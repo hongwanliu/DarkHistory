@@ -1,27 +1,22 @@
+<<<<<<< HEAD:docs/_autosummary/darkhistory.spec.rst
+darkhistory\.spec
+=====================
+
+.. automodule:: darkhistory.spec
+=======
 DarkHistory\.spectrum
 =====================
 
 .. automodule:: DarkHistory.spectrum
+>>>>>>> parent of 08df32b... New documentation structure:docs/_autosummary/DarkHistory.spectrum.rst
    
-   .. rubric:: Functions
+   .. rubric:: Sub-Modules
 
    .. autosummary::
    
-      discretize
-      get_bin_bound
-      rebin_N_arr
-   
-   .. rubric:: Classes
-
-   .. autosummary::
-   
-      Spectra
-      Spectrum
-   
-   .. rubric:: Exceptions
-
-   .. autosummary::
-   
-      LogBinError
-   
+      darkhistory.spec.spectrum
+      darkhistory.spec.spectra
+      darkhistory.spec.spectools
+      darkhistory.spec.transferfunction
+      
    

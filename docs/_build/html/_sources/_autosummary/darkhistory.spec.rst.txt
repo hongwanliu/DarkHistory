@@ -1,0 +1,15 @@
+darkhistory\.spec
+=====================
+
+.. automodule:: darkhistory.spec
+   
+   .. rubric:: Sub-Modules
+
+   .. autosummary::
+   
+      darkhistory.spec.spectrum
+      darkhistory.spec.spectra
+      darkhistory.spec.spectools
+      darkhistory.spec.transferfunction
+      
+   

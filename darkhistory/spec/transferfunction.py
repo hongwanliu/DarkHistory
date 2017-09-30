@@ -1,4 +1,4 @@
-"""``transferfunction`` contains functions and classes for processing transfer functions."""
+"""Contains functions and classes for transfer functions."""
 
 import numpy as np
 from darkhistory import physics as phys

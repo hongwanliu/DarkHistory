@@ -1,4 +1,4 @@
-"""``spectools`` contains functions useful for processing spectral data."""
+"""Functions useful for processing spectral data."""
 
 import numpy as np
 from darkhistory import utilities as utils

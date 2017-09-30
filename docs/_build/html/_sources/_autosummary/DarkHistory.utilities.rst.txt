@@ -1,7 +1,7 @@
-DarkHistory\.utilities
+darkhistory\.utilities
 ======================
 
-.. automodule:: DarkHistory.utilities
+.. automodule:: darkhistory.utilities
 
    .. rubric:: Functions
 
