@@ -1,0 +1,346 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>DarkHistory.TransferFunction package &mdash; DarkHistory  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="DarkHistory  documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> DarkHistory
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">DarkHistory</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DarkHistory</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>DarkHistory.TransferFunction package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/DarkHistory.TransferFunction.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="darkhistory-transferfunction-package">
+<h1>DarkHistory.TransferFunction package<a class="headerlink" href="#darkhistory-transferfunction-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-DarkHistory.TransferFunction.get_raw_tf">
+<span id="darkhistory-transferfunction-get-raw-tf-module"></span><h2>DarkHistory.TransferFunction.get_raw_tf module<a class="headerlink" href="#module-DarkHistory.TransferFunction.get_raw_tf" title="Permalink to this headline">¶</a></h2>
+<p>Functions for importing raw transfer function data.</p>
+<p>Abscissa values are subject to change.</p>
+<dl class="function">
+<dt id="DarkHistory.TransferFunction.get_raw_tf.get_out_eng_absc">
+<code class="descclassname">DarkHistory.TransferFunction.get_raw_tf.</code><code class="descname">get_out_eng_absc</code><span class="sig-paren">(</span><em>in_eng</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.get_raw_tf.get_out_eng_absc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the output energy abscissa for a given input energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>in_eng</strong> (<em>float</em>) – Input energy (in eV).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Output energy abscissa.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="DarkHistory.TransferFunction.get_raw_tf.process_raw_tf">
+<code class="descclassname">DarkHistory.TransferFunction.get_raw_tf.</code><code class="descname">process_raw_tf</code><span class="sig-paren">(</span><em>file</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.get_raw_tf.process_raw_tf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes raw data to return transfer functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file</strong> (<em>str</em>) – File to be processed.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List indexed by injection energy.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list of Transferfunction</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-DarkHistory.TransferFunction.transferfunction">
+<span id="darkhistory-transferfunction-transferfunction-module"></span><h2>DarkHistory.TransferFunction.transferfunction module<a class="headerlink" href="#module-DarkHistory.TransferFunction.transferfunction" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal"><span class="pre">transferfunction</span></code> contains functions and classes for processing transfer functions.</p>
+<dl class="class">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction">
+<em class="property">class </em><code class="descclassname">DarkHistory.TransferFunction.transferfunction.</code><code class="descname">Transferfunction</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>in_eng</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">DarkHistory.spectrum.Spectra</span></code></p>
+<p>Collection of <code class="docutils literal"><span class="pre">Spectrum</span></code> objects for transfer functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>spec_arr</strong> (list of <code class="docutils literal"><span class="pre">Spectrum</span></code>) – List of <code class="docutils literal"><span class="pre">Spectrum</span></code> to be stored together.</li>
+<li><strong>in_eng</strong> (<em>float</em>) – Injection energy of this transfer function.</li>
+<li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the <code class="docutils literal"><span class="pre">Spectrum</span></code> objects into.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.eng">
+<code class="descname">eng</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.eng" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – Energy abscissa for the <code class="docutils literal"><span class="pre">Spectrum</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.rs">
+<code class="descname">rs</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.rs" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – The redshifts of the <code class="docutils literal"><span class="pre">Spectrum</span></code> objects.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.log_bin_width">
+<code class="descname">log_bin_width</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.log_bin_width" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – The log bin width.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.bin_boundary">
+<code class="descname">bin_boundary</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.bin_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – The boundary of each energy bin. Has one more entry than <cite>length</cite>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.grid_values">
+<code class="descname">grid_values</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.grid_values" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – 2D array with the spectra laid out in (rs, eng).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.at_rs">
+<code class="descname">at_rs</code><span class="sig-paren">(</span><em>out_rs</em>, <em>interp_type='val'</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.at_rs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the interpolation spectrum at a given redshift.</p>
+<p>Interpolation is logarithmic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>out_rs</strong> (<em>ndarray</em>) – The redshifts (or redshift bin indices) at which to interpolate.</li>
+<li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual redshift.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The interpolated spectra.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction" title="DarkHistory.TransferFunction.transferfunction.Transferfunction">Transferfunction</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-DarkHistory.TransferFunction">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-DarkHistory.TransferFunction" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Hongwan Liu.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
