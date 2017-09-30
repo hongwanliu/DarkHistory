@@ -1,7 +1,0 @@
-darkhistory\.spec
-======================
-
-.. automodule:: darkhistory.spec
-    :members:
-    :undoc-members:
-    :show-inheritance:

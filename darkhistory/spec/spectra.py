@@ -1,4 +1,4 @@
-"""The ``Spectra`` class."""
+"""``spectra`` contains the ``Spectra`` class."""
 
 import numpy as np
 from darkhistory import utilities as utils
