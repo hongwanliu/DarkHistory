@@ -1,8 +1,8 @@
-darkhistory\.utilities Summary
-==============================
+darkhistory\.utilities
+======================
 
 .. automodule:: darkhistory.utilities
-
+   
    .. rubric:: Functions
 
    .. autosummary::

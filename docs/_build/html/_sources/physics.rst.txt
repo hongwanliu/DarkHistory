@@ -1,4 +1,4 @@
-darkhistory\.physics
+darkhistory.physics
 ====================
 
 .. automodule:: darkhistory.physics

@@ -1,20 +1,25 @@
-darkhistory.spec Summary
-=========================
+darkhistory\.spec
+=================
 
 .. automodule:: darkhistory.spec
 
-   .. rubric:: Sub-Modules
+.. rubric:: Modules
 
-   .. autosummary::
+.. autosummary::
+   :toctree: spec
    
-      darkhistory.spec.spectools
-   
-   .. rubric:: Classes
+   darkhistory.spec.spectools
 
-   .. autosummary::
+.. rubric:: Classes
+
+.. autosummary:: 
+   :toctree: spec
    
-      darkhistory.spec.spectrum
-      darkhistory.spec.spectra
+   darkhistory.spec.spectrum
+   darkhistory.spec.spectra
+
+   
+   
    
 
    

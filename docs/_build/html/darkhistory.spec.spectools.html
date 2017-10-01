@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>darkhistory Modules &mdash; DarkHistory  documentation</title>
+  <title>darkhistory.spec.spectools &mdash; DarkHistory  documentation</title>
   
 
   
@@ -36,8 +36,9 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="DarkHistory  documentation" href="index.html"/>
-        <link rel="next" title="darkhistory.physics" href="_autosummary/darkhistory.physics.html"/>
-        <link rel="prev" title="Welcome to DarkHistory’s documentation!" href="index.html"/> 
+        <link rel="up" title="darkhistory.spec" href="_autosummary/darkhistory.spec.html"/>
+        <link rel="next" title="darkhistory.spec.spectrum" href="darkhistory.spec.spectrum.html"/>
+        <link rel="prev" title="darkhistory.spec" href="_autosummary/darkhistory.spec.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -88,10 +89,15 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">darkhistory Modules</a><ul>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">darkhistory Modules</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="_autosummary/darkhistory.physics.html">darkhistory.physics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="_autosummary/darkhistory.utilities.html">darkhistory.utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_autosummary/darkhistory.spec.html">darkhistory.spec</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="_autosummary/darkhistory.spec.html">darkhistory.spec</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">darkhistory.spec.spectools</a></li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">darkhistory.spec.spectrum</a></li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectra.html">darkhistory.spec.spectra</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -138,13 +144,17 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>darkhistory Modules</li>
+          <li><a href="modules.html">darkhistory Modules</a> &raquo;</li>
+        
+          <li><a href="_autosummary/darkhistory.spec.html">darkhistory.spec</a> &raquo;</li>
+        
+      <li>darkhistory.spec.spectools</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/darkhistory.spec.spectools.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -157,32 +167,27 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="darkhistory-modules">
-<h1>darkhistory Modules<a class="headerlink" href="#darkhistory-modules" title="Permalink to this headline">¶</a></h1>
-<p class="rubric">Sub-Modules</p>
+  <div class="section" id="module-darkhistory.spec.spectools">
+<span id="darkhistory-spec-spectools"></span><h1>darkhistory.spec.spectools<a class="headerlink" href="#module-darkhistory.spec.spectools" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal"><span class="pre">spectools</span></code> contains functions useful for processing spectral data.</p>
+<p class="rubric">Functions</p>
 <table border="1" class="longtable docutils">
 <colgroup>
 <col width="10%" />
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="physics.html#module-darkhistory.physics" title="darkhistory.physics"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.physics</span></code></a></td>
-<td>Physics functions as well as constants.</td>
+<tr class="row-odd"><td><a class="reference internal" href="spectools.html#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal"><span class="pre">discretize</span></code></a>(func_dNdE,&nbsp;eng)</td>
+<td>Discretizes a continuous function.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="utilities.html#module-darkhistory.utilities" title="darkhistory.utilities"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.utilities</span></code></a></td>
-<td>Non-physics functions used in darkhistory.</td>
+<tr class="row-even"><td><a class="reference internal" href="spectools.html#darkhistory.spec.spectools.get_bin_bound" title="darkhistory.spec.spectools.get_bin_bound"><code class="xref py py-obj docutils literal"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
+<td>Returns the bin boundary of an abscissa.</td>
 </tr>
-</tbody>
-</table>
-<p class="rubric">Packages</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="_autosummary/darkhistory.spec.html#module-darkhistory.spec" title="darkhistory.spec"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.spec</span></code></a></td>
-<td>Classes and functions for manipulating spectra.</td>
+<tr class="row-odd"><td><a class="reference internal" href="spectools.html#darkhistory.spec.spectools.get_log_bin_width" title="darkhistory.spec.spectools.get_log_bin_width"><code class="xref py py-obj docutils literal"><span class="pre">get_log_bin_width</span></code></a>(eng)</td>
+<td>Return the log bin width of the abscissa.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="spectools.html#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng,&nbsp;out_eng)</td>
+<td>Rebins an array of particle number with fixed energy.</td>
 </tr>
 </tbody>
 </table>
@@ -198,10 +203,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="_autosummary/darkhistory.physics.html" class="btn btn-neutral float-right" title="darkhistory.physics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="darkhistory.spec.spectrum.html" class="btn btn-neutral float-right" title="darkhistory.spec.spectrum" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="Welcome to DarkHistory’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="_autosummary/darkhistory.spec.html" class="btn btn-neutral" title="darkhistory.spec" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

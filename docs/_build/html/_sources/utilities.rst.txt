@@ -1,4 +1,4 @@
-darkhistory\.utilities
+darkhistory.utilities
 ======================
 
 .. automodule:: darkhistory.utilities
