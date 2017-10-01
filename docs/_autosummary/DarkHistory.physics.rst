@@ -1,7 +1,7 @@
-DarkHistory\.physics
+darkhistory\.physics
 =====================
 
-.. automodule:: DarkHistory.physics
+.. automodule:: darkhistory.physics
 
     .. rubric:: Constants - Fundamental
 

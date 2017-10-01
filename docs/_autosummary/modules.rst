@@ -1,20 +1,18 @@
-DarkHistory
+darkhistory
 ===========
 
-.. automodule:: DarkHistory
+.. automodule:: darkhistory
 
    .. rubric:: Packages
 
    .. autosummary:: 
 
-      DarkHistory.Electrons
-      DarkHistory.TransferFunction
+      darkhistory.spec
 
    .. rubric:: Sub-Modules
 
    .. autosummary::
    
-      DarkHistory.physics
-      DarkHistory.spectrum
-      DarkHistory.utilities
+      darkhistory.physics
+      darkhistory.utilities
    

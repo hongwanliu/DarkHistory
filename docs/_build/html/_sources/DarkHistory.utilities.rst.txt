@@ -1,7 +1,7 @@
-DarkHistory\.utilities
+darkhistory\.utilities
 ======================
 
-.. automodule:: DarkHistory.utilities
+.. automodule:: darkhistory.utilities
     :members:
     :undoc-members:
     :show-inheritance:
