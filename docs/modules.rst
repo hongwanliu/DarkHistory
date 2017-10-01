@@ -1,25 +1,17 @@
-DarkHistory Modules
+darkhistory
 ===================
 
-.. toctree::
-   :hidden:
-   
-   DarkHistory.physics
-   DarkHistory.spectrum
-   DarkHistory.utilities
-
-.. rubric:: Sub-Modules
+.. rubric:: Table of Sub-Modules
 
 .. autosummary::
    :toctree: _autosummary
+   
+   darkhistory.physics
+   darkhistory.utilities
 
-   DarkHistory.physics
-   DarkHistory.spectrum
-   DarkHistory.utilities
-
-.. rubric:: Packages
+.. rubric:: Table of Packages
 
 .. autosummary:: 
    :toctree: _autosummary
-
-   DarkHistory.TransferFunction
+   
+   darkhistory.spec

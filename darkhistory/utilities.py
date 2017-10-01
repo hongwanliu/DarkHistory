@@ -1,5 +1,4 @@
-""" ``utilities`` contains useful, non-physics functions used in DarkHistory.
-
+""" Non-physics functions used in darkhistory.
 
 """
 

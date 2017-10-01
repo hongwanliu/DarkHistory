@@ -393,6 +393,7 @@ class Spectra:
         Parameters
         ----------
         spec : Spectrum
+            The new spectrum to append.
         """
         if not np.array_equal(self.eng, spec.eng):
             raise TypeError("new Spectrum does not have the same energy abscissa.")

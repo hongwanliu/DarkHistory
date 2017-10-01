@@ -1,0 +1,322 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>darkhistory.spec.spectools &mdash; DarkHistory  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="DarkHistory  documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> DarkHistory
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">darkhistory Modules</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DarkHistory</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>darkhistory.spec.spectools</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/spectools.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-darkhistory.spec.spectools">
+<span id="darkhistory-spec-spectools"></span><h1>darkhistory.spec.spectools<a class="headerlink" href="#module-darkhistory.spec.spectools" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal"><span class="pre">spectools</span></code> contains functions useful for processing spectral data.</p>
+<p class="rubric">Methods</p>
+<dl class="function">
+<dt id="darkhistory.spec.spectools.discretize">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">discretize</code><span class="sig-paren">(</span><em>func_dNdE</em>, <em>eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.discretize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discretizes a continuous function.</p>
+<p>The function is integrated between the bin boundaries specified by <cite>eng</cite> to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin <strong>boundaries</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>func_dNdE</strong> (<em>function</em>) – A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value.</li>
+<li><strong>eng</strong> (<em>ndarray</em>) – Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The discretized spectrum. rs is set to -1, and must be set manually.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.get_bin_bound">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">get_bin_bound</code><span class="sig-paren">(</span><em>eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.get_bin_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bin boundary of an abscissa.</p>
+<p>The bin boundaries are computed by taking the midpoint of the <strong>log</strong> of the abscissa. The first and last entries are computed by taking all of the bins to be symmetric with respect to the bin center.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>eng</strong> (<em>ndarray</em>) – Abscissa from which the bin boundary is obtained.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The bin boundaries.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.get_log_bin_width">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">get_log_bin_width</code><span class="sig-paren">(</span><em>eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.get_log_bin_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the log bin width of the abscissa.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.rebin_N_arr">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rebins an array of particle number with fixed energy.</p>
+<p>Returns a <code class="docutils literal"><span class="pre">Spectrum</span></code> object. The rebinning conserves both total number and total energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>N_arr</strong> (<em>ndarray</em>) – An array of number of particles in each bin.</li>
+<li><strong>in_eng</strong> (<em>ndarray</em>) – An array of the energy abscissa for each bin. The total energy in each bin <cite>i should be `N_arr[i]*in_eng[i]</cite>.</li>
+<li><strong>out_eng</strong> (<em>ndarray</em>) – The new abscissa to bin into. If <cite>in_eng</cite> has values that are smaller than</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The output <code class="docutils literal"><span class="pre">Spectrum</span></code> with appropriate dN/dE, with abscissa out_eng.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">OverflowError</span></code> – The maximum energy in <cite>out_eng</cite> cannot be smaller than any bin in <cite>self.eng</cite>.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The total number and total energy is conserved by assigning the number of particles N in a bin of energy eng to two adjacent bins in new_eng, with energies eng_low and eng_upp such that eng_low &lt; eng &lt; eng_upp. Then dN_low_dE_low = (eng_upp - eng)/(eng_upp - eng_low)*(N/(E * dlogE_low)), and dN_upp_dE_upp = (eng - eng_low)/(eng_upp - eng_low)*(N/(E*dlogE_upp)).</p>
+<p>If a bin in <cite>in_eng</cite> is below the lowest bin in <cite>out_eng</cite>, then the total number and energy not assigned to the lowest bin are assigned to the underflow. Particles will only be assigned to the lowest bin if there is some overlap between the bin index with respect to <cite>out_eng</cite> bin centers is larger than -1.0.</p>
+<p class="last">If a bin in <cite>in_eng</cite> is above the highest bin in <cite>out_eng</cite>, then an <cite>OverflowError</cite> is thrown.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Hongwan Liu.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
