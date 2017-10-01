@@ -35,10 +35,7 @@
         <link rel="index" title="Index"
               href="../genindex.html"/>
         <link rel="search" title="Search" href="../search.html"/>
-    <link rel="top" title="DarkHistory  documentation" href="../index.html"/>
-        <link rel="up" title="DarkHistory Modules" href="../modules.html"/>
-        <link rel="next" title="DarkHistory.utilities" href="DarkHistory.utilities.html"/>
-        <link rel="prev" title="DarkHistory.physics" href="DarkHistory.physics.html"/> 
+    <link rel="top" title="DarkHistory  documentation" href="../index.html"/> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -88,15 +85,8 @@
             
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../modules.html">DarkHistory Modules</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="DarkHistory.physics.html">DarkHistory.physics</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">DarkHistory.spectrum</a></li>
-<li class="toctree-l2"><a class="reference internal" href="DarkHistory.utilities.html">DarkHistory.utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="DarkHistory.TransferFunction.html">DarkHistory.TransferFunction</a></li>
-<li class="toctree-l2"><a class="reference internal" href="DarkHistory.Electrons.html">DarkHistory.Electrons</a></li>
-</ul>
-</li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">darkhistory Modules</a></li>
 </ul>
 
             
@@ -141,8 +131,6 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
-          <li><a href="../modules.html">DarkHistory Modules</a> &raquo;</li>
-        
       <li>DarkHistory.spectrum</li>
     
     
@@ -162,54 +150,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="module-DarkHistory.spectrum">
-<span id="darkhistory-spectrum"></span><h1>DarkHistory.spectrum<a class="headerlink" href="#module-DarkHistory.spectrum" title="Permalink to this headline">¶</a></h1>
-<p><code class="docutils literal"><span class="pre">spectrum</span></code> contains functions and classes for processing spectral data.</p>
-<p class="rubric">Functions</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="../DarkHistory.spectrum.html#DarkHistory.spectrum.discretize" title="DarkHistory.spectrum.discretize"><code class="xref py py-obj docutils literal"><span class="pre">discretize</span></code></a>(func_dNdE,&nbsp;eng)</td>
-<td>Discretizes a continuous function.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="../DarkHistory.spectrum.html#DarkHistory.spectrum.get_bin_bound" title="DarkHistory.spectrum.get_bin_bound"><code class="xref py py-obj docutils literal"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
-<td>Returns the bin boundary of an abscissa.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="../DarkHistory.spectrum.html#DarkHistory.spectrum.rebin_N_arr" title="DarkHistory.spectrum.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng,&nbsp;out_eng)</td>
-<td>Rebins an array of particle number with fixed energy.</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Classes</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="../DarkHistory.spectrum.html#DarkHistory.spectrum.Spectra" title="DarkHistory.spectrum.Spectra"><code class="xref py py-obj docutils literal"><span class="pre">Spectra</span></code></a>(spec_arr[,&nbsp;rebin_eng])</td>
-<td>Structure for a collection of <code class="docutils literal"><span class="pre">Spectrum</span></code> objects.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="../DarkHistory.spectrum.html#DarkHistory.spectrum.Spectrum" title="DarkHistory.spectrum.Spectrum"><code class="xref py py-obj docutils literal"><span class="pre">Spectrum</span></code></a>(eng,&nbsp;dNdE[,&nbsp;rs])</td>
-<td>Structure for photon and electron spectra with log-binning in energy.</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Exceptions</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">LogBinError</span></code></td>
-<td>Exception when something is not log-binned.</td>
-</tr>
-</tbody>
-</table>
+  <div class="section" id="darkhistory-spectrum">
+<h1>DarkHistory.spectrum<a class="headerlink" href="#darkhistory-spectrum" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -219,15 +161,6 @@
            </div>
           </div>
           <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="DarkHistory.utilities.html" class="btn btn-neutral float-right" title="DarkHistory.utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="DarkHistory.physics.html" class="btn btn-neutral" title="DarkHistory.physics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
-    </div>
   
 
   <hr/>

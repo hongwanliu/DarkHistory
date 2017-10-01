@@ -86,7 +86,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="modules.html">DarkHistory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">darkhistory Modules</a></li>
 </ul>
 
             
@@ -155,128 +155,14 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-DarkHistory.TransferFunction.get_raw_tf">
-<span id="darkhistory-transferfunction-get-raw-tf-module"></span><h2>DarkHistory.TransferFunction.get_raw_tf module<a class="headerlink" href="#module-DarkHistory.TransferFunction.get_raw_tf" title="Permalink to this headline">¶</a></h2>
-<p>Functions for importing raw transfer function data.</p>
-<p>Abscissa values are subject to change.</p>
-<dl class="function">
-<dt id="DarkHistory.TransferFunction.get_raw_tf.get_out_eng_absc">
-<code class="descclassname">DarkHistory.TransferFunction.get_raw_tf.</code><code class="descname">get_out_eng_absc</code><span class="sig-paren">(</span><em>in_eng</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.get_raw_tf.get_out_eng_absc" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the output energy abscissa for a given input energy.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>in_eng</strong> (<em>float</em>) – Input energy (in eV).</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Output energy abscissa.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="DarkHistory.TransferFunction.get_raw_tf.process_raw_tf">
-<code class="descclassname">DarkHistory.TransferFunction.get_raw_tf.</code><code class="descname">process_raw_tf</code><span class="sig-paren">(</span><em>file</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.get_raw_tf.process_raw_tf" title="Permalink to this definition">¶</a></dt>
-<dd><p>Processes raw data to return transfer functions.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file</strong> (<em>str</em>) – File to be processed.</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List indexed by injection energy.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list of Transferfunction</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
+<div class="section" id="darkhistory-transferfunction-get-raw-tf-module">
+<h2>DarkHistory.TransferFunction.get_raw_tf module<a class="headerlink" href="#darkhistory-transferfunction-get-raw-tf-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-DarkHistory.TransferFunction.transferfunction">
-<span id="darkhistory-transferfunction-transferfunction-module"></span><h2>DarkHistory.TransferFunction.transferfunction module<a class="headerlink" href="#module-DarkHistory.TransferFunction.transferfunction" title="Permalink to this headline">¶</a></h2>
-<p><code class="docutils literal"><span class="pre">transferfunction</span></code> contains functions and classes for processing transfer functions.</p>
-<dl class="class">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction">
-<em class="property">class </em><code class="descclassname">DarkHistory.TransferFunction.transferfunction.</code><code class="descname">Transferfunction</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>in_eng</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">DarkHistory.spectrum.Spectra</span></code></p>
-<p>Collection of <code class="docutils literal"><span class="pre">Spectrum</span></code> objects for transfer functions.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>spec_arr</strong> (list of <code class="docutils literal"><span class="pre">Spectrum</span></code>) – List of <code class="docutils literal"><span class="pre">Spectrum</span></code> to be stored together.</li>
-<li><strong>in_eng</strong> (<em>float</em>) – Injection energy of this transfer function.</li>
-<li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the <code class="docutils literal"><span class="pre">Spectrum</span></code> objects into.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.eng">
-<code class="descname">eng</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.eng" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – Energy abscissa for the <code class="docutils literal"><span class="pre">Spectrum</span></code>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.rs">
-<code class="descname">rs</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.rs" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – The redshifts of the <code class="docutils literal"><span class="pre">Spectrum</span></code> objects.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.log_bin_width">
-<code class="descname">log_bin_width</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.log_bin_width" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – The log bin width.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.bin_boundary">
-<code class="descname">bin_boundary</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.bin_boundary" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – The boundary of each energy bin. Has one more entry than <cite>length</cite>.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.grid_values">
-<code class="descname">grid_values</code><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.grid_values" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – 2D array with the spectra laid out in (rs, eng).</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="DarkHistory.TransferFunction.transferfunction.Transferfunction.at_rs">
-<code class="descname">at_rs</code><span class="sig-paren">(</span><em>out_rs</em>, <em>interp_type='val'</em><span class="sig-paren">)</span><a class="headerlink" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction.at_rs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the interpolation spectrum at a given redshift.</p>
-<p>Interpolation is logarithmic.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>out_rs</strong> (<em>ndarray</em>) – The redshifts (or redshift bin indices) at which to interpolate.</li>
-<li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual redshift.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The interpolated spectra.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#DarkHistory.TransferFunction.transferfunction.Transferfunction" title="DarkHistory.TransferFunction.transferfunction.Transferfunction">Transferfunction</a></p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
+<div class="section" id="darkhistory-transferfunction-transferfunction-module">
+<h2>DarkHistory.TransferFunction.transferfunction module<a class="headerlink" href="#darkhistory-transferfunction-transferfunction-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-DarkHistory.TransferFunction">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-DarkHistory.TransferFunction" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
