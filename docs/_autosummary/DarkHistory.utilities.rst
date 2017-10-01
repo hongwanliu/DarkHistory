@@ -1,5 +1,5 @@
-darkhistory\.utilities
-======================
+darkhistory\.utilities Summary
+==============================
 
 .. automodule:: darkhistory.utilities
 

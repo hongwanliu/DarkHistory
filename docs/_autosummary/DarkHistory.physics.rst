@@ -1,5 +1,5 @@
-darkhistory\.physics
-=====================
+darkhistory\.physics Summary
+============================
 
 .. automodule:: darkhistory.physics
 

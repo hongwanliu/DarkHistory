@@ -13,12 +13,12 @@ darkhistory Modules
 .. autosummary::
    :toctree: _autosummary
 
-   darkhistory.physics
-   darkhistory.utilities
+   darkhistory.physics Summary
+   darkhistory.utilities Summary
 
 .. rubric:: Packages
 
 .. autosummary:: 
    :toctree: _autosummary
 
-   darkhistory.spec
+   darkhistory.spec Summary
