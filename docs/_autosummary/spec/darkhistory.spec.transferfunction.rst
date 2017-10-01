@@ -8,6 +8,7 @@ Classes
 
 .. autoclass:: darkhistory.spec.transferfunction.TransferFunction
    :members:
+   :inherited-members:
    :undoc-members:
    :show-inheritance:
 
