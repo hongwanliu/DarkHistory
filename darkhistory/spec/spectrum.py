@@ -1,4 +1,4 @@
-"""``spectrum`` contains the ``Spectrum`` class."""
+"""Contains the `Spectrum` class."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -57,7 +57,7 @@ class Spectrum:
         # self.log_bin_width = np.diff(np.log(self.bin_boundary))
 
     def __add__(self, other):
-        """Adds two Spectrum instances together, or an array to the spectrum. The ``Spectrum`` object is on the left.
+        """Adds two `Spectrum` instances together, or an array to the spectrum. The `Spectrum` object is on the left.
         
         Parameters
         ----------
@@ -66,13 +66,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the summed spectrum. 
+            New `Spectrum` instance which has the summed spectrum. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__radd__`, allows the use of the symbol + to add ``Spectrum`` objects together.
+        This special function, together with `Spectrum.__radd__`, allows the use of the symbol + to add `Spectrum` objects together.
 
-        The returned ``Spectrum`` object `underflow` is reset to zero if `other` is not a ``Spectrum`` object.
+        The returned `Spectrum` object `underflow` is reset to zero if `other` is not a `Spectrum` object.
 
         See Also
         --------
@@ -85,9 +85,9 @@ class Spectrum:
         if np.issubclass_(type(other), Spectrum):
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
-                raise TypeError("abscissae are different for the two ``Spectrum`` objects.")
+                raise TypeError("abscissae are different for the two `Spectrum` objects.")
             if not np.array_equal(self.rs, other.rs):
-                raise TypeError("redshifts are different for the two ``Spectrum`` objects.")
+                raise TypeError("redshifts are different for the two `Spectrum` objects.")
 
             new_spectrum = Spectrum(self.eng, self.dNdE+other.dNdE, self.rs)
             new_spectrum.underflow['N'] = (self.underflow['N'] 
@@ -106,7 +106,7 @@ class Spectrum:
             raise TypeError("cannot add object to Spectrum.")
 
     def __radd__(self, other):
-        """Adds two Spectrum instances together, or an array to the spectrum. The ``Spectrum`` object is on the right.
+        """Adds two `Spectrum` instances together, or an array to the spectrum. The `Spectrum` object is on the right.
         
         Parameters
         ----------
@@ -115,13 +115,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the summed spectrum. 
+            New `Spectrum` instance which has the summed spectrum. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__add__`, allows the use of the symbol + to add ``Spectrum`` objects together.
+        This special function, together with `Spectrum.__add__`, allows the use of the symbol + to add `Spectrum` objects together.
 
-        The returned ``Spectrum`` object `underflow` is reset to zero if `other` is not a ``Spectrum`` object.
+        The returned `Spectrum` object `underflow` is reset to zero if `other` is not a `Spectrum` object.
 
         See Also
         --------
@@ -134,9 +134,9 @@ class Spectrum:
         if np.issubclass_(type(other), Spectrum):
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
-                raise TypeError("abscissae are different for the two ``Spectrum`` objects.")
+                raise TypeError("abscissae are different for the two `Spectrum` objects.")
             if not np.array_equal(self.rs, other.rs):
-                raise TypeError("redshifts are different for the two ``Spectrum`` objects.")
+                raise TypeError("redshifts are different for the two `Spectrum` objects.")
 
             new_spectrum = Spectrum(self.eng, self.dNdE+other.dNdE, self.rs)
             new_spectrum.underflow['N'] = (self.underflow['N'] 
@@ -155,7 +155,7 @@ class Spectrum:
             raise TypeError("cannot add object to Spectrum.")
 
     def __sub__(self, other):
-        """Subtracts one ``Spectrum`` instance from another, or subtracts an array from the spectrum. 
+        """Subtracts one `Spectrum` instance from another, or subtracts an array from the spectrum. 
         
         Parameters
         ----------
@@ -164,13 +164,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the subtracted `dNdE`. 
+            New `Spectrum` instance which has the subtracted `dNdE`. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__rsub__`, allows the use of the symbol - to subtract or subtract from ``Spectrum`` objects.
+        This special function, together with `Spectrum.__rsub__`, allows the use of the symbol - to subtract or subtract from `Spectrum` objects.
 
-        The returned ``Spectrum`` object underflow is reset to zero if `other` is not a ``Spectrum`` object.
+        The returned `Spectrum` object underflow is reset to zero if `other` is not a `Spectrum` object.
 
         See Also
         --------
@@ -180,7 +180,7 @@ class Spectrum:
         return self + -1*other
 
     def __rsub__(self, other):
-        """Subtracts one Spectrum instance from another, or subtracts the spectrum from an array.
+        """Subtracts one `Spectrum` instance from another, or subtracts the spectrum from an array.
         
         Parameters
         ----------
@@ -189,11 +189,11 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the subtracted `dNdE`. 
+            New `Spectrum` instance which has the subtracted `dNdE`. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__sub__`, allows the use of the symbol - to subtract or subtract from ``Spectrum`` objects.
+        This special function, together with `Spectrum.__sub__`, allows the use of the symbol - to subtract or subtract from `Spectrum` objects.
 
         See Also
         --------
@@ -208,7 +208,7 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance with the spectrum negated. 
+            New `Spectrum` instance with the spectrum negated. 
         """
         return -1*self
 
@@ -222,13 +222,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the multiplied `dNdE`. 
+            New `Spectrum` instance which has the multiplied `dNdE`. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__rmul__`, allows the use of the symbol * to multiply ``Spectrum`` objects or an array and Spectrum.
+        This special function, together with `Spectrum.__rmul__`, allows the use of the symbol * to multiply `Spectrum` objects or an array and Spectrum.
 
-        The returned ``Spectrum`` object `underflow` is reset to zero if `other` is not a ``Spectrum`` object.
+        The returned `Spectrum` object `underflow` is reset to zero if `other` is not a `Spectrum` object.
 
         See Also
         --------
@@ -266,13 +266,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the multiplied `dNdE`. 
+            New `Spectrum` instance which has the multiplied `dNdE`. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__mul__`, allows the use of the symbol * to multiply ``Spectrum`` objects or an array and Spectrum.
+        This special function, together with `Spectrum.__mul__`, allows the use of the symbol * to multiply `Spectrum` objects or an array and Spectrum.
 
-        The returned ``Spectrum`` object `underflow` is reset to zero if `other` is not a ``Spectrum`` object.
+        The returned `Spectrum` object `underflow` is reset to zero if `other` is not a `Spectrum` object.
 
         See Also
         --------
@@ -285,7 +285,7 @@ class Spectrum:
             new_spectrum.underflow['eng'] = self.underflow['eng']*other
             return new_spectrum
 
-        # Removed ability to multiply two ``Spectrum`` objects, doesn't seem like there's a physical reason for us to implement this.
+        # Removed ability to multiply two `Spectrum` objects, doesn't seem like there's a physical reason for us to implement this.
 
         elif isinstance(other, np.ndarray):
 
@@ -305,13 +305,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the divided `dNdE`. 
+            New `Spectrum` instance which has the divided `dNdE`. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__truediv__`, allows the use of the symbol / to multiply ``Spectrum`` objects or an array and ``Spectrum``.
+        This special function, together with `Spectrum.__truediv__`, allows the use of the symbol / to multiply `Spectrum` objects or an array and Spectrum.
 
-        The returned ``Spectrum`` object `underflow` is reset to zero.
+        The returned `Spectrum` object `underflow` is reset to zero.
 
         """
         return self*(1/other)
@@ -326,13 +326,13 @@ class Spectrum:
         Returns
         -------
         Spectrum
-            New ``Spectrum`` instance which has the divided `dNdE`. 
+            New `Spectrum` instance which has the divided `dNdE`. 
 
         Notes
         -----
-        This special function, together with `Spectrum.__truediv__`, allows the use of the symbol / to multiply ``Spectrum`` objects or an array and Spectrum.
+        This special function, together with `Spectrum.__truediv__`, allows the use of the symbol / to multiply `Spectrum` objects or an array and Spectrum.
 
-        The returned ``Spectrum`` object `underflow` is reset to zero.
+        The returned `Spectrum` object `underflow` is reset to zero.
 
         """
         invSpec = Spectrum(self.eng, 1/self.dNdE, self.rs)
@@ -550,7 +550,7 @@ class Spectrum:
 
 
     def rebin(self, out_eng):
-        """ Re-bins the ``Spectrum`` object according to a new abscissa.
+        """ Re-bins the `Spectrum` object according to a new abscissa.
 
         Rebinning conserves total number and total energy.
         
@@ -696,7 +696,7 @@ class Spectrum:
         self.underflow['eng'] += eng_underflow 
 
     def redshift(self, new_rs):
-        """Redshifts the ``Spectrum`` object as a photon spectrum. 
+        """Redshifts the `Spectrum` object as a photon spectrum. 
 
         Parameters
         ----------

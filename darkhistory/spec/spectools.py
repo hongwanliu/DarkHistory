@@ -1,4 +1,4 @@
-"""``spectools`` contains functions useful for processing spectral data."""
+"""Functions useful for processing spectral data."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -53,7 +53,7 @@ def get_log_bin_width(eng):
 def rebin_N_arr(N_arr, in_eng, out_eng):
     """Rebins an array of particle number with fixed energy.
     
-    Returns a ``Spectrum`` object. The rebinning conserves both total number and total energy.
+    Returns a `Spectrum` object. The rebinning conserves both total number and total energy.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     Returns
     -------
     Spectrum
-        The output ``Spectrum`` with appropriate dN/dE, with abscissa out_eng.
+        The output `Spectrum` with appropriate dN/dE, with abscissa out_eng.
 
     Raises
     ------

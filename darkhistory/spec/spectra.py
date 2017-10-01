@@ -1,4 +1,4 @@
-"""``spectra`` contains the ``Spectra`` class."""
+"""Contains the `Spectra` class."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -10,21 +10,21 @@ import warnings
 from scipy import integrate
 
 class Spectra:
-    """Structure for a collection of ``Spectrum`` objects.
+    """Structure for a collection of `Spectrum` objects.
 
     Parameters
     ---------- 
-    spec_arr : list of ``Spectrum``
-        List of ``Spectrum`` to be stored together.
+    spec_arr : list of Spectrum
+        List of Spectrum to be stored together.
     rebin_eng : ndarray, optional
-        New abscissa to rebin all of the ``Spectrum`` objects into.
+        New abscissa to rebin all of the `Spectrum` objects into.
 
     Attributes
     ----------
     eng : ndarray
-        Energy abscissa for the ``Spectrum``.
+        Energy abscissa for the Spectrum.
     rs : ndarray
-        The redshifts of the ``Spectrum`` objects.  
+        The redshifts of the `Spectrum` objects.  
     grid_values : ndarray
         2D array with the spectra laid out in (rs, eng). 
     
@@ -95,7 +95,7 @@ class Spectra:
 
 
     def __add__(self, other): 
-        """Adds two ``Spectra`` instances together.
+        """Adds two `Spectra` instances together.
 
         Parameters
         ----------
@@ -104,11 +104,11 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise sum of the ``Spectrum`` objects in each ``Spectra``.
+            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add ``Spectra`` objects together. 
+        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add `Spectra` objects together. 
 
         See Also
         --------
@@ -127,7 +127,7 @@ class Spectra:
 
 
     def __radd__(self, other): 
-        """Adds two ``Spectra`` instances together.
+        """Adds two `Spectra` instances together.
 
         Parameters
         ----------
@@ -136,7 +136,7 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise sum of the ``Spectrum`` objects in each ``Spectra``.
+            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
 
         Notes
         -----
@@ -158,7 +158,7 @@ class Spectra:
         else: raise TypeError('adding an object that is not of class Spectra.')
 
     def __sub__(self, other):
-        """Subtracts one ``Spectra`` instance from another. 
+        """Subtracts one `Spectra` instance from another. 
 
         Parameters
         ----------
@@ -167,7 +167,7 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which has the subtracted list of `dNdE`. 
+            New `Spectra` instance which has the subtracted list of `dNdE`. 
 
         Notes
         -----
@@ -180,7 +180,7 @@ class Spectra:
         return self + -1*other 
 
     def __rsub__(self, other):
-        """Subtracts one ``Spectra`` instance from another. 
+        """Subtracts one `Spectra` instance from another. 
 
         Parameters
         ----------
@@ -189,7 +189,7 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which has the subtracted list of `dNdE`. 
+            New `Spectra` instance which has the subtracted list of `dNdE`. 
 
         Notes
         -----
@@ -207,12 +207,12 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance with the `dNdE` negated.
+            New `Spectra` instance with the `dNdE` negated.
         """
         return -1*self
 
     def __mul__(self, other):
-        """Takes the product of two ``Spectra`` instances. 
+        """Takes the product of two `Spectra` instances. 
 
         Parameters
         ----------
@@ -221,11 +221,11 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise product of the ``Spectrum`` objects in each ``Spectra``. 
+            New `Spectra` instance which is an element-wise product of the `Spectrum` objects in each Spectra. 
 
         Notes
         -----
-        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to add ``Spectra`` objects together.
+        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to add `Spectra` objects together.
 
         See Also
         --------
@@ -241,7 +241,7 @@ class Spectra:
             raise TypeError("can only multiply Spectra or scalars.")
 
     def __rmul__(self, other):
-        """Takes the product of two ``Spectra`` instances. 
+        """Takes the product of two `Spectra` instances. 
 
         Parameters
         ----------
@@ -250,11 +250,11 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise product of the ``Spectrum`` objects in each ``Spectra``. 
+            New `Spectra` instance which is an element-wise product of the `Spectrum` objects in each Spectra. 
 
         Notes
         -----
-        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to add ``Spectra`` objects together.
+        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to add `Spectra` objects together.
 
         See Also
         --------
@@ -270,7 +270,7 @@ class Spectra:
             raise TypeError("can only multiply Spectra or scalars.")
 
     def __truediv__(self,other):
-        """Divides ``Spectra`` by a number or another ``Spectra``. 
+        """Divides Spectra by a number or another Spectra. 
 
         Parameters
         ----------
@@ -282,7 +282,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide ``Spectra`` objects by a number or another ``Spectra``. 
+        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects by a number or another Spectra. 
 
         See Also
         --------
@@ -295,7 +295,7 @@ class Spectra:
             return self*(1/other)
 
     def __rtruediv__(self,other):
-        """Divides ``Spectra`` by a number or another ``Spectra``. 
+        """Divides Spectra by a number or another Spectra. 
 
         Parameters
         ----------
@@ -307,7 +307,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__truediv__`, allows the use of the symbol / to divide ``Spectra`` objects by a number or another ``Spectra``. 
+        This special function, together with `Spectra.__truediv__`, allows the use of the symbol / to divide `Spectra` objects by a number or another Spectra. 
 
         See Also
         --------
@@ -318,9 +318,9 @@ class Spectra:
         return other*invSpec   
 
     def integrate_each_spec(self,weight=None):
-        """Sums each ``Spectrum``, each `eng` bin weighted by `weight`. 
+        """Sums each Spectrum, each `eng` bin weighted by `weight`. 
 
-        Equivalent to contracting `weight` with each `dNdE` in ``Spectra``, `weight` should have length `self.length`. 
+        Equivalent to contracting `weight` with each `dNdE` in Spectra, `weight` should have length `self.length`. 
 
         Parameters
         ----------
@@ -348,13 +348,13 @@ class Spectra:
 
         Parameters
         ----------
-        weight : ndarray or ``Spectrum``, optional
+        weight : ndarray or Spectrum, optional
             The weight in each redshift bin, with weight of 1 for every bin if not specified.
 
         Returns
         -------
-        ndarray or ``Spectrum``
-            An array or ``Spectrum`` of weight sums, one for each energy in `self.eng`, with length `self.length`. 
+        ndarray or Spectrum
+            An array or Spectrum of weight sums, one for each energy in `self.eng`, with length `self.length`. 
 
         """
         if weight is None:
@@ -369,7 +369,7 @@ class Spectra:
             raise TypeError("mat must be an ndarray.")
 
     def rebin(self, out_eng):
-        """ Re-bins all ``Spectrum`` objects according to a new abscissa.
+        """ Re-bins all `Spectrum` objects according to a new abscissa.
 
         Rebinning conserves total number and total energy.
         
@@ -388,7 +388,7 @@ class Spectra:
         self.eng = out_eng
 
     def append(self, spec):
-        """Appends a new ``Spectrum``. 
+        """Appends a new Spectrum. 
 
         Parameters
         ----------
@@ -404,15 +404,15 @@ class Spectra:
         self.rs = np.append(self.rs, spec.rs)
 
     def plot(self, ind, step=1):
-        """Plots the contained ``Spectrum`` objects. 
+        """Plots the contained `Spectrum` objects. 
 
         Parameters
         ----------
         ind : int or tuple of int
-            Index of ``Spectrum`` to plot, or a tuple of indices providing a range of ``Spectrum`` to plot. 
+            Index of Spectrum to plot, or a tuple of indices providing a range of Spectrum to plot. 
 
         step : int, optional
-            The number of steps to take before choosing one ``Spectrum`` to plot. 
+            The number of steps to take before choosing one Spectrum to plot. 
 
         Returns
         -------

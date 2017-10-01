@@ -27,7 +27,7 @@ thomson_xsec = 6.652458734e-25
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^2."""
 rydberg      = 13.60569253
-"""Ionization potential of ground state hydrogen."""
+"""Ionization potential of ground state hydrogen in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
@@ -83,7 +83,7 @@ nA          = nH + nHe
 # Cosmology functions
 
 def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda): 
-    """ Returns the Hubble parameter at a given redshift.
+    """ Hubble parameter in s^-1.
 
     Assumes a flat universe. 
     
@@ -109,7 +109,7 @@ def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_l
     return H0*np.sqrt(omega_rad*rs**4 + omega_m*rs**3 + omega_lambda)
 
 def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ Returns dt/dz at a given redshift. 
+    """ dt/dz in s. 
 
     Assumes a flat universe. 
 
@@ -134,7 +134,7 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
     return 1/(rs*hubblerates(rs, H0, omega_m, omega_rad, omega_lambda))
 
 def TCMB(rs):
-    """ Returns the CMB temperature at a given redshift in eV.
+    """ CMB temperature in eV.
 
     Parameters
     ----------
@@ -149,7 +149,7 @@ def TCMB(rs):
     return 0.235e-3 * rs
 
 def get_inj_rate(inj_type, inj_fac):
-    """Returns the injection rate function.
+    """Dark matter injection rate function.
 
     Parameters
     ----------
@@ -178,7 +178,7 @@ def get_inj_rate(inj_type, inj_fac):
 # Atomic Cross-Sections
 
 def photo_ion_xsec(eng, species):
-    """Returns the photoionization cross section. 
+    """Photoionization cross section in cm^2. 
 
     Cross sections for hydrogen, neutral helium and singly-ionized helium are available. 
 
@@ -230,7 +230,7 @@ def photo_ion_xsec(eng, species):
     return xsec
 
 def photo_ion_rate(rs, eng, xH, xe, atom=None):
-    """Returns the photoionization rate.
+    """Photoionization rate in cm^3 s^-1.
  
     Parameters
     ----------
@@ -266,7 +266,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         return sum([ion_rate[atom] for atom in atoms])
 
 def tau_sobolev(rs):
-    """Returns the Sobolev optical depth. 
+    """Sobolev optical depth. 
     
     Parameters
     ----------
@@ -284,7 +284,7 @@ def tau_sobolev(rs):
 # CMB
 
 def CMB_spec(eng, temp):
-    """Returns the CMB spectrum in number of photons/cm^3/eV. 
+    """CMB spectrum in number of photons/cm^3/eV. 
 
     Returns zero if the energy exceeds 500 times the temperature.
 
