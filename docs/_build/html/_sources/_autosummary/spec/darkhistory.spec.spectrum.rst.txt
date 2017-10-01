@@ -1,13 +1,7 @@
-spec.spectrum
+spectrum
 ===========================
 
 .. automodule:: darkhistory.spec.spectrum
-   
-   .. rubric:: Classes
-
-   .. autosummary::
-   
-      Spectrum
    
 Classes
 -------

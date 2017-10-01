@@ -1,7 +1,7 @@
-darkhistory Modules
+darkhistory
 ===================
 
-.. rubric:: Sub-Modules
+.. rubric:: Table of Sub-Modules
 
 .. autosummary::
    :toctree: _autosummary
@@ -9,7 +9,7 @@ darkhistory Modules
    darkhistory.physics
    darkhistory.utilities
 
-.. rubric:: Packages
+.. rubric:: Table of Packages
 
 .. autosummary:: 
    :toctree: _autosummary

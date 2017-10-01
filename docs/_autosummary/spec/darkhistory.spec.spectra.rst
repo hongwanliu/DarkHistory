@@ -1,14 +1,8 @@
-spec.spectra
+spectra
 ==========================
 
 .. automodule:: darkhistory.spec.spectra
-   
-   .. rubric:: Classes
-
-   .. autosummary::
-   
-      Spectra
-   
+  
 Classes
 -------
 

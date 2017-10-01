@@ -1,10 +1,10 @@
-physics Module
+physics
 ====================
 
 
 .. automodule:: darkhistory.physics
 
-   .. rubric:: Constants - Fundamental
+   .. rubric:: Table of Constants - Fundamental
 
    .. autosummary::
 
@@ -16,7 +16,7 @@ physics Module
       alpha
       ele
 
-   .. rubric:: Constants - Atomic and Optical
+   .. rubric:: Table of Constants - Atomic and Optical
 
    .. autosummary::
       thomson_xsec
@@ -29,7 +29,7 @@ physics Module
       ele_rad
       ele_compton
 
-   .. rubric:: Constants - Cosmology
+   .. rubric:: Table of Constants - Cosmology
 
    .. autosummary::
       h
@@ -48,7 +48,7 @@ physics Module
       nHe
       nA
 
-   .. rubric:: Methods
+   .. rubric:: Table of Methods
 
    .. autosummary::
 

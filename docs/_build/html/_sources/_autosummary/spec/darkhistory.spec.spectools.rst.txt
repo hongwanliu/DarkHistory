@@ -1,9 +1,9 @@
-spec.spectools
+spectools
 ============================
 
 .. automodule:: darkhistory.spec.spectools
    
-   .. rubric:: Functions
+   .. rubric:: Table of Methods
 
    .. autosummary::
    

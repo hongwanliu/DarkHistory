@@ -1,4 +1,4 @@
-spec Package
+spec
 =================
 
 .. automodule:: darkhistory.spec
@@ -17,6 +17,7 @@ spec Package
    
    darkhistory.spec.spectrum
    darkhistory.spec.spectra
+   darkhistory.spec.transferfunction
 
    
    

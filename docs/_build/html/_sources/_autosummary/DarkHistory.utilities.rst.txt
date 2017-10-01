@@ -1,9 +1,9 @@
-utilities Module
+utilities
 ======================
 
 .. automodule:: darkhistory.utilities
    
-   .. rubric:: Functions
+   .. rubric:: Table of Methods
 
    .. autosummary::
    
@@ -12,7 +12,7 @@ utilities Module
       div_ignore_by_zero
       is_log_spaced
    
-Members
+Methods
 -------
 
    .. autofunction:: arrays_equal
