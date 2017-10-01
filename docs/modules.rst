@@ -5,7 +5,7 @@ darkhistory Modules
    :hidden:
    
    darkhistory.physics
-   darkhistory.spec
+   _autosummary/darkhistory.spec Summary
    darkhistory.utilities
 
 .. rubric:: Sub-Modules
