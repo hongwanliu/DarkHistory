@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>darkhistory.spec.transferfunction &mdash; DarkHistory  documentation</title>
+  <title>transferfunction &mdash; DarkHistory  documentation</title>
   
 
   
@@ -95,7 +95,11 @@
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectools.html">spectools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">spectrum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectra.html">spectra</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">darkhistory.spec.transferfunction</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">transferfunction</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -148,7 +152,7 @@
         
           <li><a href="../darkhistory.spec.html">spec</a> &raquo;</li>
         
-      <li>darkhistory.spec.transferfunction</li>
+      <li>transferfunction</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -168,32 +172,134 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-darkhistory.spec.transferfunction">
-<span id="darkhistory-spec-transferfunction"></span><h1>darkhistory.spec.transferfunction<a class="headerlink" href="#module-darkhistory.spec.transferfunction" title="Permalink to this headline">¶</a></h1>
+<span id="transferfunction"></span><h1>transferfunction<a class="headerlink" href="#module-darkhistory.spec.transferfunction" title="Permalink to this headline">¶</a></h1>
 <p><code class="docutils literal"><span class="pre">transferfunction</span></code> contains functions and classes for processing transfer functions.</p>
-<p class="rubric">Functions</p>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="darkhistory.spec.transferfunction.TransferFunction">
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransferFunction</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>in_eng</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
+<p>Collection of <code class="docutils literal"><span class="pre">Spectrum</span></code> objects for transfer functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>spec_arr</strong> (list of <code class="docutils literal"><span class="pre">Spectrum</span></code>) – List of <code class="docutils literal"><span class="pre">Spectrum</span></code> to be stored together.</li>
+<li><strong>in_eng</strong> (<em>float</em>) – Injection energy of this transfer function.</li>
+<li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the <code class="docutils literal"><span class="pre">Spectrum</span></code> objects into.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunction.TransferFunction.eng">
+<code class="descname">eng</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction.eng" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – Energy abscissa for the <code class="docutils literal"><span class="pre">Spectrum</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunction.TransferFunction.rs">
+<code class="descname">rs</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction.rs" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – The redshifts of the <code class="docutils literal"><span class="pre">Spectrum</span></code> objects.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunction.TransferFunction.log_bin_width">
+<code class="descname">log_bin_width</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction.log_bin_width" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – The log bin width.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunction.TransferFunction.bin_boundary">
+<code class="descname">bin_boundary</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction.bin_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – The boundary of each energy bin. Has one more entry than <cite>length</cite>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunction.TransferFunction.grid_values">
+<code class="descname">grid_values</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction.grid_values" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – 2D array with the spectra laid out in (rs, eng).</p>
+</dd></dl>
+
+<p class="rubric">Table of Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
 <col width="10%" />
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">process_raw_tf</span></code>(file)</td>
-<td>Processes raw data to return transfer functions.</td>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">append</span></code>(spec)</td>
+<td>Appends a new <code class="docutils literal"><span class="pre">Spectrum</span></code>.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransferFunction.at_rs" title="darkhistory.spec.transferfunction.TransferFunction.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(out_rs[,&nbsp;interp_type])</td>
+<td>Returns the interpolation spectrum at a given redshift.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code>([weight])</td>
+<td>Sums each <code class="docutils literal"><span class="pre">Spectrum</span></code>, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code>(ind[,&nbsp;step])</td>
+<td>Plots the contained <code class="docutils literal"><span class="pre">Spectrum</span></code> objects.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code>(out_eng)</td>
+<td>Re-bins all <code class="docutils literal"><span class="pre">Spectrum</span></code> objects according to a new abscissa.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code>([weight])</td>
+<td>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</td>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Classes</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransferFunction.at_rs">
+<code class="descname">at_rs</code><span class="sig-paren">(</span><em>out_rs</em>, <em>interp_type='val'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransferFunction.at_rs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the interpolation spectrum at a given redshift.</p>
+<p>Interpolation is logarithmic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">TransferFunction</span></code>(spec_arr,&nbsp;in_eng[,&nbsp;rebin_eng])</td>
-<td>Collection of <code class="docutils literal"><span class="pre">Spectrum</span></code> objects for transfer functions.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>out_rs</strong> (<em>ndarray</em>) – The redshifts (or redshift bin indices) at which to interpolate.</li>
+<li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual redshift.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The interpolated spectra.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#darkhistory.spec.transferfunction.TransferFunction" title="darkhistory.spec.transferfunction.TransferFunction">TransferFunction</a></p>
+</td>
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="darkhistory.spec.transferfunction.process_raw_tf">
+<code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">process_raw_tf</code><span class="sig-paren">(</span><em>file</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.process_raw_tf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes raw data to return transfer functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file</strong> (<em>str</em>) – File to be processed.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List indexed by injection energy.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list of TransferFunction</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 
 

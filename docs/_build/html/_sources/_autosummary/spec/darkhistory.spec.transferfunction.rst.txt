@@ -1,28 +1,22 @@
-darkhistory\.spec\.transferfunction
+transferfunction
 ===================================
 
 .. automodule:: darkhistory.spec.transferfunction
 
-   
-   
-   .. rubric:: Functions
+Classes
+-------
 
-   .. autosummary::
-   
-      process_raw_tf
-   
-   
+.. autoclass:: darkhistory.spec.transferfunction.TransferFunction
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-   
-   
-   .. rubric:: Classes
+   .. rubric:: Table of Methods
 
-   .. autosummary::
+   .. autoautosummary:: darkhistory.spec.transferfunction.TransferFunction
+      :methods:
    
-      TransferFunction
-   
-   
+Methods
+-------
 
-   
-   
-   
+.. autofunction:: process_raw_tf  

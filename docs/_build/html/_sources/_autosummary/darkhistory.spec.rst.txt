@@ -3,18 +3,12 @@ spec
 
 .. automodule:: darkhistory.spec
 
-.. rubric:: Modules
+.. rubric:: Table of Sub-Modules
 
 .. autosummary::
    :toctree: spec
    
    darkhistory.spec.spectools
-
-.. rubric:: Classes
-
-.. autosummary:: 
-   :toctree: spec
-   
    darkhistory.spec.spectrum
    darkhistory.spec.spectra
    darkhistory.spec.transferfunction
