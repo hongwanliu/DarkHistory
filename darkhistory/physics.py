@@ -1,4 +1,4 @@
-""" ``physics`` contains useful physics functions as well as constants.
+""" Physics functions as well as constants.
 
 """
 
