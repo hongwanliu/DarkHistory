@@ -1,12 +1,12 @@
 darkhistory.spec.spectrum
 ==========================
 
-.. autoclass:: darkhistory.spec.spectrum
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autoclass:: darkhistory.spec.spectrum.Spectrum
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-    .. rubric:: Methods
+   .. rubric:: Methods
 
-      .. autoautosummary:: DarkHistory.spectrum.Spectrum
-         :methods:
+   .. autoautosummary:: darkhistory.spec.spectrum.Spectrum
+      :methods:
