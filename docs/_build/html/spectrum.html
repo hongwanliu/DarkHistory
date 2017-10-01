@@ -150,8 +150,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="darkhistory-spec-spectrum">
-<h1>darkhistory.spec.spectrum<a class="headerlink" href="#darkhistory-spec-spectrum" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-darkhistory.spec.spectrum">
+<span id="darkhistory-spec-spectrum"></span><h1>darkhistory.spec.spectrum<a class="headerlink" href="#module-darkhistory.spec.spectrum" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal"><span class="pre">spectrum</span></code> contains the <code class="docutils literal"><span class="pre">Spectrum</span></code> class.</p>
 <dl class="class">
 <dt id="darkhistory.spec.spectrum.Spectrum">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.spectrum.</code><code class="descname">Spectrum</code><span class="sig-paren">(</span><em>eng</em>, <em>dNdE</em>, <em>rs=-1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum" title="Permalink to this definition">¶</a></dt>
@@ -171,26 +172,26 @@
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="Spectrum.length">
-<code class="descname">length</code><a class="headerlink" href="#Spectrum.length" title="Permalink to this definition">¶</a></dt>
+<dt id="darkhistory.spec.spectrum.Spectrum.length">
+<code class="descname">length</code><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.length" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>int</em> – The length of the <cite>eng</cite> and <cite>dNdE</cite>.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Spectrum.underflow">
-<code class="descname">underflow</code><a class="headerlink" href="#Spectrum.underflow" title="Permalink to this definition">¶</a></dt>
+<dt id="darkhistory.spec.spectrum.Spectrum.underflow">
+<code class="descname">underflow</code><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.underflow" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>dict of str: float</em> – The underflow total number of particles and total energy.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Spectrum.log_bin_width">
-<code class="descname">log_bin_width</code><a class="headerlink" href="#Spectrum.log_bin_width" title="Permalink to this definition">¶</a></dt>
+<dt id="darkhistory.spec.spectrum.Spectrum.log_bin_width">
+<code class="descname">log_bin_width</code><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.log_bin_width" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em> – The log bin width.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="Spectrum.bin_boundary">
-<code class="descname">bin_boundary</code><a class="headerlink" href="#Spectrum.bin_boundary" title="Permalink to this definition">¶</a></dt>
+<dt id="darkhistory.spec.spectrum.Spectrum.bin_boundary">
+<code class="descname">bin_boundary</code><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.bin_boundary" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>ndarray</em> – The boundary of each energy bin. Has one more entry than <cite>length</cite>.</p>
 </dd></dl>
 

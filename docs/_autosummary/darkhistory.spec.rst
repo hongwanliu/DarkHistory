@@ -1,4 +1,4 @@
-darkhistory\.spec Summary
+darkhistory.spec Summary
 =========================
 
 .. automodule:: darkhistory.spec
@@ -13,9 +13,8 @@ darkhistory\.spec Summary
 
    .. autosummary::
    
-      darkhistory.spec.spectra
       darkhistory.spec.spectrum
-   
+      darkhistory.spec.spectra
    
 
    
