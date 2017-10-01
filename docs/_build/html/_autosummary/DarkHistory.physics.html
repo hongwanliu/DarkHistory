@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>darkhistory.physics &mdash; DarkHistory  documentation</title>
+  <title>physics Module &mdash; DarkHistory  documentation</title>
   
 
   
@@ -37,7 +37,7 @@
         <link rel="search" title="Search" href="../search.html"/>
     <link rel="top" title="DarkHistory  documentation" href="../index.html"/>
         <link rel="up" title="darkhistory Modules" href="../modules.html"/>
-        <link rel="next" title="darkhistory.utilities" href="darkhistory.utilities.html"/>
+        <link rel="next" title="utilities Module" href="darkhistory.utilities.html"/>
         <link rel="prev" title="darkhistory Modules" href="../modules.html"/> 
 
   
@@ -90,8 +90,12 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../modules.html">darkhistory Modules</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">darkhistory.physics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="darkhistory.utilities.html">darkhistory.utilities</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">physics Module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#attributes">Attributes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.utilities.html">utilities Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">darkhistory.spec</a></li>
 </ul>
 </li>
@@ -141,7 +145,7 @@
         
           <li><a href="../modules.html">darkhistory Modules</a> &raquo;</li>
         
-      <li>darkhistory.physics</li>
+      <li>physics Module</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -161,7 +165,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="module-darkhistory.physics">
-<span id="darkhistory-physics"></span><h1>darkhistory.physics<a class="headerlink" href="#module-darkhistory.physics" title="Permalink to this headline">¶</a></h1>
+<span id="physics-module"></span><h1>physics Module<a class="headerlink" href="#module-darkhistory.physics" title="Permalink to this headline">¶</a></h1>
 <p>Physics functions as well as constants.</p>
 <p class="rubric">Constants - Fundamental</p>
 <table border="1" class="longtable docutils">
@@ -170,25 +174,25 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.mp" title="darkhistory.physics.mp"><code class="xref py py-obj docutils literal"><span class="pre">mp</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.mp" title="darkhistory.physics.mp"><code class="xref py py-obj docutils literal"><span class="pre">mp</span></code></a></td>
 <td>Proton mass in eV.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.me" title="darkhistory.physics.me"><code class="xref py py-obj docutils literal"><span class="pre">me</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.me" title="darkhistory.physics.me"><code class="xref py py-obj docutils literal"><span class="pre">me</span></code></a></td>
 <td>Electron mass in eV.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.hbar" title="darkhistory.physics.hbar"><code class="xref py py-obj docutils literal"><span class="pre">hbar</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.hbar" title="darkhistory.physics.hbar"><code class="xref py py-obj docutils literal"><span class="pre">hbar</span></code></a></td>
 <td>hbar in eV s.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.c" title="darkhistory.physics.c"><code class="xref py py-obj docutils literal"><span class="pre">c</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.c" title="darkhistory.physics.c"><code class="xref py py-obj docutils literal"><span class="pre">c</span></code></a></td>
 <td>Speed of light in cm/s.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.kB" title="darkhistory.physics.kB"><code class="xref py py-obj docutils literal"><span class="pre">kB</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.kB" title="darkhistory.physics.kB"><code class="xref py py-obj docutils literal"><span class="pre">kB</span></code></a></td>
 <td>Boltzmann constant in eV/K.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.alpha" title="darkhistory.physics.alpha"><code class="xref py py-obj docutils literal"><span class="pre">alpha</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.alpha" title="darkhistory.physics.alpha"><code class="xref py py-obj docutils literal"><span class="pre">alpha</span></code></a></td>
 <td>Fine structure constant.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.ele" title="darkhistory.physics.ele"><code class="xref py py-obj docutils literal"><span class="pre">ele</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.ele" title="darkhistory.physics.ele"><code class="xref py py-obj docutils literal"><span class="pre">ele</span></code></a></td>
 <td>Electron charge in C.</td>
 </tr>
 </tbody>
@@ -200,31 +204,31 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.thomson_xsec" title="darkhistory.physics.thomson_xsec"><code class="xref py py-obj docutils literal"><span class="pre">thomson_xsec</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.thomson_xsec" title="darkhistory.physics.thomson_xsec"><code class="xref py py-obj docutils literal"><span class="pre">thomson_xsec</span></code></a></td>
 <td>Thomson cross section in cm^2.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.stefboltz" title="darkhistory.physics.stefboltz"><code class="xref py py-obj docutils literal"><span class="pre">stefboltz</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.stefboltz" title="darkhistory.physics.stefboltz"><code class="xref py py-obj docutils literal"><span class="pre">stefboltz</span></code></a></td>
 <td>Stefan-Boltzmann constant in eV^-3 cm^-2 s^2.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.rydberg" title="darkhistory.physics.rydberg"><code class="xref py py-obj docutils literal"><span class="pre">rydberg</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.rydberg" title="darkhistory.physics.rydberg"><code class="xref py py-obj docutils literal"><span class="pre">rydberg</span></code></a></td>
 <td>Ionization potential of ground state hydrogen.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.lya_eng" title="darkhistory.physics.lya_eng"><code class="xref py py-obj docutils literal"><span class="pre">lya_eng</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.lya_eng" title="darkhistory.physics.lya_eng"><code class="xref py py-obj docutils literal"><span class="pre">lya_eng</span></code></a></td>
 <td>Lyman alpha transition energy in eV.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.lya_freq" title="darkhistory.physics.lya_freq"><code class="xref py py-obj docutils literal"><span class="pre">lya_freq</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.lya_freq" title="darkhistory.physics.lya_freq"><code class="xref py py-obj docutils literal"><span class="pre">lya_freq</span></code></a></td>
 <td>Lyman alpha transition frequency in Hz.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.width_2s1s" title="darkhistory.physics.width_2s1s"><code class="xref py py-obj docutils literal"><span class="pre">width_2s1s</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.width_2s1s" title="darkhistory.physics.width_2s1s"><code class="xref py py-obj docutils literal"><span class="pre">width_2s1s</span></code></a></td>
 <td>Hydrogen 2s to 1s decay width in s^-1.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.bohr_rad" title="darkhistory.physics.bohr_rad"><code class="xref py py-obj docutils literal"><span class="pre">bohr_rad</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.bohr_rad" title="darkhistory.physics.bohr_rad"><code class="xref py py-obj docutils literal"><span class="pre">bohr_rad</span></code></a></td>
 <td>Bohr radius in cm.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.ele_rad" title="darkhistory.physics.ele_rad"><code class="xref py py-obj docutils literal"><span class="pre">ele_rad</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.ele_rad" title="darkhistory.physics.ele_rad"><code class="xref py py-obj docutils literal"><span class="pre">ele_rad</span></code></a></td>
 <td>Classical electron radius in cm.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.ele_compton" title="darkhistory.physics.ele_compton"><code class="xref py py-obj docutils literal"><span class="pre">ele_compton</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.ele_compton" title="darkhistory.physics.ele_compton"><code class="xref py py-obj docutils literal"><span class="pre">ele_compton</span></code></a></td>
 <td>Electron Compton wavelength in cm.</td>
 </tr>
 </tbody>
@@ -236,49 +240,49 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.h" title="darkhistory.physics.h"><code class="xref py py-obj docutils literal"><span class="pre">h</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.h" title="darkhistory.physics.h"><code class="xref py py-obj docutils literal"><span class="pre">h</span></code></a></td>
 <td>h parameter.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.H0" title="darkhistory.physics.H0"><code class="xref py py-obj docutils literal"><span class="pre">H0</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.H0" title="darkhistory.physics.H0"><code class="xref py py-obj docutils literal"><span class="pre">H0</span></code></a></td>
 <td>Hubble parameter today in s^-1.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.omega_m" title="darkhistory.physics.omega_m"><code class="xref py py-obj docutils literal"><span class="pre">omega_m</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.omega_m" title="darkhistory.physics.omega_m"><code class="xref py py-obj docutils literal"><span class="pre">omega_m</span></code></a></td>
 <td>Omega of all matter today.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.omega_rad" title="darkhistory.physics.omega_rad"><code class="xref py py-obj docutils literal"><span class="pre">omega_rad</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.omega_rad" title="darkhistory.physics.omega_rad"><code class="xref py py-obj docutils literal"><span class="pre">omega_rad</span></code></a></td>
 <td>Omega of radiation today.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.omega_lambda" title="darkhistory.physics.omega_lambda"><code class="xref py py-obj docutils literal"><span class="pre">omega_lambda</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.omega_lambda" title="darkhistory.physics.omega_lambda"><code class="xref py py-obj docutils literal"><span class="pre">omega_lambda</span></code></a></td>
 <td>Omega of dark energy today.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.omega_baryon" title="darkhistory.physics.omega_baryon"><code class="xref py py-obj docutils literal"><span class="pre">omega_baryon</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.omega_baryon" title="darkhistory.physics.omega_baryon"><code class="xref py py-obj docutils literal"><span class="pre">omega_baryon</span></code></a></td>
 <td>Omega of baryons today.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.omega_DM" title="darkhistory.physics.omega_DM"><code class="xref py py-obj docutils literal"><span class="pre">omega_DM</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.omega_DM" title="darkhistory.physics.omega_DM"><code class="xref py py-obj docutils literal"><span class="pre">omega_DM</span></code></a></td>
 <td>Omega of dark matter today.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.rho_crit" title="darkhistory.physics.rho_crit"><code class="xref py py-obj docutils literal"><span class="pre">rho_crit</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.rho_crit" title="darkhistory.physics.rho_crit"><code class="xref py py-obj docutils literal"><span class="pre">rho_crit</span></code></a></td>
 <td>Critical density of the universe in eV/cm^3.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.rho_DM" title="darkhistory.physics.rho_DM"><code class="xref py py-obj docutils literal"><span class="pre">rho_DM</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.rho_DM" title="darkhistory.physics.rho_DM"><code class="xref py py-obj docutils literal"><span class="pre">rho_DM</span></code></a></td>
 <td>DM density in eV/cm^3.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.rho_baryon" title="darkhistory.physics.rho_baryon"><code class="xref py py-obj docutils literal"><span class="pre">rho_baryon</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.rho_baryon" title="darkhistory.physics.rho_baryon"><code class="xref py py-obj docutils literal"><span class="pre">rho_baryon</span></code></a></td>
 <td>Baryon density in eV/cm^3.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.nB" title="darkhistory.physics.nB"><code class="xref py py-obj docutils literal"><span class="pre">nB</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.nB" title="darkhistory.physics.nB"><code class="xref py py-obj docutils literal"><span class="pre">nB</span></code></a></td>
 <td>Baryon number density in cm^-3.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.YHe" title="darkhistory.physics.YHe"><code class="xref py py-obj docutils literal"><span class="pre">YHe</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.YHe" title="darkhistory.physics.YHe"><code class="xref py py-obj docutils literal"><span class="pre">YHe</span></code></a></td>
 <td>Helium abundance by mass.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.nH" title="darkhistory.physics.nH"><code class="xref py py-obj docutils literal"><span class="pre">nH</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.nH" title="darkhistory.physics.nH"><code class="xref py py-obj docutils literal"><span class="pre">nH</span></code></a></td>
 <td>Atomic hydrogen number density in cm^-3.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.nHe" title="darkhistory.physics.nHe"><code class="xref py py-obj docutils literal"><span class="pre">nHe</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.nHe" title="darkhistory.physics.nHe"><code class="xref py py-obj docutils literal"><span class="pre">nHe</span></code></a></td>
 <td>Atomic helium number density in cm^-3.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.nA" title="darkhistory.physics.nA"><code class="xref py py-obj docutils literal"><span class="pre">nA</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.nA" title="darkhistory.physics.nA"><code class="xref py py-obj docutils literal"><span class="pre">nA</span></code></a></td>
 <td>Hydrogen and helium number density in cm^-3.</td>
 </tr>
 </tbody>
@@ -290,32 +294,393 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.hubble" title="darkhistory.physics.hubble"><code class="xref py py-obj docutils literal"><span class="pre">hubble</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.hubble" title="darkhistory.physics.hubble"><code class="xref py py-obj docutils literal"><span class="pre">hubble</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;…])</td>
 <td>Returns the Hubble parameter at a given redshift.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.dtdz" title="darkhistory.physics.dtdz"><code class="xref py py-obj docutils literal"><span class="pre">dtdz</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;omega_lambda])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.dtdz" title="darkhistory.physics.dtdz"><code class="xref py py-obj docutils literal"><span class="pre">dtdz</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;omega_lambda])</td>
 <td>Returns dt/dz at a given redshift.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.TCMB" title="darkhistory.physics.TCMB"><code class="xref py py-obj docutils literal"><span class="pre">TCMB</span></code></a>(rs)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.TCMB" title="darkhistory.physics.TCMB"><code class="xref py py-obj docutils literal"><span class="pre">TCMB</span></code></a>(rs)</td>
 <td>Returns the CMB temperature at a given redshift in eV.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.get_inj_rate" title="darkhistory.physics.get_inj_rate"><code class="xref py py-obj docutils literal"><span class="pre">get_inj_rate</span></code></a>(inj_type,&nbsp;inj_fac)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.get_inj_rate" title="darkhistory.physics.get_inj_rate"><code class="xref py py-obj docutils literal"><span class="pre">get_inj_rate</span></code></a>(inj_type,&nbsp;inj_fac)</td>
 <td>Returns the injection rate function.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.photo_ion_rate" title="darkhistory.physics.photo_ion_rate"><code class="xref py py-obj docutils literal"><span class="pre">photo_ion_rate</span></code></a>(rs,&nbsp;eng,&nbsp;xH,&nbsp;xe[,&nbsp;atom])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.photo_ion_rate" title="darkhistory.physics.photo_ion_rate"><code class="xref py py-obj docutils literal"><span class="pre">photo_ion_rate</span></code></a>(rs,&nbsp;eng,&nbsp;xH,&nbsp;xe[,&nbsp;atom])</td>
 <td>Returns the photoionization rate.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.photo_ion_xsec" title="darkhistory.physics.photo_ion_xsec"><code class="xref py py-obj docutils literal"><span class="pre">photo_ion_xsec</span></code></a>(eng,&nbsp;species)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.photo_ion_xsec" title="darkhistory.physics.photo_ion_xsec"><code class="xref py py-obj docutils literal"><span class="pre">photo_ion_xsec</span></code></a>(eng,&nbsp;species)</td>
 <td>Returns the photoionization cross section.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="../physics.html#darkhistory.physics.tau_sobolev" title="darkhistory.physics.tau_sobolev"><code class="xref py py-obj docutils literal"><span class="pre">tau_sobolev</span></code></a>(rs)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.tau_sobolev" title="darkhistory.physics.tau_sobolev"><code class="xref py py-obj docutils literal"><span class="pre">tau_sobolev</span></code></a>(rs)</td>
 <td>Returns the Sobolev optical depth.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="../physics.html#darkhistory.physics.CMB_spec" title="darkhistory.physics.CMB_spec"><code class="xref py py-obj docutils literal"><span class="pre">CMB_spec</span></code></a>(eng,&nbsp;temp)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.CMB_spec" title="darkhistory.physics.CMB_spec"><code class="xref py py-obj docutils literal"><span class="pre">CMB_spec</span></code></a>(eng,&nbsp;temp)</td>
 <td>Returns the CMB spectrum in number of photons/cm^3/eV.</td>
 </tr>
 </tbody>
 </table>
+<div class="section" id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p class="rubric">Constants - Fundamental</p>
+<dl class="attribute">
+<dt id="darkhistory.physics.mp">
+<code class="descclassname">physics.</code><code class="descname">mp</code><em class="property"> = 938000000.0</em><a class="headerlink" href="#darkhistory.physics.mp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.me">
+<code class="descclassname">physics.</code><code class="descname">me</code><em class="property"> = 510998.9</em><a class="headerlink" href="#darkhistory.physics.me" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.hbar">
+<code class="descclassname">physics.</code><code class="descname">hbar</code><em class="property"> = 6.58211951e-16</em><a class="headerlink" href="#darkhistory.physics.hbar" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.c">
+<code class="descclassname">physics.</code><code class="descname">c</code><em class="property"> = 29979245800.0</em><a class="headerlink" href="#darkhistory.physics.c" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.kB">
+<code class="descclassname">physics.</code><code class="descname">kB</code><em class="property"> = 8.6173324e-05</em><a class="headerlink" href="#darkhistory.physics.kB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.alpha">
+<code class="descclassname">physics.</code><code class="descname">alpha</code><em class="property"> = 0.007297352566354976</em><a class="headerlink" href="#darkhistory.physics.alpha" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.ele">
+<code class="descclassname">physics.</code><code class="descname">ele</code><em class="property"> = 1.60217662e-19</em><a class="headerlink" href="#darkhistory.physics.ele" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Constants - Atomic and Optical</p>
+<dl class="attribute">
+<dt id="darkhistory.physics.thomson_xsec">
+<code class="descclassname">physics.</code><code class="descname">thomson_xsec</code><em class="property"> = 6.652458734e-25</em><a class="headerlink" href="#darkhistory.physics.thomson_xsec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.stefboltz">
+<code class="descclassname">physics.</code><code class="descname">stefboltz</code><em class="property"> = 6.418149054771152e+23</em><a class="headerlink" href="#darkhistory.physics.stefboltz" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.rydberg">
+<code class="descclassname">physics.</code><code class="descname">rydberg</code><em class="property"> = 13.60569253</em><a class="headerlink" href="#darkhistory.physics.rydberg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.lya_eng">
+<code class="descclassname">physics.</code><code class="descname">lya_eng</code><em class="property"> = 10.204269397500001</em><a class="headerlink" href="#darkhistory.physics.lya_eng" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.lya_freq">
+<code class="descclassname">physics.</code><code class="descname">lya_freq</code><em class="property"> = 2467381384956776.5</em><a class="headerlink" href="#darkhistory.physics.lya_freq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.width_2s1s">
+<code class="descclassname">physics.</code><code class="descname">width_2s1s</code><em class="property"> = 8.23</em><a class="headerlink" href="#darkhistory.physics.width_2s1s" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.bohr_rad">
+<code class="descclassname">physics.</code><code class="descname">bohr_rad</code><em class="property"> = 5.291772581084844e-09</em><a class="headerlink" href="#darkhistory.physics.bohr_rad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.ele_rad">
+<code class="descclassname">physics.</code><code class="descname">ele_rad</code><em class="property"> = 2.8179405753065666e-13</em><a class="headerlink" href="#darkhistory.physics.ele_rad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.ele_compton">
+<code class="descclassname">physics.</code><code class="descname">ele_compton</code><em class="property"> = 2.4263104541371187e-10</em><a class="headerlink" href="#darkhistory.physics.ele_compton" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Constants - Cosmology</p>
+<dl class="attribute">
+<dt id="darkhistory.physics.h">
+<code class="descclassname">physics.</code><code class="descname">h</code><em class="property"> = 0.6727</em><a class="headerlink" href="#darkhistory.physics.h" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.H0">
+<code class="descclassname">physics.</code><code class="descname">H0</code><em class="property"> = 2.1802207e-18</em><a class="headerlink" href="#darkhistory.physics.H0" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.omega_m">
+<code class="descclassname">physics.</code><code class="descname">omega_m</code><em class="property"> = 0.3156</em><a class="headerlink" href="#darkhistory.physics.omega_m" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.omega_rad">
+<code class="descclassname">physics.</code><code class="descname">omega_rad</code><em class="property"> = 8e-05</em><a class="headerlink" href="#darkhistory.physics.omega_rad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.omega_lambda">
+<code class="descclassname">physics.</code><code class="descname">omega_lambda</code><em class="property"> = 0.6844</em><a class="headerlink" href="#darkhistory.physics.omega_lambda" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.omega_baryon">
+<code class="descclassname">physics.</code><code class="descname">omega_baryon</code><em class="property"> = 0.049168522713946</em><a class="headerlink" href="#darkhistory.physics.omega_baryon" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.omega_DM">
+<code class="descclassname">physics.</code><code class="descname">omega_DM</code><em class="property"> = 0.2647365852193587</em><a class="headerlink" href="#darkhistory.physics.omega_DM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.rho_crit">
+<code class="descclassname">physics.</code><code class="descname">rho_crit</code><em class="property"> = 4768.485243374999</em><a class="headerlink" href="#darkhistory.physics.rho_crit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.rho_DM">
+<code class="descclassname">physics.</code><code class="descname">rho_DM</code><em class="property"> = 1262.3925</em><a class="headerlink" href="#darkhistory.physics.rho_DM" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.rho_baryon">
+<code class="descclassname">physics.</code><code class="descname">rho_baryon</code><em class="property"> = 234.45937499999997</em><a class="headerlink" href="#darkhistory.physics.rho_baryon" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.nB">
+<code class="descclassname">physics.</code><code class="descname">nB</code><em class="property"> = 2.499566897654584e-07</em><a class="headerlink" href="#darkhistory.physics.nB" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.YHe">
+<code class="descclassname">physics.</code><code class="descname">YHe</code><em class="property"> = 0.25</em><a class="headerlink" href="#darkhistory.physics.YHe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.nH">
+<code class="descclassname">physics.</code><code class="descname">nH</code><em class="property"> = 1.8746751732409377e-07</em><a class="headerlink" href="#darkhistory.physics.nH" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.nHe">
+<code class="descclassname">physics.</code><code class="descname">nHe</code><em class="property"> = 1.562229311034115e-08</em><a class="headerlink" href="#darkhistory.physics.nHe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.physics.nA">
+<code class="descclassname">physics.</code><code class="descname">nA</code><em class="property"> = 2.0308981043443491e-07</em><a class="headerlink" href="#darkhistory.physics.nA" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="darkhistory.physics.hubble">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">hubble</code><span class="sig-paren">(</span><em>rs</em>, <em>H0=2.1802207e-18</em>, <em>omega_m=0.3156</em>, <em>omega_rad=8e-05</em>, <em>omega_lambda=0.6844</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.hubble" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Hubble parameter at a given redshift.</p>
+<p>Assumes a flat universe.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rs</strong> (<em>float</em>) – The redshift of interest.</li>
+<li><strong>H0</strong> (<em>float</em>) – The Hubble parameter today, default value <cite>H0</cite>.</li>
+<li><strong>omega_m</strong> (<em>float</em><em>, </em><em>optional</em>) – Omega matter today, default value <cite>omega_m</cite>.</li>
+<li><strong>omega_rad</strong> (<em>float</em><em>, </em><em>optional</em>) – Omega radiation today, default value <cite>omega_rad</cite>.</li>
+<li><strong>omega_lambda</strong> (<em>float</em><em>, </em><em>optional</em>) – Omega dark energy today, default value <cite>omega_lambda</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.dtdz">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">dtdz</code><span class="sig-paren">(</span><em>rs</em>, <em>H0=2.1802207e-18</em>, <em>omega_m=0.3156</em>, <em>omega_rad=8e-05</em>, <em>omega_lambda=0.6844</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.dtdz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns dt/dz at a given redshift.</p>
+<p>Assumes a flat universe.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rs</strong> (<em>float</em>) – The redshift of interest.</li>
+<li><strong>H0</strong> (<em>float</em>) – The Hubble parameter today, default value <cite>H0</cite>.</li>
+<li><strong>omega_m</strong> (<em>float</em><em>, </em><em>optional</em>) – Omega matter today, default value <cite>omega_m</cite>.</li>
+<li><strong>omega_rad</strong> (<em>float</em><em>, </em><em>optional</em>) – Omega radiation today, default value <cite>omega_rad</cite>.</li>
+<li><strong>omega_lambda</strong> (<em>float</em><em>, </em><em>optional</em>) – Omega dark energy today, default value <cite>omega_lambda</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.TCMB">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">TCMB</code><span class="sig-paren">(</span><em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.TCMB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the CMB temperature at a given redshift in eV.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rs</strong> (<em>float</em>) – Redshift (1+z).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.get_inj_rate">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">get_inj_rate</code><span class="sig-paren">(</span><em>inj_type</em>, <em>inj_fac</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.get_inj_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the injection rate function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>inj_type</strong> (<em>{'sWave'</em><em>, </em><em>'decay'}</em>) – The type of injection.</li>
+<li><strong>inj_fac</strong> (<em>float</em>) – The prefactor for the injection rate, consisting of everything other than the redshift dependence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The function takes redshift as an input, and outputs the injection rate.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">function</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.photo_ion_rate">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">photo_ion_rate</code><span class="sig-paren">(</span><em>rs</em>, <em>eng</em>, <em>xH</em>, <em>xe</em>, <em>atom=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.photo_ion_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the photoionization rate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rs</strong> (<em>float</em>) – Redshift (1+z).</li>
+<li><strong>eng</strong> (<em>ndarray</em>) – Energies to evaluate the cross section.</li>
+<li><strong>xH</strong> (<em>float</em>) – Ionization fraction nH+/nH.</li>
+<li><strong>xe</strong> (<em>float</em>) – Ionization fraction ne/nH = nH+/nH + nHe+/nH.</li>
+<li><strong>atom</strong> (<em>{None</em><em>,</em><em>'H0'</em><em>,</em><em>'He0'</em><em>,</em><em>'He1'}</em><em>, </em><em>optional</em>) – Determines which photoionization rate is returned. The default value is <code class="docutils literal"><span class="pre">None</span></code>, which returns the total rate.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>ionrate</strong> – The ionization rate of the particular species or the total ionization rate.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.photo_ion_xsec">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">photo_ion_xsec</code><span class="sig-paren">(</span><em>eng</em>, <em>species</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.photo_ion_xsec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the photoionization cross section.</p>
+<p>Cross sections for hydrogen, neutral helium and singly-ionized helium are available.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>eng</strong> (<em>ndarray</em>) – Energy to evaluate the cross section at.</li>
+<li><strong>species</strong> (<em>{'H0'</em><em>, </em><em>'He0'</em><em>, </em><em>'He1'}</em>) – Species of interest.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>xsec</strong> – Cross section in cm^2.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.tau_sobolev">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">tau_sobolev</code><span class="sig-paren">(</span><em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.tau_sobolev" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Sobolev optical depth.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rs</strong> (<em>float</em>) – Redshift (1+z).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.physics.CMB_spec">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">CMB_spec</code><span class="sig-paren">(</span><em>eng</em>, <em>temp</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.CMB_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the CMB spectrum in number of photons/cm^3/eV.</p>
+<p>Returns zero if the energy exceeds 500 times the temperature.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>temp</strong> (<em>float</em>) – Temperature of the CMB in eV.</li>
+<li><strong>eng</strong> (<em>float</em><em> or </em><em>ndarray</em>) – Energy of the photon in eV.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>phot_spec_density</strong> – Returns the number of photons/cm^3/eV.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</div>
 </div>
 
 
@@ -328,7 +693,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="darkhistory.utilities.html" class="btn btn-neutral float-right" title="darkhistory.utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="darkhistory.utilities.html" class="btn btn-neutral float-right" title="utilities Module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../modules.html" class="btn btn-neutral" title="darkhistory Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

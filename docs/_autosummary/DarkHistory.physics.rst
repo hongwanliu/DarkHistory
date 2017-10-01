@@ -1,5 +1,6 @@
-darkhistory\.physics
+physics Module
 ====================
+
 
 .. automodule:: darkhistory.physics
 
@@ -60,9 +61,60 @@ darkhistory\.physics
       tau_sobolev
       CMB_spec   
 
-   
-   
-   
+Attributes
+----------
+
+   .. rubric:: Constants - Fundamental
+
+   .. autoattribute:: darkhistory.physics.mp
+   .. autoattribute:: darkhistory.physics.me
+   .. autoattribute:: darkhistory.physics.hbar
+   .. autoattribute:: darkhistory.physics.c
+   .. autoattribute:: darkhistory.physics.kB
+   .. autoattribute:: darkhistory.physics.alpha
+   .. autoattribute:: darkhistory.physics.ele
+
+   .. rubric:: Constants - Atomic and Optical
+
+   .. autoattribute:: darkhistory.physics.thomson_xsec
+   .. autoattribute:: darkhistory.physics.stefboltz
+   .. autoattribute:: darkhistory.physics.rydberg
+   .. autoattribute:: darkhistory.physics.lya_eng
+   .. autoattribute:: darkhistory.physics.lya_freq
+   .. autoattribute:: darkhistory.physics.width_2s1s
+   .. autoattribute:: darkhistory.physics.bohr_rad
+   .. autoattribute:: darkhistory.physics.ele_rad
+   .. autoattribute:: darkhistory.physics.ele_compton
+
+   .. rubric:: Constants - Cosmology
+
+   .. autoattribute:: darkhistory.physics.h
+   .. autoattribute:: darkhistory.physics.H0
+   .. autoattribute:: darkhistory.physics.omega_m
+   .. autoattribute:: darkhistory.physics.omega_rad
+   .. autoattribute:: darkhistory.physics.omega_lambda
+   .. autoattribute:: darkhistory.physics.omega_baryon
+   .. autoattribute:: darkhistory.physics.omega_DM
+   .. autoattribute:: darkhistory.physics.rho_crit
+   .. autoattribute:: darkhistory.physics.rho_DM
+   .. autoattribute:: darkhistory.physics.rho_baryon
+   .. autoattribute:: darkhistory.physics.nB
+   .. autoattribute:: darkhistory.physics.YHe
+   .. autoattribute:: darkhistory.physics.nH
+   .. autoattribute:: darkhistory.physics.nHe
+   .. autoattribute:: darkhistory.physics.nA
+
+Methods
+-------
+
+   .. autofunction:: hubble
+   .. autofunction:: dtdz
+   .. autofunction:: TCMB
+   .. autofunction:: get_inj_rate
+   .. autofunction:: photo_ion_rate
+   .. autofunction:: photo_ion_xsec
+   .. autofunction:: tau_sobolev
+   .. autofunction:: CMB_spec   
 
    
    
