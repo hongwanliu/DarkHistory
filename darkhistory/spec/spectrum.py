@@ -27,11 +27,6 @@ class Spectrum:
         The length of the `eng` and `dNdE`.
     underflow : dict of str: float
         The underflow total number of particles and total energy.
-    log_bin_width : ndarray
-        The log bin width.  
-    bin_boundary : ndarray
-        The boundary of each energy bin. Has one more entry than `length`.
-
     """
 
     # __array_priority__ must be larger than 0, so that radd can work.

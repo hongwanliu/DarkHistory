@@ -28,10 +28,6 @@ class TransferFunction(spectra.Spectra):
         Energy abscissa for the ``Spectrum``.
     rs : ndarray
         The redshifts of the ``Spectrum`` objects.
-    log_bin_width : ndarray
-        The log bin width. 
-    bin_boundary : ndarray
-        The boundary of each energy bin. Has one more entry than `length`. 
     grid_values : ndarray
         2D array with the spectra laid out in (rs, eng). 
     
@@ -201,6 +197,8 @@ class TransferFunction(spectra.Spectra):
                 )
         else:
             raise TypeError("Invalid interp_type specified.")
+
+    def coarsen(self, type='step', )
 
 def process_raw_tf(file):
     """Processes raw data to return transfer functions.
