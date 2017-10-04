@@ -7,6 +7,8 @@ import warnings
 
 from scipy import integrate
 
+from tqdm import tqdm_notebook as tqdm
+
 
 def get_bin_bound(eng):
     """Returns the bin boundary of an abscissa.
@@ -213,3 +215,56 @@ def discretize(func_dNdE, eng):
 
 
     return rebin_N_arr(N, eng_mean, eng)
+
+def evolve(spec, tflist, save_steps=False):
+    """Evolves a spectrum using a list of transfer functions. 
+    
+    Parameters
+    ----------
+    spec : Spectrum
+        The initial spectrum to evolve. 
+    tflist : TransferFuncList
+        The list of transfer functions for the evolution.
+    save_steps : bool, optional
+        Saves every intermediate spectrum if true.
+
+    Returns
+    -------
+    Spectrum or Spectra
+        The evolved final spectrum, with or without intermediate steps. 
+
+    """
+    from darkhistory.spec.spectra import Spectra
+
+    if not np.all(spec.eng == tflist.in_eng):
+        raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
+    if (len(set(np.diff(np.log(tflist.rs)))) > 1 or
+        np.abs(np.log(tflist.rs[0]/tflist.rs[1]) - tflist.dlnz) > 1e-5
+    ):
+        raise TypeError("transfer functions must be spaced at the same interval as dlnz of each transfer function for now.")
+
+    if save_steps is True:
+
+        out_specs = Spectra([spec])
+        append_spec = out_specs.append
+
+        for i in tqdm(np.arange(tflist.rs.size-1).astype(int)):
+            tf_at_rs = Spectra([tf[i] for tf in tflist])
+            append_spec(tf_at_rs.sum_specs(out_specs[-1]))
+            out_specs[-1].rs = tflist.rs[i+1]
+
+        return out_specs
+
+    else:
+
+        for i in tqdm(np.arange(tflist.rs.size-1).astype(int)):
+            tf_at_rs = Spectra([tf[i] for tf in tflist])
+            spec = tf_at_rs.sum_specs(spec)
+            spec.rs = tflist.rs[i+1]
+
+        return spec
+
+
+
+
+

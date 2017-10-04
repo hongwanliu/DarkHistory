@@ -299,7 +299,8 @@ def process_raw_tf(file):
     
 
     transfer_func_table = TransferFuncList([
-        TransferFunction(spec_arr/N, init_inj_eng, 0.002, 
+        TransferFunction(spec_arr/N, init_inj_eng, 
+            0.002, 
             rebin_eng = init_inj_eng_arr
         ) for N, init_inj_eng, spec_arr in zip(normfac2,
             init_inj_eng_arr, tqdm(tf_raw_list)
