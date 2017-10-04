@@ -4,6 +4,7 @@ processing lists of transfer functions."""
 import numpy as np
 
 import darkhistory.utilities as utils
+from darkhistory.spec import transferfunction
 
 class TransferFuncList:
     """List of transfer functions.
