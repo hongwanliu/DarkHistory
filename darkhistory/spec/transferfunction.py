@@ -18,7 +18,9 @@ class TransferFunction(spectra.Spectra):
     spec_arr : list of ``Spectrum``
         List of ``Spectrum`` to be stored together.
     in_eng : float
-        Injection energy of this transfer function. 
+        Injection energy of this transfer function.
+    dlnz : float
+        The d log(1+z) step for the transfer function.
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the ``Spectrum`` objects into. 
 
@@ -33,9 +35,10 @@ class TransferFunction(spectra.Spectra):
     
 
     """
-    def __init__(self, spec_arr, in_eng, rebin_eng=None):
+    def __init__(self, spec_arr, in_eng, dlnz, rebin_eng=None):
         spectra.Spectra.__init__(self, spec_arr, rebin_eng)
         self.in_eng = in_eng
+        self.dlnz = dlnz
 
     def __iter__(self):
         return iter(self.spec_arr)
@@ -65,7 +68,7 @@ class TransferFunction(spectra.Spectra):
             else:
                 raise TypeError("can only add one spectrum per index.")
         else:
-            raise TypeError("index must be int.")
+            raise TypeError("index must be int or slice.")
 
 
     def __add__(self, other): 
@@ -197,8 +200,6 @@ class TransferFunction(spectra.Spectra):
                 )
         else:
             raise TypeError("Invalid interp_type specified.")
-
-    def coarsen(self, type='step', )
 
 def process_raw_tf(file):
     """Processes raw data to return transfer functions.
