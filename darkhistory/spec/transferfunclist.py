@@ -6,6 +6,8 @@ import numpy as np
 import darkhistory.utilities as utils
 from darkhistory.spec import transferfunction
 
+from tqdm import tqdm_notebook as tqdm
+
 class TransferFuncList:
     """List of transfer functions.
     
@@ -72,7 +74,25 @@ class TransferFuncList:
         else:
             raise TypeError("index must be int or slice.")
 
+    def at_rs(self, rs_arr):
+        """Returns the transfer functions at the new redshift abscissa.
 
+        Parameters
+        ----------
+        rs_arr : ndarray
+            The new redshift abscissa. 
+
+        """
+
+        # i enables the use of tqdm.
+
+        new_tflist = [tf.at_rs(rs_arr) 
+        for i,tf in zip(tqdm(np.arange(self.in_eng.size)), 
+            self.tflist)
+        ]
+
+        self.tflist = new_tflist
+        self.rs = rs_arr
 
 
 
