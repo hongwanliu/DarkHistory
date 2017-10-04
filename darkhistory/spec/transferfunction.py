@@ -83,7 +83,7 @@ class TransferFunction(spectra.Spectra):
                 raise TypeError('injection energies are different \
                     for the two TransferFunction.')
 
-            return TransferFunction([spec1 + spec2 for spec1,spec2 in zip(self.spec_arr, other.spec_arr)], self.in_eng)
+            return TransferFunction([spec1 + spec2 for spec1,spec2 in zip(self.spec_arr, other.spec_arr)], self.in_eng, self.dlnz)
 
         else: raise TypeError('adding an object that is not of class TransferFunction.')
 
@@ -103,7 +103,7 @@ class TransferFunction(spectra.Spectra):
                     for the two TransferFunction.')
 
             return TransferFunction([spec1 + spec2 for spec1,spec2 in zip(
-                self.spec_arr, other.spec_arr)], self.in_eng)
+                self.spec_arr, other.spec_arr)], self.in_eng, self.dlnz)
 
         else: raise TypeError('adding an object that is not of \
                     class TransferFunction.')
@@ -125,7 +125,7 @@ class TransferFunction(spectra.Spectra):
         if (np.issubdtype(type(other), float) 
             or np.issubdtype(type(other), int)):
             return TransferFunction([other*spec for spec in self], 
-                self.in_eng)
+                self.in_eng, self.dlnz)
         elif np.issubclass_(type(other), TransferFunction):
             if self.rs != other.rs or self.eng != other.eng:
                 raise TypeError("the two spectra do not have the same redshift or abscissae.")
@@ -133,7 +133,7 @@ class TransferFunction(spectra.Spectra):
                 raise TypeError('injection energies are different \
                     for the two TransferFunction.')
             return TransferFunction([spec1*spec2 
-                for spec1,spec2 in zip(self, other)], self.in_eng)
+                for spec1,spec2 in zip(self, other)], self.in_eng, self.dlnz)
         else:
             raise TypeError("can only multiply TransferFunction or scalars.")
 
@@ -141,7 +141,8 @@ class TransferFunction(spectra.Spectra):
         
         if (np.issubdtype(type(other), float) 
             or np.issubdtype(type(other), int)):
-            return TransferFunction([other*spec for spec in self])
+            return TransferFunction([other*spec for spec in self],
+                self.in_eng, self.dlnz)
         elif np.issubclass_(type(other), TransferFunction):
             if self.rs != other.rs or self.eng != other.eng:
                 raise TypeError("the two spectra do not have the \
@@ -150,21 +151,23 @@ class TransferFunction(spectra.Spectra):
                 raise TypeError('injection energies are different \
                     for the two TransferFunction.')
             return TransferFunction([spec2*spec1 
-                for spec1,spec2 in zip(self, other)], self.in_eng)
+                for spec1,spec2 in zip(self, other)], self.in_eng, self.dlnz)
         else:
             raise TypeError("can only multiply TransferFunction or scalars.")
 
     def __truediv__(self,other):
         
         if np.issubclass_(type(other), TransferFunction):
-            invSpec = TransferFunction([1./spec for spec in other])
+            invSpec = TransferFunction([1./spec for spec in other], 
+                self.in_eng, self.dlnz)
             return self*invSpec
         else:
             return self*(1/other)
 
     def __rtruediv__(self,other):
         
-        invSpec = TransferFunction([1./spec for spec in self])
+        invSpec = TransferFunction([1./spec for spec in self], 
+            self.in_eng, self.dlnz)
 
         return other*invSpec
 
@@ -191,12 +194,12 @@ class TransferFunction(spectra.Spectra):
 
         if interp_type == 'val':
             return TransferFunction(
-                [spectrum.Spectrum(self.eng, interp(self.eng, np.log(rs)), rs) for rs in out_rs], self.in_eng
+                [spectrum.Spectrum(self.eng, interp(self.eng, np.log(rs)), rs) for rs in out_rs], self.in_eng, self.dlnz
                 )
         elif interp_type == 'bin':
             log_rs_value = np.interp(out_rs, np.arange(self.rs.size), np.log(self.rs))
             return TransferFunction(
-                [spectrum.Spectrum(self.eng, interp(self.eng, log_rs_value), rs) for rs in out_rs], self.in_eng
+                [spectrum.Spectrum(self.eng, interp(self.eng, log_rs_value), rs) for rs in out_rs], self.in_eng, self.dlnz
                 )
         else:
             raise TypeError("Invalid interp_type specified.")
@@ -286,8 +289,11 @@ def process_raw_tf(file):
     ]
 
     transfer_func_table = [
-        TransferFunction(spec_arr, init_inj_eng, rebin_eng = init_inj_eng_arr) for init_inj_eng, out_eng_absc, spec_arr in zip(
-                init_inj_eng_arr, out_eng_absc_arr, tqdm(tf_raw_list))
+        TransferFunction(spec_arr, init_inj_eng, 0.002, 
+            rebin_eng = init_inj_eng_arr
+        ) for init_inj_eng, out_eng_absc, spec_arr in zip(
+            init_inj_eng_arr, out_eng_absc_arr, tqdm(tf_raw_list)
+        )
     ]
 
     #Rebin to the desired abscissa, which is in_eng_absc.

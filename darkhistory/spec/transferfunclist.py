@@ -37,6 +37,7 @@ class TransferFuncList:
             raise TypeError("transfer functions must have the \
                 same dlnz.")
 
+        self.rs = tflist[0].rs
         self.dlnz = tflist[0].dlnz
 
     def __iter__(self):
