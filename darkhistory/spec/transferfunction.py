@@ -5,10 +5,11 @@ from darkhistory import physics as phys
 from darkhistory import utilities as utils
 from darkhistory.spec import spectrum
 from darkhistory.spec import spectra
+from darkhistory.spec.spectools import rebin_N_arr
 from scipy import interpolate
 
 from astropy.io import fits 
-from tqdm import tqdm 
+from tqdm import tqdm_notebook as tqdm 
 
 class TransferFunction(spectra.Spectra):
     """Collection of ``Spectrum`` objects for transfer functions.
@@ -220,6 +221,8 @@ def process_raw_tf(file):
 
     """
 
+    from darkhistory.spec.transferfunclist import TransferFuncList
+
     def get_out_eng_absc(in_eng):
         """ Returns the output energy abscissa for a given input energy. 
 
@@ -262,9 +265,9 @@ def process_raw_tf(file):
                                 for in_eng in in_eng_absc])
 
     # Initial injected bin in output energy abscissa
-    init_inj_eng_arr = [out_eng_absc[out_eng_absc < in_eng][-1] 
+    init_inj_eng_arr = np.array([out_eng_absc[out_eng_absc < in_eng][-1] 
         for in_eng,out_eng_absc in zip(in_eng_absc, out_eng_absc_arr)
-    ]
+    ])
 
     # Import raw data. 
 
@@ -279,22 +282,33 @@ def process_raw_tf(file):
     # Prepare the output.
 
     norm_fac = (in_eng_absc/init_inj_eng_arr)*2
-
     # The transfer function is expressed as a dN/dE spectrum as a result of injecting approximately 2 particles in out_eng_absc[-1]. The exact number is computed and the transfer function appropriately normalized to 1 particle injection (at energy out_eng_absc[-1]).
 
     tf_raw_list = [
         [spectrum.Spectrum(out_eng_absc_arr[i], tf_raw[j,0,:,i]/norm_fac[i], 
-            np.exp(log_rs_absc[j])) for j in np.arange(tf_raw.shape[0])]
-        for i in tqdm(np.arange(tf_raw.shape[-1]))
+            np.exp(log_rs_absc[j])) for j in np.arange(tf_raw.shape[0])
+        ]
+        for i in np.arange(tf_raw.shape[-1])
     ]
 
-    transfer_func_table = [
-        TransferFunction(spec_arr, init_inj_eng, 0.002, 
+    normfac2 = rebin_N_arr(np.ones(init_inj_eng_arr.size), 
+        init_inj_eng_arr, init_inj_eng_arr
+    ).dNdE
+    # This rescales the transfer function so that it is now normalized to
+    # dN/dE = 1. 
+    
+
+    transfer_func_table = TransferFuncList([
+        TransferFunction(spec_arr/N, init_inj_eng, 0.002, 
             rebin_eng = init_inj_eng_arr
-        ) for init_inj_eng, out_eng_absc, spec_arr in zip(
-            init_inj_eng_arr, out_eng_absc_arr, tqdm(tf_raw_list)
+        ) for N, init_inj_eng, spec_arr in zip(normfac2,
+            init_inj_eng_arr, tqdm(tf_raw_list)
         )
-    ]
+    ])
+
+    # This further rescales the spectrum so that it is now the transfer
+    # function for dN/dE = 1 in in_eng_absc. 
+
 
     #Rebin to the desired abscissa, which is in_eng_absc.
     # for spec_list,out_eng_absc in zip(tqdm(tf_raw_list),out_eng_absc_arr):
