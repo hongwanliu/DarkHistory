@@ -88,6 +88,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     """
 
     from darkhistory.spec.spectrum import Spectrum
+    # This avoids circular dependencies.
 
     if N_arr.size != in_eng.size:
         raise TypeError("The array for number of particles has a different length from the abscissa.")
