@@ -1,4 +1,4 @@
-"""``transferfunction`` contains functions and classes for processing transfer functions."""
+"""Functions and classes for processing transfer functions."""
 
 import numpy as np
 from darkhistory import physics as phys
@@ -12,25 +12,25 @@ from astropy.io import fits
 from tqdm import tqdm_notebook as tqdm 
 
 class TransferFunction(spectra.Spectra):
-    """Collection of ``Spectrum`` objects for transfer functions.
+    """Collection of Spectrum objects for transfer functions.
 
     Parameters
     ---------- 
-    spec_arr : list of ``Spectrum``
-        List of ``Spectrum`` to be stored together.
+    spec_arr : list of Spectrum
+        List of Spectrum to be stored together.
     in_eng : float
         Injection energy of this transfer function.
     dlnz : float
         The d log(1+z) step for the transfer function.
     rebin_eng : ndarray, optional
-        New abscissa to rebin all of the ``Spectrum`` objects into. 
+        New abscissa to rebin all of the Spectrum objects into. 
 
     Attributes
     ----------
     eng : ndarray
-        Energy abscissa for the ``Spectrum``.
+        Energy abscissa for the Spectrum.
     rs : ndarray
-        The redshifts of the ``Spectrum`` objects.
+        The redshifts of the Spectrum objects.
     grid_values : ndarray
         2D array with the spectra laid out in (rs, eng). 
     

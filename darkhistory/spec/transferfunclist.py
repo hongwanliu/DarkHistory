@@ -4,6 +4,7 @@ import numpy as np
 
 import darkhistory.utilities as utils
 from darkhistory.spec import transferfunction
+from darkhistory.spec.spectools import evolve
 
 from tqdm import tqdm_notebook as tqdm
 
@@ -86,12 +87,43 @@ class TransferFuncList:
         # i enables the use of tqdm.
 
         new_tflist = [tf.at_rs(rs_arr) 
-        for i,tf in zip(tqdm(np.arange(self.in_eng.size)), 
-            self.tflist)
+            for i,tf in zip(tqdm(np.arange(self.in_eng.size)), 
+                self.tflist)
         ]
 
         self.tflist = new_tflist
         self.rs = rs_arr
+
+    def increase_dlnz(self, dlnz_factor):
+        """Increases the dlnz of the transfer function.
+
+        Parameters
+        ----------
+        dlnz_factor : int
+            The factor by which to increase dlnz by.  
+
+        """
+        old_dlnz = self.dlnz
+        new_dlnz = old_dlnz*dlnz_factor
+
+        new_rs = np.exp(
+            np.arange(
+                np.log(self.rs[0])  - old_dlnz, 
+                np.log(self.rs[-1]) - old_dlnz, 
+                -new_dlnz
+            )
+        )
+
+        self.at_rs(new_rs)
+
+        for tf in self:
+            for i,spec in zip(np.arange(new_rs.size),tf):
+                old_rs = spec.rs
+                spec.rs = new_rs[i]
+                spec = evolve(spec, self, 
+                    end_rs=np.exp(np.log(old_rs) - new_dlnz)
+                )
+                spec.rs = old_rs
 
 
 
