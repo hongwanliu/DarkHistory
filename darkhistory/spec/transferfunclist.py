@@ -1,5 +1,4 @@
-"""``transferfunclist`` contains functions and classes for \
-processing lists of transfer functions."""
+"""Functions and classes for processing lists of transfer functions."""
 
 import numpy as np
 
