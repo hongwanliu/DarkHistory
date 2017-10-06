@@ -107,7 +107,7 @@ class TransFuncAtRedshift(Spectra):
         Energy abscissa for the Spectrum. 
     rs : float
         The redshift of the Spectrum objects. 
-    gridsvalues : ndarray
+    grid_values : ndarray
         2D array with the spectra laid out in (in_eng, eng).
 
     """

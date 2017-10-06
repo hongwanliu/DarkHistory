@@ -194,7 +194,7 @@
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng,&nbsp;out_eng)</td>
 <td>Rebins an array of particle number with fixed energy.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code></a>(spec,&nbsp;tflist[,&nbsp;save_steps])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code></a>(spec,&nbsp;tflist[,&nbsp;end_rs,&nbsp;save_steps])</td>
 <td>Evolves a spectrum using a list of transfer functions.</td>
 </tr>
 </tbody>
@@ -225,7 +225,6 @@
 </tr>
 </tbody>
 </table>
-<p class="rubric">Notes</p>
 </dd></dl>
 
 <dl class="function">
@@ -304,7 +303,7 @@
 
 <dl class="function">
 <dt id="darkhistory.spec.spectools.evolve">
-<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>spec</em>, <em>tflist</em>, <em>save_steps=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.evolve" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>spec</em>, <em>tflist</em>, <em>end_rs=None</em>, <em>save_steps=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.evolve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evolves a spectrum using a list of transfer functions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -313,6 +312,7 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>spec</strong> (<a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – The initial spectrum to evolve.</li>
 <li><strong>tflist</strong> (<a class="reference internal" href="darkhistory.spec.transferfunclist.html#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><em>TransferFuncList</em></a>) – The list of transfer functions for the evolution.</li>
+<li><strong>end_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – The final redshift to evolve to.</li>
 <li><strong>save_steps</strong> (<em>bool</em><em>, </em><em>optional</em>) – Saves every intermediate spectrum if true.</li>
 </ul>
 </td>

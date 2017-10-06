@@ -192,9 +192,6 @@ def discretize(func_dNdE, eng):
     Spectrum
         The discretized spectrum. rs is set to -1, and must be set manually. 
 
-    Notes
-    -----
-
     """
     def func_EdNdE(eng):
         return func_dNdE(eng)*eng

@@ -15,6 +15,10 @@ class TransferFuncList:
     ----------
     tftype : {'rs', 'eng'}
         Type of transfer functions in the list: 'rs' for TransFuncAtRedshift, 'eng' for TransFuncAtEnergy
+    rs : ndarray
+        Redshift abscissa of the transfer functions. 
+    in_eng : ndarray
+        Injection energy abscissa of the transfer functions.
     """
 
     def __init__(self, tflist):
