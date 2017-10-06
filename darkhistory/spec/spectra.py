@@ -36,8 +36,7 @@ class Spectra:
     __array_priority__ = 1
 
     def __init__(self, spec_arr, rebin_eng=None):
-
-        if len(set(spec.length for spec in spec_arr)) > 1:
+        if len(set([spec.length for spec in spec_arr])) > 1:
             raise TypeError("all spectra must have the same length.")
 
         if not np.all(np.diff(spec_arr[0].eng) > 0):

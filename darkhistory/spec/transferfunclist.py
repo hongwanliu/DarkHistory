@@ -1,98 +1,80 @@
 """Functions and classes for processing lists of transfer functions."""
 
 import numpy as np
-
-import darkhistory.utilities as utils
-from darkhistory.spec import transferfunction
-from darkhistory.spec.spectools import evolve
-
 from tqdm import tqdm_notebook as tqdm
 
+import darkhistory.spec.transferfunction as tf
 class TransferFuncList:
-    """List of transfer functions.
-    
+    """List of transfer functions. 
+
     Parameters
     ----------
-    tflist : list of TransferFunction
-        A list of transfer functions at various injection energies. 
-    
+    tflist : list of TransFuncAtRedshift or TransFuncAtEnergy
+
     Attributes
     ----------
-    in_eng : ndarray
-        The injection energies of the transfer functions. 
-    rs : ndarray
-        The redshift abscissa for all transfer functions.
-    dlnz : float
-        The d log(1+z) step for all transfer functions.
-
+    tftype : {'rs', 'eng'}
+        Type of transfer functions in the list: 'rs' for TransFuncAtRedshift, 'eng' for TransFuncAtEnergy
     """
+
     def __init__(self, tflist):
         self.tflist = tflist
-        self.in_eng = np.array([tf.in_eng for tf in tflist])
-        if not all(np.diff(self.in_eng) > 0):
-            raise TypeError("injection energies must be \
-            ordered in increasing energy")
-        if not utils.arrays_equal([tf.rs for tf in tflist]):
-            raise TypeError("transfer function redshifts must be \
-                the same.")
-        if len(set(tf.dlnz for tf in tflist)) > 1:
-            raise TypeError("transfer functions must have the \
-                same dlnz.")
+        print(type(tflist[0]))
 
-        self.rs = tflist[0].rs
-        self.dlnz = tflist[0].dlnz
+        if (not np.all([isinstance(tfunc, tf.TransFuncAtRedshift) 
+                for tfunc in tflist]) and
+            not np.all([isinstance(tfunc, tf.TransFuncAtEnergy)
+                for tfunc in tflist])
+        ):
+
+            raise TypeError('transfer functions must be of the same type.')
+
+        if isinstance(tflist[0], tf.TransFuncAtRedshift):
+            self.tftype = 'rs'
+            self.rs = np.array([tfunc.rs for tfunc in self.tflist])
+            self.in_eng = tflist[0].in_eng
+        elif isinstance(tflist[0], tf.TransFuncAtEnergy):
+            self.tftype = 'eng'
+            self.rs = tflist[0].rs
+            self.in_eng = np.array([tfunc.in_eng for tfunc in self.tflist])
+        else:
+            raise TypeError('can only be list of valid transfer functions.')
 
     def __iter__(self):
         return iter(self.tflist)
 
-    def __getitem__(self,key):
-        if np.issubdtype(type(key), int) or isinstance(key, slice):
-            return self.tflist[key]
-        else:
-            raise TypeError("index must be int.")
+    def __getitem__(self, key):
+        return self.tflist[key]
 
-    def __setitem__(self,key,value):
-        if isinstance(key, int):
-            if not isinstance(value, (list, tuple)):
-                if np.issubclass_(type(value), TransferFunction):
-                    self.spec_arr[key] = value
-                else:
-                    raise TypeError("can only add TransferFunction.")
-            else:
-                raise TypeError("can only add one TransferFunction \
-                    per index.")
-        elif isinstance(key, slice):
-            if len(self.spec_arr[key]) == len(value):
-                for i,spec in zip(key,value): 
-                    if np.issubclass_(type(spec), TransferFunction):
-                        self.spec_arr[i] = spec
-                    else: 
-                        raise TypeError("can only add TransferFunction.")
-            else:
-                raise TypeError("can only add one TransferFunction \
-                    per index.")
-        else:
-            raise TypeError("index must be int or slice.")
+    def __setitem__(self, key, value):
+        self.tflist[key] = value
 
-    def at_rs(self, rs_arr):
-        """Returns the transfer functions at the new redshift abscissa.
+    def at_val(self, new_val):
+        """Returns the transfer functions at the new abscissa.
 
         Parameters
         ----------
-        rs_arr : ndarray
-            The new redshift abscissa. 
-
+        new_val : ndarray
+            The new redshift or injection energy abscissa.
         """
 
-        # i enables the use of tqdm.
+        # i enables the use of tqdm. 
+        if self.tftype == 'rs':
+            new_tflist = [tf.at_eng(new_val)
+                for i,tf in zip(
+                    tqdm(np.arange(len(self.tflist))), self.tflist
+                )
+            ]
 
-        new_tflist = [tf.at_rs(rs_arr) 
-            for i,tf in zip(tqdm(np.arange(self.in_eng.size)), 
-                self.tflist)
-        ]
+            self.tflist = new_tflist
+            self.in_eng = new_val
 
-        self.tflist = new_tflist
-        self.rs = rs_arr
+        else:
+            new_tflist = [tf.at_rs(new_val)
+                for i,tf in zip(
+                    tqdm(np.arange(len(self.tflist))), self.tflist
+                )
+            ]
 
-
-
+            self.tflist = new_tflist
+            self.rs = new_val
