@@ -116,7 +116,7 @@ class TransFuncAtRedshift(Spectra):
 
         self.in_eng = in_eng
         self.dlnz = dlnz
-        super().__init__(self, spec_arr, rebin_eng)
+        super().__init__(spec_arr, rebin_eng)
         if len(set([rs for rs in self.rs])) > 1:
             raise TypeError("all spectra must have identical redshifts.")
         self.rs = self.spec_arr[0].rs 

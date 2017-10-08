@@ -221,7 +221,7 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
     spec : Spectrum
         The initial spectrum to evolve. 
     tflist : TransferFuncList
-        The list of transfer functions for the evolution.
+        The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.
     end_rs : float, optional
         The final redshift to evolve to.
     save_steps : bool, optional
@@ -256,20 +256,28 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
         out_specs = Spectra([spec])
         append_spec = out_specs.append
 
-        
-        for i in tqdm(np.arange(rs_last_ind).astype(int)):
-            tf_at_rs = Spectra([tf[i] for tf in tflist])
-            append_spec(tf_at_rs.sum_specs(out_specs[-1]))
+        tflist.transpose()
+
+        for i in np.arange(rs_last_ind):
+            append_spec(tflist[i].sum_specs(out_specs[-1]))
             out_specs[-1].rs = tflist.rs[i+1]
+        
+        # for i in tqdm(np.arange(rs_last_ind).astype(int)):
+        #     tf_at_rs = Spectra([tf[i] for tf in tflist])
+        #     append_spec(tf_at_rs.sum_specs(out_specs[-1]))
+        #     out_specs[-1].rs = tflist.rs[i+1]
 
         return out_specs
 
     else:
 
-        for i in tqdm(np.arange(rs_last_ind).astype(int)):
-            tf_at_rs = Spectra([tf[i] for tf in tflist])
-            spec = tf_at_rs.sum_specs(spec)
+        for i in np.arange(rs_last_ind):
+            spec = tflist[i].sum_specs(spec)
             spec.rs = tflist.rs[i+1]
+        # for i in tqdm(np.arange(rs_last_ind).astype(int)):
+        #     tf_at_rs = Spectra([tf[i] for tf in tflist])
+        #     spec = tf_at_rs.sum_specs(spec)
+        #     spec.rs = tflist.rs[i+1]
 
         return spec
 
