@@ -7,8 +7,6 @@ import warnings
 
 from scipy import integrate
 
-from tqdm import tqdm_notebook as tqdm
-
 
 def get_bin_bound(eng):
     """Returns the bin boundary of an abscissa.
@@ -220,7 +218,7 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
     ----------
     spec : Spectrum
         The initial spectrum to evolve. 
-    tflist : TransferFuncList
+    tflist_in : TransferFuncList
         The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.
     end_rs : float, optional
         The final redshift to evolve to.
@@ -242,6 +240,9 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
     # ):
     #     raise TypeError("transfer functions must be spaced at the same interval as dlnz of each transfer function for now.")
 
+    if tflist.tftype != 'rs':
+            tflist.transpose()
+
     if end_rs is not None:
         # Calculates where to stop the transfer function multiplication.
         rs_ind = np.arange(tflist.rs.size)
@@ -255,8 +256,6 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
 
         out_specs = Spectra([spec])
         append_spec = out_specs.append
-
-        tflist.transpose()
 
         for i in np.arange(rs_last_ind):
             append_spec(tflist[i].sum_specs(out_specs[-1]))

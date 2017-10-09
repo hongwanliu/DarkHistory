@@ -128,7 +128,7 @@ class TransFuncAtRedshift(Spectra):
 
         Parameters
         ----------
-        out_eng : ndarray
+        new_eng : ndarray
             The injection energies or injection energy bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
@@ -145,7 +145,7 @@ class TransFuncAtRedshift(Spectra):
                     self.rs) for eng in new_eng
             ]
             return TransFuncAtRedshift(
-                new_spec_arr, self.new_eng, self.dlnz
+                new_spec_arr, new_eng, self.dlnz
             )
 
         elif inter_type == 'bin':

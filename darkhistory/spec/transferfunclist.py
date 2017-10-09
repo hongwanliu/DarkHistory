@@ -18,8 +18,8 @@ class TransferFuncList:
 
     Attributes
     ----------
-    tftype : {'rs', 'eng'}
-        Type of transfer functions in the list: 'rs' for TransFuncAtRedshift, 'eng' for TransFuncAtEnergy
+    tftype : {'rs', 'in_eng'}
+        Type of transfer functions in the list: 'rs' for TransFuncAtRedshift, 'in_eng' for TransFuncAtEnergy
     rs : ndarray
         Redshift abscissa of the transfer functions. 
     in_eng : ndarray
@@ -54,7 +54,7 @@ class TransferFuncList:
             self.in_eng = tflist[0].in_eng
             self.dlnz = tflist[0].dlnz
         elif isinstance(tflist[0], tf.TransFuncAtEnergy):
-            self.tftype = 'eng'
+            self.tftype = 'in_eng'
             self.rs = tflist[0].rs
             self.in_eng = np.array([tfunc.in_eng for tfunc in self.tflist])
             self.dlnz = tflist[0].dlnz
@@ -75,28 +75,34 @@ class TransferFuncList:
 
         Parameters
         ----------
-        axis : {'rs', 'eng'}
-            The axis along which to perform the interpolation.
+        axis : {'rs', 'in_eng'}
+            The axis along which to perform the interpolation. If the axis is 'rs', then the list will be transposed into tftype 'in_eng' and vice-versa. 
         new_val : ndarray
             The new redshift or injection energy abscissa.
         """
 
         # i enables the use of tqdm. 
 
-        if self.tftype == 'rs':
-            new_tflist = [tf.at_eng(new_val)
+        if axis == 'in_eng':
+            if self.tftype != 'rs':
+                self.transpose()
+
+            new_tflist = [tf.at_in_eng(new_val)
                 for i,tf in zip(
-                    tqdm(np.arange(len(self.tflist))), self.tflist
+                    np.arange(len(self.tflist)), self.tflist
                 )
             ]
 
             self.tflist = new_tflist
             self.in_eng = new_val
 
-        elif self.tftype == 'eng':
+        elif axis == 'rs':
+            if self.tftype != 'in_eng':
+                self.transpose()
+
             new_tflist = [tf.at_rs(new_val)
                 for i,tf in zip(
-                    tqdm(np.arange(len(self.tflist))), self.tflist
+                    np.arange(len(self.tflist)), self.tflist
                 )
             ]
 
@@ -111,7 +117,8 @@ class TransferFuncList:
 
         This takes a TransferFuncList made of TransFuncAtEnergy into a list a TransferFuncList made of TransFuncAtRedshift and vice-versa. 
         """
-        if self.tftype == 'eng':
+
+        if self.tftype == 'in_eng':
 
             new_tflist = [tf.TransFuncAtRedshift(
                     [tfunc.spec_arr[i] for tfunc in self.tflist],
@@ -135,34 +142,57 @@ class TransferFuncList:
             ]
 
             self.tflist = new_tflist
-            self.tftype = 'eng'
+            self.tftype = 'in_eng'
 
         else:
 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
 
-    def extend_dlnz(self, dlnz_factor):
-        """Obtains the new transfer function with larger dlnz. 
+    def coarsen(self, dlnz_factor, delete_tfs=True):
+        """Coarsens the new transfer function with larger dlnz. 
 
-        This is obtained by multiplying the transfer function by itself dlnz_factor times. 
+        This is obtained by multiplying the transfer function by itself several times, and removing intermediate transfer functions. 
 
         Parameters
         ----------
         dlnz_factor : int
             The factor to increase dlnz by. 
+        delete_tfs : bool
+            If true, only retains transfer functions in tflist that have an index that is a multiple of dlnz_factor. 
 
         """
-        transposed = False
 
-        if self.tftype != rs:
+        if self.tftype != 'rs':
             self.transpose()
-            transposed = True
 
-        for i,tf in zip(np.arange(self.tflist.size),self.tflist):
-            self.tflist[i] = matrix_power(tf,dlnz_factor)
+        if delete_tfs:
+            new_tflist = [
+                self.tflist[i] for i in np.arange(
+                    0, len(self.tflist), dlnz_factor
+                )
+            ]
+        else: 
+            # list() needed to create a new copy, not just point.
+            new_tflist = list(self.tflist)
 
-        if transposed:
-            self.transpose()
+        self.tflist = []
+
+        for i,tfunc in zip(np.arange(len(new_tflist)),new_tflist):
+            
+            new_grid_val = matrix_power(tfunc.grid_values,dlnz_factor)
+            new_spec_arr = [
+                Spectrum(tfunc.eng, new_grid_val[i], tfunc.rs)
+                for i in np.arange(tfunc.in_eng.size)
+            ]
+
+            self.tflist.append(
+                tf.TransFuncAtRedshift(
+                    new_spec_arr, self.in_eng, self.dlnz*dlnz_factor
+                )
+            )
+
+        self.rs = np.array([tfunc.rs for tfunc in new_tflist])
+        self.dlnz *= dlnz_factor
 
 
 
