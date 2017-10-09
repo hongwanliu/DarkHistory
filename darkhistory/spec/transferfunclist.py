@@ -1,7 +1,7 @@
 """Functions and classes for processing lists of transfer functions."""
 
 import numpy as np
-from scipy.interpolate import interp1d as interp
+from numpy.linalg import matrix_power
 from tqdm import tqdm_notebook as tqdm
 
 from darkhistory.utilities import arrays_equal
@@ -140,6 +140,30 @@ class TransferFuncList:
         else:
 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
+
+    def extend_dlnz(self, dlnz_factor):
+        """Obtains the new transfer function with larger dlnz. 
+
+        This is obtained by multiplying the transfer function by itself dlnz_factor times. 
+
+        Parameters
+        ----------
+        dlnz_factor : int
+            The factor to increase dlnz by. 
+
+        """
+        transposed = False
+
+        if self.tftype != rs:
+            self.transpose()
+            transposed = True
+
+        for i,tf in zip(np.arange(self.tflist.size),self.tflist):
+            self.tflist[i] = matrix_power(tf,dlnz_factor)
+
+        if transposed:
+            self.transpose()
+
 
 
 
