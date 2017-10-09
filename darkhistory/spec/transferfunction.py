@@ -121,7 +121,7 @@ class TransFuncAtRedshift(Spectra):
             raise TypeError("all spectra must have identical redshifts.")
         self.rs = self.spec_arr[0].rs 
 
-    def at_eng(self, new_eng, interp_type='val'):
+    def at_in_eng(self, new_eng, interp_type='val'):
         """Interpolates the transfer function at a new injection energy. 
 
         Interpolation is logarithmic. 
@@ -156,7 +156,20 @@ class TransFuncAtRedshift(Spectra):
                 np.log(self.in_eng)
             )
 
-            return self.at_eng(np.exp(log_new_eng))
+            return self.at_in_eng(np.exp(log_new_eng))
+
+    def at_rs(self, new_eng, interp_type='val'):
+        """ Removes the inherited Spectra.at_rs from this class.
+
+        Parameters
+        ----------
+        new_rs : ndarray
+            The redshifts or redshift bin indices at which to interpolate. 
+        interp_type : {'val', 'bin'}
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+        """
+
+        raise AttributeError("Not implemented for TransFuncAtRedshift class.")
 
 def process_raw_tf(file):
     """Processes raw data to return transfer functions.

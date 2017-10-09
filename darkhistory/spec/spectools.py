@@ -260,11 +260,16 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
         for i in np.arange(rs_last_ind):
             append_spec(tflist[i].sum_specs(out_specs[-1]))
             out_specs[-1].rs = tflist.rs[i+1]
-        
+            
         # for i in tqdm(np.arange(rs_last_ind).astype(int)):
         #     tf_at_rs = Spectra([tf[i] for tf in tflist])
         #     append_spec(tf_at_rs.sum_specs(out_specs[-1]))
         #     out_specs[-1].rs = tflist.rs[i+1]
+
+        out_specs.rs = np.array([s.rs for s in out_specs])
+        out_specs.grid_values = np.stack(
+            [s.dNdE for s in out_specs.spec_arr]
+        )
 
         return out_specs
 

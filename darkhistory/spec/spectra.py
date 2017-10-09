@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import warnings
 
 from scipy import integrate
+from scipy import interpolate
+
 
 class Spectra:
     """Structure for a collection of `Spectrum` objects.
@@ -391,6 +393,9 @@ class Spectra:
             spec.rebin(out_eng)
 
         self.eng = out_eng
+        self.grid_values = np.stack(
+            [spec.dNdE for spec in self.spec_arr]
+        )
 
     def append(self, spec):
         """Appends a new Spectrum. 
@@ -408,29 +413,112 @@ class Spectra:
         self.spec_arr.append(spec)
         self.rs = np.append(self.rs, spec.rs)
 
-    def plot(self, ind, step=1):
+    def at_rs(self, new_rs, interp_type='val'):
+        """Interpolates the transfer function at a new redshift. 
+
+        Interpolation is logarithmic. 
+
+        Parameters
+        ----------
+        new_rs : ndarray
+            The redshifts or redshift bin indices at which to interpolate. 
+        interp_type : {'val', 'bin'}
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+        """
+
+        interp_func = interpolate.interp2d(
+            self.eng, np.log(self.rs), self.grid_values
+        )
+
+        if interp_type == 'val':
+            
+            new_spec_arr = [
+                Spectrum(self.eng, interp_func(self.eng, np.log(rs)), rs)
+                    for rs in new_rs
+            ]
+            return Spectra(new_spec_arr)
+
+        elif interp_type == 'bin':
+            
+            log_new_rs = np.interp(
+                np.log(new_rs), 
+                np.arange(self.rs.size), 
+                np.log(self.rs)
+            )
+
+            return self.at_rs(np.exp(log_new_rs))
+
+        else:
+            raise TypeError("invalid interp_type specified.")
+
+    def plot(self, ax, ind=None, step=1, indtype='ind', 
+        **kwargs):
         """Plots the contained `Spectrum` objects. 
 
         Parameters
         ----------
-        ind : int or tuple of int
-            Index of Spectrum to plot, or a tuple of indices providing a range of Spectrum to plot. 
-
+        ax : matplotlib.axes.Axes
+            The axis handle of the figure to show the plot in.
+        ind : int, float, tuple or ndarray, optional.
+            Index or redshift of Spectrum to plot, or a tuple of indices or redshifts providing a range of Spectrum to plot, or a list of indices or redshifts of Spectrum to plot.
         step : int, optional
-            The number of steps to take before choosing one Spectrum to plot. 
+            The number of steps to take before choosing one Spectrum to plot.
+        indtype : {'ind', 'rs'}, optional
+            Specifies whether ind is an index or a redshift.
+        **kwargs : optional
+            All additional keyword arguments to pass to matplotlib.plt.plot. 
 
         Returns
         -------
         matplotlib.figure
         """
-        fig = plt.figure()
-        if np.issubdtype(type(ind), int):
-            plt.plot(self.eng, self.spec_arr[ind].dNdE)
-            return fig
-        elif np.issubdtype(type(ind), tuple):
-            spec_to_plot = np.stack([self.spec_arr[i].dNdE for i in np.arange(ind[0], ind[1], step)], 
-                axis=-1)
-            plt.plot(self.eng, spec_to_plot)
-            return fig
+        
+        if ind is None:
+            return self.plot(
+                ax, ind=np.arange(self.rs.size), **kwargs
+            )
+
+        if indtype == 'ind':
+
+            if np.issubdtype(type(ind), int):
+                return ax.plot(
+                    self.eng, self.spec_arr[ind].dNdE, **kwargs
+                )
+
+            elif isinstance(ind, tuple):
+                spec_to_plot = np.stack([self.spec_arr[i].dNdE for i in np.arange(ind[0], ind[1], step)], 
+                    axis=-1)
+                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                
+            
+            elif isinstance(ind, np.ndarray):
+                fig = plt.figure()
+                spec_to_plot = np.stack(
+                    [self.spec_arr[i].dNdE
+                        for i in ind
+                    ], axis=-1
+                )
+                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                
+
+            else:
+                raise TypeError("ind should be either int, tuple of int or ndarray.")
+
+        if indtype == 'rs':
+
+            if (np.issubdtype(type(ind),int) or 
+                    np.issubdtype(type(ind), float)):
+                return self.at_rs(np.array([ind])).plot(
+                    ax, ind=0, **kwargs
+                )
+
+            elif isinstance(ind, tuple):
+                rs_to_plot = np.arange(ind[0], ind[1], step)
+                return self.at_rs(rs_to_plot).plot(ax, **kwargs)
+
+            elif isinstance(ind, np.ndarray):
+                return self.at_rs(ind).plot(ax, **kwargs)
+
         else:
-            raise TypeError("ind should be either an integer or a tuple of integers.")
+            raise TypeError("indtype must be either ind or rs.")
+
