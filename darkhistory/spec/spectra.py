@@ -111,14 +111,17 @@ class Spectra:
 
         See Also
         --------
-        spectrum.Spectra.__radd__
+        spectra.Spectra.__radd__
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not util.array_equal(self.eng, other.eng):
+            if not np.array_equal(self.eng, other.eng):
                 raise TypeError('abscissae are different for the two Spectra.')
-            if not util.array_equal(self.rs, other.rs):
-                raise TypeError('redshifts are different for the two Spectra.')
+
+            # Need to remove this in order to add transfer functions for TransferFuncList.at_val
+            
+            # if not np.array_equal(self.rs, other.rs):
+            #     raise TypeError('redshifts are different for the two Spectra.')
 
             return Spectra([spec1 + spec2 for spec1,spec2 in zip(self.spec_arr, other.spec_arr)])
 
@@ -143,14 +146,17 @@ class Spectra:
 
         See Also
         --------
-        spectrum.Spectra.__add__
+        spectra.Spectra.__add__
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not util.array_equal(self.eng, other.eng):
+            if not np.array_equal(self.eng, other.eng):
                 raise TypeError('abscissae are different for the two Spectra.')
-            if not util.array_equal(self.rs, other.rs):
-                raise TypeError('redshifts are different for the two Spectra.')
+            
+            # Need to remove this in order to add transfer functions for TransferFuncList.at_val
+
+            # if not np.array_equal(self.rs, other.rs):
+            #     raise TypeError('redshifts are different for the two Spectra.')
 
             return Spectra([spec1 + spec2 for spec1,spec2 in zip(self.spec_arr, other.spec_arr)])
 

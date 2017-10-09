@@ -1,6 +1,7 @@
 """Functions and classes for processing lists of transfer functions."""
 
 import numpy as np
+from scipy.interpolate import interp1d as interp
 from tqdm import tqdm_notebook as tqdm
 
 from darkhistory.utilities import arrays_equal
@@ -28,6 +29,7 @@ class TransferFuncList:
     """
 
     def __init__(self, tflist):
+
         self.tflist = tflist
 
         if (not np.all([isinstance(tfunc, tf.TransFuncAtRedshift) 
@@ -68,16 +70,19 @@ class TransferFuncList:
     def __setitem__(self, key, value):
         self.tflist[key] = value
 
-    def at_val(self, new_val):
+    def at_val(self, axis, new_val):
         """Returns the transfer functions at the new abscissa.
 
         Parameters
         ----------
+        axis : {'rs', 'eng'}
+            The axis along which to perform the interpolation.
         new_val : ndarray
             The new redshift or injection energy abscissa.
         """
 
         # i enables the use of tqdm. 
+
         if self.tftype == 'rs':
             new_tflist = [tf.at_eng(new_val)
                 for i,tf in zip(
@@ -98,20 +103,21 @@ class TransferFuncList:
             self.tflist = new_tflist
             self.rs = new_val
 
+        else: 
+            raise TypeError('TransferFuncList.tftype is neither rs nor eng')
+
     def transpose(self):
         """ Transposes the list of transfer functions. 
 
         This takes a TransferFuncList made of TransFuncAtEnergy into a list a TransferFuncList made of TransFuncAtRedshift and vice-versa. 
         """
-        print('Transposing the list of transfer functions...')
-
         if self.tftype == 'eng':
 
             new_tflist = [tf.TransFuncAtRedshift(
                     [tfunc.spec_arr[i] for tfunc in self.tflist],
                     self.in_eng, self.dlnz
                 ) for i,rs in zip(
-                    tqdm(np.arange(self.rs.size)), self.rs
+                    np.arange(self.rs.size), self.rs
                 )
             ]
 
@@ -122,14 +128,18 @@ class TransferFuncList:
 
             new_tflist = [tf.TransFuncAtEnergy(
                     [tfunc.spec_arr[i] for tfunc in self.tflist],
-                    self.in_eng, self.dlnz
+                    self.in_eng[i], self.dlnz
                 ) for i,in_eng in zip(
-                    tqdm(np.arange(self.in_eng.size)), self.in_eng
+                    np.arange(self.in_eng.size), self.in_eng
                 )
             ]
 
             self.tflist = new_tflist
             self.tftype = 'eng'
+
+        else:
+
+            raise TypeError('TransferFuncList.tftype is neither rs nor eng')
 
 
 
