@@ -414,7 +414,7 @@ class Spectra:
         self.spec_arr.append(spec)
         self.rs = np.append(self.rs, spec.rs)
 
-    def at_rs(self, new_rs, interp_type='val'):
+    def at_rs(self, new_rs, interp_type='val',bounds_err=True):
         """Interpolates the transfer function at a new redshift. 
 
         Interpolation is logarithmic. 
@@ -425,10 +425,13 @@ class Spectra:
             The redshifts or redshift bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+        bounds_err : bool, optional
+            Whether to return an error if outside of the bounds for the interpolation. 
         """
 
         interp_func = interpolate.interp2d(
-            self.eng, np.log(self.rs), self.grid_values
+            self.eng, np.log(self.rs), self.grid_values,
+            bounds_error = bounds_err, fill_value = 0
         )
 
         if interp_type == 'val':
