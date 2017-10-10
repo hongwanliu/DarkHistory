@@ -23,6 +23,8 @@ class Spectra:
 
     Attributes
     ----------
+    spec_arr : list of Spectrum
+        List of Spectrum to be stored together.
     eng : ndarray
         Energy abscissa for the Spectrum.
     rs : ndarray

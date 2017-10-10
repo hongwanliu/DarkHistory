@@ -23,6 +23,12 @@ class Spectrum:
 
     Attributes
     ----------
+    eng : ndarray
+        Abscissa for the spectrum. 
+    dNdE : ndarray
+        Spectrum stored as dN/dE. 
+    rs : float, optional
+        The redshift (1+z) of the spectrum. Set to -1 if not specified.
     length : int
         The length of the `eng` and `dNdE`.
     underflow : dict of str: float

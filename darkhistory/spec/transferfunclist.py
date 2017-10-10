@@ -18,6 +18,8 @@ class TransferFuncList:
 
     Attributes
     ----------
+    tflist : list of TransFuncAtRedshift or TransFuncAtEnergy
+        List of transfer functions that is part of this class.
     tftype : {'rs', 'in_eng'}
         Type of transfer functions in the list: 'rs' for TransFuncAtRedshift, 'in_eng' for TransFuncAtEnergy
     rs : ndarray
