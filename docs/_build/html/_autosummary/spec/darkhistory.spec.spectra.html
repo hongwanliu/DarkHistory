@@ -222,16 +222,19 @@
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.append" title="darkhistory.spec.spectra.Spectra.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(spec)</td>
 <td>Appends a new Spectrum.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.integrate_each_spec" title="darkhistory.spec.spectra.Spectra.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.at_rs" title="darkhistory.spec.spectra.Spectra.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_err])</td>
+<td>Interpolates the transfer function at a new redshift.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.integrate_each_spec" title="darkhistory.spec.spectra.Spectra.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
 <td>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.plot" title="darkhistory.spec.spectra.Spectra.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ind[,&nbsp;step])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.plot" title="darkhistory.spec.spectra.Spectra.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;abs_plot])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.rebin" title="darkhistory.spec.spectra.Spectra.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.rebin" title="darkhistory.spec.spectra.Spectra.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.sum_specs" title="darkhistory.spec.spectra.Spectra.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.sum_specs" title="darkhistory.spec.spectra.Spectra.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
 <td>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</td>
 </tr>
 </tbody>
@@ -256,7 +259,7 @@
 <p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add <cite>Spectra</cite> objects together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__radd__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -320,7 +323,7 @@
 <p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add <cite>Spectra</cite> objects together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__add__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__add__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -459,6 +462,26 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="darkhistory.spec.spectra.Spectra.at_rs">
+<code class="descname">at_rs</code><span class="sig-paren">(</span><em>new_rs</em>, <em>interp_type='val'</em>, <em>bounds_err=True</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra.at_rs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolates the transfer function at a new redshift.</p>
+<p>Interpolation is logarithmic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>new_rs</strong> (<em>ndarray</em>) – The redshifts or redshift bin indices at which to interpolate.</li>
+<li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual redshift.</li>
+<li><strong>bounds_err</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to return an error if outside of the bounds for the interpolation.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="darkhistory.spec.spectra.Spectra.integrate_each_spec">
 <code class="descname">integrate_each_spec</code><span class="sig-paren">(</span><em>weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra.integrate_each_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</p>
@@ -479,15 +502,19 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.spectra.Spectra.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><em>ind</em>, <em>step=1</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>ind=None</em>, <em>step=1</em>, <em>indtype='ind'</em>, <em>abs_plot=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the contained <cite>Spectrum</cite> objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ind</strong> (<em>int</em><em> or </em><em>tuple of int</em>) – Index of Spectrum to plot, or a tuple of indices providing a range of Spectrum to plot.</li>
+<li><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – The axis handle of the figure to show the plot in.</li>
+<li><strong>ind</strong> (<em>int</em><em>, </em><em>float</em><em>, </em><em>tuple</em><em> or </em><em>ndarray</em><em>, </em><em>optional.</em>) – Index or redshift of Spectrum to plot, or a tuple of indices or redshifts providing a range of Spectrum to plot, or a list of indices or redshifts of Spectrum to plot.</li>
 <li><strong>step</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to take before choosing one Spectrum to plot.</li>
+<li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'rs'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or a redshift.</li>
+<li><strong>abs_plot</strong> (<em>bool</em><em>, </em><em>optional</em>) – Plots the absolute value if true.</li>
+<li><strong>**kwargs</strong> (<em>optional</em>) – All additional keyword arguments to pass to matplotlib.plt.plot.</li>
 </ul>
 </td>
 </tr>
