@@ -241,7 +241,8 @@ class Spectra:
         if np.issubdtype(type(other), float) or np.issubdtype(type(other), int):
             return Spectra([other*spec for spec in self])
         elif np.issubclass_(type(other), Spectra):
-            if self.rs != other.rs or self.eng != other.eng:
+            if (not np.array_equal(self.rs, other.rs) 
+                or not np.array_equal(self.eng, other.eng)):
                 raise TypeError("the two spectra do not have the same redshift or abscissae.")
             return Spectra([spec1*spec2 for spec1,spec2 in zip(self, other)])
         else:
@@ -452,7 +453,7 @@ class Spectra:
             raise TypeError("invalid interp_type specified.")
 
     def plot(self, ax, ind=None, step=1, indtype='ind', 
-        **kwargs):
+        abs_plot=False, **kwargs):
         """Plots the contained `Spectrum` objects. 
 
         Parameters
@@ -465,6 +466,8 @@ class Spectra:
             The number of steps to take before choosing one Spectrum to plot.
         indtype : {'ind', 'rs'}, optional
             Specifies whether ind is an index or a redshift.
+        abs_plot :  bool, optional
+            Plots the absolute value if true.
         **kwargs : optional
             All additional keyword arguments to pass to matplotlib.plt.plot. 
 
@@ -475,29 +478,60 @@ class Spectra:
         
         if ind is None:
             return self.plot(
-                ax, ind=np.arange(self.rs.size), **kwargs
+                ax, ind=np.arange(self.rs.size), 
+                abs_plot=abs_plot, **kwargs
             )
 
         if indtype == 'ind':
 
             if np.issubdtype(type(ind), int):
-                return ax.plot(
-                    self.eng, self.spec_arr[ind].dNdE, **kwargs
-                )
+                if abs_plot:
+                    return ax.plot(
+                        self.eng, 
+                        np.abs(self.spec_arr[ind].dNdE), 
+                        **kwargs
+                    )
+                else:
+                    return ax.plot(
+                        self.eng, 
+                        self.spec_arr[ind].dNdE, 
+                        **kwargs
+                    )
 
             elif isinstance(ind, tuple):
-                spec_to_plot = np.stack([self.spec_arr[i].dNdE for i in np.arange(ind[0], ind[1], step)], 
-                    axis=-1)
+                if abs_plot:
+                    spec_to_plot = np.stack(
+                        [np.abs(self.spec_arr[i].dNdE) 
+                            for i in 
+                                np.arange(ind[0], ind[1], step)
+                        ], 
+                        axis=-1
+                    )
+                else:
+                    spec_to_plot = np.stack(
+                        [self.spec_arr[i].dNdE 
+                            for i in 
+                                np.arange(ind[0], ind[1], step)
+                        ], 
+                        axis=-1
+                    )
                 return ax.plot(self.eng, spec_to_plot, **kwargs)
                 
             
             elif isinstance(ind, np.ndarray):
                 fig = plt.figure()
-                spec_to_plot = np.stack(
-                    [self.spec_arr[i].dNdE
-                        for i in ind
-                    ], axis=-1
-                )
+                if abs_plot:
+                    spec_to_plot = np.stack(
+                        [np.abs(self.spec_arr[i].dNdE)
+                            for i in ind
+                        ], axis=-1
+                    ) 
+                else:
+                    spec_to_plot = np.stack(
+                        [self.spec_arr[i].dNdE
+                            for i in ind
+                        ], axis=-1
+                    )
                 return ax.plot(self.eng, spec_to_plot, **kwargs)
                 
 
@@ -509,15 +543,19 @@ class Spectra:
             if (np.issubdtype(type(ind),int) or 
                     np.issubdtype(type(ind), float)):
                 return self.at_rs(np.array([ind])).plot(
-                    ax, ind=0, **kwargs
+                    ax, ind=0, abs_plot=abs_plot, **kwargs
                 )
 
             elif isinstance(ind, tuple):
                 rs_to_plot = np.arange(ind[0], ind[1], step)
-                return self.at_rs(rs_to_plot).plot(ax, **kwargs)
+                return self.at_rs(rs_to_plot).plot(
+                    ax, abs_plot=abs_plot,**kwargs
+                )
 
             elif isinstance(ind, np.ndarray):
-                return self.at_rs(ind).plot(ax, **kwargs)
+                return self.at_rs(ind).plot(
+                    ax, abs_plot=abs_plot, **kwargs
+                )
 
         else:
             raise TypeError("indtype must be either ind or rs.")
