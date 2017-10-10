@@ -5,9 +5,9 @@
 import numpy as np
 
 # Fundamental constants
-mp          = 0.938e9                     
+mp          = 0.938272081e9                     
 """Proton mass in eV."""
-me          = 510998.9
+me          = 510998.9461
 """Electron mass in eV."""
 hbar        = 6.58211951e-16
 """hbar in eV s."""
