@@ -301,12 +301,8 @@ def CMB_spec(eng, temp):
         Returns the number of photons/cm^3/eV. 
 
     """
-    if np.issubdtype(type(eng), float):
-        eng = np.array([eng])
     prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
-    phot_spec_density = prefactor*[1/(np.exp(photeng/temp) - 1) if photeng/temp < 500 else 0 for photeng in eng]
-
-    if np.issubdtype(type(eng), float): 
-        return phot_spec_density[0] 
-    else: 
-        return phot_spec_density
+    if eng/temp < 500:
+        return prefactor/(np.exp(eng/temp) - 1)
+    else:
+        return 0

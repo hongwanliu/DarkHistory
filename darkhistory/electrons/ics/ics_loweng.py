@@ -9,15 +9,15 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
-def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
+def icsspec_loweng(eleceng_arr, photeng_arr, rs):
     """Returns the ICS scattered photon spectrum at low electron energies. 
 
     ICS off the CMB is assumed. 
 
     Parameters
     ----------
-    eleckineng_arr : ndarray
-        A list of electron kinetic energies. 
+    eleceng_arr : ndarray
+        A list of electron *total* energies. 
     photeng_arr : ndarray
         A list of scattered photon energies. 
     rs : float
@@ -28,13 +28,13 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
     TransFuncAtRedshift
         A transfer function at fixed redshift, indexed by in_eng = electron kinetic energy, eng = scattered photon energy of (dN/dE dt), where E is the energy of the scattered photon, normalized to one electron.
     """
-    gamma_arr = 1 + eleckineng_arr/phys.me
-    beta_arr = np.sqrt(1 - 1/(gamma_arr**2))
+    gamma_arr = eleceng_arr/phys.me
+    beta_arr = np.sqrt(1 - 1/gamma_arr**2)
 
-    def integrand_div_by_CMB(CMBeng, eleckineng, photeng):
+    def integrand_div_by_CMB(CMBeng, eleceng, photeng):
 
-        gamma = 1 + eleckineng/phys.me
-        beta = np.sqrt(1 - 1/(gamma**2))
+        gamma = eleceng/phys.me
+        beta = np.sqrt(1 - 1/gamma**2)
 
         def prefac(CMBeng):
             
@@ -74,9 +74,9 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
 
         return prefac(CMBeng)*integrand_part(CMBeng, photeng)
 
-    def integrand(CMBeng, eleckineng, photeng):
+    def integrand(CMBeng, eleceng, photeng):
 
-        return (integrand_div_by_CMB(CMBeng, eleckineng, photeng)
+        return (integrand_div_by_CMB(CMBeng, eleceng, photeng)
             * phys.CMB_spec(CMBeng, phys.TCMB(rs))
         )
 
@@ -93,11 +93,11 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
         [
             integrate.quad(integrand, lowlim[i,j], upplim[i,j],
                 args = (eleceng, photeng), epsabs = 0, epsrel = 1e-3
-            )[0] for j,photeng in zip(
+            )[0] if eleceng > photeng else 0 for j,photeng in zip(
                 np.arange(photeng_arr.size), photeng_arr
             )
         ] for i,eleceng in zip(
-            tqdm(np.arange(eleckineng_arr.size)), eleckineng_arr
+            tqdm(np.arange(eleceng_arr.size)), eleceng_arr
         )
     ])
 
@@ -107,7 +107,7 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
 
     # dlnz set to 1 second, which is the normalization for dN/dE dt. 
     return TransFuncAtRedshift(
-        spec_arr, eleckineng_arr, 1/rs*(phys.dtdz(rs)**-1)
+        spec_arr, eleceng_arr, 1/rs*(phys.dtdz(rs)**-1)
     )
 
 
