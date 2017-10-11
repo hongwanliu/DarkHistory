@@ -2,7 +2,6 @@
 
 import numpy as np
 from numpy.linalg import matrix_power
-from tqdm import tqdm_notebook as tqdm
 
 from darkhistory.utilities import arrays_equal
 from darkhistory.spec.spectrum import Spectrum

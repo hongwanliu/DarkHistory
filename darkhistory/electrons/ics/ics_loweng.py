@@ -2,8 +2,11 @@
 
 import numpy as np
 from scipy import integrate
+from tqdm import tqdm_notebook as tqdm
 
 import darkhistory.physics as phys
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
 def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
@@ -34,6 +37,7 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
         beta = np.sqrt(1 - 1/(gamma**2))
 
         def prefac(CMBeng):
+            
             return (phys.c*(3/16)*phys.thomson_xsec
                 /(gamma**3 * beta**2 * CMBeng**2)
             )
@@ -68,7 +72,7 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
 
             return outval
 
-        return prefac(CMBeng)*integrand_part(CMBeng, photeng_arr)
+        return prefac(CMBeng)*integrand_part(CMBeng, photeng)
 
     def integrand(CMBeng, eleckineng, photeng):
 
@@ -80,23 +84,30 @@ def icsspec_loweng(eleckineng_arr, photeng_arr, rs):
     upplim = np.array([(1+beta)/(1-beta)*photeng_arr for beta in beta_arr])
 
     # Zero out where the CMB spectrum is already set to zero.
-    upplim = np.where(upplim < 500*phys.TCMB(rs),
+    upplim = np.where(upplim < 100*phys.TCMB(rs),
                         upplim,
-                        500*phys.TCMB(rs)*np.ones(upplim.shape)
+                        100*phys.TCMB(rs)*np.ones(upplim.shape)
     )
 
     spec_arr_raw = np.array([
         [
             integrate.quad(integrand, lowlim[i,j], upplim[i,j],
                 args = (eleceng, photeng), epsabs = 0, epsrel = 1e-3
-            )[0]
-            for j,photeng in zip(np.arange(photeng_arr.size), photeng_arr)
-        ] 
-        for i,eleceng in zip(np.arange(eleckineng_arr.size), eleckineng_arr)
+            )[0] for j,photeng in zip(
+                np.arange(photeng_arr.size), photeng_arr
+            )
+        ] for i,eleceng in zip(
+            tqdm(np.arange(eleckineng_arr.size)), eleckineng_arr
+        )
     ])
 
-    return TransferFuncAtRedshift(
-        
+    spec_arr = [
+        Spectrum(photeng_arr, np.array(spec), rs) for spec in spec_arr_raw
+    ]
+
+    # dlnz set to 1 second, which is the normalization for dN/dE dt. 
+    return TransFuncAtRedshift(
+        spec_arr, eleckineng_arr, 1/rs*(phys.dtdz(rs)**-1)
     )
 
 

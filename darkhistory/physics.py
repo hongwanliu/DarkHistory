@@ -131,7 +131,7 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
     float
     """
 
-    return 1/(rs*hubblerates(rs, H0, omega_m, omega_rad, omega_lambda))
+    return 1/(rs*hubble(rs, H0, omega_m, omega_rad, omega_lambda))
 
 def TCMB(rs):
     """ CMB temperature in eV.
