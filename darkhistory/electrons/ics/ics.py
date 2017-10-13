@@ -9,15 +9,15 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
-def icsspec(eleckineng_arr, photeng_arr, rs):
+def icsspec(eleceng_arr, photeng_arr, rs):
     """Returns the ICS scattered photon spectrum at all energies.
 
     ICS off the CMB is assumed. 
 
     Parameters
     ----------
-    eleckineng_arr : ndarray
-        A list of electron kinetic energies. 
+    eleceng_arr : ndarray
+        A list of electron total energies. 
     photeng_arr : ndarray
         A list of scattered photon energies. 
     rs : float
@@ -31,12 +31,12 @@ def icsspec(eleckineng_arr, photeng_arr, rs):
     
     gamma_where_rel = 10
 
-    gamma_arr = 1 + eleckineng_arr/phys.me
+    gamma_arr = eleceng_arr/phys.me
     beta_arr = np.sqrt(1 - 1/gamma_arr**2)
 
     def integrand_div_by_CMB(CMBeng, eleckineng, photeng):
 
-        gamma = 1 + eleckineng/phys.me
+        gamma = eleceng/phys.me
         beta = np.sqrt(1 - 1/gamma**2)
 
         relativistic = False
