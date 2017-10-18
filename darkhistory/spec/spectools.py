@@ -1,4 +1,4 @@
-"""``spectools`` contains functions useful for processing spectral data."""
+"""Functions useful for processing spectral data."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -53,7 +53,7 @@ def get_log_bin_width(eng):
 def rebin_N_arr(N_arr, in_eng, out_eng):
     """Rebins an array of particle number with fixed energy.
     
-    Returns a ``Spectrum`` object. The rebinning conserves both total number and total energy.
+    Returns a `Spectrum` object. The rebinning conserves both total number and total energy.
 
     Parameters
     ----------
@@ -67,7 +67,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     Returns
     -------
     Spectrum
-        The output ``Spectrum`` with appropriate dN/dE, with abscissa out_eng.
+        The output `Spectrum` with appropriate dN/dE, with abscissa out_eng.
 
     Raises
     ------
@@ -88,6 +88,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     """
 
     from darkhistory.spec.spectrum import Spectrum
+    # This avoids circular dependencies.
 
     if N_arr.size != in_eng.size:
         raise TypeError("The array for number of particles has a different length from the abscissa.")
@@ -189,9 +190,6 @@ def discretize(func_dNdE, eng):
     Spectrum
         The discretized spectrum. rs is set to -1, and must be set manually. 
 
-    Notes
-    -----
-
     """
     def func_EdNdE(eng):
         return func_dNdE(eng)*eng
@@ -212,3 +210,82 @@ def discretize(func_dNdE, eng):
 
 
     return rebin_N_arr(N, eng_mean, eng)
+
+def evolve(spec, tflist, end_rs=None, save_steps=False):
+    """Evolves a spectrum using a list of transfer functions. 
+    
+    Parameters
+    ----------
+    spec : Spectrum
+        The initial spectrum to evolve. 
+    tflist_in : TransferFuncList
+        The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.
+    end_rs : float, optional
+        The final redshift to evolve to.
+    save_steps : bool, optional
+        Saves every intermediate spectrum if true.
+
+    Returns
+    -------
+    Spectrum or Spectra
+        The evolved final spectrum, with or without intermediate steps. 
+
+    """
+    from darkhistory.spec.spectra import Spectra
+
+    if not np.all(spec.eng == tflist.in_eng):
+        raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
+    # if (len(set(np.diff(np.log(tflist.rs)))) > 1 or
+    #     np.abs(np.log(tflist.rs[0]/tflist.rs[1]) - tflist.dlnz) > 1e-5
+    # ):
+    #     raise TypeError("transfer functions must be spaced at the same interval as dlnz of each transfer function for now.")
+
+    if tflist.tftype != 'rs':
+            tflist.transpose()
+
+    if end_rs is not None:
+        # Calculates where to stop the transfer function multiplication.
+        rs_ind = np.arange(tflist.rs.size)
+        rs_last_ind = rs_ind[np.where(tflist.rs > end_rs)][-1]
+
+    else:
+
+        rs_last_ind = tflist.rs.size-1 
+
+    if save_steps is True:
+
+        out_specs = Spectra([spec])
+        append_spec = out_specs.append
+
+        for i in np.arange(rs_last_ind):
+            append_spec(tflist[i].sum_specs(out_specs[-1]))
+            out_specs[-1].rs = tflist.rs[i+1]
+            
+        # for i in tqdm(np.arange(rs_last_ind).astype(int)):
+        #     tf_at_rs = Spectra([tf[i] for tf in tflist])
+        #     append_spec(tf_at_rs.sum_specs(out_specs[-1]))
+        #     out_specs[-1].rs = tflist.rs[i+1]
+
+        out_specs.rs = np.array([s.rs for s in out_specs])
+        out_specs.grid_values = np.stack(
+            [s.dNdE for s in out_specs.spec_arr]
+        )
+
+        return out_specs
+
+    else:
+
+        for i in np.arange(rs_last_ind):
+            spec = tflist[i].sum_specs(spec)
+            spec.rs = tflist.rs[i+1]
+        # for i in tqdm(np.arange(rs_last_ind).astype(int)):
+        #     tf_at_rs = Spectra([tf[i] for tf in tflist])
+        #     spec = tf_at_rs.sum_specs(spec)
+        #     spec.rs = tflist.rs[i+1]
+
+        return spec
+
+
+
+
+

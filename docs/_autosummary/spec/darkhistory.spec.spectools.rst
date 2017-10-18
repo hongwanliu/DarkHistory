@@ -11,6 +11,7 @@ spectools
       get_bin_bound
       get_log_bin_width
       rebin_N_arr
+      evolve
 
 Methods
 -------
@@ -19,6 +20,7 @@ Methods
    .. autofunction:: get_bin_bound
    .. autofunction:: get_log_bin_width
    .. autofunction:: rebin_N_arr
+   .. autofunction:: evolve
    
    
 

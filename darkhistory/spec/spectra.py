@@ -1,4 +1,4 @@
-"""``spectra`` contains the ``Spectra`` class."""
+"""Contains the `Spectra` class."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -8,23 +8,27 @@ import matplotlib.pyplot as plt
 import warnings
 
 from scipy import integrate
+from scipy import interpolate
+
 
 class Spectra:
-    """Structure for a collection of ``Spectrum`` objects.
+    """Structure for a collection of `Spectrum` objects.
 
     Parameters
     ---------- 
-    spec_arr : list of ``Spectrum``
-        List of ``Spectrum`` to be stored together.
+    spec_arr : list of Spectrum
+        List of Spectrum to be stored together.
     rebin_eng : ndarray, optional
-        New abscissa to rebin all of the ``Spectrum`` objects into.
+        New abscissa to rebin all of the `Spectrum` objects into.
 
     Attributes
     ----------
+    spec_arr : list of Spectrum
+        List of Spectrum to be stored together.
     eng : ndarray
-        Energy abscissa for the ``Spectrum``.
+        Energy abscissa for the Spectrum.
     rs : ndarray
-        The redshifts of the ``Spectrum`` objects.  
+        The redshifts of the `Spectrum` objects.  
     grid_values : ndarray
         2D array with the spectra laid out in (rs, eng). 
     
@@ -36,8 +40,7 @@ class Spectra:
     __array_priority__ = 1
 
     def __init__(self, spec_arr, rebin_eng=None):
-
-        if len(set(spec.length for spec in spec_arr)) > 1:
+        if len(set([spec.length for spec in spec_arr])) > 1:
             raise TypeError("all spectra must have the same length.")
 
         if not np.all(np.diff(spec_arr[0].eng) > 0):
@@ -95,7 +98,7 @@ class Spectra:
 
 
     def __add__(self, other): 
-        """Adds two ``Spectra`` instances together.
+        """Adds two `Spectra` instances together.
 
         Parameters
         ----------
@@ -104,22 +107,25 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise sum of the ``Spectrum`` objects in each ``Spectra``.
+            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add ``Spectra`` objects together. 
+        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add `Spectra` objects together. 
 
         See Also
         --------
-        spectrum.Spectra.__radd__
+        spectra.Spectra.__radd__
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not util.array_equal(self.eng, other.eng):
+            if not np.array_equal(self.eng, other.eng):
                 raise TypeError('abscissae are different for the two Spectra.')
-            if not util.array_equal(self.rs, other.rs):
-                raise TypeError('redshifts are different for the two Spectra.')
+
+            # Need to remove this in order to add transfer functions for TransferFuncList.at_val
+            
+            # if not np.array_equal(self.rs, other.rs):
+            #     raise TypeError('redshifts are different for the two Spectra.')
 
             return Spectra([spec1 + spec2 for spec1,spec2 in zip(self.spec_arr, other.spec_arr)])
 
@@ -127,7 +133,7 @@ class Spectra:
 
 
     def __radd__(self, other): 
-        """Adds two ``Spectra`` instances together.
+        """Adds two `Spectra` instances together.
 
         Parameters
         ----------
@@ -136,7 +142,7 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise sum of the ``Spectrum`` objects in each ``Spectra``.
+            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
 
         Notes
         -----
@@ -144,21 +150,24 @@ class Spectra:
 
         See Also
         --------
-        spectrum.Spectra.__add__
+        spectra.Spectra.__add__
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not util.array_equal(self.eng, other.eng):
+            if not np.array_equal(self.eng, other.eng):
                 raise TypeError('abscissae are different for the two Spectra.')
-            if not util.array_equal(self.rs, other.rs):
-                raise TypeError('redshifts are different for the two Spectra.')
+            
+            # Need to remove this in order to add transfer functions for TransferFuncList.at_val
+
+            # if not np.array_equal(self.rs, other.rs):
+            #     raise TypeError('redshifts are different for the two Spectra.')
 
             return Spectra([spec1 + spec2 for spec1,spec2 in zip(self.spec_arr, other.spec_arr)])
 
         else: raise TypeError('adding an object that is not of class Spectra.')
 
     def __sub__(self, other):
-        """Subtracts one ``Spectra`` instance from another. 
+        """Subtracts one `Spectra` instance from another. 
 
         Parameters
         ----------
@@ -167,7 +176,7 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which has the subtracted list of `dNdE`. 
+            New `Spectra` instance which has the subtracted list of `dNdE`. 
 
         Notes
         -----
@@ -180,7 +189,7 @@ class Spectra:
         return self + -1*other 
 
     def __rsub__(self, other):
-        """Subtracts one ``Spectra`` instance from another. 
+        """Subtracts one `Spectra` instance from another. 
 
         Parameters
         ----------
@@ -189,7 +198,7 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which has the subtracted list of `dNdE`. 
+            New `Spectra` instance which has the subtracted list of `dNdE`. 
 
         Notes
         -----
@@ -207,12 +216,12 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance with the `dNdE` negated.
+            New `Spectra` instance with the `dNdE` negated.
         """
         return -1*self
 
     def __mul__(self, other):
-        """Takes the product of two ``Spectra`` instances. 
+        """Takes the product of two `Spectra` instances. 
 
         Parameters
         ----------
@@ -221,11 +230,11 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise product of the ``Spectrum`` objects in each ``Spectra``. 
+            New `Spectra` instance which is an element-wise product of the `Spectrum` objects in each Spectra. 
 
         Notes
         -----
-        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to add ``Spectra`` objects together.
+        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to add `Spectra` objects together.
 
         See Also
         --------
@@ -234,14 +243,15 @@ class Spectra:
         if np.issubdtype(type(other), float) or np.issubdtype(type(other), int):
             return Spectra([other*spec for spec in self])
         elif np.issubclass_(type(other), Spectra):
-            if self.rs != other.rs or self.eng != other.eng:
+            if (not np.array_equal(self.rs, other.rs) 
+                or not np.array_equal(self.eng, other.eng)):
                 raise TypeError("the two spectra do not have the same redshift or abscissae.")
             return Spectra([spec1*spec2 for spec1,spec2 in zip(self, other)])
         else:
             raise TypeError("can only multiply Spectra or scalars.")
 
     def __rmul__(self, other):
-        """Takes the product of two ``Spectra`` instances. 
+        """Takes the product of two `Spectra` instances. 
 
         Parameters
         ----------
@@ -250,11 +260,11 @@ class Spectra:
         Returns
         -------
         Spectra
-            New ``Spectra`` instance which is an element-wise product of the ``Spectrum`` objects in each ``Spectra``. 
+            New `Spectra` instance which is an element-wise product of the `Spectrum` objects in each Spectra. 
 
         Notes
         -----
-        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to add ``Spectra`` objects together.
+        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to add `Spectra` objects together.
 
         See Also
         --------
@@ -270,7 +280,7 @@ class Spectra:
             raise TypeError("can only multiply Spectra or scalars.")
 
     def __truediv__(self,other):
-        """Divides ``Spectra`` by a number or another ``Spectra``. 
+        """Divides Spectra by a number or another Spectra. 
 
         Parameters
         ----------
@@ -282,7 +292,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide ``Spectra`` objects by a number or another ``Spectra``. 
+        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects by a number or another Spectra. 
 
         See Also
         --------
@@ -295,7 +305,7 @@ class Spectra:
             return self*(1/other)
 
     def __rtruediv__(self,other):
-        """Divides ``Spectra`` by a number or another ``Spectra``. 
+        """Divides Spectra by a number or another Spectra. 
 
         Parameters
         ----------
@@ -307,7 +317,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__truediv__`, allows the use of the symbol / to divide ``Spectra`` objects by a number or another ``Spectra``. 
+        This special function, together with `Spectra.__truediv__`, allows the use of the symbol / to divide `Spectra` objects by a number or another Spectra. 
 
         See Also
         --------
@@ -318,9 +328,9 @@ class Spectra:
         return other*invSpec   
 
     def integrate_each_spec(self,weight=None):
-        """Sums each ``Spectrum``, each `eng` bin weighted by `weight`. 
+        """Sums each Spectrum, each `eng` bin weighted by `weight`. 
 
-        Equivalent to contracting `weight` with each `dNdE` in ``Spectra``, `weight` should have length `self.length`. 
+        Equivalent to contracting `weight` with each `dNdE` in Spectra, `weight` should have length `self.length`. 
 
         Parameters
         ----------
@@ -348,13 +358,13 @@ class Spectra:
 
         Parameters
         ----------
-        weight : ndarray or ``Spectrum``, optional
+        weight : ndarray or Spectrum, optional
             The weight in each redshift bin, with weight of 1 for every bin if not specified.
 
         Returns
         -------
-        ndarray or ``Spectrum``
-            An array or ``Spectrum`` of weight sums, one for each energy in `self.eng`, with length `self.length`. 
+        ndarray or Spectrum
+            An array or Spectrum of weight sums, one for each energy in `self.eng`, with length `self.length`. 
 
         """
         if weight is None:
@@ -369,7 +379,7 @@ class Spectra:
             raise TypeError("mat must be an ndarray.")
 
     def rebin(self, out_eng):
-        """ Re-bins all ``Spectrum`` objects according to a new abscissa.
+        """ Re-bins all `Spectrum` objects according to a new abscissa.
 
         Rebinning conserves total number and total energy.
         
@@ -386,9 +396,12 @@ class Spectra:
             spec.rebin(out_eng)
 
         self.eng = out_eng
+        self.grid_values = np.stack(
+            [spec.dNdE for spec in self.spec_arr]
+        )
 
     def append(self, spec):
-        """Appends a new ``Spectrum``. 
+        """Appends a new Spectrum. 
 
         Parameters
         ----------
@@ -403,29 +416,152 @@ class Spectra:
         self.spec_arr.append(spec)
         self.rs = np.append(self.rs, spec.rs)
 
-    def plot(self, ind, step=1):
-        """Plots the contained ``Spectrum`` objects. 
+    def at_rs(self, new_rs, interp_type='val',bounds_err=True):
+        """Interpolates the transfer function at a new redshift. 
+
+        Interpolation is logarithmic. 
 
         Parameters
         ----------
-        ind : int or tuple of int
-            Index of ``Spectrum`` to plot, or a tuple of indices providing a range of ``Spectrum`` to plot. 
+        new_rs : ndarray
+            The redshifts or redshift bin indices at which to interpolate. 
+        interp_type : {'val', 'bin'}
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+        bounds_err : bool, optional
+            Whether to return an error if outside of the bounds for the interpolation. 
+        """
 
+        interp_func = interpolate.interp2d(
+            self.eng, np.log(self.rs), self.grid_values,
+            bounds_error = bounds_err, fill_value = 0
+        )
+
+        if interp_type == 'val':
+            
+            new_spec_arr = [
+                Spectrum(self.eng, interp_func(self.eng, np.log(rs)), rs)
+                    for rs in new_rs
+            ]
+            return Spectra(new_spec_arr)
+
+        elif interp_type == 'bin':
+            
+            log_new_rs = np.interp(
+                np.log(new_rs), 
+                np.arange(self.rs.size), 
+                np.log(self.rs)
+            )
+
+            return self.at_rs(np.exp(log_new_rs))
+
+        else:
+            raise TypeError("invalid interp_type specified.")
+
+    def plot(self, ax, ind=None, step=1, indtype='ind', 
+        abs_plot=False, **kwargs):
+        """Plots the contained `Spectrum` objects. 
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axis handle of the figure to show the plot in.
+        ind : int, float, tuple or ndarray, optional.
+            Index or redshift of Spectrum to plot, or a tuple of indices or redshifts providing a range of Spectrum to plot, or a list of indices or redshifts of Spectrum to plot.
         step : int, optional
-            The number of steps to take before choosing one ``Spectrum`` to plot. 
+            The number of steps to take before choosing one Spectrum to plot.
+        indtype : {'ind', 'rs'}, optional
+            Specifies whether ind is an index or a redshift.
+        abs_plot :  bool, optional
+            Plots the absolute value if true.
+        **kwargs : optional
+            All additional keyword arguments to pass to matplotlib.plt.plot. 
 
         Returns
         -------
         matplotlib.figure
         """
-        fig = plt.figure()
-        if np.issubdtype(type(ind), int):
-            plt.plot(self.eng, self.spec_arr[ind].dNdE)
-            return fig
-        elif np.issubdtype(type(ind), tuple):
-            spec_to_plot = np.stack([self.spec_arr[i].dNdE for i in np.arange(ind[0], ind[1], step)], 
-                axis=-1)
-            plt.plot(self.eng, spec_to_plot)
-            return fig
+        
+        if ind is None:
+            return self.plot(
+                ax, ind=np.arange(self.rs.size), 
+                abs_plot=abs_plot, **kwargs
+            )
+
+        if indtype == 'ind':
+
+            if np.issubdtype(type(ind), int):
+                if abs_plot:
+                    return ax.plot(
+                        self.eng, 
+                        np.abs(self.spec_arr[ind].dNdE), 
+                        **kwargs
+                    )
+                else:
+                    return ax.plot(
+                        self.eng, 
+                        self.spec_arr[ind].dNdE, 
+                        **kwargs
+                    )
+
+            elif isinstance(ind, tuple):
+                if abs_plot:
+                    spec_to_plot = np.stack(
+                        [np.abs(self.spec_arr[i].dNdE) 
+                            for i in 
+                                np.arange(ind[0], ind[1], step)
+                        ], 
+                        axis=-1
+                    )
+                else:
+                    spec_to_plot = np.stack(
+                        [self.spec_arr[i].dNdE 
+                            for i in 
+                                np.arange(ind[0], ind[1], step)
+                        ], 
+                        axis=-1
+                    )
+                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                
+            
+            elif isinstance(ind, np.ndarray):
+                fig = plt.figure()
+                if abs_plot:
+                    spec_to_plot = np.stack(
+                        [np.abs(self.spec_arr[i].dNdE)
+                            for i in ind
+                        ], axis=-1
+                    ) 
+                else:
+                    spec_to_plot = np.stack(
+                        [self.spec_arr[i].dNdE
+                            for i in ind
+                        ], axis=-1
+                    )
+                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                
+
+            else:
+                raise TypeError("ind should be either int, tuple of int or ndarray.")
+
+        if indtype == 'rs':
+
+            if (np.issubdtype(type(ind),int) or 
+                    np.issubdtype(type(ind), float)):
+                return self.at_rs(np.array([ind])).plot(
+                    ax, ind=0, abs_plot=abs_plot, **kwargs
+                )
+
+            elif isinstance(ind, tuple):
+                rs_to_plot = np.arange(ind[0], ind[1], step)
+                return self.at_rs(rs_to_plot).plot(
+                    ax, abs_plot=abs_plot,**kwargs
+                )
+
+            elif isinstance(ind, np.ndarray):
+                return self.at_rs(ind).plot(
+                    ax, abs_plot=abs_plot, **kwargs
+                )
+
         else:
-            raise TypeError("ind should be either an integer or a tuple of integers.")
+            raise TypeError("indtype must be either ind or rs.")
+

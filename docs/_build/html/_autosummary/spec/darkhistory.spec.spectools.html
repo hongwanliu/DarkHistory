@@ -99,6 +99,8 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">spectrum</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectra.html">spectra</a></li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.transferfunction.html">transferfunction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.transferfunclist.html">transferfunclist</a></li>
 </ul>
 </li>
 </ul>
@@ -172,7 +174,7 @@
             
   <div class="section" id="module-darkhistory.spec.spectools">
 <span id="spectools"></span><h1>spectools<a class="headerlink" href="#module-darkhistory.spec.spectools" title="Permalink to this headline">¶</a></h1>
-<p><code class="docutils literal"><span class="pre">spectools</span></code> contains functions useful for processing spectral data.</p>
+<p>Functions useful for processing spectral data.</p>
 <p class="rubric">Table of Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -191,6 +193,9 @@
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng,&nbsp;out_eng)</td>
 <td>Rebins an array of particle number with fixed energy.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code></a>(spec,&nbsp;tflist[,&nbsp;end_rs,&nbsp;save_steps])</td>
+<td>Evolves a spectrum using a list of transfer functions.</td>
 </tr>
 </tbody>
 </table>
@@ -220,7 +225,6 @@
 </tr>
 </tbody>
 </table>
-<p class="rubric">Notes</p>
 </dd></dl>
 
 <dl class="function">
@@ -262,7 +266,7 @@
 <dt id="darkhistory.spec.spectools.rebin_N_arr">
 <code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rebins an array of particle number with fixed energy.</p>
-<p>Returns a <code class="docutils literal"><span class="pre">Spectrum</span></code> object. The rebinning conserves both total number and total energy.</p>
+<p>Returns a <cite>Spectrum</cite> object. The rebinning conserves both total number and total energy.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -274,7 +278,7 @@
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The output <code class="docutils literal"><span class="pre">Spectrum</span></code> with appropriate dN/dE, with abscissa out_eng.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The output <cite>Spectrum</cite> with appropriate dN/dE, with abscissa out_eng.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
@@ -295,6 +299,32 @@
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-func docutils literal"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
 </div>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.evolve">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>spec</em>, <em>tflist</em>, <em>end_rs=None</em>, <em>save_steps=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.evolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evolves a spectrum using a list of transfer functions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>spec</strong> (<a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – The initial spectrum to evolve.</li>
+<li><strong>tflist_in</strong> (<a class="reference internal" href="darkhistory.spec.transferfunclist.html#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><em>TransferFuncList</em></a>) – The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.</li>
+<li><strong>end_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – The final redshift to evolve to.</li>
+<li><strong>save_steps</strong> (<em>bool</em><em>, </em><em>optional</em>) – Saves every intermediate spectrum if true.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The evolved final spectrum, with or without intermediate steps.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a> or <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div></blockquote>

@@ -211,7 +211,7 @@
 <td>Stefan-Boltzmann constant in eV^-3 cm^-2 s^2.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.rydberg" title="darkhistory.physics.rydberg"><code class="xref py py-obj docutils literal"><span class="pre">rydberg</span></code></a></td>
-<td>Ionization potential of ground state hydrogen.</td>
+<td>Ionization potential of ground state hydrogen in eV.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.lya_eng" title="darkhistory.physics.lya_eng"><code class="xref py py-obj docutils literal"><span class="pre">lya_eng</span></code></a></td>
 <td>Lyman alpha transition energy in eV.</td>
@@ -295,28 +295,28 @@
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.hubble" title="darkhistory.physics.hubble"><code class="xref py py-obj docutils literal"><span class="pre">hubble</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;…])</td>
-<td>Returns the Hubble parameter at a given redshift.</td>
+<td>Hubble parameter in s^-1.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.dtdz" title="darkhistory.physics.dtdz"><code class="xref py py-obj docutils literal"><span class="pre">dtdz</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;omega_lambda])</td>
-<td>Returns dt/dz at a given redshift.</td>
+<td>dt/dz in s.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.TCMB" title="darkhistory.physics.TCMB"><code class="xref py py-obj docutils literal"><span class="pre">TCMB</span></code></a>(rs)</td>
-<td>Returns the CMB temperature at a given redshift in eV.</td>
+<td>CMB temperature in eV.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.get_inj_rate" title="darkhistory.physics.get_inj_rate"><code class="xref py py-obj docutils literal"><span class="pre">get_inj_rate</span></code></a>(inj_type,&nbsp;inj_fac)</td>
-<td>Returns the injection rate function.</td>
+<td>Dark matter injection rate function.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.photo_ion_rate" title="darkhistory.physics.photo_ion_rate"><code class="xref py py-obj docutils literal"><span class="pre">photo_ion_rate</span></code></a>(rs,&nbsp;eng,&nbsp;xH,&nbsp;xe[,&nbsp;atom])</td>
-<td>Returns the photoionization rate.</td>
+<td>Photoionization rate in cm^3 s^-1.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.photo_ion_xsec" title="darkhistory.physics.photo_ion_xsec"><code class="xref py py-obj docutils literal"><span class="pre">photo_ion_xsec</span></code></a>(eng,&nbsp;species)</td>
-<td>Returns the photoionization cross section.</td>
+<td>Photoionization cross section in cm^2.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.tau_sobolev" title="darkhistory.physics.tau_sobolev"><code class="xref py py-obj docutils literal"><span class="pre">tau_sobolev</span></code></a>(rs)</td>
-<td>Returns the Sobolev optical depth.</td>
+<td>Sobolev optical depth.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.CMB_spec" title="darkhistory.physics.CMB_spec"><code class="xref py py-obj docutils literal"><span class="pre">CMB_spec</span></code></a>(eng,&nbsp;temp)</td>
-<td>Returns the CMB spectrum in number of photons/cm^3/eV.</td>
+<td>CMB spectrum in number of photons/cm^3/eV.</td>
 </tr>
 </tbody>
 </table>
@@ -489,7 +489,7 @@
 <div><dl class="function">
 <dt id="darkhistory.physics.hubble">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">hubble</code><span class="sig-paren">(</span><em>rs</em>, <em>H0=2.1802207e-18</em>, <em>omega_m=0.3156</em>, <em>omega_rad=8e-05</em>, <em>omega_lambda=0.6844</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.hubble" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Hubble parameter at a given redshift.</p>
+<dd><p>Hubble parameter in s^-1.</p>
 <p>Assumes a flat universe.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -517,7 +517,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.dtdz">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">dtdz</code><span class="sig-paren">(</span><em>rs</em>, <em>H0=2.1802207e-18</em>, <em>omega_m=0.3156</em>, <em>omega_rad=8e-05</em>, <em>omega_lambda=0.6844</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.dtdz" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns dt/dz at a given redshift.</p>
+<dd><p>dt/dz in s.</p>
 <p>Assumes a flat universe.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -545,7 +545,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.TCMB">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">TCMB</code><span class="sig-paren">(</span><em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.TCMB" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the CMB temperature at a given redshift in eV.</p>
+<dd><p>CMB temperature in eV.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -563,7 +563,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.get_inj_rate">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">get_inj_rate</code><span class="sig-paren">(</span><em>inj_type</em>, <em>inj_fac</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.get_inj_rate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the injection rate function.</p>
+<dd><p>Dark matter injection rate function.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -587,7 +587,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.photo_ion_rate">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">photo_ion_rate</code><span class="sig-paren">(</span><em>rs</em>, <em>eng</em>, <em>xH</em>, <em>xe</em>, <em>atom=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.photo_ion_rate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the photoionization rate.</p>
+<dd><p>Photoionization rate in cm^3 s^-1.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -614,7 +614,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.photo_ion_xsec">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">photo_ion_xsec</code><span class="sig-paren">(</span><em>eng</em>, <em>species</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.photo_ion_xsec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the photoionization cross section.</p>
+<dd><p>Photoionization cross section in cm^2.</p>
 <p>Cross sections for hydrogen, neutral helium and singly-ionized helium are available.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -639,7 +639,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.tau_sobolev">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">tau_sobolev</code><span class="sig-paren">(</span><em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.tau_sobolev" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Sobolev optical depth.</p>
+<dd><p>Sobolev optical depth.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -657,7 +657,7 @@
 <dl class="function">
 <dt id="darkhistory.physics.CMB_spec">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">CMB_spec</code><span class="sig-paren">(</span><em>eng</em>, <em>temp</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.CMB_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the CMB spectrum in number of photons/cm^3/eV.</p>
+<dd><p>CMB spectrum in number of photons/cm^3/eV.</p>
 <p>Returns zero if the energy exceeds 500 times the temperature.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

@@ -12,6 +12,7 @@ spec
    darkhistory.spec.spectrum
    darkhistory.spec.spectra
    darkhistory.spec.transferfunction
+   darkhistory.spec.transferfunclist
 
    
    
