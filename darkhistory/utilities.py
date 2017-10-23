@@ -82,7 +82,7 @@ def compare_arr(ndarray_list):
 def log_1_plus_x(x):
     """ Computes log(1+x) with greater floating point accuracy. 
 
-    See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. 
+    See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.
 
     Parameters
     ----------
@@ -94,7 +94,11 @@ def log_1_plus_x(x):
     float
         log(1+x). 
     """
-    return x*np.log(1+x)/((1+x) - 1)
+    if (1+x) - 1 > 0:
+        return x*np.log(1+x)/((1+x) - 1)
+    else:
+        n = 1 + np.arange(11)
+        return np.sum((-1)**(n-1)*x**n/n)
 
 def diff_pow(a, b, n):
     """ Computes a^n - b^n with greater floating point accuracy. 
@@ -115,10 +119,58 @@ def diff_pow(a, b, n):
     float
         The computed value. 
     """
-    if n > 11:
-        raise TypeError('Cannot compute a^n - b^n for n > 11.')
+    if n == 0:
+        return 0
+    elif n == 1:
+        return a - b
+    elif n == 2:
+        return (a+b)*(a-b)
+    elif n == 3:
+        return (a-b)*(a**2 + a*b + b**2)
+    elif n == 4:
+        return (a-b)*(a+b)*(a**2 + b**2)
+    elif n == 5:
+        return (a-b)*(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
+    elif n == 6:
+        return (a-b)*(a+b)*(a**2 - a*b + b**2)*(a**2 + a*b + b**2)
+    elif n == 7:
+        return (a-b)*(a**6 + a**5*b + a**4*b**2 
+                    + a**3*b**3 + a**2*b**4 + a*b**5 + b**6
+        )
+    elif n == 8:
+        return (a-b)*(a+b)*(a**2 + b**2)*(a**4 + b**4)
+    elif n == 9:
+        return (a-b)*(a**2 + a*b + b**2)*(a**6 + a**3*b**3 + b**6)
+    elif n == 10:
+        return (a-b)*(a+b)*(
+            (a**4 - a**3*b + a**2*b**2 - a*b**3 + b**4)
+            *(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
+        )
+    elif n == 11:
+        return (a-b)*(
+            a**10 + a**9*b + a**8*b**2 + a**7*b**3 + a**6*b**4
+            + a**5*b**5 + a**4*b**6 + a**3*b**7 + a**2*b**8
+            + a*b**9 + b**10
+        )
+    else: 
+        raise TypeError('n > 11 not supported.')
 
-    expr = {0: 0, 
-            1: a - b, 
-            2: 
-    }
+def check_err(val, err, epsrel):
+    """ Checks the relative error given a tolerance.
+    
+    Parameters
+    ----------
+    val : float or ndarray
+        The computed value. 
+    err : float or ndarray
+        The computed error. 
+    epsrel : float
+        The target tolerance. 
+
+    """
+    if np.max(np.abs(err/val)) > epsrel:
+        print('Series relative error is: ', err/val)
+        print('Relative error required is: ', epsrel)
+        raise RuntimeError('Relative error in series too large.')
+        
+    return None
