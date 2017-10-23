@@ -78,3 +78,47 @@ def compare_arr(ndarray_list):
     print(np.stack(ndarray_list, axis=-1))
 
     return 0
+
+def log_1_plus_x(x):
+    """ Computes log(1+x) with greater floating point accuracy. 
+
+    See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. 
+
+    Parameters
+    ----------
+    x : float
+        The input value. 
+
+    Returns
+    -------
+    float
+        log(1+x). 
+    """
+    return x*np.log(1+x)/((1+x) - 1)
+
+def diff_pow(a, b, n):
+    """ Computes a^n - b^n with greater floating point accuracy. 
+
+    Factorizes out the difference between a and b first. 
+
+    Parameters
+    ----------
+    a : float
+        a^n to be computed. 
+    b : float
+        b^n to be computed. 
+    n : int
+        The exponent. 
+
+    Returns
+    -------
+    float
+        The computed value. 
+    """
+    if n > 11:
+        raise TypeError('Cannot compute a^n - b^n for n > 11.')
+
+    expr = {0: 0, 
+            1: a - b, 
+            2: 
+    }
