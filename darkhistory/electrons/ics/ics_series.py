@@ -302,7 +302,120 @@ def F_inv(a,b,tol=1e-30):
 
     return integral
 
+def F_log(a,b,tol=1e-30):
+    """Definite integral of log(x)/(exp(x) - 1). 
 
+    Parameters
+    ----------
+    a : ndarray
+        Lower limit of integration. 
+    b : ndarray
+        Upper limit of integration.
+    tol : float
+        The relative tolerance to be reached.
+
+    Returns
+    -------
+    float
+        The resulting integral.   
+
+    """
+
+    # bound is fixed. If changed to another number, the exact integral from bound to infinity later in the code needs to be changed to the appropriate value.
+    bound = 2.
+    
+
+    # Two different series to approximate this: below and above bound.
+
+    def low_summand(x):
+        k = 1
+        while True:
+            if k == 1:
+                next_term = (1/2)*(np.log(x)**2) - (x/2)*(np.log(x) - 1)
+                k += 1
+            else:
+                next_term = (
+                    sp.bernoulli(k)[-1]*(x**k)/
+                    (sp.factorial(k)*k**2)*(k*np.log(x) - 1)
+                )
+                # B_n for n odd, n > 1 is zero.
+                k += 2
+            yield next_term
+
+    def high_summand(x):
+        k = 1
+        while True:
+            # sp.expn does not support float128.
+            next_term = (1/k)*(
+                np.exp(-k*x)*np.log(x) + 
+                sp.expn(1, k*np.array(x, dtype='float64'))
+            )
+            k += 1
+            yield next_term
+
+    err = 10*tol
+
+    both_low  = (a < bound) & (b <  bound)
+    low_high  = (a < bound) & (b >= bound)
+    both_high = (a > bound) & (b >  bound)
+
+    integral = np.zeros(a.size)
+
+    # Both low
+
+    if np.any(both_low):
+
+        low_sum_a = low_summand(a[both_low])
+        low_sum_b = low_summand(b[both_low])
+        integral[both_low] = next(low_sum_b) - next(low_sum_a)
+
+        while err > tol:
+            next_term = next(low_sum_b) - next(low_sum_a)
+            err = np.max(np.abs(next_term/integral[both_low]))
+            integral[both_low] += next_term
+
+    err = 10*tol
+
+    # a low b high
+
+    if np.any(low_high):
+
+        # Evaluate the definite integral from a to 2, and then 2 to b.
+
+        low_sum_a = low_summand(a[low_high])
+        high_sum_b = high_summand(b[low_high])
+        low_sum_bound = low_summand(bound)
+
+        # Exact integral from 2 to infinity.
+        int_bound_inf = np.float128(0.15171347859984083704)
+        int_a_bound = next(low_sum_bound) - next(low_sum_a)
+        int_bound_b = int_bound_inf - next(high_sum_b)
+        integral[low_high] = int_a_bound + int_bound_b
+
+        while err > tol:
+            next_term_a_bound = next(low_sum_bound) - next(low_sum_a)
+            # Only need to compute the next term for the b to inf integral.
+            next_term_bound_b = - next(high_sum_b)
+            next_term = next_term_a_bound + next_term_bound_b
+            err = np.max(np.abs(next_term/integral[low_high]))
+            integral[low_high] += next_term
+
+    err = 10*tol
+
+    # Both high
+
+    if np.any(both_high):
+
+        high_sum_a = high_summand(a[both_high])
+        high_sum_b = high_summand(b[both_high])
+        integral[both_high] = next(high_sum_a) - next(high_sum_b)
+
+        while err > tol:
+            next_term = next(high_sum_a) - next(high_sum_b)
+            err = np.max(np.abs(next_term/integral[both_high]))
+            integral[both_high] += next_term
+
+    return integral
 
 
 
