@@ -1,10 +1,12 @@
-"""Series for computation of ICS spectrum without quadrature."""
+"""Nonrelativistic ICS spectrum."""
 
 import numpy as np 
 import scipy.special as sp
 from darkhistory.utilities import log_1_plus_x
 from darkhistory.utilities import diff_pow
 from darkhistory.utilities import check_err
+
+# General series expressions for integrals over Planck distribution.
 
 def F1(a,b,epsrel=0):
     """Definite integral of x/[(exp(x) - 1)]. 
@@ -416,6 +418,238 @@ def F_log(a,b,tol=1e-30):
             integral[both_high] += next_term
 
     return integral
+
+# Low beta expansion functions
+
+def Q(beta, photeng, T):
+
+    eta = photeng/T
+
+    if eta > 0.01:
+
+        q2_at_0 = 4*eta**2*T**2/(np.exp(eta) - 1)**2*(
+            np.exp(eta)*(eta - 1) + 1
+        )
+
+        q4_at_0 = 8*eta**2*T**2/(np.exp(eta) - 1)**4*(
+            np.exp(2*eta)*(8*eta**3 
+                + (4*eta**3 + 50*eta - 36)*np.cosh(eta)
+                + 2*(9 - 14*eta**2)*np.sinh(eta) -50*eta + 27
+            ) + 9
+        )
+
+        q6_at_0 = 4*eta**2*T**2/(np.exp(eta) - 1)**6*(
+            np.exp(3*eta)*(
+                -16*eta**2*np.sinh(eta)*(340*eta**2 
+                + (68*eta**2 + 885)*np.cosh(eta) - 885)
+                +3*(
+                    352*eta**5 - 3096*eta**3 
+                    + 6150*eta - 1125*np.sinh(eta) 
+                    + 900*np.sinh(2*eta) - 2250
+                )
+                +np.cosh(eta)*(
+                    832*eta**5 + 6192*eta**3 - 24600*eta + 10125
+                )
+                +np.cosh(2*eta)*(
+                    32*eta**5 + 3096*eta**3 + 6150*eta - 4050
+                )   
+            ) +675
+        )
+
+    else:
+
+        q2_at_0 = T**2*(
+            2*eta**2 + eta**5/45 - eta**7/1260 + eta**9/37800
+        )
+
+        q4_at_0 = T**2*(
+            36*eta**2 - 68*eta**3/3 + 2*eta**5 
+            - 89*eta**7/630 + 149*eta**9/18900
+        )
+
+        q6_at_0 = T**2*(
+            1350*eta**2 - 1250*eta**3 + 1123*eta**5/5 
+            - 2381*eta**7/84 + 6373*eta**9/2520
+        )
+
+    return 2*(
+        q2_at_0*beta**2/2 
+        + q4_at_0*beta**4/24 
+        + q6_at_0*beta**6/720
+    )
+
+def term_Q_and_K(beta, photeng, T):
+
+    eta = photeng/T
+
+    if eta > 0.01:
+
+        q2_at_0 = 4*eta**2*T**2/(np.exp(eta) - 1)**2*(
+            np.exp(eta)*(eta - 1) + 1
+        )
+
+        q4_at_0 = 8*eta**2*T**2/(np.exp(eta) - 1)**4*(
+            np.exp(2*eta)*(8*eta**3 
+                + (4*eta**3 + 50*eta - 36)*np.cosh(eta)
+                + 2*(9 - 14*eta**2)*np.sinh(eta) -50*eta + 27
+            ) + 9
+        )
+
+        q6_at_0 = 4*eta**2*T**2/(np.exp(eta) - 1)**6*(
+            np.exp(3*eta)*(
+                -16*eta**2*np.sinh(eta)*(340*eta**2 
+                + (68*eta**2 + 885)*np.cosh(eta) - 885)
+                +3*(
+                    352*eta**5 - 3096*eta**3 
+                    + 6150*eta - 1125*np.sinh(eta) 
+                    + 900*np.sinh(2*eta) - 2250
+                )
+                +np.cosh(eta)*(
+                    832*eta**5 + 6192*eta**3 - 24600*eta + 10125
+                )
+                +np.cosh(2*eta)*(
+                    32*eta**5 + 3096*eta**3 + 6150*eta - 4050
+                )   
+            ) +675
+        )
+
+        k4_at_0 = 8*eta**2*T**2/(np.exp(eta) - 1)**4*(
+            np.exp(2*eta)*(
+                -8*eta**3 - 2*(2*eta**3 + 7*eta + 2)*np.cosh(eta)
+                +(20*eta**2 + 2)*np.sinh(eta) +14*eta + 3
+            ) +1
+        )
+
+        k6_at_0 = 4*eta**2*T**2/(np.exp(eta) - 1)**6*(
+            -np.exp(3*eta)*(
+                6*(176*eta**5 - 788*eta**3 + 303*eta + 55)
+                + 2*(16*eta**5 + 788*eta**3 + 303*eta + 99)
+                    *np.cosh(2*eta)
+                + (-4160*eta*4 + 3984*eta**2 + 165)*np.sinh(eta)
+                + (832*eta**5 + 3152*eta**3
+                    -8*(108*eta**4 + 498*eta**2 + 33)
+                        *np.sinh(eta)
+                    -2424*eta - 495
+                )*np.cosh(eta)
+            ) + 33
+        )
+
+    else:
+        q2_at_0 = T**2*(
+            2*eta**2 + eta**5/45 - eta**7/1260 + eta**9/37800
+        )
+        q4_at_0 = T**2*(
+            36*eta**2 - 68*eta**3/3 + 2*eta**5 
+            - 89*eta**7/630 + 149*eta**9/18900
+        )
+        q6_at_0 = T**2*(
+            1350*eta**2 - 1250*eta**3 + 1123*eta**5/5
+            - 2381*eta**7/84 + 6373*eta**9/2520
+        )
+        k4_at_0 = T**2*(
+            4*eta**2 + 4*eta**3 - 46*eta**5/45 
+            + 59*eta**7/630 - 37*eta**9/6300
+        )
+        k6_at_0 = T**2*(
+            66*eta**2 + 90*eta**3 - 193*eta**5/3
+            + 5309*eta**7/420 - 393*eta**9/280
+        )
+
+    return Q(beta, photeng, T) + 2*(
+        (q4_at_0 + k4_at_0)*beta**2/24
+        (q6_at_0 + k6_at_0)*beta**4/720
+    )
+
+def term_H_and_G(beta, photeng, T):
+
+    eta = photeng/T
+
+    if eta > 0.01:
+
+        h3_at_0 = 2*eta**2*T**2/(np.exp(eta) - 1)**3*(
+            2*np.exp(eta)*(2*eta**2 + 9*eta - 15)
+            + np.exp(2*eta)*(4*eta**2 - 18*eta + 15)
+            +15
+        )
+
+        h5_at_0 = 2*eta**2*T**2/(np.exp(eta) - 1)**5*(
+            np.exp(4*eta)*(
+                16*eta**4 - 200*eta**3 + 760*eta**2 
+                - 1020*eta + 405
+            )
+            + 4*np.exp(3*eta)*(
+                44*eta**4 - 150*eta**3 - 190*eta**2
+                + 765*eta - 405
+            )
+            + 2*np.exp(2*eta)*(
+                88*eta**4 + 300*eta**3 - 380*eta**2
+                - 1530*eta + 1215
+            )
+            + 4*np.exp(eta)*(
+                4*eta**4 + 50*eta**3 + 190*eta**2
+                + 255*eta - 405
+            ) + 405
+        )
+
+        g2_at_0 = -4*eta**2*T**2/(np.exp(eta) - 1)
+
+        g4_at_0 = -16*eta**2*T**2/(np.exp(eta) - 1)**3*(
+            np.exp(2*eta)*(eta**2-3*eta+3)
+            + np.exp(eta)*(eta**2+3*eta-6)
+            +3
+        )
+
+        g6_at_0 = -32*eta**2*T**2/(np.exp(eta) - 1)**5*(
+            np.exp(4*eta)*(
+                2*eta**4 - 20*eta**3 + 70*eta**2 - 90*eta + 45
+            )
+            + 2*np.exp(3*eta)*(
+                11*eta**4 - 30*eta**3 - 35*eta**2 + 135*eta - 90
+            )
+            + np.exp(2*eta)*(
+                22*eta**4 + 60*eta**3 - 70*eta**2 - 270*eta + 270
+            )
+            + 2*np.exp(eta)*(
+                eta**4 + 10*eta**3 + 35*eta**2 + 45*eta - 90
+            ) + 45
+        )
+
+    else: 
+
+        h3_at_0 = T**2*(
+            10*eta - 15*eta**2 + 11*eta**3/2 - 31*eta**5/120
+            + 37*eta**7/3024 - 103*eta**9/201600
+        )
+
+        h5_at_0 = T**2*(
+            178*eta - 405*eta**2 + 475*eta**3/2 - 205*eta**5/8
+            + 6925*eta**7/3024 - 703*eta**9/4480
+        )
+
+        g2_at_0 = T**2*(
+            -4*eta + 2*eta**2 - eta**3/3 + eta**5/180 
+            - eta**7/7560 + eta**9/302400
+        )
+
+        g4_at_0 = T**2*(
+            -32*eta + 24*eta**2 - 8*eta**3 + 2*eta**5/5 
+            - 19*eta**7/945 + 11*eta**9/12600
+        )
+
+        g6_at_0 = T**2*(
+            -736*eta + 720*eta**2 - 360*eta**3 + 38*eta**5
+            -667*eta**7/189 + 211*eta**9/840
+        )
+        
+    term1 = 4*beta**2*(h3_at_0/6 + h5_at_0/120*beta**2)
+    term2 = 4*beta**2*np.sqrt(1-beta**2)*(
+        g4_at_0/24 + g6_at_0/720*beta**2
+    )
+    term3 = 2*g2_at_0*beta**2*(-1/2 - 1/8*beta**2)
+
+    return term1+term2+term3
+    
+
 
 
 
