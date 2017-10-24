@@ -86,19 +86,31 @@ def log_1_plus_x(x):
 
     Parameters
     ----------
-    x : float
+    x : ndarray
         The input value. 
 
     Returns
     -------
-    float
+    ndarray
         log(1+x). 
     """
-    if (1+x) - 1 > 0:
-        return x*np.log(1+x)/((1+x) - 1)
-    else:
+    ind_zero = ((1+x) - 1 != 0)
+    expr = np.zeros(x.size)
+
+    if np.any(ind_zero):
+        expr[ind_zero] = (
+            x[ind_zero]*np.log(1+x[ind_zero])/((1+x[ind_zero]) - 1)
+        )
+
+    if np.any(~ind_zero):
         n = 1 + np.arange(11)
-        return np.sum((-1)**(n-1)*x**n/n)
+        expr[~ind_zero] = np.sum(
+            np.array(
+                [(-1)**(n-1)*x**n/n for x in x[~ind_zero]]
+            ), axis=1
+        )
+
+    return expr
 
 def diff_pow(a, b, n):
     """ Computes a^n - b^n with greater floating point accuracy. 
@@ -107,9 +119,9 @@ def diff_pow(a, b, n):
 
     Parameters
     ----------
-    a : float
+    a : ndarray
         a^n to be computed. 
-    b : float
+    b : ndarray
         b^n to be computed. 
     n : int
         The exponent. 
@@ -152,8 +164,14 @@ def diff_pow(a, b, n):
             + a**5*b**5 + a**4*b**6 + a**3*b**7 + a**2*b**8
             + a*b**9 + b**10
         )
+    elif n == 12:
+        return (a-b)*(a+b)*(a**2 + b**2)*(
+            (a**2 - a*b + b**2)
+            *(a**2 + a*b + b**2)
+            *(a**4 - a**2*b**2 + b**4)
+        )
     else: 
-        raise TypeError('n > 11 not supported.')
+        raise TypeError('n > 12 not supported.')
 
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.

@@ -32,60 +32,90 @@ def F1(a,b,epsrel=0):
     upplim = 3
 
     def indef_int(x):
-        if x < lowlim:
-            # Excludes pi^2/6 to avoid catastrophic cancellation.
-            return (
-                x - x**2/4 + x**3/36 - x**5/3600 
-                + x**7/211680 - x**9/10886400
+        low = (x < lowlim)
+        high = (x > upplim)
+        gen = ~(low | high)
+        expr = np.zeros(x.size)
+        
+        # Excludes pi^2/6 to avoid catastrophic cancellation.
+        if np.any(low):
+            expr[low] = (
+                x[low] - x[low]**2/4 + x[low]**3/36 
+                - x[low]**5/3600 + x[low]**7/211680 - x[low]**9/10886400
             )
-        elif x > upplim:
+        if np.any(high):
             n = np.arange(11) + 1
-            return (
-                x*log_1_plus_x(-np.exp(-x))
-                - np.sum(np.exp(-n*x)/n**2, axis=0)
+            expr[high] = (
+                x[high]*log_1_plus_x(-np.exp(-x[high]))
+                - np.sum(
+                    np.array(
+                        [np.exp(-n*x)/n**2 for x in x[high]]
+                    ), axis=1
+                )
             )
-        else:
-            return (
-                x*log_1_plus_x(-np.exp(-x))
+        
+        if np.any(gen):
+            expr[gen] = (x[gen]*log_1_plus_x(-np.exp(-x[gen]))
                 - sp.spence(
-                    np.array(1. - np.exp(-x), dtype='float64')
+                    np.array(1. - np.exp(-x[gen]), dtype='float64')
                 )
             )
 
-    if a < lowlim and b < lowlim: 
-        integral = (
-            (b-a) - (b-a)*(b+a)/4 + diff_pow(b,a,3)/36 
-            - diff_pow(b,a,5)/3600 + diff_pow(b,a,7)/211680 
-            - diff_pow(b,a,9)/10886400
-        )
-        if epsrel > 0:
-            err = diff_pow(b,a,11)/526901760
-            check_err(integral, err, epsrel)
+        return expr
 
-    elif a > upplim and b > upplim:
+    integral = np.zeros(a.size)
+
+    both_low = (a < lowlim) & (b < lowlim)
+    both_high = (a > upplim) & (b > upplim)
+    
+    if np.any(both_low):
+
+        integral[both_low] = (
+                b[both_low]-a[both_low]
+                - (b[both_low]-a[both_low])*(b[both_low]+a[both_low])/4 
+                + diff_pow(b[both_low],a[both_low],3)/36 
+                - diff_pow(b[both_low],a[both_low],5)/3600 
+                + diff_pow(b[both_low],a[both_low],7)/211680 
+                - diff_pow(b[both_low],a[both_low],9)/10886400
+        )
+
+        if epsrel > 0:
+            err = diff_pow(b[both_low],a[both_low],11)/526901760
+            check_err(integral[both_low], err, epsrel)
+
+    if np.any(both_high):
+
         spence_term = np.sum(
             np.array(
-                [diff_pow(np.exp(-b), np.exp(-a), i)/i**2 
-                    for i in np.arange(1,11)
-                ]
+                [diff_pow(
+                    np.exp(-b[both_high]), 
+                    np.exp(-a[both_high]), i
+                )/i**2 for i in np.arange(1,11)]
             ), axis=0
         )
 
-        integral = ( 
-            b*log_1_plus_x(-np.exp(-b)) 
-            - a*log_1_plus_x(-np.exp(-a))
+        integral[both_high] = (
+            b[both_high]*log_1_plus_x(-np.exp(-b[both_high]))
+            - a[both_high]*log_1_plus_x(-np.exp(-a[both_high]))
             - spence_term
         )
-        if epsrel > 0:
-            err = diff_pow(np.exp(-11*b), np.exp(-11*a), 11)/121
-            check_err(integral, err, epsrel)
 
-    else:
-        # Correct for missing pi^2/6 if necessary.
-        piSquareOver6 = 0
-        if a < lowlim and b >= lowlim:
-            piSquareOver6 = np.pi**2/6
-        integral = indef_int(b) - indef_int(a) + piSquareOver6
+        if epsrel > 0:
+            err = (
+                diff_pow(np.exp(-b[both_high]), np.exp(-a[both_high]), 11)/11**2
+            )
+            check_err(integral[both_high], err, epsrel)
+
+    gen_case = ~(both_low | both_high)
+
+    if np.any(gen_case):
+        integral[gen_case] = indef_int(b[gen_case]) - indef_int(a[gen_case])
+
+    # Correct for missing pi^2/6 where necessary.
+    a_low_b_notlow = (a < lowlim) & (b >= lowlim)
+
+    integral[a_low_b_notlow] += np.pi**2/6
+
     return integral
 
 def F0(a,b,epsrel=0):
@@ -108,24 +138,48 @@ def F0(a,b,epsrel=0):
     """
     lowlim = 0.1
     upplim = 3
-    
+
     def indef_int(x):
-        if x < lowlim:
-            # Excludes pi^2/6 to avoid catastrophic cancellation.
-            return (
-                x - x**2/4 + x**3/36 - x**5/3600 
-                + x**7/211680 - x**9/10886400
-            )
-        elif x > upplim:
-            n = np.arange(11) + 1
-            return (
-                x*log_1_plus_x(-np.exp(-x))
-                - np.sum(np.exp(-n*x)/n**2, axis=0)
-            )
-        else:
-            return (
-                x*log_1_plus_x(-np.exp(-x))
-                - sp.spence(
-                    np.array(1. - np.exp(-x), dtype='float64')
-                )
-            )
+        
+        return log_1_plus_x(-np.exp(-x))
+
+    integral = np.zeros(a.size)
+
+    both_low = (a < lowlim) & (b < lowlim)
+    both_high = (a > upplim) & (b > upplim)
+
+    if np.any(both_low):
+        integral[both_low] = (
+            np.log(b[both_low]/a[both_low]) 
+            - (b[both_low]-a[both_low])/2 
+            + (b[both_low]-a[both_low])*(b[both_low]+a[both_low])/24
+            - diff_pow(b[both_low],a[both_low],4)/2880 
+            + diff_pow(b[both_low],a[both_low],6)/181440
+            - diff_pow(b[both_low],a[both_low],8)/9676800
+            + diff_pow(b[both_low],a[both_low],10)/479001600
+        )
+        if epsrel > 0:
+            err = -diff_pow(b[both_low],a[both_low],12)*691/15692092416000
+            check_err(integral[both_low], err, epsrel)
+
+    if np.any(both_high):
+        integral[both_high] = np.sum(
+            np.array(
+                [-diff_pow(np.exp(-b[both_high]), np.exp(-a[both_high]), i)/i
+                    for i in np.arange(1,11)
+                ]
+            ), axis=0
+        )
+        if epsrel > 0:
+            err = -diff_pow(
+                np.exp(-b[both_high]), 
+                np.exp(-a[both_high]), 12
+            )/12
+            check_err(integral[both_high], err, epsrel)
+
+    gen_case = ~(both_low | both_high)
+
+    if np.any(gen_case):
+        integral[gen_case] = indef_int(b[gen_case]) - indef_int(a[gen_case])
+
+    return integral
