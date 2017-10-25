@@ -7,6 +7,8 @@ from darkhistory.electrons.ics.ics_nonrel_series import *
 from darkhistory.utilities import log_1_plus_x
 from darkhistory import physics as phys
 
+from tqdm import tqdm_notebook as tqdm
+
 def spec_series(eleceng, photeng, T):
     """ Nonrelativistic ICS spectrum using the series method.
 
@@ -43,15 +45,23 @@ def spec_series(eleceng, photeng, T):
         * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
     )
 
-    F1_low = np.array([F1(low, eta) for low in lowlim])
-    F0_low = np.array([F0(low, eta) for low in lowlim])
-    F_inv_low = np.array([F_inv(low, eta) for low in lowlim])
-    F_log_low = np.array([F_log(low, eta) for low in lowlim])
+    F1_low = np.array([F1(low, eta) for low in tqdm(lowlim)])
+    F0_low = np.array([F0(low, eta) for low in tqdm(lowlim)])
+    F_inv_low = np.array([
+        F_inv(low, eta) for low in tqdm(lowlim)
+    ])
+    F_log_low = np.array([
+        F_log(low, eta) for low in tqdm(lowlim)
+    ])
 
-    F1_upp = np.array([F1(eta, upp) for upp in upplim])
-    F0_upp = np.array([F0(eta, upp) for upp in upplim])
-    F_inv_upp = np.array([F_inv(eta, upp) for upp in upplim])
-    F_log_upp = np.array([F_log(eta, upp) for upp in upplim])
+    F1_upp = np.array([F1(eta, upp) for upp in tqdm(upplim)])
+    F0_upp = np.array([F0(eta, upp) for upp in tqdm(upplim)])
+    F_inv_upp = np.array([
+        F_inv(eta, upp) for upp in tqdm(upplim)
+    ])
+    F_log_upp = np.array([
+        F_log(eta, upp) for upp in tqdm(upplim)
+    ])
 
 
     # CMB photon energy less than outgoing photon energy.
@@ -273,27 +283,17 @@ def spec_diff(eleceng, photeng, T):
     # Most accurate way of finding beta when beta is small, I think.
     beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
 
+    testing = True
+    if testing: 
+        print('beta: ', beta)
+
     prefac = ( 
         phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
         * (8*np.pi/(phys.ele_compton*phys.me)**3)
     )
 
-    Q_and_K_term = np.array([Q_and_K(b, photeng, T) 
-        for b in beta])
-
-    H_and_G_term = np.array([H_and_G(b, photeng, T)
-        for b in beta])
-
-    testing = True
-    if testing:
-        print('***** Diagnostics for spec_diff *****')
-        print('beta: ', beta)
-        np.array([Q_and_K(b, photeng, T, epsrel=1e-3) 
-            for b in beta])
-
-        np.array([H_and_G(b, photeng, T, epsrel=1e-3) 
-            for b in beta])
-        print('***** End Diagnostics for spec_diff *****')
+    Q_and_K_term = Q_and_K(beta, photeng, T)
+    H_and_G_term = H_and_G(beta, photeng, T)
 
     return np.transpose(
         prefac*np.transpose(Q_and_K_term + H_and_G_term)

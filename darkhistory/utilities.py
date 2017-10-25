@@ -103,13 +103,13 @@ def log_1_plus_x(x):
         )
 
     if np.any(~ind_zero):
-        n = 1 + np.arange(11)
-        expr[~ind_zero] = np.sum(
-            np.array(
-                [(-1)**(n-1)*x**n/n for x in x[~ind_zero]]
-            ), axis=1
+        expr[~ind_zero] = (
+            x[~ind_zero] - x[~ind_zero]**2/2 + x[~ind_zero]**3/3
+            - x[~ind_zero]**4/4 + x[~ind_zero]**5/5
+            - x[~ind_zero]**6/6 + x[~ind_zero]**7/7
+            - x[~ind_zero]**8/8 + x[~ind_zero]**9/9
+            - x[~ind_zero]**10/10 + x[~ind_zero]**11/11
         )
-
     return expr
 
 def diff_pow(a, b, n):
@@ -131,6 +131,9 @@ def diff_pow(a, b, n):
     float
         The computed value. 
     """
+
+    # return a**n - b**n
+
     if n == 0:
         return 0
     elif n == 1:
@@ -172,6 +175,23 @@ def diff_pow(a, b, n):
         )
     else: 
         raise TypeError('n > 12 not supported.')
+
+def bernoulli(k):
+
+    import scipy.special as sp
+
+    B_n = np.array([1, -1/2, 1/6, 0, -1/30,
+        0, 1/42, 0, -1/30, 0, 5/66, 
+        0, -691/2730, 0, 7/6, 0, -3617/510, 
+        0, 43867/798, 0, -174611/330, 0, 854513/138
+    ])
+
+    if k <= 22:
+        return B_n[k]
+    else:
+        return sp.bernoulli(k)[-1]
+
+
 
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.
