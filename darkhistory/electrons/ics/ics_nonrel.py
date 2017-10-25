@@ -1,13 +1,13 @@
-"""ICS spectrum after integrating over CMB."""
+"""Nonrelativistic ICS spectrum after integrating over CMB."""
 
 import numpy as np 
 from scipy.integrate import quad
 
-from darkhistory.electrons.ics.ics_nonrel import *
+from darkhistory.electrons.ics.ics_nonrel_series import *
 from darkhistory.utilities import log_1_plus_x
 from darkhistory import physics as phys
 
-def nonrel_series(eleceng, photeng, T):
+def spec_series(eleceng, photeng, T):
     """ Nonrelativistic ICS spectrum using the series method.
 
     Parameters
@@ -164,7 +164,7 @@ def nonrel_series(eleceng, photeng, T):
         )
     )
 
-def ics_spec_nonrel_quad(eleceng_arr, photeng_arr, T):
+def spec_quad(eleceng_arr, photeng_arr, T):
     """ Nonrelativistic ICS spectrum using quadrature.
 
     Parameters
@@ -267,8 +267,36 @@ def ics_spec_nonrel_quad(eleceng_arr, photeng_arr, T):
 
     return integral
 
-def ics_spec_nonrel_diff(eleceng, photeng, T):
+def spec_diff(eleceng, photeng, T):
 
+    gamma = eleceng/phys.me
+    # Most accurate way of finding beta when beta is small, I think.
+    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
 
+    prefac = ( 
+        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+        * (8*np.pi/(phys.ele_compton*phys.me)**3)
+    )
+
+    Q_and_K_term = np.array([Q_and_K(b, photeng, T) 
+        for b in beta])
+
+    H_and_G_term = np.array([H_and_G(b, photeng, T)
+        for b in beta])
+
+    testing = True
+    if testing:
+        print('***** Diagnostics for spec_diff *****')
+        print('beta: ', beta)
+        np.array([Q_and_K(b, photeng, T, epsrel=1e-3) 
+            for b in beta])
+
+        np.array([H_and_G(b, photeng, T, epsrel=1e-3) 
+            for b in beta])
+        print('***** End Diagnostics for spec_diff *****')
+
+    return np.transpose(
+        prefac*np.transpose(Q_and_K_term + H_and_G_term)
+    )
 
 

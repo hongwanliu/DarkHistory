@@ -421,7 +421,7 @@ def F_log(a,b,tol=1e-30):
 
 # Low beta expansion functions
 
-def Q(beta, photeng, T):
+def Q(beta, photeng, T, epsrel=0):
 
     eta = photeng/T
 
@@ -454,6 +454,45 @@ def Q(beta, photeng, T):
                     32*eta**5 + 3096*eta**3 + 6150*eta - 4050
                 )   
             ) +675
+        )
+
+        # Computed for error
+        q8_at_0 = 16*eta**2*T**2/(np.exp(eta) - 1)**8*(
+            np.exp(7*eta)*(
+                16*eta**7 - 496*eta**6 + 5776*eta**5
+                - 32144*eta**4 + 90006*eta**3
+                - 122010*eta**2 + 69825*eta - 11025
+            )
+            + np.exp(6*eta)*(
+                1920*eta**7 - 27776*eta**6 + 138624*eta**5
+                - 257152*eta**4 + 488040*eta**2
+                - 418950*eta + 77175
+            )
+            + np.exp(5*eta)*(
+                19056*eta**7 - 121520*eta**6 + 86640*eta**5
+                + 610736*eta**4 - 810054*eta**3 - 610050*eta**2
+                + 1047375*eta - 231525
+            )
+            + np.exp(4*eta)*(
+                38656*eta**7 - 462080*eta**5 + 1440096*eta**3
+                - 1396500*eta + 385875
+            )
+            + np.exp(3*eta)*(
+                19056*eta**7 + 121520*eta**6 + 86640*eta**5
+                - 610736*eta**4 - 810054*eta**3
+                + 610050*eta**2 + 1047375*eta - 385875
+            )
+            + np.exp(2*eta)*(
+                1920*eta**7 + 27776*eta**6 + 138624*eta**5
+                + 257152*eta**4 - 488040*eta**2
+                - 418950*eta + 231525
+            )
+            + np.exp(eta)*(
+                16*eta**7 + 496*eta**6 + 5776*eta**5
+                + 32144*eta**4 + 90006*eta**3 + 122010*eta**2
+                + 69825*eta - 77175
+            )
+            + 11025
         )
 
     else:
@@ -471,14 +510,32 @@ def Q(beta, photeng, T):
             1350*eta**2 - 1250*eta**3 + 1123*eta**5/5 
             - 2381*eta**7/84 + 6373*eta**9/2520
         )
+        # Computed for error
+        q8_at_0 = T**2*(
+            88200*eta**2 - 107800*eta**3 + 165844*eta**5/5
+            - 141679*eta**7/21 + 27247*eta**9/30
+        )
 
-    return 2*(
+    term = 2*(
         q2_at_0*beta**2/2 
         + q4_at_0*beta**4/24 
         + q6_at_0*beta**6/720
     )
 
-def term_Q_and_K(beta, photeng, T):
+    err = 2*q8_at_0*beta**8/40320
+
+    if epsrel > 0:
+        check_err(term, err, epsrel)
+        print('***** Diagnostics for Q *****')
+        print('1st Term: ', 2*q2_at_0*beta**2/2)
+        print('2nd Term: ', 2*q4_at_0*beta**4/24)
+        print('3rd Term: ', 2*q6_at_0*beta**6/720)
+        print('Error: ', err)
+        print('***** End Diagnostics for Q *****')
+
+    return term
+
+def Q_and_K(beta, photeng, T, epsrel=0):
 
     eta = photeng/T
 
@@ -497,8 +554,10 @@ def term_Q_and_K(beta, photeng, T):
 
         q6_at_0 = 4*eta**2*T**2/(np.exp(eta) - 1)**6*(
             np.exp(3*eta)*(
-                -16*eta**2*np.sinh(eta)*(340*eta**2 
-                + (68*eta**2 + 885)*np.cosh(eta) - 885)
+                -16*eta**2*np.sinh(eta)*(
+                    340*eta**2 
+                    + (68*eta**2 + 885)*np.cosh(eta) - 885
+                )
                 +3*(
                     352*eta**5 - 3096*eta**3 
                     + 6150*eta - 1125*np.sinh(eta) 
@@ -511,6 +570,45 @@ def term_Q_and_K(beta, photeng, T):
                     32*eta**5 + 3096*eta**3 + 6150*eta - 4050
                 )   
             ) +675
+        )
+
+        # Computed for error
+        q8_at_0 = 16*eta**2*T**2/(np.exp(eta) - 1)**8*(
+            np.exp(7*eta)*(
+                16*eta**7 - 496*eta**6 + 5776*eta**5
+                - 32144*eta**4 + 90006*eta**3
+                - 122010*eta**2 + 69825*eta - 11025
+            )
+            + np.exp(6*eta)*(
+                1920*eta**7 - 27776*eta**6 + 138624*eta**5
+                - 257152*eta**4 + 488040*eta**2
+                - 418950*eta + 77175
+            )
+            + np.exp(5*eta)*(
+                19056*eta**7 - 121520*eta**6 + 86640*eta**5
+                + 610736*eta**4 - 810054*eta**3 - 610050*eta**2
+                + 1047375*eta - 231525
+            )
+            + np.exp(4*eta)*(
+                38656*eta**7 - 462080*eta**5 + 1440096*eta**3
+                - 1396500*eta + 385875
+            )
+            + np.exp(3*eta)*(
+                19056*eta**7 + 121520*eta**6 + 86640*eta**5
+                - 610736*eta**4 - 810054*eta**3
+                + 610050*eta**2 + 1047375*eta - 385875
+            )
+            + np.exp(2*eta)*(
+                1920*eta**7 + 27776*eta**6 + 138624*eta**5
+                + 257152*eta**4 - 488040*eta**2
+                - 418950*eta + 231525
+            )
+            + np.exp(eta)*(
+                16*eta**7 + 496*eta**6 + 5776*eta**5
+                + 32144*eta**4 + 90006*eta**3 + 122010*eta**2
+                + 69825*eta - 77175
+            )
+            + 11025
         )
 
         k4_at_0 = 8*eta**2*T**2/(np.exp(eta) - 1)**4*(
@@ -534,10 +632,45 @@ def term_Q_and_K(beta, photeng, T):
             ) + 33
         )
 
-    else:
-        q2_at_0 = T**2*(
-            2*eta**2 + eta**5/45 - eta**7/1260 + eta**9/37800
+        k8_at_0 = -16*eta**2*T**2/(np.exp(eta) - 1)**8*(
+            np.exp(7*eta)*(
+                16*eta**7 - 400*eta**6 + 3536*eta**5
+                - 13904*eta**4 + 24814*eta**3 - 17958*eta**2
+                + 3459*eta + 309
+            )
+            + np.exp(6*eta)*(
+                1920*eta**7 - 22400*eta**6 + 84864*eta**5
+                - 111232*eta**4 + 71832*eta**2
+                - 20754*eta - 2163
+            )
+            + np.exp(5*eta)*(
+                19056*eta**7 - 98000*eta**6 + 53040*eta**5
+                + 264176*eta**4 - 223326*eta**3
+                - 89790*eta**2 + 51885*eta + 6489
+            )
+            + np.exp(4*eta)*(
+                38656*eta**7 - 282880*eta**5 + 397024*eta**3
+                - 69180*eta - 10815
+            )
+            + np.exp(3*eta)*(
+                19056*eta**7 + 98000*eta**6 + 53040*eta**5
+                - 264176*eta**4 - 223326*eta**3
+                + 89790*eta**2 + 51885*eta + 10815
+            )
+            + np.exp(2*eta)*(
+                1920*eta**7 + 22400*eta**6 + 84864*eta**5
+                + 111232*eta**4 - 71832*eta**2
+                - 20754*eta - 6489
+            )
+            + np.exp(eta)*(
+                16*eta**7 + 400*eta**6 + 3536*eta**5
+                + 13904*eta**4 + 24814*eta**3 + 17958*eta**2
+                + 3459*eta + 2163
+            )
+            + 309
         )
+
+    else:
         q4_at_0 = T**2*(
             36*eta**2 - 68*eta**3/3 + 2*eta**5 
             - 89*eta**7/630 + 149*eta**9/18900
@@ -545,6 +678,10 @@ def term_Q_and_K(beta, photeng, T):
         q6_at_0 = T**2*(
             1350*eta**2 - 1250*eta**3 + 1123*eta**5/5
             - 2381*eta**7/84 + 6373*eta**9/2520
+        )
+        q8_at_0 = T**2*(
+            88200*eta**2 - 107800*eta**3 + 165844*eta**5/5
+            - 141679*eta**7/21 + 27247*eta**9/30
         )
         k4_at_0 = T**2*(
             4*eta**2 + 4*eta**3 - 46*eta**5/45 
@@ -554,13 +691,30 @@ def term_Q_and_K(beta, photeng, T):
             66*eta**2 + 90*eta**3 - 193*eta**5/3
             + 5309*eta**7/420 - 393*eta**9/280
         )
+        k8_at_0 = T**2*(
+            2472*eta**2 + 4200*eta**3 - 17780*eta**5/3
+            + 31411*eta**7/15 - 15931*eta**9/42
+        )
 
-    return Q(beta, photeng, T) + 2*(
+    term = Q(beta, photeng, T) + 2*(
         (q4_at_0 + k4_at_0)*beta**2/24
-        (q6_at_0 + k6_at_0)*beta**4/720
+        + (q6_at_0 + k6_at_0)*beta**4/720
     )
 
-def term_H_and_G(beta, photeng, T):
+    err = 2*((q8_at_0 + k8_at_0)*beta**6/40320)
+
+    if epsrel > 0:
+        check_err(term, err, epsrel)
+        print('***** Diagnostics for Q_and_K *****')
+        Q(beta, photeng, T, epsrel=epsrel)
+        print('1st Term: ', 2*(q4_at_0 + k4_at_0)*beta**2/24)
+        print('2nd Term: ', 2*(q6_at_0 + k6_at_0)*beta**4/720)
+        print('Error: ', err)
+        print('***** End Diagnostics for Q_and_K *****')
+
+    return term
+
+def H_and_G(beta, photeng, T, epsrel=0):
 
     eta = photeng/T
 
@@ -591,11 +745,45 @@ def term_H_and_G(beta, photeng, T):
             ) + 405
         )
 
+        h7_at_0 = 2*eta**2*T**2/(np.exp(eta) - 1)**7*(
+            np.exp(6*eta)*(
+                64*eta**6 - 1568*eta**5 + 13776*eta**4
+                - 54600*eta**3 + 100380*eta**2
+                - 78750*eta + 20475
+            )
+            + 2*np.exp(5*eta)*(
+                1824*eta**6 - 19600*eta**5 + 61992*eta**4
+                - 27300*eta**3 - 150570*eta**2
+                + 196875*eta - 61425
+            )
+            + np.exp(4*eta)*(
+                19328*eta**6 - 62720*eta**5 - 137760*eta**4
+                + 436800*eta**3 + 200760*eta**2
+                - 787500*eta + 307125
+            )
+            + 4*np.exp(3*eta)*(
+                4832*eta**6 + 15680*eta**5 - 34440*eta**4
+                - 109200*eta**3 + 50190*eta**2
+                + 196875*eta - 102375
+            )
+            + np.exp(2*eta)*(
+                3648*eta**6 + 39200*eta**5 + 123984*eta**4
+                + 54600*eta**3 - 301140*eta**2
+                - 393750*eta + 307125
+            )
+            + 2*np.exp(eta)*(
+                32*eta**6 + 784*eta**5 + 6888*eta**4
+                + 27300*eta**3 + 50190*eta**2
+                + 39375*eta - 61425
+            )
+            + 20475
+        )
+
         g2_at_0 = -4*eta**2*T**2/(np.exp(eta) - 1)
 
         g4_at_0 = -16*eta**2*T**2/(np.exp(eta) - 1)**3*(
-            np.exp(2*eta)*(eta**2-3*eta+3)
-            + np.exp(eta)*(eta**2+3*eta-6)
+            np.exp(2*eta)*(eta**2 - 3*eta + 3)
+            + np.exp(eta)*(eta**2 + 3*eta - 6)
             +3
         )
 
@@ -614,6 +802,34 @@ def term_H_and_G(beta, photeng, T):
             ) + 45
         )
 
+        g8_at_0 = -256*eta**2*T**2/(np.exp(eta) - 1)**7*(
+            np.exp(6*eta)*(
+                eta**6 - 21*eta**5 + 168*eta**4 - 630*eta**3
+                + 1155*eta**2 - 945*eta + 315
+            )
+            + 3*np.exp(5*eta)*(
+                19*eta**6 - 175*eta**5 + 504*eta**4 - 210*eta**3
+                - 1155*eta**2 + 1575*eta - 630
+            )
+            + np.exp(4*eta)*(
+                302*eta**6 - 840*eta**5 - 1680*eta**4
+                + 5040*eta**3 + 2310*eta**2 - 9450*eta + 4725
+            )
+            + 2*np.exp(3*eta)*(
+                151*eta**6 + 420*eta**5 - 840*eta**4
+                -2520*eta**3 + 1155*eta**2 + 4725*eta - 3150
+            )
+            + 3*np.exp(2*eta)*(
+                19*eta**6 + 175*eta**5 + 504*eta**4 + 210*eta**3
+                - 1155*eta**2 - 1575*eta + 1575
+            )
+            + np.exp(eta)*(
+                eta**6 + 21*eta**5 + 168*eta**4 + 630*eta**3
+                + 1155*eta**2 + 945*eta - 1890
+            )
+            + 315
+        )
+
     else: 
 
         h3_at_0 = T**2*(
@@ -624,6 +840,12 @@ def term_H_and_G(beta, photeng, T):
         h5_at_0 = T**2*(
             178*eta - 405*eta**2 + 475*eta**3/2 - 205*eta**5/8
             + 6925*eta**7/3024 - 703*eta**9/4480
+        )
+
+        h7_at_0 = T**2*(
+            6858*eta - 20475*eta**2 + 33075*eta**3/2
+            - 26369*eta**5/8 + 71801*eta**7/144
+            - 101903*eta**9/1920
         )
 
         g2_at_0 = T**2*(
@@ -640,14 +862,40 @@ def term_H_and_G(beta, photeng, T):
             -736*eta + 720*eta**2 - 360*eta**3 + 38*eta**5
             -667*eta**7/189 + 211*eta**9/840
         )
-        
+        g8_at_0 = T**2*(
+            -33792*eta + 40320*eta**2 - 26880*eta**3 
+            + 4928*eta**5 - 6752*eta**7/9 + 1228*eta**9/15
+        )
+
     term1 = 4*beta**2*(h3_at_0/6 + h5_at_0/120*beta**2)
     term2 = 4*beta**2*np.sqrt(1-beta**2)*(
         g4_at_0/24 + g6_at_0/720*beta**2
     )
     term3 = 2*g2_at_0*beta**2*(-1/2 - 1/8*beta**2)
 
-    return term1+term2+term3
+    term = term1+term2+term3
+
+    err = (4*beta**2*h7_at_0/40320*beta**4
+        + 4*beta**2*np.sqrt(1-beta**2)*g8_at_0/40320*beta**4
+        + 2*g2_at_0*beta**2*(-1/16*beta**4)
+    )
+
+    if epsrel > 0:
+        check_err(term, err, epsrel)
+        print('***** Diagnostics for Q_and_K *****')
+        print('1st Term: ', 4*beta**2*(
+                h3_at_0/6 + np.sqrt(1-beta**2)*g4_at_0/24
+            ) + 2*g2_at_0*beta**2*(-1/2)
+        )
+        print('2nd Term: ', 4*beta**2*(
+                h5_at_0/120*beta**2
+                + np.sqrt(1-beta**2)*g6_at_0/720*beta**2
+            ) + 2*g2_at_0*beta**2*(-1/8*beta**2)
+        )
+        print('Error: ', err)
+        print('***** End Diagnostics for H_and_G *****')
+
+    return term
     
 
 
