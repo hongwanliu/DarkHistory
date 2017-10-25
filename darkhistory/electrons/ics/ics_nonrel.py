@@ -45,23 +45,15 @@ def spec_series(eleceng, photeng, T):
         * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
     )
 
-    F1_low = np.array([F1(low, eta) for low in tqdm(lowlim)])
-    F0_low = np.array([F0(low, eta) for low in tqdm(lowlim)])
-    F_inv_low = np.array([
-        F_inv(low, eta) for low in tqdm(lowlim)
-    ])
-    F_log_low = np.array([
-        F_log(low, eta) for low in tqdm(lowlim)
-    ])
+    F1_low = F1(lowlim, eta)
+    F0_low = F0(lowlim, eta)
+    F_inv_low = F_inv(lowlim, eta)
+    F_log_low = F_log(lowlim, eta)
 
-    F1_upp = np.array([F1(eta, upp) for upp in tqdm(upplim)])
-    F0_upp = np.array([F0(eta, upp) for upp in tqdm(upplim)])
-    F_inv_upp = np.array([
-        F_inv(eta, upp) for upp in tqdm(upplim)
-    ])
-    F_log_upp = np.array([
-        F_log(eta, upp) for upp in tqdm(upplim)
-    ])
+    F1_upp = F1(eta, upplim)
+    F0_upp = F0(eta, upplim)
+    F_inv_upp = F_inv(eta, upplim)
+    F_log_upp = F_log(eta, upplim)
 
 
     # CMB photon energy less than outgoing photon energy.
@@ -250,7 +242,7 @@ def spec_quad(eleceng_arr, photeng_arr, T):
         [quad(integrand, low, upp, args=(eleceng, photeng), epsrel=1e-10, epsabs=0)[0] 
         for (low, upp, photeng) in zip(low_part, upp_part, photeng_arr)
         ] for (low_part, upp_part, eleceng) 
-            in zip(lowlim, upplim, eleceng_arr)
+            in zip(tqdm(lowlim), upplim, eleceng_arr)
     ]) 
 
     testing = False
@@ -295,8 +287,18 @@ def spec_diff(eleceng, photeng, T):
     Q_and_K_term = Q_and_K(beta, photeng, T)
     H_and_G_term = H_and_G(beta, photeng, T)
 
-    return np.transpose(
-        prefac*np.transpose(Q_and_K_term + H_and_G_term)
+    term = np.transpose(
+        prefac*np.transpose(
+            Q_and_K_term[0] + H_and_G_term[0]
+        )
     )
+
+    err = np.transpose(
+        prefac*np.transpose(
+            Q_and_K_term[1] + H_and_G_term[1]
+        )
+    )
+
+    return term, err
 
 

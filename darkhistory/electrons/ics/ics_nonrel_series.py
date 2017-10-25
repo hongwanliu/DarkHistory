@@ -7,6 +7,7 @@ from darkhistory.utilities import log_1_plus_x
 from darkhistory.utilities import diff_pow
 from darkhistory.utilities import check_err
 from darkhistory.utilities import bernoulli as bern
+from darkhistory.utilities import div_ignore_by_zero
 
 # General series expressions for integrals over Planck distribution.
 
@@ -16,9 +17,9 @@ def F1(a,b,epsrel=0):
     Parameters
     ----------
     a : ndarray
-        Lower limit of integration. 
+        Lower limit of integration. Can be either 1D or 2D.  
     b : ndarray
-        Upper limit of integration.
+        Upper limit of integration. Can be either 1D or 2D.
     err : float
         Error associated with series expansion. If zero, then the error is not computed.
 
@@ -69,7 +70,19 @@ def F1(a,b,epsrel=0):
 
         return expr
 
-    integral = np.zeros(a.size)
+    if a.ndim == 1 and b.ndim == 2:
+        if b.shape[1] != a.size:
+            raise TypeError('The second dimension of b must have the same length as a.')
+        # Extend a to a 2D array.
+        a = np.outer(np.ones(b.shape[0]), a)
+    elif a.ndim == 2 and b.ndim == 1:
+        if a.shape[1] != b.size:
+            raise TypeError('The second dimension of a must have the same length as b.')
+        b = np.outer(np.ones(a.shape[0]), b)
+
+    # if both are 1D, then the rest of the code still works.
+
+    integral = np.zeros(a.shape)
 
     both_low = (a < lowlim) & (b < lowlim)
     both_high = (a > upplim) & (b > upplim)
@@ -134,9 +147,9 @@ def F0(a,b,epsrel=0):
     Parameters
     ----------
     a : ndarray
-        Lower limit of integration. 
+        Lower limit of integration. Can be either 1D or 2D.
     b : ndarray
-        Upper limit of integration.
+        Upper limit of integration. Can be either 1D or 2D.
     err : float
         Error associated with series expansion. If zero, then the error is not computed.
 
@@ -153,7 +166,19 @@ def F0(a,b,epsrel=0):
         
         return log_1_plus_x(-np.exp(-x))
 
-    integral = np.zeros(a.size)
+    if a.ndim == 1 and b.ndim == 2:
+        if b.shape[1] != a.size:
+            raise TypeError('The second dimension of b must have the same length as a.')
+        # Extend a to a 2D array.
+        a = np.outer(np.ones(b.shape[0]), a)
+    elif a.ndim == 2 and b.ndim == 1:
+        if a.shape[1] != b.size:
+            raise TypeError('The second dimension of a must have the same length as b.')
+        b = np.outer(np.ones(a.shape[0]), b)
+
+    # if both are 1D, then the rest of the code still works.
+
+    integral = np.zeros(a.shape)
 
     both_low = (a < lowlim) & (b < lowlim)
     both_high = (a > upplim) & (b > upplim)
@@ -244,11 +269,23 @@ def F_inv(a,b,tol=1e-10):
 
     err = 10*tol
 
+    if a.ndim == 1 and b.ndim == 2:
+        if b.shape[1] != a.size:
+            raise TypeError('The second dimension of b must have the same length as a.')
+        # Extend a to a 2D array.
+        a = np.outer(np.ones(b.shape[0]), a)
+    elif a.ndim == 2 and b.ndim == 1:
+        if a.shape[1] != b.size:
+            raise TypeError('The second dimension of a must have the same length as b.')
+        b = np.outer(np.ones(a.shape[0]), b)
+
+    # if both are 1D, then the rest of the code still works.
+
+    integral = np.zeros(a.shape)
+
     both_low  = (a < bound) & (b <  bound)
     low_high  = (a < bound) & (b >= bound)
     both_high = (a > bound) & (b >  bound)
-
-    integral = np.zeros(a.size)
 
     # Both low
 
@@ -359,11 +396,23 @@ def F_log(a,b,tol=1e-10):
 
     err = 10*tol
 
+    if a.ndim == 1 and b.ndim == 2:
+        if b.shape[1] != a.size:
+            raise TypeError('The second dimension of b must have the same length as a.')
+        # Extend a to a 2D array.
+        a = np.outer(np.ones(b.shape[0]), a)
+    elif a.ndim == 2 and b.ndim == 1:
+        if a.shape[1] != b.size:
+            raise TypeError('The second dimension of a must have the same length as b.')
+        b = np.outer(np.ones(a.shape[0]), b)
+
+    # if both are 1D, then the rest of the code still works.
+
+    integral = np.zeros(a.shape)
+
     both_low  = (a < bound) & (b <  bound)
     low_high  = (a < bound) & (b >= bound)
     both_high = (a > bound) & (b >  bound)
-
-    integral = np.zeros(a.size)
 
     # Both low
 
@@ -581,7 +630,7 @@ def Q(beta, photeng, T):
         print('Error: ', err)
         print('***** End Diagnostics for Q *****')
 
-    return term
+    return term, err
 
 def Q_and_K(beta, photeng, T):
 
@@ -819,7 +868,9 @@ def Q_and_K(beta, photeng, T):
             + 31411*eta[small]**7/15 - 15931*eta[small]**9/42
         )
 
-    term = Q(beta, photeng, T) + 2*np.array([
+    Q_term = Q(beta, photeng, T)
+
+    term = Q_term[0] + 2*np.array([
             (q4_at_0 + k4_at_0)*b**2/24
             + (q6_at_0 + k6_at_0)*b**4/720
         for b in beta]
@@ -828,18 +879,18 @@ def Q_and_K(beta, photeng, T):
     err = 2*np.array([
         (q8_at_0 + k8_at_0)*b**6/40320
         for b in beta]
-    )
+    ) + Q_term[1]
 
     testing = False
     if testing:
         print('***** Diagnostics for Q_and_K *****')
-        Q(beta, photeng, T)
+        print('Q Term: ', Q_term[0])
         print('1st Term: ', 2*(q4_at_0 + k4_at_0)*beta**2/24)
         print('2nd Term: ', 2*(q6_at_0 + k6_at_0)*beta**4/720)
         print('Error: ', err)
         print('***** End Diagnostics for Q_and_K *****')
 
-    return term
+    return term, err
 
 def H_and_G(beta, photeng, T):
 
@@ -1046,28 +1097,26 @@ def H_and_G(beta, photeng, T):
             - 6752*eta[small]**7/9 + 1228*eta[small]**9/15
         )
 
-    term1 = np.array(
-        [4*b**2*(h3_at_0/6 + h5_at_0/120*b**2) for b in beta]
+    term1 = (
+        4*np.outer(beta**2, h3_at_0/6)
+        + 4*np.outer(beta**4, h5_at_0/120)
     )
 
-    term2 = np.array(
-        [4*beta**2*np.sqrt(1-beta**2)*(
-            g4_at_0/24 + g6_at_0/720*beta**2
-        ) for b in beta]
+    term2 = (
+        4*np.outer(beta**2*np.sqrt(1-beta**2), g4_at_0/24)
+        + 4*np.outer(beta**4*np.sqrt(1-beta**2), g6_at_0/720)
     )
 
-    term3 = np.array(
-        [2*g2_at_0*beta**2*(-1/2 - 1/8*beta**2)
-        for b in beta]
+    term3 = (
+        2*np.outer(beta**2*(-1/2 - 1/8*beta**2), g2_at_0)
     )
 
     term = term1+term2+term3
 
-    err = np.array(
-            [4*b**2*h7_at_0/40320*b**4
-            + 4*b**2*np.sqrt(1-b**2)*g8_at_0/40320*b**4
-            + 2*g2_at_0*b**2*(-1/16*b**4)
-            for b in beta]
+    err = (
+        4*np.outer(beta**6, h7_at_0/40320)
+        + 4*np.outer(beta**6*np.sqrt(1-beta**2), g8_at_0/40320)
+        + 2*np.outer(-beta**6/16, g2_at_0)
     )
 
     testing = False
@@ -1085,7 +1134,7 @@ def H_and_G(beta, photeng, T):
         print('Error: ', err)
         print('***** End Diagnostics for H_and_G *****')
 
-    return term
+    return term, err
     
 
 

@@ -132,49 +132,49 @@ def diff_pow(a, b, n):
         The computed value. 
     """
 
-    # return a**n - b**n
+    return a**n - b**n
 
-    if n == 0:
-        return 0
-    elif n == 1:
-        return a - b
-    elif n == 2:
-        return (a+b)*(a-b)
-    elif n == 3:
-        return (a-b)*(a**2 + a*b + b**2)
-    elif n == 4:
-        return (a-b)*(a+b)*(a**2 + b**2)
-    elif n == 5:
-        return (a-b)*(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
-    elif n == 6:
-        return (a-b)*(a+b)*(a**2 - a*b + b**2)*(a**2 + a*b + b**2)
-    elif n == 7:
-        return (a-b)*(a**6 + a**5*b + a**4*b**2 
-                    + a**3*b**3 + a**2*b**4 + a*b**5 + b**6
-        )
-    elif n == 8:
-        return (a-b)*(a+b)*(a**2 + b**2)*(a**4 + b**4)
-    elif n == 9:
-        return (a-b)*(a**2 + a*b + b**2)*(a**6 + a**3*b**3 + b**6)
-    elif n == 10:
-        return (a-b)*(a+b)*(
-            (a**4 - a**3*b + a**2*b**2 - a*b**3 + b**4)
-            *(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
-        )
-    elif n == 11:
-        return (a-b)*(
-            a**10 + a**9*b + a**8*b**2 + a**7*b**3 + a**6*b**4
-            + a**5*b**5 + a**4*b**6 + a**3*b**7 + a**2*b**8
-            + a*b**9 + b**10
-        )
-    elif n == 12:
-        return (a-b)*(a+b)*(a**2 + b**2)*(
-            (a**2 - a*b + b**2)
-            *(a**2 + a*b + b**2)
-            *(a**4 - a**2*b**2 + b**4)
-        )
-    else: 
-        raise TypeError('n > 12 not supported.')
+    # if n == 0:
+    #     return 0
+    # elif n == 1:
+    #     return a - b
+    # elif n == 2:
+    #     return (a+b)*(a-b)
+    # elif n == 3:
+    #     return (a-b)*(a**2 + a*b + b**2)
+    # elif n == 4:
+    #     return (a-b)*(a+b)*(a**2 + b**2)
+    # elif n == 5:
+    #     return (a-b)*(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
+    # elif n == 6:
+    #     return (a-b)*(a+b)*(a**2 - a*b + b**2)*(a**2 + a*b + b**2)
+    # elif n == 7:
+    #     return (a-b)*(a**6 + a**5*b + a**4*b**2 
+    #                 + a**3*b**3 + a**2*b**4 + a*b**5 + b**6
+    #     )
+    # elif n == 8:
+    #     return (a-b)*(a+b)*(a**2 + b**2)*(a**4 + b**4)
+    # elif n == 9:
+    #     return (a-b)*(a**2 + a*b + b**2)*(a**6 + a**3*b**3 + b**6)
+    # elif n == 10:
+    #     return (a-b)*(a+b)*(
+    #         (a**4 - a**3*b + a**2*b**2 - a*b**3 + b**4)
+    #         *(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
+    #     )
+    # elif n == 11:
+    #     return (a-b)*(
+    #         a**10 + a**9*b + a**8*b**2 + a**7*b**3 + a**6*b**4
+    #         + a**5*b**5 + a**4*b**6 + a**3*b**7 + a**2*b**8
+    #         + a*b**9 + b**10
+    #     )
+    # elif n == 12:
+    #     return (a-b)*(a+b)*(a**2 + b**2)*(
+    #         (a**2 - a*b + b**2)
+    #         *(a**2 + a*b + b**2)
+    #         *(a**4 - a**2*b**2 + b**4)
+    #     )
+    # else: 
+    #     raise TypeError('n > 12 not supported.')
 
 def bernoulli(k):
 
