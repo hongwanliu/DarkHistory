@@ -5,11 +5,13 @@ from scipy.integrate import quad
 
 from darkhistory.electrons.ics.ics_nonrel_series import *
 from darkhistory.utilities import log_1_plus_x
+from darkhistory.utilities import div_ignore_by_zero
 from darkhistory import physics as phys
+
 
 from tqdm import tqdm_notebook as tqdm
 
-def spec_series(eleceng, photeng, T, as_pairs=False):
+def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
     """ Nonrelativistic ICS spectrum using the series method.
 
     Parameters
@@ -43,6 +45,7 @@ def spec_series(eleceng, photeng, T, as_pairs=False):
     else: 
         lowlim = np.outer((1-beta)/(1+beta), photeng/T)
         upplim = np.outer((1+beta)/(1-beta), photeng/T)
+    
     eta = photeng/T
 
     prefac = ( 
@@ -51,16 +54,32 @@ def spec_series(eleceng, photeng, T, as_pairs=False):
         * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
     )
 
+    # print('term by term')
+    # if test:
+    #     print('yes')
+    #     print(lowlim)
+    #     print(eta)
+    # else:
+    #     print('no')
+    #     print(lowlim[0:-1,0:-1])
+    #     print(eta)
+
+
     F1_low = F1(lowlim, eta)
     F0_low = F0(lowlim, eta)
-    F_inv_low = F_inv(lowlim, eta)
+    F_inv_low = F_inv(lowlim, eta, test)
     F_log_low = F_log(lowlim, eta)
+
+    # print('term-by-term')
+    # if test:
+    #     print(F_inv_low)
+    # else:
+    #     print(F_inv_low[0:-1,0:-1])
 
     F1_upp = F1(eta, upplim)
     F0_upp = F0(eta, upplim)
-    F_inv_upp = F_inv(eta, upplim)
+    F_inv_upp = F_inv(eta, upplim, test)
     F_log_upp = F_log(eta, upplim)
-
 
     # CMB photon energy less than outgoing photon energy.
 
@@ -245,7 +264,7 @@ def spec_quad(eleceng_arr, photeng_arr, T):
         return prefac*fac
 
     integral = np.array([
-        [quad(integrand, low, upp, args=(eleceng, photeng), limit=21)[0] 
+        [quad(integrand, low, upp, args=(eleceng, photeng), epsabs=0)[0] 
         for (low, upp, photeng) in zip(low_part, upp_part, photeng_arr)
         ] for (low_part, upp_part, eleceng) 
             in zip(tqdm(lowlim), upplim, eleceng_arr)
@@ -275,7 +294,7 @@ def spec_quad(eleceng_arr, photeng_arr, T):
 
     return integral
 
-def spec_diff(eleceng, photeng, T):
+def spec_diff(eleceng, photeng, T, as_pairs=False):
     """ Nonrelativistic ICS spectrum by beta expansion.
 
     Parameters
@@ -285,7 +304,9 @@ def spec_diff(eleceng, photeng, T):
     photeng : ndarray
         Outgoing photon energy. 
     T : float
-        CMB temperature. 
+        CMB temperature.
+    as_pairs : bool
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
 
     Returns
     -------
@@ -309,8 +330,8 @@ def spec_diff(eleceng, photeng, T):
         * (8*np.pi/(phys.ele_compton*phys.me)**3)
     )
 
-    Q_and_K_term = Q_and_K(beta, photeng, T)
-    H_and_G_term = H_and_G(beta, photeng, T)
+    Q_and_K_term = Q_and_K(beta, photeng, T, as_pairs=as_pairs)
+    H_and_G_term = H_and_G(beta, photeng, T, as_pairs=as_pairs)
 
     term = np.transpose(
         prefac*np.transpose(
@@ -361,17 +382,12 @@ def nonrel_spec(eleceng, photeng, T):
     eleceng_2D_mask = np.outer(eleceng, np.ones(photeng.size))
     photeng_2D_mask = np.outer(np.ones(eleceng.size), photeng)
 
-    # 1D boolean arrays.
-    beta_small = (beta < 0.01)
-    eta_small = (eta < 1)
-    
     # 2D boolean arrays. 
     beta_2D_small = (beta_2D_mask < 0.01)
-    eta_2D_small  = (eta_2D_mask < 1)
+    eta_2D_small  = (eta_2D_mask < 0.1/beta_2D_mask) & (eta_2D_mask < 100)
 
     where_diff = (beta_2D_small & eta_2D_small)
-    print('beta < 0.01: ', beta_small)
-    print('eta < 1: ', eta_small)
+    
     print('where_diff on (eleceng, photeng) grid: ')
     print(where_diff)
 
@@ -379,26 +395,22 @@ def nonrel_spec(eleceng, photeng, T):
     epsrel = np.zeros((eleceng.size, photeng.size))
 
     spec_with_diff, err_with_diff = spec_diff(
-        eleceng[beta_small], 
-        photeng[eta_small], 
-        T
+        eleceng_2D_mask[where_diff].flatten(), 
+        photeng_2D_mask[where_diff].flatten(), 
+        T, as_pairs=True
     )
-    print('Computed spectrum from spec_diff: ')
-    print(spec_with_diff)
-    print('Computed relative error from spec_diff: ')
-    print(np.abs(err_with_diff/spec_with_diff))
 
     spec[where_diff] = spec_with_diff.flatten()
     epsrel[where_diff] = np.abs(
         err_with_diff.flatten()/spec[where_diff]
     )
     
-    print('spec: ')
+    print('spec from spec_diff: ')
     print(spec)
-    print('epsrel: ')
+    print('epsrel from spec_diff: ')
     print(epsrel)
 
-    where_series = (~where_diff) | (epsrel > 1e-10)
+    where_series = (~where_diff) | (epsrel > 1e-6)
     print('where_series on (eleceng, photeng) grid: ')
     print(where_series)
 
@@ -407,14 +419,17 @@ def nonrel_spec(eleceng, photeng, T):
         photeng_2D_mask[where_series].flatten(),
         T, as_pairs=True
     )
-    print('Computed spectrum from spec_series: ')
-    print(spec_with_series)
+
     spec[where_series] = spec_with_series.flatten()
+    spec_with_series = np.array(spec)
+    spec_with_series[~where_series] = 0
+    print('spec from spec_series: ')
+    print(spec_with_series)
     print('*********************')
     print('Final Result: ')
     print(spec)
 
-    return 0
+    return spec
 
 
 

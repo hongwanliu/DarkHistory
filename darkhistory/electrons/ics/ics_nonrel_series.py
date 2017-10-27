@@ -219,7 +219,7 @@ def F0(a,b,epsrel=0):
 
     return integral
 
-def F_inv(a,b,tol=1e-10):
+def F_inv(a,b,test,tol=1e-10):
     """Definite integral of 1/[x(exp(x) - 1)]. 
 
     Parameters
@@ -241,6 +241,7 @@ def F_inv(a,b,tol=1e-10):
     # bound is fixed. If changed to another number, the exact integral from bound to infinity later in the code needs to be changed to the appropriate value.
     bound = 2.
     
+
 
     # Two different series to approximate this: below and above bound.
 
@@ -273,11 +274,11 @@ def F_inv(a,b,tol=1e-10):
         if b.shape[1] != a.size:
             raise TypeError('The second dimension of b must have the same length as a.')
         # Extend a to a 2D array.
-        a = np.outer(np.ones(b.shape[0]), a)
+        a = np.outer(np.ones(b.shape[0],dtype='float128'), a)
     elif a.ndim == 2 and b.ndim == 1:
         if a.shape[1] != b.size:
             raise TypeError('The second dimension of a must have the same length as b.')
-        b = np.outer(np.ones(a.shape[0]), b)
+        b = np.outer(np.ones(a.shape[0],dtype='float128'), b)
 
     # if both are 1D, then the rest of the code still works.
 
@@ -297,7 +298,13 @@ def F_inv(a,b,tol=1e-10):
 
         while err > tol:
             next_term = next(low_sum_b) - next(low_sum_a)
-            err = np.max(np.abs(next_term/integral[both_low]))
+            err = np.max(np.abs(
+                div_ignore_by_zero(
+                    next_term, 
+                    integral[both_low], 
+                    0
+                )
+            ))
             integral[both_low] += next_term
 
     err = 10*tol
@@ -323,7 +330,13 @@ def F_inv(a,b,tol=1e-10):
             # Only need to compute the next term for the b to inf integral.
             next_term_bound_b = - next(high_sum_b)
             next_term = next_term_a_bound + next_term_bound_b
-            err = np.max(np.abs(next_term/integral[low_high]))
+            err = np.max(np.abs(
+                div_ignore_by_zero(
+                    next_term, 
+                    integral[low_high], 
+                    0
+                )
+            ))
             integral[low_high] += next_term
 
     err = 10*tol
@@ -338,7 +351,13 @@ def F_inv(a,b,tol=1e-10):
 
         while err > tol:
             next_term = next(high_sum_a) - next(high_sum_b)
-            err = np.max(np.abs(next_term/integral[both_high]))
+            err = np.max(np.abs(
+                div_ignore_by_zero(
+                    next_term,
+                    integral[both_high],
+                    0
+                )
+            ))
             integral[both_high] += next_term
 
     return integral
@@ -424,7 +443,13 @@ def F_log(a,b,tol=1e-10):
 
         while err > tol:
             next_term = next(low_sum_b) - next(low_sum_a)
-            err = np.max(np.abs(next_term/integral[both_low]))
+            err = np.max(np.abs(
+                div_ignore_by_zero(
+                    next_term, 
+                    integral[both_low],
+                    0
+                )
+            ))
             integral[both_low] += next_term
 
     err = 10*tol
@@ -450,7 +475,13 @@ def F_log(a,b,tol=1e-10):
             # Only need to compute the next term for the b to inf integral.
             next_term_bound_b = - next(high_sum_b)
             next_term = next_term_a_bound + next_term_bound_b
-            err = np.max(np.abs(next_term/integral[low_high]))
+            err = np.max(np.abs(
+                div_ignore_by_zero(
+                    next_term, 
+                    integral[low_high], 
+                    0
+                )
+            ))
             integral[low_high] += next_term
 
     err = 10*tol
@@ -465,14 +496,20 @@ def F_log(a,b,tol=1e-10):
 
         while err > tol:
             next_term = next(high_sum_a) - next(high_sum_b)
-            err = np.max(np.abs(next_term/integral[both_high]))
+            err = np.max(np.abs(
+                div_ignore_by_zero(
+                    next_term, 
+                    integral[both_high],
+                    0
+                )
+            ))
             integral[both_high] += next_term
 
     return integral
 
 # Low beta expansion functions
 
-def Q(beta, photeng, T):
+def Q(beta, photeng, T, as_pairs=False):
 
     eta = photeng/T
 
@@ -611,15 +648,20 @@ def Q(beta, photeng, T):
             - 141679*eta[small]**7/21 + 27247*eta[small]**9/30
         )
 
-    term = np.array([
-        2*(
-            q2_at_0*b**2/2 
-            + q4_at_0*b**4/24 
-            + q6_at_0*b**6/720
-        ) for b in beta
-    ])
-
-    err = np.array([2*q8_at_0*b**8/40320 for b in beta])
+    if as_pairs:
+        term = 2*(
+            q2_at_0*beta**2/2
+            + q4_at_0*beta**4/24
+            + q6_at_0*beta**6/720
+        )
+        err = 2*q8_at_0*beta**8/40320
+    else:
+        term = 2*(
+            np.outer(beta**2, q2_at_0/2)
+            + np.outer(beta**4, q4_at_0/24)
+            + np.outer(beta**6, q6_at_0/720)
+        )
+        err = np.outer(beta**8, 2*q8_at_0/40320)
 
     testing = False
     if testing:
@@ -632,7 +674,7 @@ def Q(beta, photeng, T):
 
     return term, err
 
-def Q_and_K(beta, photeng, T):
+def Q_and_K(beta, photeng, T, as_pairs=False):
 
     eta = photeng/T
 
@@ -868,18 +910,24 @@ def Q_and_K(beta, photeng, T):
             + 31411*eta[small]**7/15 - 15931*eta[small]**9/42
         )
 
-    Q_term = Q(beta, photeng, T)
+    Q_term = Q(beta, photeng, T, as_pairs=as_pairs)
 
-    term = Q_term[0] + 2*np.array([
-            (q4_at_0 + k4_at_0)*b**2/24
-            + (q6_at_0 + k6_at_0)*b**4/720
-        for b in beta]
-    )
-
-    err = 2*np.array([
-        (q8_at_0 + k8_at_0)*b**6/40320
-        for b in beta]
-    ) + Q_term[1]
+    if as_pairs:
+        term = Q_term[0] + 2*(
+            (q4_at_0 + k4_at_0)*beta**2/24
+            + (q6_at_0 + k6_at_0)*beta**4/720
+        )
+        err = Q_term[1] + 2*(
+            (q8_at_0 + k8_at_0)*beta**6/40320
+        )
+    else:
+        term = Q_term[0] + 2*(
+            np.outer(beta**2, (q4_at_0 + k4_at_0)/24)
+            + np.outer(beta**4, (q6_at_0 + k6_at_0)/720)
+        )
+        err = Q_term[1] + 2*(
+            np.outer(beta**6, (q8_at_0 + k8_at_0)/40320)
+        )
 
     testing = False
     if testing:
@@ -892,7 +940,7 @@ def Q_and_K(beta, photeng, T):
 
     return term, err
 
-def H_and_G(beta, photeng, T):
+def H_and_G(beta, photeng, T, as_pairs=False):
 
     eta = photeng/T
 
@@ -1097,27 +1145,43 @@ def H_and_G(beta, photeng, T):
             - 6752*eta[small]**7/9 + 1228*eta[small]**9/15
         )
 
-    term1 = (
-        4*np.outer(beta**2, h3_at_0/6)
-        + 4*np.outer(beta**4, h5_at_0/120)
-    )
+    if as_pairs:
+        term1 = 4*(h3_at_0/6 + h5_at_0/120*beta**2)*beta**2
+        term2 = (
+            4*(g4_at_0/24 + g6_at_0/720*beta**2)
+                *beta**2*np.sqrt(1-beta**2)
+        )
+        term3 = 2*g2_at_0*beta**2*(-1/2 - 1/8*beta**2)
+        err = (
+            4*(h7_at_0/40320 + g8_at_0/40320*np.sqrt(1-beta**2))
+            + 2*g2_at_0*(-1/16)
+        )*beta**6
+    else: 
+        term1 = (
+            4*np.outer(beta**2, h3_at_0/6)
+            + 4*np.outer(beta**4, h5_at_0/120)
+        )
 
-    term2 = (
-        4*np.outer(beta**2*np.sqrt(1-beta**2), g4_at_0/24)
-        + 4*np.outer(beta**4*np.sqrt(1-beta**2), g6_at_0/720)
-    )
+        term2 = (
+            4*np.outer(beta**2*np.sqrt(1-beta**2), g4_at_0/24)
+            + 4*np.outer(
+                beta**4*np.sqrt(1-beta**2), g6_at_0/720
+            )
+        )
 
-    term3 = (
-        2*np.outer(beta**2*(-1/2 - 1/8*beta**2), g2_at_0)
-    )
+        term3 = (
+            2*np.outer(beta**2*(-1/2 - 1/8*beta**2), g2_at_0)
+        )
+        err = (
+            4*np.outer(beta**6, h7_at_0/40320)
+            + 4*np.outer(
+                beta**6*np.sqrt(1-beta**2), 
+                g8_at_0/40320
+            )
+            + 2*np.outer(-beta**6/16, g2_at_0)
+        )
 
     term = term1+term2+term3
-
-    err = (
-        4*np.outer(beta**6, h7_at_0/40320)
-        + 4*np.outer(beta**6*np.sqrt(1-beta**2), g8_at_0/40320)
-        + 2*np.outer(-beta**6/16, g2_at_0)
-    )
 
     testing = False
     if testing:
