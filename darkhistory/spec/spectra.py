@@ -431,15 +431,14 @@ class Spectra:
             Whether to return an error if outside of the bounds for the interpolation. 
         """
 
-        interp_func = interpolate.interp2d(
-            self.eng, np.log(self.rs), self.grid_values,
-            bounds_error = bounds_err, fill_value = 0
+        interp_func = interpolate.interp1d(
+            np.log(self.rs), self.grid_values, axis=0
         )
-
+        
         if interp_type == 'val':
             
             new_spec_arr = [
-                Spectrum(self.eng, interp_func(self.eng, np.log(rs)), rs)
+                Spectrum(self.eng, interp_func(np.log(rs)), rs)
                     for rs in new_rs
             ]
             return Spectra(new_spec_arr)
@@ -470,7 +469,7 @@ class Spectra:
         step : int, optional
             The number of steps to take before choosing one Spectrum to plot.
         indtype : {'ind', 'rs'}, optional
-            Specifies whether ind is an index or a redshift.
+            Specifies whether ind is an index or an abscissa value.
         abs_plot :  bool, optional
             Plots the absolute value if true.
         **kwargs : optional
@@ -524,7 +523,6 @@ class Spectra:
                 
             
             elif isinstance(ind, np.ndarray):
-                fig = plt.figure()
                 if abs_plot:
                     spec_to_plot = np.stack(
                         [np.abs(self.spec_arr[i].dNdE)

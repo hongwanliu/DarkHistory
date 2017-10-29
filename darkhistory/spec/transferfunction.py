@@ -57,14 +57,14 @@ class TransFuncAtEnergy(Spectra):
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
         """
 
-        interp_func = interpolate.interp2d(
-            self.eng, np.log(self.rs), self.grid_values
+        interp_func = interpolate.interp1d(
+            np.log(self.rs), self.grid_values, axis=0
         )
 
         if interp_type == 'val':
             
             new_spec_arr = [
-                Spectrum(self.eng, interp_func(self.eng, np.log(rs)), rs)
+                Spectrum(self.eng, interp_func(np.log(rs)), rs)
                     for rs in new_rs
             ]
             return TransFuncAtEnergy(
@@ -132,16 +132,22 @@ class TransFuncAtRedshift(Spectra):
             The injection energies or injection energy bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+
+        Returns
+        -------
+        TransFuncAtRedshift
+            New transfer function at the new injection energy. 
         """
 
-        interp_func = interpolate.interp2d(
-            self.eng, np.log(self.in_eng), self.grid_values
+        interp_func = interpolate.interp1d(
+            np.log(self.in_eng), self.grid_values, axis=0
         )
 
         if interp_type == 'val':
-
             new_spec_arr = [
-                Spectrum(self.eng, interp_func(self.eng, np.log(eng)), 
+                Spectrum(
+                    self.eng, 
+                    interp_func(np.log(eng)), 
                     self.rs) for eng in new_eng
             ]
             return TransFuncAtRedshift(
@@ -170,6 +176,120 @@ class TransFuncAtRedshift(Spectra):
         """
 
         raise AttributeError("Not implemented for TransFuncAtRedshift class.")
+
+    def plot(self, ax, ind=None, step=1, indtype='ind', 
+        abs_plot=False, **kwargs):
+        """Plots the contained `Spectrum` objects. 
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            The axis handle of the figure to show the plot in.
+        ind : int, float, tuple or ndarray, optional.
+            Index or injected energy of Spectrum to plot, or a tuple of indices or injected energies providing a range of Spectrum to plot, or a list of indices or injected energies of Spectrum to plot.
+        step : int, optional
+            The number of steps to take before choosing one Spectrum to plot.
+        indtype : {'ind', 'in_eng'}, optional
+            Specifies whether ind is an index or an abscissa value.
+        abs_plot :  bool, optional
+            Plots the absolute value if true.
+        **kwargs : optional
+            All additional keyword arguments to pass to matplotlib.plt.plot. 
+
+        Returns
+        -------
+        matplotlib.figure
+        """
+        
+        if ind is None:
+            return self.plot(
+                ax, ind=np.arange(self.in_eng.size), 
+                abs_plot=abs_plot, **kwargs
+            )
+
+        if indtype == 'ind':
+
+            if np.issubdtype(type(ind), int):
+                if abs_plot:
+                    return ax.plot(
+                        self.eng, 
+                        np.abs(self.spec_arr[ind].dNdE), 
+                        **kwargs
+                    )
+                else:
+                    return ax.plot(
+                        self.eng, 
+                        self.spec_arr[ind].dNdE, 
+                        **kwargs
+                    )
+
+            elif isinstance(ind, tuple):
+                if abs_plot:
+                    spec_to_plot = np.stack(
+                        [np.abs(self.spec_arr[i].dNdE) 
+                            for i in 
+                                np.arange(ind[0], ind[1], step)
+                        ], 
+                        axis=-1
+                    )
+                else:
+                    spec_to_plot = np.stack(
+                        [self.spec_arr[i].dNdE 
+                            for i in 
+                                np.arange(ind[0], ind[1], step)
+                        ], 
+                        axis=-1
+                    )
+                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                
+            
+            elif isinstance(ind, np.ndarray):
+                if abs_plot:
+                    spec_to_plot = np.stack(
+                        [np.abs(self.spec_arr[i].dNdE)
+                            for i in ind
+                        ], axis=-1
+                    ) 
+                else:
+                    spec_to_plot = np.stack(
+                        [self.spec_arr[i].dNdE
+                            for i in ind
+                        ], axis=-1
+                    )
+                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                
+
+            else:
+                raise TypeError("ind should be either int, tuple of int or ndarray.")
+
+        if indtype == 'in_eng':
+
+            if (np.issubdtype(type(ind),int) or 
+                    np.issubdtype(type(ind), float)):
+                return self.at_in_eng(
+                        np.array([ind]), interp_type='val'
+                    ).plot(
+                    ax, ind=0, abs_plot=abs_plot, **kwargs
+                )
+
+            elif isinstance(ind, tuple):
+                eng_to_plot = np.arange(ind[0], ind[1], step)
+                return self.at_in_eng(
+                        eng_to_plot, interp_type='val'
+                    ).plot(
+                    ax, abs_plot=abs_plot,**kwargs
+                )
+
+            elif isinstance(ind, np.ndarray):
+                return self.at_in_eng(
+                        ind, interp_type='val'
+                    ).plot(
+                    ax, abs_plot=abs_plot, **kwargs
+                )
+
+        else:
+            raise TypeError("indtype must be either ind or in_eng.")
+
 
 def process_raw_tf(file):
     """Processes raw data to return transfer functions.
