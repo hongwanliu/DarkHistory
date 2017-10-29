@@ -48,7 +48,7 @@ def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
     
     eta = photeng/T
 
-    prefac = ( 
+    prefac = np.float128( 
         phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
         * (8*np.pi/(phys.ele_compton*phys.me)**3) 
         * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
@@ -384,15 +384,15 @@ def nonrel_spec(eleceng, photeng, T):
 
     # 2D boolean arrays. 
     beta_2D_small = (beta_2D_mask < 0.01)
-    eta_2D_small  = (eta_2D_mask < 0.1/beta_2D_mask) & (eta_2D_mask < 100)
+    eta_2D_small  = (eta_2D_mask < 0.1/beta_2D_mask)
 
     where_diff = (beta_2D_small & eta_2D_small)
     
     print('where_diff on (eleceng, photeng) grid: ')
     print(where_diff)
 
-    spec = np.zeros((eleceng.size, photeng.size))
-    epsrel = np.zeros((eleceng.size, photeng.size))
+    spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
+    epsrel = np.zeros((eleceng.size, photeng.size), dtype='float128')
 
     spec_with_diff, err_with_diff = spec_diff(
         eleceng_2D_mask[where_diff].flatten(), 
@@ -402,7 +402,12 @@ def nonrel_spec(eleceng, photeng, T):
 
     spec[where_diff] = spec_with_diff.flatten()
     epsrel[where_diff] = np.abs(
-        err_with_diff.flatten()/spec[where_diff]
+        np.divide(
+            err_with_diff.flatten(),
+            spec[where_diff],
+            out = np.zeros_like(err_with_diff.flatten()),
+            where = (spec[where_diff] != 0)
+        )
     )
     
     print('spec from spec_diff: ')
@@ -410,7 +415,7 @@ def nonrel_spec(eleceng, photeng, T):
     print('epsrel from spec_diff: ')
     print(epsrel)
 
-    where_series = (~where_diff) | (epsrel > 1e-6)
+    where_series = (~where_diff) | (epsrel > 1e-3)
     print('where_series on (eleceng, photeng) grid: ')
     print(where_series)
 

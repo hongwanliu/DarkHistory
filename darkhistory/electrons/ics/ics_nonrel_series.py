@@ -7,7 +7,8 @@ from darkhistory.utilities import log_1_plus_x
 from darkhistory.utilities import diff_pow
 from darkhistory.utilities import check_err
 from darkhistory.utilities import bernoulli as bern
-from darkhistory.utilities import div_ignore_by_zero
+from darkhistory.utilities import log_series_diff
+from darkhistory.utilities import spence_series_diff
 
 # General series expressions for integrals over Planck distribution.
 
@@ -82,11 +83,11 @@ def F1(a,b,epsrel=0):
 
     # if both are 1D, then the rest of the code still works.
 
-    integral = np.zeros(a.shape)
+    integral = np.zeros(a.shape, dtype='float128')
 
     both_low = (a < lowlim) & (b < lowlim)
     both_high = (a > upplim) & (b > upplim)
-    
+
     if np.any(both_low):
 
         # Use diff_pow to compute differences in powers accurately.
@@ -108,15 +109,11 @@ def F1(a,b,epsrel=0):
 
         # Use a series for the spence function.
 
-        spence_term = np.sum(
-            np.array(
-                [diff_pow(
-                    np.exp(-b[both_high]), 
-                    np.exp(-a[both_high]), i
-                )/i**2 for i in np.arange(1,11)]
-            ), axis=0
+        spence_term = spence_series_diff(
+            np.exp(-b[both_high]),
+            np.exp(-a[both_high])
         )
-
+        
         integral[both_high] = (
             b[both_high]*log_1_plus_x(-np.exp(-b[both_high]))
             - a[both_high]*log_1_plus_x(-np.exp(-a[both_high]))
@@ -178,7 +175,7 @@ def F0(a,b,epsrel=0):
 
     # if both are 1D, then the rest of the code still works.
 
-    integral = np.zeros(a.shape)
+    integral = np.zeros(a.shape, dtype='float128')
 
     both_low = (a < lowlim) & (b < lowlim)
     both_high = (a > upplim) & (b > upplim)
@@ -198,13 +195,11 @@ def F0(a,b,epsrel=0):
             check_err(integral[both_low], err, epsrel)
 
     if np.any(both_high):
-        integral[both_high] = np.sum(
-            np.array(
-                [-diff_pow(np.exp(-b[both_high]), np.exp(-a[both_high]), i)/i
-                    for i in np.arange(1,11)
-                ]
-            ), axis=0
+        integral[both_high] = log_series_diff(
+            np.exp(-b[both_high]),
+            np.exp(-a[both_high])
         )
+
         if epsrel > 0:
             err = -diff_pow(
                 np.exp(-b[both_high]), 
@@ -282,7 +277,7 @@ def F_inv(a,b,test,tol=1e-10):
 
     # if both are 1D, then the rest of the code still works.
 
-    integral = np.zeros(a.shape)
+    integral = np.zeros(a.shape, dtype='float128')
 
     both_low  = (a < bound) & (b <  bound)
     low_high  = (a < bound) & (b >= bound)
@@ -299,10 +294,11 @@ def F_inv(a,b,test,tol=1e-10):
         while err > tol:
             next_term = next(low_sum_b) - next(low_sum_a)
             err = np.max(np.abs(
-                div_ignore_by_zero(
+                np.divide(
                     next_term, 
                     integral[both_low], 
-                    0
+                    out = np.zeros_like(next_term), 
+                    where = (integral[both_low] != 0)
                 )
             ))
             integral[both_low] += next_term
@@ -331,10 +327,11 @@ def F_inv(a,b,test,tol=1e-10):
             next_term_bound_b = - next(high_sum_b)
             next_term = next_term_a_bound + next_term_bound_b
             err = np.max(np.abs(
-                div_ignore_by_zero(
+                np.divide(
                     next_term, 
                     integral[low_high], 
-                    0
+                    out = np.zeros_like(next_term), 
+                    where = (integral[low_high] != 0)
                 )
             ))
             integral[low_high] += next_term
@@ -352,10 +349,11 @@ def F_inv(a,b,test,tol=1e-10):
         while err > tol:
             next_term = next(high_sum_a) - next(high_sum_b)
             err = np.max(np.abs(
-                div_ignore_by_zero(
+                np.divide(
                     next_term,
                     integral[both_high],
-                    0
+                    out = np.zeros_like(next_term), 
+                    where = (integral[both_high] != 0)
                 )
             ))
             integral[both_high] += next_term
@@ -408,7 +406,7 @@ def F_log(a,b,tol=1e-10):
             # sp.expn does not support float128.
             next_term = (1/k)*(
                 np.exp(-k*x)*np.log(x) + 
-                sp.expn(1, k*np.array(x, dtype='float64'))
+                sp.expn(1, k*x)
             )
             k += 1
             yield next_term
@@ -427,7 +425,7 @@ def F_log(a,b,tol=1e-10):
 
     # if both are 1D, then the rest of the code still works.
 
-    integral = np.zeros(a.shape)
+    integral = np.zeros(a.shape, dtype='float128')
 
     both_low  = (a < bound) & (b <  bound)
     low_high  = (a < bound) & (b >= bound)
@@ -444,10 +442,11 @@ def F_log(a,b,tol=1e-10):
         while err > tol:
             next_term = next(low_sum_b) - next(low_sum_a)
             err = np.max(np.abs(
-                div_ignore_by_zero(
+                np.divide(
                     next_term, 
                     integral[both_low],
-                    0
+                    out = np.zeros_like(next_term), 
+                    where = integral[both_low] != 0
                 )
             ))
             integral[both_low] += next_term
@@ -460,8 +459,10 @@ def F_log(a,b,tol=1e-10):
 
         # Evaluate the definite integral from a to 2, and then 2 to b.
 
+        b_low_high = np.array(b[low_high], dtype='float64')
+
         low_sum_a = low_summand(a[low_high])
-        high_sum_b = high_summand(b[low_high])
+        high_sum_b = high_summand(b_low_high)
         low_sum_bound = low_summand(bound)
 
         # Exact integral from 2 to infinity.
@@ -476,10 +477,11 @@ def F_log(a,b,tol=1e-10):
             next_term_bound_b = - next(high_sum_b)
             next_term = next_term_a_bound + next_term_bound_b
             err = np.max(np.abs(
-                div_ignore_by_zero(
+                np.divide(
                     next_term, 
                     integral[low_high], 
-                    0
+                    out = np.zeros_like(next_term), 
+                    where = (integral[low_high] != 0)
                 )
             ))
             integral[low_high] += next_term
@@ -490,17 +492,21 @@ def F_log(a,b,tol=1e-10):
 
     if np.any(both_high):
 
-        high_sum_a = high_summand(a[both_high])
-        high_sum_b = high_summand(b[both_high])
+        a_both_high = np.array(a[both_high], dtype='float64')
+        b_both_high = np.array(b[both_high], dtype='float64')
+
+        high_sum_a = high_summand(a_both_high)
+        high_sum_b = high_summand(b_both_high)
         integral[both_high] = next(high_sum_a) - next(high_sum_b)
 
         while err > tol:
             next_term = next(high_sum_a) - next(high_sum_b)
             err = np.max(np.abs(
-                div_ignore_by_zero(
+                np.divide(
                     next_term, 
                     integral[both_high],
-                    0
+                    out = np.zeros_like(next_term), 
+                    where = (integral[both_high] != 0)
                 )
             ))
             integral[both_high] += next_term
@@ -523,129 +529,110 @@ def Q(beta, photeng, T, as_pairs=False):
 
     if np.any(large):
 
+        n = eta[large]
+
         q2_at_0[large] = (
-            4*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**2*(
-                np.exp(eta[large])*(eta[large] - 1) + 1
+            4*n**2*T**2/(1 - np.exp(-n))**2*(
+                np.exp(-n)*(n - 1) + np.exp(-2*n)
             )
         )
 
         q4_at_0[large] = (
-            8*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**4*(
-                np.exp(2*eta[large])*(8*eta[large]**3 
-                    + (4*eta[large]**3 + 50*eta[large] - 36)
-                        *np.cosh(eta[large])
-                    + 2*(9 - 14*eta[large]**2)
-                        *np.sinh(eta[large]) 
-                    -50*eta[large] + 27
-                ) + 9
+            8*n**2*T**2/(1 - np.exp(-n))**4*(
+                np.exp(-n)*(2*n**3 - 14*n**2 + 25*n - 9)
+                + np.exp(-2*n)*(8*n**3 - 50*n + 27)
+                + np.exp(-3*n)*(2*n**3 + 14*n**2 + 25*n - 27)
+                + 9*np.exp(-4*n)
             )
         )
 
         q6_at_0[large] = (
-            4*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**6*(
-                np.exp(3*eta[large])*(
-                    -16*eta[large]**2*np.sinh(eta[large])*(
-                        340*eta[large]**2 
-                        + (68*eta[large]**2 + 885)
-                            *np.cosh(eta[large]) - 885
-                    )
-                    +3*(
-                        352*eta[large]**5 - 3096*eta[large]**3 
-                        + 6150*eta[large] 
-                        - 1125*np.sinh(eta[large]) 
-                        + 900*np.sinh(2*eta[large]) - 2250
-                    )
-                    +np.cosh(eta[large])*(
-                        832*eta[large]**5 + 6192*eta[large]**3 
-                        - 24600*eta[large] + 10125
-                    )
-                    +np.cosh(2*eta[large])*(
-                        32*eta[large]**5 + 3096*eta[large]**3 
-                        + 6150*eta[large] - 4050
-                    )   
-                ) +675
+            4*n**2*T**2/(1 - np.exp(-n))**6*(
+                np.exp(-n)*(
+                    16*n**5 - 272*n**4 + 1548*n**3 
+                    - 3540*n**2 + 3075*n - 675
+                )
+                + np.exp(-2*n)*(
+                    416*n**5 - 2720*n**4 + 3096*n**3
+                    + 7080*n**2 - 12300*n + 3375
+                )
+                + 6*np.exp(-3*n)*(
+                    176*n**5 - 1548*n**3 + 3075*n - 1125
+                )
+                + 2*np.exp(-4*n)*(
+                    208*n**5 + 1360*n**4 + 1548*n**3
+                    - 3540*n**2 - 6150*n + 3375
+                )
+                + np.exp(-5*n)*(
+                    16*n**5 + 272*n**4 + 1548*n**3
+                    + 3540*n**2 + 3075*n - 3375
+                )
+                + np.exp(-6*n)*675
             )
         )
 
         # Computed for error
         q8_at_0[large] = (
-            16*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**8*(
-                np.exp(7*eta[large])*(
-                    16*eta[large]**7 - 496*eta[large]**6 
-                    + 5776*eta[large]**5
-                    - 32144*eta[large]**4 + 90006*eta[large]**3
-                    - 122010*eta[large]**2 + 69825*eta[large] 
-                    - 11025
+            16*n**2*T**2/(1 - np.exp(-n))**8*(
+                np.exp(-n)*(
+                    16*n**7 - 496*n**6 + 5776*n**5
+                    - 32144*n**4 + 90006*n**3 - 122010*n**2 
+                    + 69825*n - 11025
                 )
-                + np.exp(6*eta[large])*(
-                    1920*eta[large]**7 - 27776*eta[large]**6 
-                    + 138624*eta[large]**5
-                    - 257152*eta[large]**4 
-                    + 488040*eta[large]**2
-                    - 418950*eta[large] + 77175
+                + np.exp(-2*n)*(
+                    1920*n**7 - 27776*n**6 + 138624*n**5
+                    - 257152*n**4 + 488040*n**2 
+                    - 418950*n + 77175
                 )
-                + np.exp(5*eta[large])*(
-                    19056*eta[large]**7 - 121520*eta[large]**6 
-                    + 86640*eta[large]**5
-                    + 610736*eta[large]**4 
-                    - 810054*eta[large]**3 
-                    - 610050*eta[large]**2
-                    + 1047375*eta[large] - 231525
+                + np.exp(-3*n)*(
+                    19056*n**7 - 121520*n**6 + 86640*n**5
+                    + 610736*n**4 - 810054*n**3 - 610050*n**2
+                    + 1047375*n - 231525
                 )
-                + np.exp(4*eta[large])*(
-                    38656*eta[large]**7 - 462080*eta[large]**5 
-                    + 1440096*eta[large]**3
-                    - 1396500*eta[large] + 385875
+                + np.exp(-4*n)*(
+                    38656*n**7 - 462080*n**5 + 1440096*n**3
+                    - 1396500*n + 385875
                 )
-                + np.exp(3*eta[large])*(
-                    19056*eta[large]**7 + 121520*eta[large]**6 
-                    + 86640*eta[large]**5
-                    - 610736*eta[large]**4 
-                    - 810054*eta[large]**3
-                    + 610050*eta[large]**2 + 1047375*eta[large]
-                    - 385875
+                + np.exp(-5*n)*(
+                    19056*n**7 + 121520*n**6 + 86640*n**5
+                    - 610736*n**4 - 810054*n**3
+                    + 610050*n**2 + 1047375*n - 385875
                 )
-                + np.exp(2*eta[large])*(
-                    1920*eta[large]**7 + 27776*eta[large]**6 
-                    + 138624*eta[large]**5
-                    + 257152*eta[large]**4 
-                    - 488040*eta[large]**2
-                    - 418950*eta[large] + 231525
+                + np.exp(-6*n)*(
+                    1920*n**7 + 27776*n**6 + 138624*n**5
+                    + 257152*n**4 - 488040*n**2
+                    - 418950*n + 231525
                 )
-                + np.exp(eta[large])*(
-                    16*eta[large]**7 + 496*eta[large]**6 
-                    + 5776*eta[large]**5
-                    + 32144*eta[large]**4 + 90006*eta[large]**3
-                    + 122010*eta[large]**2
-                    + 69825*eta[large] - 77175
+                + np.exp(-7*n)*(
+                    16*n**7 + 496*n**6 + 5776*n**5
+                    + 32144*n**4 + 90006*n**3 + 122010*n**2
+                    + 69825*n - 77175
                 )
-                + 11025
+                + 11025*np.exp(-8*n)
             )
         )
 
     if np.any(small):
 
+        p = eta[small]
+
         q2_at_0[small] = T**2*(
-            2*eta[small]**2 + eta[small]**5/45 
-            - eta[small]**7/1260 + eta[small]**9/37800
+            2*p**2 + p**5/45 - p**7/1260 + p**9/37800
         )
 
         q4_at_0[small] = T**2*(
-            36*eta[small]**2 - 68*eta[small]**3/3 
-            + 2*eta[small]**5 
-            - 89*eta[small]**7/630 + 149*eta[small]**9/18900
+            36*p**2 - 68*p**3/3 + 2*p**5 
+            - 89*p**7/630 + 149*p**9/18900
         )
 
         q6_at_0[small] = T**2*(
-            1350*eta[small]**2 - 1250*eta[small]**3 
-            + 1123*eta[small]**5/5 
-            - 2381*eta[small]**7/84 + 6373*eta[small]**9/2520
+            1350*p**2 - 1250*p**3 + 1123*p**5/5 
+            - 2381*p**7/84 + 6373*p**9/2520
         )
         # Computed for error
         q8_at_0[small] = T**2*(
-            88200*eta[small]**2 - 107800*eta[small]**3 
-            + 165844*eta[small]**5/5
-            - 141679*eta[small]**7/21 + 27247*eta[small]**9/30
+            88200*p**2 - 107800*p**3 + 165844*p**5/5
+            - 141679*p**7/21 + 27247*p**9/30
         )
 
     if as_pairs:
@@ -692,222 +679,188 @@ def Q_and_K(beta, photeng, T, as_pairs=False):
 
     if np.any(large):
 
+        n = eta[large]
+
         q2_at_0[large] = (
-            4*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**2*(
-                np.exp(eta[large])*(eta[large] - 1) + 1
+            4*n**2*T**2/(1 - np.exp(-n))**2*(
+                np.exp(-n)*(n - 1) + np.exp(-2*n)
             )
         )
 
         q4_at_0[large] = (
-            8*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**4*(
-                np.exp(2*eta[large])*(
-                    8*eta[large]**3 
-                    + (4*eta[large]**3 + 50*eta[large] - 36)
-                        *np.cosh(eta[large])
-                    + 2*(9 - 14*eta[large]**2)
-                        *np.sinh(eta[large]) 
-                    -50*eta[large] + 27
-                ) + 9
+            8*n**2*T**2/(1 - np.exp(-n))**4*(
+                np.exp(-n)*(2*n**3 - 14*n**2 + 25*n - 9)
+                + np.exp(-2*n)*(8*n**3 - 50*n + 27)
+                + np.exp(-3*n)*(2*n**3 + 14*n**2 + 25*n - 27)
+                + 9*np.exp(-4*n)
             )
         )
 
         q6_at_0[large] = (
-            4*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**6*(
-                np.exp(3*eta[large])*(
-                    -16*eta[large]**2*np.sinh(eta[large])*(
-                        340*eta[large]**2 
-                        + (68*eta[large]**2 + 885)
-                            *np.cosh(eta[large]) 
-                        - 885
-                    )
-                    +3*(
-                        352*eta[large]**5 - 3096*eta[large]**3 
-                        + 6150*eta[large] 
-                        - 1125*np.sinh(eta[large]) 
-                        + 900*np.sinh(2*eta[large]) - 2250
-                    )
-                    +np.cosh(eta[large])*(
-                        832*eta[large]**5 + 6192*eta[large]**3 
-                        - 24600*eta[large] + 10125
-                    )
-                    +np.cosh(2*eta[large])*(
-                        32*eta[large]**5 + 3096*eta[large]**3 
-                        + 6150*eta[large] - 4050
-                    )   
-                ) +675
+            4*n**2*T**2/(1 - np.exp(-n))**6*(
+                np.exp(-n)*(
+                    16*n**5 - 272*n**4 + 1548*n**3 
+                    - 3540*n**2 + 3075*n - 675
+                )
+                + np.exp(-2*n)*(
+                    416*n**5 - 2720*n**4 + 3096*n**3
+                    + 7080*n**2 - 12300*n + 3375
+                )
+                + 6*np.exp(-3*n)*(
+                    176*n**5 - 1548*n**3 + 3075*n - 1125
+                )
+                + 2*np.exp(-4*n)*(
+                    208*n**5 + 1360*n**4 + 1548*n**3
+                    - 3540*n**2 - 6150*n + 3375
+                )
+                + np.exp(-5*n)*(
+                    16*n**5 + 272*n**4 + 1548*n**3
+                    + 3540*n**2 + 3075*n - 3375
+                )
+                + np.exp(-6*n)*675
             )
         )
 
         # Computed for error
         q8_at_0[large] = (
-            16*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**8*(
-                np.exp(7*eta[large])*(
-                    16*eta[large]**7 - 496*eta[large]**6 
-                    + 5776*eta[large]**5 - 32144*eta[large]**4 
-                    + 90006*eta[large]**3 - 122010*eta[large]**2
-                    + 69825*eta[large] - 11025
+            16*n**2*T**2/(1 - np.exp(-n))**8*(
+                np.exp(-n)*(
+                    16*n**7 - 496*n**6 + 5776*n**5
+                    - 32144*n**4 + 90006*n**3 - 122010*n**2 
+                    + 69825*n - 11025
                 )
-                + np.exp(6*eta[large])*(
-                    1920*eta[large]**7 - 27776*eta[large]**6 
-                    + 138624*eta[large]**5 
-                    - 257152*eta[large]**4 
-                    + 488040*eta[large]**2 - 418950*eta[large] 
-                    + 77175
+                + np.exp(-2*n)*(
+                    1920*n**7 - 27776*n**6 + 138624*n**5
+                    - 257152*n**4 + 488040*n**2 
+                    - 418950*n + 77175
                 )
-                + np.exp(5*eta[large])*(
-                    19056*eta[large]**7 - 121520*eta[large]**6 
-                    + 86640*eta[large]**5 + 610736*eta[large]**4
-                    - 810054*eta[large]**3 
-                    - 610050*eta[large]**2 + 1047375*eta[large] 
-                    - 231525
+                + np.exp(-3*n)*(
+                    19056*n**7 - 121520*n**6 + 86640*n**5
+                    + 610736*n**4 - 810054*n**3 - 610050*n**2
+                    + 1047375*n - 231525
                 )
-                + np.exp(4*eta[large])*(
-                    38656*eta[large]**7 - 462080*eta[large]**5 
-                    + 1440096*eta[large]**3
-                    - 1396500*eta[large] + 385875
+                + np.exp(-4*n)*(
+                    38656*n**7 - 462080*n**5 + 1440096*n**3
+                    - 1396500*n + 385875
                 )
-                + np.exp(3*eta[large])*(
-                    19056*eta[large]**7 + 121520*eta[large]**6 
-                    + 86640*eta[large]**5 - 610736*eta[large]**4
-                    - 810054*eta[large]**3
-                    + 610050*eta[large]**2 + 1047375*eta[large]
-                    - 385875
+                + np.exp(-5*n)*(
+                    19056*n**7 + 121520*n**6 + 86640*n**5
+                    - 610736*n**4 - 810054*n**3
+                    + 610050*n**2 + 1047375*n - 385875
                 )
-                + np.exp(2*eta[large])*(
-                    1920*eta[large]**7 + 27776*eta[large]**6 
-                    + 138624*eta[large]**5
-                    + 257152*eta[large]**4 
-                    - 488040*eta[large]**2
-                    - 418950*eta[large] + 231525
+                + np.exp(-6*n)*(
+                    1920*n**7 + 27776*n**6 + 138624*n**5
+                    + 257152*n**4 - 488040*n**2
+                    - 418950*n + 231525
                 )
-                + np.exp(eta[large])*(
-                    16*eta[large]**7 + 496*eta[large]**6 
-                    + 5776*eta[large]**5
-                    + 32144*eta[large]**4 + 90006*eta[large]**3 
-                    + 122010*eta[large]**2
-                    + 69825*eta[large] - 77175
+                + np.exp(-7*n)*(
+                    16*n**7 + 496*n**6 + 5776*n**5
+                    + 32144*n**4 + 90006*n**3 + 122010*n**2
+                    + 69825*n - 77175
                 )
-                + 11025
+                + 11025*np.exp(-8*n)
             )
         )
 
         k4_at_0[large] = (
-            8*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**4*(
-                np.exp(2*eta[large])*(
-                    -8*eta[large]**3 
-                    - 2*(2*eta[large]**3 + 7*eta[large] + 2)
-                        *np.cosh(eta[large])
-                    +(20*eta[large]**2 + 2)
-                        *np.sinh(eta[large]) 
-                    +14*eta[large] + 3
-                ) +1
+            -8*n**2*T**2/(1 - np.exp(-n))**4*(
+                np.exp(-n)*(2*n**3 - 10*n**2 + 7*n + 1)
+                + np.exp(-2*n)*(8*n**3 - 14*n - 3)
+                + np.exp(-3*n)*(2*n**3 + 10*n**2 + 7*n + 3)
+                - np.exp(-4*n)
             )
         )
 
         k6_at_0[large] = (
-            4*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**6*(
-                -np.exp(3*eta[large])*(
-                    6*(176*eta[large]**5 - 788*eta[large]**3 
-                        + 303*eta[large] + 55
-                    )
-                    + 2*(16*eta[large]**5 + 788*eta[large]**3 
-                        + 303*eta[large] + 99
-                    ) * np.cosh(2*eta[large])
-                    + (-4160*eta[large]*4 
-                        + 3984*eta[large]**2 + 165
-                    ) * np.sinh(eta[large])
-                    + (832*eta[large]**5 + 3152*eta[large]**3
-                        -8*(108*eta[large]**4 
-                            + 498*eta[large]**2 + 33
-                        )*np.sinh(eta[large])
-                        -2424*eta[large] - 495
-                    ) * np.cosh(eta[large])
-                ) + 33
+            -4*n**2*T**2/(1 - np.exp(-n))**6*(
+                np.exp(-n)*(
+                    16*n**5 - 208*n**4 + 788*n**3 
+                    -996*n**2 + 303*n + 33
+                )
+                + np.exp(-2*n)*(
+                    416*n**5 - 2080*n**4 + 1576*n**3
+                    + 1992*n**2 - 1212*n - 165
+                )
+                + 6*np.exp(-3*n)*(
+                    176*n**5 - 788*n**3 + 303*n + 55
+                )
+                + 2*np.exp(-4*n)*(
+                    208*n**5 + 1040*n**4 + 788*n**3
+                    - 996*n**2 - 606*n - 165
+                )
+                + np.exp(-5*n)*(
+                    16*n**5 + 208*n**4 + 788*n**3
+                    + 996*n**2 + 303*n + 165
+                )
+                - 33*np.exp(-6*n)
             )
         )
 
         k8_at_0[large] = (
-            -16*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**8*(
-                np.exp(7*eta[large])*(
-                    16*eta[large]**7 - 400*eta[large]**6 
-                    + 3536*eta[large]**5
-                    - 13904*eta[large]**4 + 24814*eta[large]**3
-                    - 17958*eta[large]**2
-                    + 3459*eta[large] + 309
+            -16*n**2*T**2/(1 - np.exp(-n))**8*(
+                np.exp(-n)*(
+                    16*n**7 - 400*n**6 + 3536*n**5
+                    - 13904*n**4 + 24814*n**3 - 17958*n**2
+                    + 3459*n + 309
                 )
-                + np.exp(6*eta[large])*(
-                    1920*eta[large]**7 - 22400*eta[large]**6 
-                    + 84864*eta[large]**5
-                    - 111232*eta[large]**4 + 71832*eta[large]**2
-                    - 20754*eta[large] - 2163
+                + np.exp(-2*n)*(
+                    1920*n**7 - 22400*n**6 + 84864*n**5
+                    - 111232*n**4 + 71832*n**2 - 20754*n - 2163
                 )
-                + np.exp(5*eta[large])*(
-                    19056*eta[large]**7 - 98000*eta[large]**6 
-                    + 53040*eta[large]**5
-                    + 264176*eta[large]**4 
-                    - 223326*eta[large]**3
-                    - 89790*eta[large]**2 + 51885*eta[large] 
-                    + 6489
+                + np.exp(-3*n)*(
+                    19056*n**7 - 98000*n**6 + 53040*n**5
+                    + 264176*n**4 - 223326*n**3
+                    - 89790*n**2 + 51885*n + 6489
                 )
-                + np.exp(4*eta[large])*(
-                    38656*eta[large]**7 - 282880*eta[large]**5 
-                    + 397024*eta[large]**3
-                    - 69180*eta[large] - 10815
+                + np.exp(-4*n)*(
+                    38656*n**7 - 282880*n**5 + 397024*n**3
+                    - 69180*n - 10815
                 )
-                + np.exp(3*eta[large])*(
-                    19056*eta[large]**7 + 98000*eta[large]**6 
-                    + 53040*eta[large]**5
-                    - 264176*eta[large]**4 
-                    - 223326*eta[large]**3
-                    + 89790*eta[large]**2 
-                    + 51885*eta[large] + 10815
+                + np.exp(-5*n)*(
+                    19056*n**7 + 98000*n**6 + 53040*n**5
+                    - 264176*n**4 - 223326*n**3 + 89790*n**2 
+                    + 51885*n + 10815
                 )
-                + np.exp(2*eta[large])*(
-                    1920*eta[large]**7 + 22400*eta[large]**6 
-                    + 84864*eta[large]**5
-                    + 111232*eta[large]**4 - 71832*eta[large]**2
-                    - 20754*eta[large] - 6489
+                + np.exp(-6*n)*(
+                    1920*n**7 + 22400*n**6 + 84864*n**5
+                    + 111232*n**4 - 71832*n**2 - 20754*n - 6489
                 )
-                + np.exp(eta[large])*(
-                    16*eta[large]**7 + 400*eta[large]**6 
-                    + 3536*eta[large]**5
-                    + 13904*eta[large]**4 + 24814*eta[large]**3
-                    + 17958*eta[large]**2
-                    + 3459*eta[large] + 2163
+                + np.exp(-7*n)*(
+                    16*n**7 + 400*n**6 + 3536*n**5
+                    + 13904*n**4 + 24814*n**3
+                    + 17958*n**2 + 3459*n + 2163
                 )
-                + 309
+                - 309*np.exp(-8*n)
             )
         )
 
     if np.any(small):
+
+        p = eta[small]
+
         q4_at_0[small] = T**2*(
-            36*eta[small]**2 - 68*eta[small]**3/3 
-            + 2*eta[small]**5 
-            - 89*eta[small]**7/630 + 149*eta[small]**9/18900
+            36*p**2 - 68*p**3/3 + 2*p**5 
+            - 89*p**7/630 + 149*p**9/18900
         )
         q6_at_0[small] = T**2*(
-            1350*eta[small]**2 - 1250*eta[small]**3 
-            + 1123*eta[small]**5/5
-            - 2381*eta[small]**7/84 + 6373*eta[small]**9/2520
+            1350*p**2 - 1250*p**3 + 1123*p**5/5
+            - 2381*p**7/84 + 6373*p**9/2520
         )
         q8_at_0[small] = T**2*(
-            88200*eta[small]**2 - 107800*eta[small]**3 + 165844*eta[small]**5/5
-            - 141679*eta[small]**7/21 + 27247*eta[small]**9/30
+            88200*p**2 - 107800*p**3 + 165844*p**5/5
+            - 141679*p**7/21 + 27247*p**9/30
         )
         k4_at_0[small] = T**2*(
-            4*eta[small]**2 + 4*eta[small]**3 
-            - 46*eta[small]**5/45 
-            + 59*eta[small]**7/630 - 37*eta[small]**9/6300
+            4*p**2 + 4*p**3 - 46*p**5/45 
+            + 59*p**7/630 - 37*p**9/6300
         )
         k6_at_0[small] = T**2*(
-            66*eta[small]**2 + 90*eta[small]**3 
-            - 193*eta[small]**5/3
-            + 5309*eta[small]**7/420 - 393*eta[small]**9/280
+            66*p**2 + 90*p**3 - 193*p**5/3
+            + 5309*p**7/420 - 393*p**9/280
         )
         k8_at_0[small] = T**2*(
-            2472*eta[small]**2 + 4200*eta[small]**3 
-            - 17780*eta[small]**5/3
-            + 31411*eta[small]**7/15 - 15931*eta[small]**9/42
+            2472*p**2 + 4200*p**3 - 17780*p**5/3
+            + 31411*p**7/15 - 15931*p**9/42
         )
 
     Q_term = Q(beta, photeng, T, as_pairs=as_pairs)
@@ -958,191 +911,171 @@ def H_and_G(beta, photeng, T, as_pairs=False):
 
     if np.any(large):
 
+        n = eta[large]
+
         h3_at_0[large] = (
-            2*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**3*(
-                2*np.exp(eta[large])
-                    *(2*eta[large]**2 + 9*eta[large] - 15)
-                + np.exp(2*eta[large])
-                    *(4*eta[large]**2 - 18*eta[large] + 15)
-                +15
+            2*n**2*T**2/(1 - np.exp(-n))**3*(
+                np.exp(-n)*(4*n**2 - 18*n + 15)
+                + 2*np.exp(-2*n)*(2*n**2 + 9*n - 15)
+                + 15*np.exp(-3*n)
             )
         )
 
         h5_at_0[large] = (
-            2*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**5*(
-                np.exp(4*eta[large])*(
-                    16*eta[large]**4 - 200*eta[large]**3 
-                    + 760*eta[large]**2 - 1020*eta[large] + 405
+            2*n**2*T**2/(1 - np.exp(-n))**5*(
+                np.exp(-n)*(
+                    16*n**4 - 200*n**3 
+                    + 760*n**2 - 1020*n + 405
                 )
-                + 4*np.exp(3*eta[large])*(
-                    44*eta[large]**4 - 150*eta[large]**3 
-                    - 190*eta[large]**2 + 765*eta[large] - 405
+                + 4*np.exp(-2*n)*(
+                    44*n**4 - 150*n**3 
+                    - 190*n**2 + 765*n - 405
                 )
-                + 2*np.exp(2*eta[large])*(
-                    88*eta[large]**4 + 300*eta[large]**3 
-                    - 380*eta[large]**2 - 1530*eta[large] + 1215
+                + 2*np.exp(-3*n)*(
+                    88*n**4 + 300*n**3 
+                    - 380*n**2 - 1530*n + 1215
                 )
-                + 4*np.exp(eta[large])*(
-                    4*eta[large]**4 + 50*eta[large]**3 
-                    + 190*eta[large]**2 + 255*eta[large] - 405
-                ) + 405
+                + 4*np.exp(-4*n)*(
+                    4*n**4 + 50*n**3 
+                    + 190*n**2 + 255*n - 405
+                ) 
+                + 405*np.exp(-5*n)
             )
         )
 
         h7_at_0[large] = (
-            2*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**7*(
-                np.exp(6*eta[large])*(
-                    64*eta[large]**6 - 1568*eta[large]**5 
-                    + 13776*eta[large]**4 - 54600*eta[large]**3 
-                    + 100380*eta[large]**2 - 78750*eta[large] 
+            2*n**2*T**2/(1 - np.exp(-n))**7*(
+                np.exp(-n)*(
+                    64*n**6 - 1568*n**5 + 13776*n**4 
+                    - 54600*n**3 + 100380*n**2 - 78750*n 
                     + 20475
                 )
-                + 2*np.exp(5*eta[large])*(
-                    1824*eta[large]**6 - 19600*eta[large]**5 
-                    + 61992*eta[large]**4 - 27300*eta[large]**3 
-                    - 150570*eta[large]**2 + 196875*eta[large] 
+                + 2*np.exp(-2*n)*(
+                    1824*n**6 - 19600*n**5 + 61992*n**4 
+                    - 27300*n**3 - 150570*n**2 + 196875*n 
                     - 61425
                 )
-                + np.exp(4*eta[large])*(
-                    19328*eta[large]**6 - 62720*eta[large]**5 
-                    - 137760*eta[large]**4
-                    + 436800*eta[large]**3 + 200760*eta[large]**2
-                    - 787500*eta[large] + 307125
+                + np.exp(-3*n)*(
+                    19328*n**6 - 62720*n**5 - 137760*n**4
+                    + 436800*n**3 + 200760*n**2
+                    - 787500*n + 307125
                 )
-                + 4*np.exp(3*eta[large])*(
-                    4832*eta[large]**6 + 15680*eta[large]**5 
-                    - 34440*eta[large]**4
-                    - 109200*eta[large]**3 + 50190*eta[large]**2
-                    + 196875*eta[large] - 102375
+                + 4*np.exp(-4*n)*(
+                    4832*n**6 + 15680*n**5 - 34440*n**4
+                    - 109200*n**3 + 50190*n**2
+                    + 196875*n - 102375
                 )
-                + np.exp(2*eta[large])*(
-                    3648*eta[large]**6 + 39200*eta[large]**5 
-                    + 123984*eta[large]**4
-                    + 54600*eta[large]**3 - 301140*eta[large]**2
-                    - 393750*eta[large] + 307125
+                + np.exp(-5*n)*(
+                    3648*n**6 + 39200*n**5 + 123984*n**4
+                    + 54600*n**3 - 301140*n**2
+                    - 393750*n + 307125
                 )
-                + 2*np.exp(eta[large])*(
-                    32*eta[large]**6 + 784*eta[large]**5 
-                    + 6888*eta[large]**4
-                    + 27300*eta[large]**3 + 50190*eta[large]**2
-                    + 39375*eta[large] - 61425
+                + 2*np.exp(-6*n)*(
+                    32*n**6 + 784*n**5 + 6888*n**4
+                    + 27300*n**3 + 50190*n**2
+                    + 39375*n - 61425
                 )
-                + 20475
+                + 20475*np.exp(-7*n)
             )
         )
 
-        g2_at_0[large] = (-4*eta[large]**2*T**2
-            /(np.exp(eta[large]) - 1)
+        g2_at_0[large] = (-4*n**2*T**2*np.exp(-n)
+            /(1 - np.exp(-n))
         )
 
         g4_at_0[large] = (
-            -16*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**3*(
-                np.exp(2*eta[large])
-                    *(eta[large]**2 - 3*eta[large] + 3)
-                + np.exp(eta[large])
-                    *(eta[large]**2 + 3*eta[large] - 6)
-                +3
+            -16*n**2*T**2/(1 - np.exp(-n))**3*(
+                np.exp(-n) * (n**2 - 3*n + 3)
+                + np.exp(-2*n) * (n**2 + 3*n - 6)
+                + 3 * np.exp(-3*n)
             )
         )
 
         g6_at_0[large] = (
-            -32*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**5*(
-                np.exp(4*eta[large])*(
-                    2*eta[large]**4 - 20*eta[large]**3 
-                    + 70*eta[large]**2 - 90*eta[large] + 45
+            -32*n**2*T**2/(1 - np.exp(-n))**5*(
+                np.exp(-n)*(
+                    2*n**4 - 20*n**3 + 70*n**2 - 90*n + 45
                 )
-                + 2*np.exp(3*eta[large])*(
-                    11*eta[large]**4 - 30*eta[large]**3 
-                    - 35*eta[large]**2 + 135*eta[large] - 90
+                + 2*np.exp(-2*n)*(
+                    11*n**4 - 30*n**3 - 35*n**2 + 135*n - 90
                 )
-                + np.exp(2*eta[large])*(
-                    22*eta[large]**4 + 60*eta[large]**3 
-                    - 70*eta[large]**2 - 270*eta[large] + 270
+                + np.exp(-3*n)*(
+                    22*n**4 + 60*n**3 - 70*n**2 - 270*n + 270
                 )
-                + 2*np.exp(eta[large])*(
-                    eta[large]**4 + 10*eta[large]**3 
-                    + 35*eta[large]**2 + 45*eta[large] - 90
-                ) + 45
+                + 2*np.exp(-4*n)*(
+                    n**4 + 10*n**3 + 35*n**2 + 45*n - 90
+                ) 
+                + 45 * np.exp(-5*n)
             )
         )
 
         g8_at_0[large] = (
-            -256*eta[large]**2*T**2/(np.exp(eta[large]) - 1)**7*(
-                np.exp(6*eta[large])*(
-                    eta[large]**6 - 21*eta[large]**5 
-                    + 168*eta[large]**4 - 630*eta[large]**3
-                    + 1155*eta[large]**2 - 945*eta[large] + 315
+            -256*n**2*T**2/(1 - np.exp(-n))**7*(
+                np.exp(-n)*(
+                    n**6 - 21*n**5 + 168*n**4 - 630*n**3
+                    + 1155*n**2 - 945*n + 315
                 )
-                + 3*np.exp(5*eta[large])*(
-                    19*eta[large]**6 - 175*eta[large]**5 
-                    + 504*eta[large]**4 - 210*eta[large]**3
-                    - 1155*eta[large]**2 + 1575*eta[large] - 630
+                + 3*np.exp(-2*n)*(
+                    19*n**6 - 175*n**5 + 504*n**4 - 210*n**3
+                    - 1155*n**2 + 1575*n - 630
                 )
-                + np.exp(4*eta[large])*(
-                    302*eta[large]**6 - 840*eta[large]**5 
-                    - 1680*eta[large]**4 + 5040*eta[large]**3 
-                    + 2310*eta[large]**2 - 9450*eta[large] + 4725
+                + np.exp(-3*n)*(
+                    302*n**6 - 840*n**5 - 1680*n**4 + 5040*n**3 
+                    + 2310*n**2 - 9450*n + 4725
                 )
-                + 2*np.exp(3*eta[large])*(
-                    151*eta[large]**6 + 420*eta[large]**5 
-                    - 840*eta[large]**4 -2520*eta[large]**3 
-                    + 1155*eta[large]**2 + 4725*eta[large] - 3150
+                + 2*np.exp(-4*n)*(
+                    151*n**6 + 420*n**5 - 840*n**4 -2520*n**3 
+                    + 1155*n**2 + 4725*n - 3150
                 )
-                + 3*np.exp(2*eta[large])*(
-                    19*eta[large]**6 + 175*eta[large]**5 
-                    + 504*eta[large]**4 + 210*eta[large]**3
-                    - 1155*eta[large]**2 - 1575*eta[large] + 1575
+                + 3*np.exp(-5*n)*(
+                    19*n**6 + 175*n**5 + 504*n**4 + 210*n**3
+                    - 1155*n**2 - 1575*n + 1575
                 )
-                + np.exp(eta[large])*(
-                    eta[large]**6 + 21*eta[large]**5 
-                    + 168*eta[large]**4 + 630*eta[large]**3
-                    + 1155*eta[large]**2 + 945*eta[large] - 1890
+                + np.exp(-6*n)*(
+                    n**6 + 21*n**5 + 168*n**4 + 630*n**3
+                    + 1155*n**2 + 945*n - 1890
                 )
-                + 315
+                + 315*np.exp(-7*n)
             )
         )
 
     if np.any(small):
 
+        p = eta[small]
+
         h3_at_0[small] = T**2*(
-            10*eta[small] - 15*eta[small]**2 + 11*eta[small]**3/2
-            - 31*eta[small]**5/120+ 37*eta[small]**7/3024 
-            - 103*eta[small]**9/201600
+            10*p - 15*p**2 + 11*p**3/2 - 31*p**5/120 
+            + 37*p**7/3024 - 103*p**9/201600
         )
 
         h5_at_0[small] = T**2*(
-            178*eta[small] - 405*eta[small]**2 
-            + 475*eta[small]**3/2 - 205*eta[small]**5/8
-            + 6925*eta[small]**7/3024 - 703*eta[small]**9/4480
+            178*p - 405*p**2 + 475*p**3/2 - 205*p**5/8
+            + 6925*p**7/3024 - 703*p**9/4480
         )
 
         h7_at_0[small] = T**2*(
-            6858*eta[small] - 20475*eta[small]**2 
-            + 33075*eta[small]**3/2 - 26369*eta[small]**5/8 
-            + 71801*eta[small]**7/144 - 101903*eta[small]**9/1920
+            6858*p - 20475*p**2 + 33075*p**3/2 - 26369*p**5/8 
+            + 71801*p**7/144 - 101903*p**9/1920
         )
 
         g2_at_0[small] = T**2*(
-            -4*eta[small] + 2*eta[small]**2 - eta[small]**3/3 
-            + eta[small]**5/180 - eta[small]**7/7560 
-            + eta[small]**9/302400
+            -4*p + 2*p**2 - p**3/3 + p**5/180 - p**7/7560 
+            + p**9/302400
         )
 
         g4_at_0[small] = T**2*(
-            -32*eta[small] + 24*eta[small]**2 - 8*eta[small]**3 
-            + 2*eta[small]**5/5 - 19*eta[small]**7/945 
-            + 11*eta[small]**9/12600
+            -32*p + 24*p**2 - 8*p**3 + 2*p**5/5 - 19*p**7/945 
+            + 11*p**9/12600
         )
 
         g6_at_0[small] = T**2*(
-            -736*eta[small] + 720*eta[small]**2 
-            - 360*eta[small]**3 + 38*eta[small]**5
-            -667*eta[small]**7/189 + 211*eta[small]**9/840
+            -736*p + 720*p**2 - 360*p**3 + 38*p**5
+            - 667*p**7/189 + 211*p**9/840
         )
+
         g8_at_0[small] = T**2*(
-            -33792*eta[small] + 40320*eta[small]**2 
-            - 26880*eta[small]**3 + 4928*eta[small]**5 
-            - 6752*eta[small]**7/9 + 1228*eta[small]**9/15
+            -33792*p + 40320*p**2 - 26880*p**3 + 4928*p**5 
+            - 6752*p**7/9 + 1228*p**9/15
         )
 
     if as_pairs:
