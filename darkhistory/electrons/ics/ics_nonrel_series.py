@@ -214,7 +214,7 @@ def F0(a,b,epsrel=0):
 
     return integral
 
-def F_inv(a,b,test,tol=1e-10):
+def F_inv(a,b,tol=1e-10):
     """Definite integral of 1/[x(exp(x) - 1)]. 
 
     Parameters

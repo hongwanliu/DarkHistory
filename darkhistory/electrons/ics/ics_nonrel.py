@@ -35,6 +35,8 @@ def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
     Insert note on the suitability of the method. 
     """
 
+    print('Computing spectra by analytic series...')
+
     gamma = eleceng/phys.me
     # Most accurate way of finding beta when beta is small, I think.
     beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
@@ -65,21 +67,23 @@ def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
     #     print(eta)
 
 
+    print('Computing series 1/8...')
     F1_low = F1(lowlim, eta)
+    print('Computing series 2/8...')
     F0_low = F0(lowlim, eta)
-    F_inv_low = F_inv(lowlim, eta, test)
+    print('Computing series 3/8...')
+    F_inv_low = F_inv(lowlim, eta)
+    print('Computing series 4/8...')
     F_log_low = F_log(lowlim, eta)
 
-    # print('term-by-term')
-    # if test:
-    #     print(F_inv_low)
-    # else:
-    #     print(F_inv_low[0:-1,0:-1])
-
     F1_upp = F1(eta, upplim)
+    print('Computing series 5/8...')
     F0_upp = F0(eta, upplim)
-    F_inv_upp = F_inv(eta, upplim, test)
+    print('Computing series 6/8...')
+    F_inv_upp = F_inv(eta, upplim)
+    print('Computing series 7/8...')
     F_log_upp = F_log(eta, upplim)
+    print('Computing series 8/8...')
 
     # CMB photon energy less than outgoing photon energy.
 
@@ -180,6 +184,8 @@ def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
         print('***** End Diagnostics *****')
 
     # Addition ordered to minimize catastrophic cancellation, but if this is important, you shouldn't be using this method.
+
+    print('Computation by analytic series complete!')
 
     return np.transpose(
         prefac*np.transpose(
@@ -317,6 +323,9 @@ def spec_diff(eleceng, photeng, T, as_pairs=False):
     ----
     Insert note on the suitability of the method. 
     """
+
+    print('Computing spectra by an expansion in beta...')
+
     gamma = eleceng/phys.me
     # Most accurate way of finding beta when beta is small, I think.
     beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
@@ -330,7 +339,9 @@ def spec_diff(eleceng, photeng, T, as_pairs=False):
         * (8*np.pi/(phys.ele_compton*phys.me)**3)
     )
 
+    print('Computing Q and K terms...')
     Q_and_K_term = Q_and_K(beta, photeng, T, as_pairs=as_pairs)
+    print('Computing H and G terms...')
     H_and_G_term = H_and_G(beta, photeng, T, as_pairs=as_pairs)
 
     term = np.transpose(
@@ -344,6 +355,8 @@ def spec_diff(eleceng, photeng, T, as_pairs=False):
             Q_and_K_term[1] + H_and_G_term[1]
         )
     )
+
+    print('Computation by expansion in beta complete!')
 
     return term, err
 
@@ -371,6 +384,8 @@ def nonrel_spec(eleceng, photeng, T):
     Insert note on the suitability of the method. 
     """
 
+    print('Initializing...')
+
     gamma = eleceng/phys.me
     # Most accurate way of finding beta when beta is small, I think.
     beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
@@ -388,8 +403,11 @@ def nonrel_spec(eleceng, photeng, T):
 
     where_diff = (beta_2D_small & eta_2D_small)
     
-    print('where_diff on (eleceng, photeng) grid: ')
-    print(where_diff)
+    testing = False
+
+    if testing:
+        print('where_diff on (eleceng, photeng) grid: ')
+        print(where_diff)
 
     spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
     epsrel = np.zeros((eleceng.size, photeng.size), dtype='float128')
@@ -399,6 +417,9 @@ def nonrel_spec(eleceng, photeng, T):
         photeng_2D_mask[where_diff].flatten(), 
         T, as_pairs=True
     )
+
+
+    print('Computing errors for beta expansion method...')
 
     spec[where_diff] = spec_with_diff.flatten()
     epsrel[where_diff] = np.abs(
@@ -410,14 +431,18 @@ def nonrel_spec(eleceng, photeng, T):
         )
     )
     
-    print('spec from spec_diff: ')
-    print(spec)
-    print('epsrel from spec_diff: ')
-    print(epsrel)
+    if testing:
+        print('spec from spec_diff: ')
+        print(spec)
+        print('epsrel from spec_diff: ')
+        print(epsrel)
 
     where_series = (~where_diff) | (epsrel > 1e-3)
-    print('where_series on (eleceng, photeng) grid: ')
-    print(where_series)
+
+    if testing:
+    
+        print('where_series on (eleceng, photeng) grid: ')
+        print(where_series)
 
     spec_with_series = spec_series(
         eleceng_2D_mask[where_series].flatten(),
@@ -426,13 +451,17 @@ def nonrel_spec(eleceng, photeng, T):
     )
 
     spec[where_series] = spec_with_series.flatten()
-    spec_with_series = np.array(spec)
-    spec_with_series[~where_series] = 0
-    print('spec from spec_series: ')
-    print(spec_with_series)
-    print('*********************')
-    print('Final Result: ')
-    print(spec)
+
+    if testing:
+        spec_with_series = np.array(spec)
+        spec_with_series[~where_series] = 0
+        print('spec from spec_series: ')
+        print(spec_with_series)
+        print('*********************')
+        print('Final Result: ')
+        print(spec)
+
+    print('Spectrum computed!')
 
     return spec
 
