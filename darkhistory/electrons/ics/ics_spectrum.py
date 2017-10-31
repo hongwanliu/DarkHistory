@@ -11,7 +11,7 @@ from darkhistory import physics as phys
 
 from tqdm import tqdm_notebook as tqdm
 
-def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
+def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     """ Nonrelativistic ICS spectrum using the series method.
 
     Parameters
@@ -55,17 +55,6 @@ def spec_series(eleceng, photeng, T, as_pairs=False, test=True):
         * (8*np.pi/(phys.ele_compton*phys.me)**3) 
         * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
     )
-
-    # print('term by term')
-    # if test:
-    #     print('yes')
-    #     print(lowlim)
-    #     print(eta)
-    # else:
-    #     print('no')
-    #     print(lowlim[0:-1,0:-1])
-    #     print(eta)
-
 
     print('Computing series 1/8...')
     F1_low = F1(lowlim, eta)
@@ -300,7 +289,7 @@ def spec_quad(eleceng_arr, photeng_arr, T):
 
     return integral
 
-def spec_diff(eleceng, photeng, T, as_pairs=False):
+def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
     """ Nonrelativistic ICS spectrum by beta expansion.
 
     Parameters
@@ -363,7 +352,7 @@ def spec_diff(eleceng, photeng, T, as_pairs=False):
 def nonrel_spec(eleceng, photeng, T):
     """ Nonrelativistic ICS spectrum.
 
-    Switches between `spec_diff` and `spec_series`. 
+    Switches between `nonrel_spec_diff` and `nonrel_spec_series`. 
 
     Parameters
     ----------
@@ -412,7 +401,7 @@ def nonrel_spec(eleceng, photeng, T):
     spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
     epsrel = np.zeros((eleceng.size, photeng.size), dtype='float128')
 
-    spec_with_diff, err_with_diff = spec_diff(
+    spec_with_diff, err_with_diff = nonrel_spec_diff(
         eleceng_2D_mask[where_diff].flatten(), 
         photeng_2D_mask[where_diff].flatten(), 
         T, as_pairs=True
@@ -432,9 +421,9 @@ def nonrel_spec(eleceng, photeng, T):
     )
     
     if testing:
-        print('spec from spec_diff: ')
+        print('spec from nonrel_spec_diff: ')
         print(spec)
-        print('epsrel from spec_diff: ')
+        print('epsrel from nonrel_spec_diff: ')
         print(epsrel)
 
     where_series = (~where_diff) | (epsrel > 1e-3)
@@ -444,7 +433,7 @@ def nonrel_spec(eleceng, photeng, T):
         print('where_series on (eleceng, photeng) grid: ')
         print(where_series)
 
-    spec_with_series = spec_series(
+    spec_with_series = nonrel_spec_series(
         eleceng_2D_mask[where_series].flatten(),
         photeng_2D_mask[where_series].flatten(),
         T, as_pairs=True
@@ -455,7 +444,7 @@ def nonrel_spec(eleceng, photeng, T):
     if testing:
         spec_with_series = np.array(spec)
         spec_with_series[~where_series] = 0
-        print('spec from spec_series: ')
+        print('spec from nonrel_spec_series: ')
         print(spec_with_series)
         print('*********************')
         print('Final Result: ')
@@ -464,6 +453,121 @@ def nonrel_spec(eleceng, photeng, T):
     print('Spectrum computed!')
 
     return spec
+
+def rel_spec(eleceng, photeng, T, as_pairs=False):
+    """ Relativistic ICS spectrum.
+
+    Parameters
+    ----------
+    eleceng : ndarray
+        Incoming electron energy. 
+    photeng : ndarray
+        Outgoing photon energy. 
+    T : float
+        CMB temperature. 
+    as_pairs : bool
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+
+    Returns
+    -------
+    tuple of ndarrays
+        dN/(dt dE) of the outgoing photons and the error, with abscissa given by (eleceng, photeng). 
+
+    Note
+    ----
+    Insert note on the suitability of the method. 
+    """
+    print('Initializing...')
+
+    gamma = eleceng/phys.me
+    # Most accurate way of finding beta when beta is small, I think.
+    beta = np.sqrt(1 - 1/gamma**2)
+    
+    if as_pairs:
+        lowlim = (1/gamma**2)/(1+beta)**2*photeng/T 
+        upplim = gamma**2*(1+beta)**2*photeng/T
+        Gamma_eps_q = (
+            photeng/(gamma*phys.me)
+            / (1 - photeng/(gamma*phys.me))
+        )
+        B = phys.me/(4*gamma)*Gamma_eps_q
+        
+    else: 
+        lowlim = np.outer((1/gamma**2)/(1+beta)**2, photeng/T)
+        upplim = np.outer(gamma**2*(1+beta)**2, photeng/T)
+        Gamma_eps_q = (
+            np.outer(1/(gamma*phys.me), photeng)
+            / (1 - np.outer(1/(gamma*phys.me), photeng))
+        )
+        B = np.transpose(
+                phys.me/(4*gamma)*np.transpose(Gamma_eps_q)
+        )
+
+    Q = (1/2)*Gamma_eps_q**2/(1 + Gamma_eps_q)
+
+    prefac = np.float128( 
+        6*np.pi*phys.thomson_xsec*phys.c*T/(gamma**2)
+        /(phys.ele_compton*phys.me)**3
+    )
+
+    print('Computing series 1/4...')
+    F1_int = F1(lowlim, upplim)
+    print('Computing series 2/4...')
+    F0_int = F0(lowlim, upplim)
+    print('Computing series 3/4...')
+    F_inv_int = F_inv(lowlim, upplim)
+    print('Computing series 4/4...')
+    F_log_int = F_log(lowlim, upplim)
+
+    term_1 = (1 + Q)*T*F1_int
+    term_2 = (1 + 2*np.log(B/T) - Q)*B*F0_int
+    term_3 = -2*B*F_log_int
+    term_4 = -2*B**2/T*F_inv_int
+    
+    testing = True
+    if testing:
+        print('***** Diagnostics *****')
+        print('gamma: ', gamma)
+        print('beta: ', beta)
+        print('lowlim: ', lowlim)
+        print('lowlim*T: ', lowlim*T)
+        print('upplim: ', upplim)
+        print('upplim*T: ', upplim*T)
+        print('Gamma_eps_q: ', Gamma_eps_q)
+        print('Q: ', Q)
+        print('B: ', B)
+
+        print('***** Integrals *****')
+        print('term_1: ', term_1)
+        term_1_quad = quad(
+            lambda x: x/(np.exp(x) - 1), lowlim[0,0], 
+            upplim[0,0], epsabs = 0, epsrel = 1e-10
+        )[0]*(1 + Q)*T
+        print('term_1 by quadrature: ', term_1_quad)
+        print('term_2: ', term_2)
+        print('term_3: ', term_3)
+        print('term_4: ', term_4)
+        print('Sum of terms: ', term_1+term_2+term_3+term_4)
+
+        print('Final answer: ', 
+            np.transpose(
+                prefac*np.transpose(
+                    term_1 + term_2 + term_3 + term_4
+                )
+            )
+        )
+        
+        print('***** End Diagnostics *****')
+
+    print('Relativistic Computation Complete!')
+
+    return np.transpose(
+        prefac*np.transpose(term_1 + term_2 + term_3 + term_4)
+    )
+
+
+
 
 
 

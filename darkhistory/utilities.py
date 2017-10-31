@@ -94,21 +94,23 @@ def log_1_plus_x(x):
     ndarray
         log(1+x). 
     """
-    ind_zero = ((1+x) - 1 != 0)
-    expr = np.zeros(x.size)
+    ind_not_zero = ((1+x) - 1 != 0)
+    expr = np.zeros_like(x)
 
-    if np.any(ind_zero):
-        expr[ind_zero] = (
-            x[ind_zero]*np.log(1+x[ind_zero])/((1+x[ind_zero]) - 1)
+    if np.any(ind_not_zero):
+        expr[ind_not_zero] = (
+            x[ind_not_zero]*np.log(1+x[ind_not_zero])
+            /((1+x[ind_not_zero]) - 1)
         )
 
-    if np.any(~ind_zero):
-        expr[~ind_zero] = (
-            x[~ind_zero] - x[~ind_zero]**2/2 + x[~ind_zero]**3/3
-            - x[~ind_zero]**4/4 + x[~ind_zero]**5/5
-            - x[~ind_zero]**6/6 + x[~ind_zero]**7/7
-            - x[~ind_zero]**8/8 + x[~ind_zero]**9/9
-            - x[~ind_zero]**10/10 + x[~ind_zero]**11/11
+    if np.any(~ind_not_zero):
+        expr[~ind_not_zero] = (
+            x[~ind_not_zero] - x[~ind_not_zero]**2/2 
+            + x[~ind_not_zero]**3/3
+            - x[~ind_not_zero]**4/4 + x[~ind_not_zero]**5/5
+            - x[~ind_not_zero]**6/6 + x[~ind_not_zero]**7/7
+            - x[~ind_not_zero]**8/8 + x[~ind_not_zero]**9/9
+            - x[~ind_not_zero]**10/10 + x[~ind_not_zero]**11/11
         )
     return expr
 

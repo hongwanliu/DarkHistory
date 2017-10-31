@@ -55,11 +55,13 @@ def F1(a,b,epsrel=0):
             n = np.arange(11) + 1
             expr[high] = (
                 x[high]*log_1_plus_x(-np.exp(-x[high]))
-                - np.sum(
-                    np.array(
-                        [np.exp(-n*x)/n**2 for x in x[high]]
-                    ), axis=1
-                )
+                - np.exp(-x[high]) - np.exp(-2*x[high])/4
+                - np.exp(-3*x[high])/9 - np.exp(-4*x[high])/16
+                - np.exp(-5*x[high])/25 - np.exp(-6*x[high])/36
+                - np.exp(-7*x[high])/49 - np.exp(-8*x[high])/64
+                - np.exp(-9*x[high])/81 
+                - np.exp(-10*x[high])/100
+                - np.exp(-11*x[high])/121
             )
         
         if np.any(gen):
@@ -161,7 +163,14 @@ def F0(a,b,epsrel=0):
 
     def indef_int(x):
         
-        return log_1_plus_x(-np.exp(-x))
+        if x > 1.0e-10:
+            return log_1_plus_x(-np.exp(-x))
+        else:
+            return (
+                np.log(x) - x/2 + x**2/24 - x**4/2880
+                + x**6/181440 - x**8/9676800
+                + x**10/479001600
+            )
 
     if a.ndim == 1 and b.ndim == 2:
         if b.shape[1] != a.size:

@@ -146,7 +146,7 @@ def TCMB(rs):
     float
     """
 
-    return 0.235e-3 * rs
+    return 2.7255 * 8.61733e-5 * rs
 
 def get_inj_rate(inj_type, inj_fac):
     """Dark matter injection rate function.
