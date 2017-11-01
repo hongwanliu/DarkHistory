@@ -163,14 +163,21 @@ def F0(a,b,epsrel=0):
 
     def indef_int(x):
         
-        if x > 1.0e-10:
-            return log_1_plus_x(-np.exp(-x))
-        else:
-            return (
-                np.log(x) - x/2 + x**2/24 - x**4/2880
-                + x**6/181440 - x**8/9676800
-                + x**10/479001600
+        low = (x <= 1e-10)
+        high = (x > 1e-10)
+        expr = np.zeros_like(x)
+
+        if np.any(high):
+            expr[high] = log_1_plus_x(-np.exp(-x[high]))
+
+        if np.any(low):
+            expr[low] = (
+                np.log(x[low]) - x[low]/2 + x[low]**2/24 
+                - x[low]**4/2880 + x[low]**6/181440 
+                - x[low]**8/9676800 + x[low]**10/479001600
             )
+
+        return expr
 
     if a.ndim == 1 and b.ndim == 2:
         if b.shape[1] != a.size:
@@ -244,10 +251,10 @@ def F_inv(a,b,tol=1e-10):
 
     # bound is fixed. If changed to another number, the exact integral from bound to infinity later in the code needs to be changed to the appropriate value.
     bound = 2.
-    
-
 
     # Two different series to approximate this: below and above bound.
+
+    
 
     def low_summand(x):
         k = 1

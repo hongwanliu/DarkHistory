@@ -454,7 +454,7 @@ def nonrel_spec(eleceng, photeng, T):
 
     return spec
 
-def rel_spec(eleceng, photeng, T, as_pairs=False):
+def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     """ Relativistic ICS spectrum.
 
     Parameters
@@ -481,21 +481,25 @@ def rel_spec(eleceng, photeng, T, as_pairs=False):
     print('Initializing...')
 
     gamma = eleceng/phys.me
+
     # Most accurate way of finding beta when beta is small, I think.
     beta = np.sqrt(1 - 1/gamma**2)
+
+    if inf_upp_bound:
+        inf_fac = 1e100
+    else:
+        inf_fac = 1
     
     if as_pairs:
-        lowlim = (1/gamma**2)/(1+beta)**2*photeng/T 
-        upplim = gamma**2*(1+beta)**2*photeng/T
         Gamma_eps_q = (
             photeng/(gamma*phys.me)
             / (1 - photeng/(gamma*phys.me))
         )
         B = phys.me/(4*gamma)*Gamma_eps_q
+        lowlim = B/T
+        upplim = 4*gamma**2*B/T*inf_fac
         
     else: 
-        lowlim = np.outer((1/gamma**2)/(1+beta)**2, photeng/T)
-        upplim = np.outer(gamma**2*(1+beta)**2, photeng/T)
         Gamma_eps_q = (
             np.outer(1/(gamma*phys.me), photeng)
             / (1 - np.outer(1/(gamma*phys.me), photeng))
@@ -503,6 +507,21 @@ def rel_spec(eleceng, photeng, T, as_pairs=False):
         B = np.transpose(
                 phys.me/(4*gamma)*np.transpose(Gamma_eps_q)
         )
+        lowlim = B/T
+        upplim = np.transpose(4*gamma**2*np.transpose(B)/T)*inf_fac
+        
+    spec = np.zeros_like(Gamma_eps_q)
+    F1_int = np.zeros_like(Gamma_eps_q)
+    F0_int = np.zeros_like(Gamma_eps_q)
+    F_inv_int = np.zeros_like(Gamma_eps_q)
+    F_log_int = np.zeros_like(Gamma_eps_q)
+
+    term_1 = np.zeros_like(Gamma_eps_q)
+    term_2 = np.zeros_like(Gamma_eps_q)
+    term_3 = np.zeros_like(Gamma_eps_q)
+    term_4 = np.zeros_like(Gamma_eps_q)
+
+    good = (lowlim > 0)
 
     Q = (1/2)*Gamma_eps_q**2/(1 + Gamma_eps_q)
 
@@ -512,20 +531,22 @@ def rel_spec(eleceng, photeng, T, as_pairs=False):
     )
 
     print('Computing series 1/4...')
-    F1_int = F1(lowlim, upplim)
+    F1_int[good] = F1(lowlim[good], upplim[good])
     print('Computing series 2/4...')
-    F0_int = F0(lowlim, upplim)
+    F0_int[good] = F0(lowlim[good], upplim[good])
     print('Computing series 3/4...')
-    F_inv_int = F_inv(lowlim, upplim)
+    F_inv_int[good] = F_inv(lowlim[good], upplim[good])
     print('Computing series 4/4...')
-    F_log_int = F_log(lowlim, upplim)
+    F_log_int[good] = F_log(lowlim[good], upplim[good])
 
-    term_1 = (1 + Q)*T*F1_int
-    term_2 = (1 + 2*np.log(B/T) - Q)*B*F0_int
-    term_3 = -2*B*F_log_int
-    term_4 = -2*B**2/T*F_inv_int
+    term_1[good] = (1 + Q[good])*T*F1_int[good]
+    term_2[good] = (
+        (1 + 2*np.log(B[good]/T) - Q[good])*B[good]*F0_int[good]
+    )
+    term_3[good] = -2*B[good]*F_log_int[good]
+    term_4[good] = -2*B[good]**2/T*F_inv_int[good]
     
-    testing = True
+    testing = False
     if testing:
         print('***** Diagnostics *****')
         print('gamma: ', gamma)
@@ -540,11 +561,11 @@ def rel_spec(eleceng, photeng, T, as_pairs=False):
 
         print('***** Integrals *****')
         print('term_1: ', term_1)
-        term_1_quad = quad(
-            lambda x: x/(np.exp(x) - 1), lowlim[0,0], 
-            upplim[0,0], epsabs = 0, epsrel = 1e-10
-        )[0]*(1 + Q)*T
-        print('term_1 by quadrature: ', term_1_quad)
+        # term_1_quad = quad(
+        #     lambda x: x/(np.exp(x) - 1), lowlim[0,0], 
+        #     upplim[0,0], epsabs = 0, epsrel = 1e-10
+        # )[0]*(1 + Q)*T
+        # print('term_1 by quadrature: ', term_1_quad)
         print('term_2: ', term_2)
         print('term_3: ', term_3)
         print('term_4: ', term_4)
@@ -562,8 +583,12 @@ def rel_spec(eleceng, photeng, T, as_pairs=False):
 
     print('Relativistic Computation Complete!')
 
+    spec[good] = (
+        term_1[good] + term_2[good] + term_3[good] + term_4[good]
+    )
+
     return np.transpose(
-        prefac*np.transpose(term_1 + term_2 + term_3 + term_4)
+        prefac*np.transpose(spec)
     )
 
 
