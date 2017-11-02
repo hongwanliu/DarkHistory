@@ -63,7 +63,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     print('Computing series 3/8...')
     F_inv_low = F_inv(lowlim, eta)
     print('Computing series 4/8...')
-    F_log_low = F_log(lowlim, eta)
+    F_log_low = F_log(lowlim, eta)[0]
 
     F1_upp = F1(eta, upplim)
     print('Computing series 5/8...')
@@ -71,7 +71,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     print('Computing series 6/8...')
     F_inv_upp = F_inv(eta, upplim)
     print('Computing series 7/8...')
-    F_log_upp = F_log(eta, upplim)
+    F_log_upp = F_log(eta, upplim)[0]
     print('Computing series 8/8...')
 
     # CMB photon energy less than outgoing photon energy.
