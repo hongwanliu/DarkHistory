@@ -61,7 +61,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     print('Computing series 2/8...')
     F0_low = F0(lowlim, eta)
     print('Computing series 3/8...')
-    F_inv_low = F_inv(lowlim, eta)
+    F_inv_low = F_inv(lowlim, eta)[0]
     print('Computing series 4/8...')
     F_log_low = F_log(lowlim, eta)[0]
 
@@ -69,7 +69,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     print('Computing series 5/8...')
     F0_upp = F0(eta, upplim)
     print('Computing series 6/8...')
-    F_inv_upp = F_inv(eta, upplim)
+    F_inv_upp = F_inv(eta, upplim)[0]
     print('Computing series 7/8...')
     F_log_upp = F_log(eta, upplim)[0]
     print('Computing series 8/8...')
