@@ -535,9 +535,9 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     print('Computing series 2/4...')
     F0_int[good] = F0(lowlim[good], upplim[good])
     print('Computing series 3/4...')
-    F_inv_int[good] = F_inv(lowlim[good], upplim[good])
+    F_inv_int[good] = F_inv(lowlim[good], upplim[good])[0]
     print('Computing series 4/4...')
-    F_log_int[good] = F_log(lowlim[good], upplim[good])
+    F_log_int[good] = F_log(lowlim[good], upplim[good])[0]
 
     term_1[good] = (1 + Q[good])*T*F1_int[good]
     term_2[good] = (
