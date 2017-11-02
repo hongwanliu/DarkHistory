@@ -4,7 +4,6 @@ import numpy as np
 import scipy.special as sp
 
 from darkhistory.utilities import log_1_plus_x
-from darkhistory.utilities import diff_pow
 from darkhistory.utilities import check_err
 from darkhistory.utilities import bernoulli as bern
 from darkhistory.utilities import log_series_diff
@@ -97,14 +96,14 @@ def F1(a,b,epsrel=0):
         integral[both_low] = (
                 b[both_low]-a[both_low]
                 - (b[both_low]-a[both_low])*(b[both_low]+a[both_low])/4 
-                + diff_pow(b[both_low],a[both_low],3)/36 
-                - diff_pow(b[both_low],a[both_low],5)/3600 
-                + diff_pow(b[both_low],a[both_low],7)/211680 
-                - diff_pow(b[both_low],a[both_low],9)/10886400
+                + (b[both_low]**3 - a[both_low]**3)/36 
+                - (b[both_low]**5 - a[both_low]**5)/3600 
+                + (b[both_low]**7 - a[both_low]**7)/211680 
+                - (b[both_low]**9 - a[both_low]**9)/10886400
         )
 
         if epsrel > 0:
-            err = diff_pow(b[both_low],a[both_low],11)/526901760
+            err = (b[both_low]**11 - a[both_low]**11)/526901760
             check_err(integral[both_low], err, epsrel)
 
     if np.any(both_high):
@@ -122,10 +121,12 @@ def F1(a,b,epsrel=0):
             - spence_term
         )
 
+        # Use diff_pow if necessary
         if epsrel > 0:
             err = (
-                diff_pow(np.exp(-b[both_high]), np.exp(-a[both_high]), 11)/11**2
-            )
+                np.exp(-b[both_high])**11 
+                - np.exp(-a[both_high])**11
+            )/11**2
             check_err(integral[both_high], err, epsrel)
 
     gen_case = ~(both_low | both_high)
@@ -196,18 +197,19 @@ def F0(a,b,epsrel=0):
     both_low = (a < lowlim) & (b < lowlim)
     both_high = (a > upplim) & (b > upplim)
 
+    # Use diff_pow if necessary
     if np.any(both_low):
         integral[both_low] = (
             np.log(b[both_low]/a[both_low]) 
             - (b[both_low]-a[both_low])/2 
             + (b[both_low]-a[both_low])*(b[both_low]+a[both_low])/24
-            - diff_pow(b[both_low],a[both_low],4)/2880 
-            + diff_pow(b[both_low],a[both_low],6)/181440
-            - diff_pow(b[both_low],a[both_low],8)/9676800
-            + diff_pow(b[both_low],a[both_low],10)/479001600
+            - (b[both_low]**4 - a[both_low]**4)/2880 
+            + (b[both_low]**6 - a[both_low]**6)/181440
+            - (b[both_low]**8 - a[both_low]**8)/9676800
+            + (b[both_low]**10 - a[both_low]**10)/479001600
         )
         if epsrel > 0:
-            err = -diff_pow(b[both_low],a[both_low],12)*691/15692092416000
+            err = -(b[both_low]**12 - a[both_low]**12)*691/15692092416000
             check_err(integral[both_low], err, epsrel)
 
     if np.any(both_high):
@@ -217,9 +219,9 @@ def F0(a,b,epsrel=0):
         )
 
         if epsrel > 0:
-            err = -diff_pow(
-                np.exp(-b[both_high]), 
-                np.exp(-a[both_high]), 12
+            err = -(
+                np.exp(-b[both_high])**12 - 
+                np.exp(-a[both_high])**12
             )/12
             check_err(integral[both_high], err, epsrel)
 

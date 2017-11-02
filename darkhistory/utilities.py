@@ -209,14 +209,23 @@ def log_series_diff(b, a):
         The Taylor series log(1+b) - log(1+a), up to the 11th order term. 
 
     """
-    return (
-        - diff_pow(b, a, 1) - diff_pow(b, a, 2)/2 
-        - diff_pow(b, a, 3)/3 - diff_pow(b, a, 4)/4
-        - diff_pow(b, a, 5)/5 - diff_pow(b, a, 6)/6
-        - diff_pow(b, a, 7)/7 - diff_pow(b, a, 8)/8
-        - diff_pow(b, a, 9)/9 - diff_pow(b, a, 10)/10
-        - diff_pow(b, a, 11)/11
+
+    # Use diff_pow if necessary
+    return(
+        - (b-a) - (b**2 - a**2)/2 - (b**3 - a**3)/3
+        - (b**4 - a**4)/4 - (b**5 - a**5)/5 - (b**6 - a**6)/6
+        - (b**7 - a**7)/7 - (b**8 - a**8)/8 - (b**9 - a**9)/9
+        - (b**10 - a**10)/10 - (b**11 - a**11)/11
     )
+
+    # return (
+    #     - diff_pow(b, a, 1) - diff_pow(b, a, 2)/2 
+    #     - diff_pow(b, a, 3)/3 - diff_pow(b, a, 4)/4
+    #     - diff_pow(b, a, 5)/5 - diff_pow(b, a, 6)/6
+    #     - diff_pow(b, a, 7)/7 - diff_pow(b, a, 8)/8
+    #     - diff_pow(b, a, 9)/9 - diff_pow(b, a, 10)/10
+    #     - diff_pow(b, a, 11)/11
+    # )
 
 def spence_series_diff(b, a):
     """ Returns the Taylor series for Li2(b) - Li2(a). 
@@ -234,14 +243,25 @@ def spence_series_diff(b, a):
         The Taylor series Li2(b) - Li2(a), up to the 11th order term. 
 
     """
-    return (
-        diff_pow(b, a, 1) + diff_pow(b, a, 2)/2**2 
-        + diff_pow(b, a, 3)/3**2 + diff_pow(b, a, 4)/4**2
-        + diff_pow(b, a, 5)/5**2 + diff_pow(b, a, 6)/6**2
-        + diff_pow(b, a, 7)/7**2 + diff_pow(b, a, 8)/8**2
-        + diff_pow(b, a, 9)/9**2 + diff_pow(b, a, 10)/10**2
-        + diff_pow(b, a, 11)/11**2
+
+    # Use diff_pow if necessary
+    
+    return(
+        (b - a) + (b**2 - a**2)/2**2 + (b**3 - a**3)/3**2
+        + (b**4 - a**4)/4**2 + (b**5 - a**5)/5**2
+        + (b**6 - a**6)/6**2 + (b**7 - a**7)/7**2
+        + (b**8 - a**8)/8**2 + (b**9 - a**9)/9**2
+        + (b**10 - a**10)/10**2 + (b**11 - a**11)/11**1
     )
+
+    # return (
+    #     diff_pow(b, a, 1) + diff_pow(b, a, 2)/2**2 
+    #     + diff_pow(b, a, 3)/3**2 + diff_pow(b, a, 4)/4**2
+    #     + diff_pow(b, a, 5)/5**2 + diff_pow(b, a, 6)/6**2
+    #     + diff_pow(b, a, 7)/7**2 + diff_pow(b, a, 8)/8**2
+    #     + diff_pow(b, a, 9)/9**2 + diff_pow(b, a, 10)/10**2
+    #     + diff_pow(b, a, 11)/11**2
+    # )
 
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.
