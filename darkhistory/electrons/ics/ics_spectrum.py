@@ -561,7 +561,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     
 
 
-    testing = False
+    testing = True
     if testing:
         print('***** Diagnostics *****')
         print('gamma: ', gamma)
