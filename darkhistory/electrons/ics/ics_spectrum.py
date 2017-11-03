@@ -483,32 +483,43 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     gamma = eleceng/phys.me
 
     # Most accurate way of finding beta when beta is small, I think.
-    beta = np.sqrt(1 - 1/gamma**2)
 
-    if inf_upp_bound:
-        inf_fac = 1e100
-    else:
-        inf_fac = 1
-    
     if as_pairs:
         Gamma_eps_q = (
-            photeng/(gamma*phys.me)
-            / (1 - photeng/(gamma*phys.me))
+            np.divide(
+                photeng/eleceng,
+                1 - photeng/eleceng,
+                out = np.zeros_like(photeng),
+                where = 1 - photeng/eleceng != 0
+            )
         )
         B = phys.me/(4*gamma)*Gamma_eps_q
         lowlim = B/T
-        upplim = 4*gamma**2*B/T*inf_fac
+        if inf_upp_bound:
+            upplim = np.inf*np.ones_like(gamma)
+        else:
+            upplim = 4*(gamma**2)*B/T
         
     else: 
+        photeng_to_eleceng = np.outer(1/eleceng, photeng)
         Gamma_eps_q = (
-            np.outer(1/(gamma*phys.me), photeng)
-            / (1 - np.outer(1/(gamma*phys.me), photeng))
+            np.divide(
+                photeng_to_eleceng,
+                1 - photeng_to_eleceng,
+                out = np.zeros_like(photeng_to_eleceng),
+                where = 1 - photeng_to_eleceng != 0
+            )
         )
         B = np.transpose(
-                phys.me/(4*gamma)*np.transpose(Gamma_eps_q)
+            phys.me/(4*gamma)*np.transpose(Gamma_eps_q)
         )
         lowlim = B/T
-        upplim = np.transpose(4*gamma**2*np.transpose(B)/T)*inf_fac
+        if inf_upp_bound:
+            upplim = np.inf*np.ones_like(photeng_to_eleceng)
+        else:
+            upplim = np.transpose(
+                4*gamma**2*np.transpose(B)/T
+            )
         
     spec = np.zeros_like(Gamma_eps_q)
     F1_int = np.zeros_like(Gamma_eps_q)
@@ -523,7 +534,9 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
     good = (lowlim > 0)
 
-    Q = (1/2)*Gamma_eps_q**2/(1 + Gamma_eps_q)
+    Q = np.zeros_like(Gamma_eps_q)
+
+    Q[good] = (1/2)*Gamma_eps_q[good]**2/(1 + Gamma_eps_q[good])
 
     prefac = np.float128( 
         6*np.pi*phys.thomson_xsec*phys.c*T/(gamma**2)
@@ -546,11 +559,12 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     term_3[good] = -2*B[good]*F_log_int[good]
     term_4[good] = -2*B[good]**2/T*F_inv_int[good]
     
+
+
     testing = False
     if testing:
         print('***** Diagnostics *****')
         print('gamma: ', gamma)
-        print('beta: ', beta)
         print('lowlim: ', lowlim)
         print('lowlim*T: ', lowlim*T)
         print('upplim: ', upplim)

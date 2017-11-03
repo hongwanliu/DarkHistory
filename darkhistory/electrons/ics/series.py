@@ -37,14 +37,19 @@ def F1(a,b,epsrel=0):
     upplim = 3
 
     def indef_int(x):
+
+        inf = (x == np.inf)
         low = (x < lowlim)
-        high = (x > upplim)
-        gen = ~(low | high)
+        high = (x > upplim) & (~inf)
+        gen = ~(low | high) & (~inf)
         expr = np.zeros(x.size)
         
         # Two different series for small and large x limit.
 
         # Excludes pi^2/6 to avoid catastrophic cancellation.
+        if np.any(inf):
+            expr[inf] = 0
+
         if np.any(low):
             expr[low] = (
                 x[low] - x[low]**2/4 + x[low]**3/36 
@@ -110,15 +115,25 @@ def F1(a,b,epsrel=0):
 
         # Use a series for the spence function.
 
-        spence_term = spence_series_diff(
+        spence_term = np.zeros_like(integral)
+
+        spence_term[both_high] = spence_series_diff(
             np.exp(-b[both_high]),
             np.exp(-a[both_high])
         )
+
+        b_inf = both_high & (b == np.inf)
+        b_not_inf = both_high & (b != np.inf)
         
-        integral[both_high] = (
-            b[both_high]*log_1_plus_x(-np.exp(-b[both_high]))
-            - a[both_high]*log_1_plus_x(-np.exp(-a[both_high]))
-            - spence_term
+        integral[b_inf] = (
+            - a[b_inf]*log_1_plus_x(-np.exp(-a[b_inf]))
+            - spence_term[b_inf]
+        )
+
+        integral[b_not_inf] = (
+            b[b_not_inf]*log_1_plus_x(-np.exp(-b[b_not_inf]))
+            - a[b_not_inf]*log_1_plus_x(-np.exp(-a[b_not_inf]))
+            - spence_term[b_not_inf]
         )
 
         # Use diff_pow if necessary
@@ -164,9 +179,13 @@ def F0(a,b,epsrel=0):
 
     def indef_int(x):
         
+        inf = (x == np.inf)
         low = (x <= 1e-10)
-        high = (x > 1e-10)
+        high = (x > 1e-10) & (~inf)
         expr = np.zeros_like(x)
+
+        if np.any(inf):
+            expr[inf] = 0
 
         if np.any(high):
             expr[high] = log_1_plus_x(-np.exp(-x[high]))
@@ -360,6 +379,7 @@ def F_inv(a,b,tol=1e-10):
                 -high_summand(b[low_high], k_high)
             )
 
+
             next_term[low_high] = (
                 next_term_a_bound[low_high]
                 + next_term_bound_b[low_high]
@@ -453,11 +473,20 @@ def F_log(a,b,tol=1e-10):
             
     def high_summand(x, k):
         # sp.expn does not support float128.
-        return (
-            1/k*(np.exp(-k*x)*np.log(x) 
-                + sp.expn(1, k*np.array(x, dtype='float64'))
+
+        inf = (x == np.inf)
+
+        expr = np.zeros_like(x)
+        expr[inf] = 0
+        expr[~inf] = (
+            1/k*(np.exp(-k*x[~inf])*np.log(x[~inf]) 
+                + sp.expn(
+                    1, k*np.array(x[~inf], dtype='float64')
+                )
             )
         )
+
+        return expr
 
     if a.ndim == 1 and b.ndim == 2:
         if b.shape[1] != a.size:
