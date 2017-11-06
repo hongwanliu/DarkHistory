@@ -673,7 +673,7 @@ def F_log_a(lowlim, a, tol=1e-10):
         else:
             return bern(k)*(x**k)/(sp.factorial(k)*k)*(np.log(x + a)
                 - x/(a*(k+1))
-                *sp.hyp2f1(1, k+1, k+2, -x_flt64/a)
+                *np.real(sp.hyp2f1(1, k+1, k+2, -x_flt64/a + 0j))
             )
 
     def high_summand(x, a, k):
@@ -720,13 +720,22 @@ def F_log_a(lowlim, a, tol=1e-10):
 
     if np.any(low):
 
-        integral[low] = low_summand(lowlim[low], a[low], 1)
+        integral[low] = (
+            low_summand(bound, a[low], 1) 
+            - low_summand(lowlim[low], a[low], 1)
+            + high_summand(bound, a[low], 1)
+        )
         k_low = 2
+        k_high = 2
         err_max = 10*tol
 
         while err_max > tol:
 
-            next_term[low] = low_summand(lowlim[low], k_low)
+            next_term[low] = (
+                low_summand(bound, a[low], k_low) 
+                - low_summand(lowlim[low], k_low)
+                + high_summand(bound, a[low], k_high)
+            )
             err[low] = np.abs(
                 np.divide(
                     next_term[low],
@@ -739,8 +748,36 @@ def F_log_a(lowlim, a, tol=1e-10):
             integral[low] += next_term[low]
 
             k_low += 2
+            k_high += 1
             err_max = np.max(err[low])
             low &= (err > tol)
+
+    if np.any(high):
+
+        integral[high] = high_summand(a[high], 1)
+
+        k_high = 2
+        err_max = 10*tol
+
+        while err_max > tol:
+            next_term[high] = high_summand(a[high], k_high)
+
+            err[high] = np.abs(
+                np.divide(
+                    next_term[high],
+                    integral[high],
+                    out = np.zeros_like(next_term[high]),
+                    where = integral[high] != 0
+                )
+            )
+
+            integral[high] += next_term[high]
+
+            k_high += 1
+            err_max = np.max(err[high])
+            high &= (err > tol)
+
+        return integral, err
 
 
 
