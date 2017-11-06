@@ -632,6 +632,120 @@ def F_log(a,b,tol=1e-10):
 
     return integral, err
 
+def F_log_a(lowlim, a, tol=1e-10):
+    """Integral of log(x+a)/(exp(x) - 1) from b to infinity. 
+
+    Parameters
+    ----------
+    a : ndarray
+        Parameter in log(x+a). 
+    lowlim : ndarray
+        Lower limit of integration. 
+    tol : float
+        The relative tolerance to be reached. 
+
+    Returns
+    -------
+    float
+        The resulting integral. 
+    """
+
+    # bound is fixed. If changed to another number, the exact integral from bound to infinity later in the code needs to be changed to the appropriate value.
+    bound = 2.
+
+    # Two different series to approximate this: below and above bound. 
+
+    def low_summand(x, a, k):
+        x_flt64 = np.array(x, dtype='float64')
+        if k == 1:
+            if a > 0:
+                return (
+                    np.log(x)*np.log(a) 
+                    - sp.spence(1-x_flt64/a)
+                    - ((x+a)*np.log(x+a) - x)/2
+                )
+            else:
+                return (
+                    np.log(-x/a)*np.log(x+a)
+                    + sp.spence(-x_flt64/a)
+                    - ((x+a)*np.log(x+a) - x)/2
+                )
+        else:
+            return bern(k)*(x**k)/(sp.factorial(k)*k)*(np.log(x + a)
+                - x/(a*(k+1))
+                *sp.hyp2f1(1, k+1, k+2, -x_flt64/a)
+            )
+
+    def high_summand(x, a, k):
+
+        x_flt64 = np.array(x, dtype='float64')
+        inf = (x == np.inf)
+
+        expr = np.zeros_like(x)
+        expr[inf] = 0
+        expr[~inf] = (
+            np.exp(k*a[~inf])
+            /k*(np.exp(-k*(x[~inf] + a[~inf]))*np.log(x[~inf] + a[~inf]) 
+                + sp.expn(1, k*(x_flt64 + a[~inf]))
+            )
+        )
+
+        return expr
+
+    if a.ndim == 1 and lowlim.ndim == 2:
+        if lowlim.shape[1] != a.size:
+            raise TypeError('The second dimension of lowlim must have the same length as a.')
+        # Extend a to a 2D array.
+        a = np.outer(np.ones(lowlim.shape[0]), a)
+    elif a.ndim == 2 and lowlim.ndim == 1:
+        if a.shape[1] != lowlim.size:
+            raise TypeError('The second dimension of a must have the same length as lowlim.')
+        lowlim = np.outer(np.ones(a.shape[0]), lowlim)
+
+    # if both are 1D, then the rest of the code still works.
+
+    integral = np.zeros(lowlim.shape, dtype='float128')
+    err = np.zeros_like(integral)
+    next_term = np.zeros_like(integral)
+
+    a_is_zero = (a == 0)
+    low = (lowlim < bound) & ~a_zero
+    high = ~low & ~a_zero
+
+    if np.any(a_is_zero):
+        integral[a_is_zero] = F_log(lowlim[a_is_zero], 
+            np.ones_like(lowlim[a_is_zero])*np.inf,
+            tol=tol
+        )
+
+    if np.any(low):
+
+        integral[low] = low_summand(lowlim[low], a[low], 1)
+        k_low = 2
+        err_max = 10*tol
+
+        while err_max > tol:
+
+            next_term[low] = low_summand(lowlim[low], k_low)
+            err[low] = np.abs(
+                np.divide(
+                    next_term[low],
+                    integral[low],
+                    out = np.zeros_like(next_term[low]),
+                    where = integral[low] != 0
+                )
+            )
+
+            integral[low] += next_term[low]
+
+            k_low += 2
+            err_max = np.max(err[low])
+            low &= (err > tol)
+
+
+
+
+
 # Low beta expansion functions
 
 def Q(beta, photeng, T, as_pairs=False):
