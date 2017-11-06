@@ -209,7 +209,9 @@ def ionize_s_cs(E_in, E_sec, atoms):
         u=U/B
         S=4*math.pi*p.value('Bohr radius')**2*N*(13.6057/B)**2 #m^2
 
-        sigma_i=S/(B*t+(u+1))*((N_i/N-2)/(t+2)*(1/(w+1)+1/(t-w))+(2-N_i/N)*(1/(W+1)**2+1/(t-w)**2)+ numpy.log(t)/(N*(w+1))*df_dw) #cm^2
+        sigma_i=S/(B*t+(u+1))*((N_i/N-2)/(t+2)*(1/(w+1)+1/(t-w))+(2-N_i/N)*(1/(W+1)**2+1/(t-w)**2)+ \
+                               numpy.log(t)/(N*(w+1))*df_dw) #cm^2
+        
         #replace negatives with zero
         if sigma_i < 0:
             sigma_i=0
