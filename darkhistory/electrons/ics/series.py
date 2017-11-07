@@ -768,6 +768,11 @@ def F_x_log(a,b,tol=1e-10):
                 -high_summand(b[low_high], k_high)
             )
 
+            next_term[low_high] = (
+                next_term_a_bound[low_high]
+                + next_term_bound_b[low_high]
+            )
+
             err[low_high] = np.abs(
                 np.divide(
                     next_term[low_high],
