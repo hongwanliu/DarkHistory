@@ -605,6 +605,46 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         prefac*np.transpose(spec)
     )
 
+def engloss_spec(eleceng, delta, T, as_pairs=False):
+    """Nonrelativistic ICS energy loss spectrum using the series method. 
+
+    Parameters
+    ----------
+    eleceng : ndarray
+        Incoming electron energy. 
+    delta : ndarray
+        Upscattered photon energy (only positive values). 
+    T : float
+        CMB temperature. 
+    as_pairs : bool
+        If true, treats eleceng and delta as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleceng, return an array of length eleceng.size*delta.size. 
+
+    Returns
+    -------
+    ndarray
+        dN/(dt d(delta)) of the outgoing photons, with abscissa delta.
+
+    Note
+    ----
+    The final result dN/(dt d(delta)) is the *net* spectrum, i.e. the total number of photons upscattered by delta - number of photons downscattered by delta. 
+
+    """
+
+    print('Computing energy loss spectra by analytic series...')
+
+    gamma = eleceng/phys.me
+    # Most accurate way of finding beta when beta is small, I think.
+    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
+
+    if as_pairs:
+        # neg denotes delta < 0
+        lowlim_neg = (1+beta)/(2*beta)*delta/T 
+        lowlim_pos = (1-beta)/(2*beta)*delta/T
+    else:
+        lowlim_neg = np.outer((1+beta)/(2*beta), delta/T)
+        lowlim_pos = np.outer((1-beta)/(2*beta), delta/T)
+
+    
 
 
 
