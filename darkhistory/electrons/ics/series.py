@@ -848,6 +848,7 @@ def F_log_a(lowlim, a, tol=1e-10):
 
     def low_summand(x, a, k):
         x_flt64 = np.array(x, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
         if k == 1:
             expr = np.zeros_like(x)
             a_pos = a > 0
@@ -855,16 +856,17 @@ def F_log_a(lowlim, a, tol=1e-10):
             if np.any(a_pos):
                 expr[a_pos] = (
                     np.log(x[a_pos])*np.log(a[a_pos]) 
-                    - sp.spence(1+x_flt64[a_pos]/a[a_pos])
+                    - sp.spence(1+x_flt64[a_pos]/a_flt64[a_pos])
                     - (
-                        (x[a_pos]+a[a_pos])*np.log(x[a_pos]+a[a_pos]) 
+                        (x[a_pos]+a[a_pos])
+                        *np.log(x[a_pos]+a[a_pos]) 
                         - x[a_pos]
                     )/2
                 )
             if np.any(a_neg):
                 expr[a_neg] = (
                     np.log(-x[a_neg]/a[a_neg])*np.log(x[a_neg]+a[a_neg])
-                    + sp.spence(-x_flt64[a_neg]/a[a_neg])
+                    + sp.spence(-x_flt64[a_neg]/a_flt64[a_neg])
                     - (
                         (x[a_neg]+a[a_neg])*np.log(x[a_neg]+a[a_neg]) 
                         - x[a_neg]
@@ -876,7 +878,9 @@ def F_log_a(lowlim, a, tol=1e-10):
             return (
                 bern(k)*x**k/(sp.factorial(k)*k)*(
                     np.log(x + a) - x/(a*(k+1))*np.real(
-                        sp.hyp2f1(1, k+1, k+2, -x_flt64/a + 0j)
+                        sp.hyp2f1(
+                            1, k+1, k+2, -x_flt64/a_flt64 + 0j
+                        )
                     )
                 )
             )
@@ -884,6 +888,7 @@ def F_log_a(lowlim, a, tol=1e-10):
     def high_summand(x, a, k):
 
         x_flt64 = np.array(x, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
         inf = (x == np.inf)
 
         expr = np.zeros_like(x)
@@ -891,7 +896,7 @@ def F_log_a(lowlim, a, tol=1e-10):
         expr[~inf] = (
             np.exp(k*a[~inf])
             /k*(np.exp(-k*(x[~inf] + a[~inf]))*np.log(x[~inf] + a[~inf]) 
-                + sp.expn(1, k*(x_flt64[~inf] + a[~inf]))
+                + sp.expn(1, k*(x_flt64[~inf] + a_flt64[~inf]))
             )
         )
 
@@ -914,7 +919,7 @@ def F_log_a(lowlim, a, tol=1e-10):
     next_term = np.zeros_like(integral)
 
     a_is_zero = (a == 0)
-    low = (lowlim < bound) & ~a_is_zero
+    low = (lowlim < 2) & ~a_is_zero
     high = ~low & ~a_is_zero
 
     if np.any(a_is_zero):
@@ -1007,28 +1012,36 @@ def F_x_log_a(lowlim, a, tol=1e-10):
 
     def low_summand(x, a, k):
         x_flt64 = np.array(x, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
         if k == 1:
             return (
                 x*(
                     np.log(a+x) - 1 
-                    + np.real(sp.hyp2f1(1, 1, 2, -x_flt64/a + 0j))
+                    + np.real(sp.hyp2f1(
+                        1, 1, 2, -x_flt64/a_flt64 + 0j)
+                    )
                 )
                 -x**2/8*(
                     2*np.log(a+x) - 1
-                    + np.real(sp.hyp2f1(1, 2, 3, -x_flt64/a + 0j))
+                    + np.real(sp.hyp2f1(
+                        1, 2, 3, -x_flt64/a_flt64 + 0j)
+                    )
                 )
             )
         else:
             return (
                 bern(k)*x**(k+1)/(sp.factorial(k)*(k+1)**2)*(
                     (k+1)*np.log(x+a) - 1
-                    + np.real(sp.hyp2f1(1, k+1, k+2, -x_flt64/a + 0j))
+                    + np.real(sp.hyp2f1(
+                        1, k+1, k+2, -x_flt64/a_flt64 + 0j
+                    ))
                 )
             )
 
     def high_summand(x, a, k):
 
         x_flt64 = np.array(x, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
         inf = (x == np.inf)
 
         expr = np.zeros_like(x)
@@ -1037,8 +1050,10 @@ def F_x_log_a(lowlim, a, tol=1e-10):
             np.exp(k*a[~inf])/k**2*(
                 (1+k*x[~inf])*np.exp(-k*(x[~inf]+a[~inf]))
                     *np.log(x[~inf] + a[~inf])
-                + (1+k*x[~inf])*sp.expn(1, k*(x_flt64[~inf] + a[~inf]))
-                + sp.expn(2, k*(x_flt64[~inf] + a[~inf]))
+                + (1+k*x[~inf])*sp.expn(
+                    1, k*(x_flt64[~inf] + a_flt64[~inf])
+                )
+                + sp.expn(2, k*(x_flt64[~inf] + a_flt64[~inf]))
             )
         )
 
@@ -1061,7 +1076,7 @@ def F_x_log_a(lowlim, a, tol=1e-10):
     next_term = np.zeros_like(integral)
 
     a_is_zero = (a == 0)
-    low = (lowlim < bound) & ~a_is_zero
+    low = (lowlim < 2) & ~a_is_zero
     high = ~low & ~a_is_zero
 
     if np.any(a_is_zero):

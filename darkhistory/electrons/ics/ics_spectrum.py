@@ -638,16 +638,276 @@ def engloss_spec(eleceng, delta, T, as_pairs=False):
 
     if as_pairs:
         # neg denotes delta < 0
-        lowlim_neg = (1+beta)/(2*beta)*delta/T 
-        lowlim_pos = (1-beta)/(2*beta)*delta/T
+        lowlim_down = (1+beta)/(2*beta)*delta/T 
+        lowlim_up = (1-beta)/(2*beta)*delta/T
     else:
-        lowlim_neg = np.outer((1+beta)/(2*beta), delta/T)
-        lowlim_pos = np.outer((1-beta)/(2*beta), delta/T)
+        lowlim_down = np.outer((1+beta)/(2*beta), delta/T)
+        lowlim_up = np.outer((1-beta)/(2*beta), delta/T)
 
-    
+    prefac = np.float128( 
+        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+        * (8*np.pi/(phys.ele_compton*phys.me)**3)
+    )
 
+    inf_array = np.inf*np.ones_like(lowlim_down)
 
+    print('Computing upscattering loss spectra...')
 
+    print('Computing series 1/7...')
+    F1_up = F1(lowlim_up, inf_array)
+    print('Computing series 2/7...')
+    F0_up = F0(lowlim_up, inf_array)
+    print('Computing series 3/7...')
+    F_inv_up = F_inv(lowlim_up, inf_array)[0]
+    print('Computing series 4/7...')
+    F_x_log_up = F_x_log(lowlim_up, inf_array)[0]
+    print('Computing series 5/7...')
+    F_log_up = F_log(lowlim_up, inf_array)[0]
+    print('Computing series 6/7...')
+    F_x_log_a_up = F_x_log_a(lowlim_up, delta/T)[0]
+    print('Computing series 7/7...')
+    F_log_a_up = F_log_a(lowlim_up, delta/T)[0]
+
+    print('Computing downscattering loss spectra...')
+
+    print('Computing series 1/7...')
+    F1_down = F1(lowlim_down, inf_array)
+    print('Computing series 2/7...')
+    F0_down = F0(lowlim_down, inf_array)
+    print('Computing series 3/7...')
+    F_inv_down = F_inv(lowlim_down, inf_array)[0]
+    print('Computing series 4/7...')
+    F_x_log_down = F_x_log(lowlim_down, inf_array)[0]
+    print('Computing series 5/7...')
+    F_log_down = F_log(lowlim_down, inf_array)[0]
+    print('Computing series 6/7...')
+    F_x_log_a_down = F_x_log_a(lowlim_down, -delta/T)[0]
+    print('Computing series 7/7...')
+    F_log_a_down = F_log_a(lowlim_down, -delta/T)[0]
+
+    term_1_up = np.transpose(
+        (
+            (2/beta)*np.sqrt((1+beta)/(1-beta))
+            + (2/beta)*np.sqrt((1-beta)/(1+beta))
+            + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
+        )*np.transpose(T**2*F1_up)
+    )
+
+    term_0_up = np.transpose(
+        (
+            (2/beta)*np.sqrt((1-beta)/(1+beta))
+            - 2*(1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))
+            + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
+        )*np.transpose(T*delta*F0_up)
+    )
+
+    term_inv_up = np.transpose(
+        -(1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*
+        np.transpose(delta**2*F_inv_up)
+    )
+
+    term_log_up = np.transpose(
+        2/(gamma*beta**2)*np.transpose(
+            -T**2*F_x_log_up - delta*T*F_log_up
+            + T**2*F_x_log_a_up + delta*T*F_log_a_up
+        )
+    )
+
+    term_1_down = np.transpose(
+        (
+            (2/beta)*np.sqrt((1-beta)/(1+beta))
+            + (2/beta)*np.sqrt((1+beta)/(1-beta))
+            - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
+        )*np.transpose(T**2*F1_down)
+    )
+
+    term_0_down = -np.transpose(
+        (
+            (2/beta)*np.sqrt((1+beta)/(1-beta))
+            + 2*(1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))
+            - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
+        )*np.transpose(T*delta*F0_down)
+    )
+
+    term_inv_down = np.transpose(
+        (1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))*
+        np.transpose(delta**2*F_inv_down)
+    )
+
+    term_log_down = np.transpose(
+        2/(gamma*beta**2)*np.transpose(
+            T**2*F_x_log_down - delta*T*F_log_down
+            - T**2*F_x_log_a_down + delta*T*F_log_a_down
+        )
+    )
+
+    testing = True
+    if testing:
+        print('***** Diagnostics *****')
+        print('lowlim_up: ', lowlim_up)
+        print('lowlim_down: ', lowlim_down)
+        print('beta: ', beta)
+        print('delta/T: ', delta/T)
+
+        print('***** Individual terms *****')
+        print('term_1_up: ', term_1_up)
+        print('term_0_up: ', term_0_up)
+        print('term_inv_up: ', term_inv_up)
+        print('term_log_up: ', term_log_up)
+        print('term_1_down: ', term_1_down)
+        print('term_0_down: ', term_0_down)
+        print('term_inv_down: ', term_inv_down)
+        print('term_log_down: ', term_log_down)
+
+        print('***** Total Sum (Excluding Prefactor) *****')
+        print('Upscattering loss spectrum: ')
+        print(
+            np.transpose(prefac*np.transpose(
+                term_1_up + term_0_up + term_inv_up + term_log_up
+            )
+        ))
+        print('Downscattering loss spectrum: ')
+        print(
+            np.transpose(prefac*np.transpose(
+                term_1_down + term_0_down + term_inv_down 
+                + term_log_down
+            )
+        ))
+        print('***** End Diagnostics *****')
+
+        return np.transpose(
+            prefac*np.transpose(
+                term_1_up + term_0_up + term_inv_up + term_log_up
+                - term_1_down - term_0_down - term_inv_down
+                - term_log_down
+            )
+        )
+
+    # print('Computing series 1/13...')
+    # F1_int = F1(lowlim_pos, lowlim_neg)
+    # print('Computing series 2/13...')
+    # F0_pos = F0(lowlim_pos, inf_array)
+    # print('Computing series 3/13...')
+    # F0_neg = F0(lowlim_neg, inf_array)
+    # print('Computing series 4/13...')
+    # F0_int = F0(lowlim_pos, lowlim_neg)
+    # print('Computing series 5/13...')
+    # F_log_int  = F_log(lowlim_pos, lowlim_neg)[0]
+    # print('Computing series 6/13...')
+    # F_x_log_pos = F_x_log(lowlim_pos, inf_array)[0]
+    # print('Computing series 7/13...')
+    # F_x_log_neg = F_x_log(lowlim_neg, inf_array)[0]
+    # print('Computing series 8/13...')
+    # F_x_log_a_pos = F_x_log_a(lowlim_pos, delta/T)[0]
+    # print('Computing series 9/13...')
+    # F_x_log_a_neg = F_x_log_a(lowlim_neg, -delta/T)[0]
+    # print('Computing series 10/13...')
+    # F_log_a_pos = F_log_a(lowlim_pos, delta/T)[0]
+    # print('Computing series 11/13...')
+    # F_log_a_neg = F_log_a(lowlim_neg, -delta/T)[0]
+    # print('Computing series 12/13...')
+    # F_inv_pos = F_inv(lowlim_pos, inf_array)[0]
+    # print('Computing series 13/13...')
+    # F_inv_neg = F_inv(lowlim_neg, inf_array)[0]
+
+    # term_1 = T*np.transpose(
+    #     (
+    #         (2/beta)*np.sqrt((1+beta)/(1-beta))
+    #         + (2/beta)*np.sqrt((1-beta)/(1+beta))
+    #         + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
+    #     )*np.transpose(F1_int)
+    # )
+
+    # term_0_pos = np.transpose(
+    #     (
+    #         (2/beta)*np.sqrt((1-beta)/(1+beta))
+    #         - 2*(1-beta)**2/(beta**2)*np.sqrt((1+beta)/(1-beta))
+    #         + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
+    #     )*np.transpose(delta*F0_pos)
+    # )
+
+    # term_0_neg = np.transpose(
+    #     (
+    #         (2/beta)*np.sqrt((1+beta)/(1-beta))
+    #         + 2*(1+beta)**2/(beta**2)*np.sqrt((1-beta)/(1+beta))
+    #         - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
+    #     )*np.transpose(delta*F0_neg)
+    # )
+
+    # term_0_int = np.transpose(
+    #     2/(gamma*beta**2)*(2*np.log(T))
+    #     *np.transpose(delta*F0_int)
+    # )
+
+    # term_log = np.transpose(
+    #     2/(gamma*beta**2)*np.transpose(
+    #         delta*F_log_int
+    #     )
+    # )
+
+    # term_x_log = -np.transpose(
+    #     2*T/(gamma*beta**2)*np.transpose(
+    #         F_x_log_pos + F_x_log_neg
+    #     )
+    # )
+
+    # term_x_log_a = np.transpose(
+    #     2*T/(gamma*beta**2)*np.transpose(
+    #         F_x_log_a_pos + F_x_log_a_neg
+    #     )
+    # )
+
+    # term_log_a = np.transpose(
+    #     2/(gamma*beta**2)*np.transpose(
+    #         delta*(F_log_a_pos - F_log_a_neg)
+    #     )
+    # )
+
+    # term_inv_pos = -np.transpose(
+    #     (1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*
+    #     np.transpose(F_inv_pos*delta**2)
+    # )
+
+    # term_inv_neg = -np.transpose(
+    #     (1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))*
+    #     np.transpose(F_inv_neg*delta**2)
+    # )
+
+    # testing = True
+    # if testing:
+    #     print('***** Diagnostics *****')
+    #     print('lowlim_neg: ', lowlim_neg)
+    #     print('lowlim_pos: ', lowlim_pos)
+    #     print('beta: ', beta)
+    #     print('delta/T: ', delta/T)
+
+    #     print('***** Individual terms *****')
+    #     print('term_1: ', term_1)
+    #     print('term_0_pos: ', term_0_pos)
+    #     print('term_0_neg: ', term_0_neg)
+    #     print('term_0_int: ', term_0_int)
+    #     print('term_log: ', term_log)
+    #     print('term_x_log: ', term_x_log)
+    #     print('term_x_log_a: ', term_x_log_a)
+    #     print('term_log_a: ', term_log_a)
+    #     print('term_inv_pos: ', term_inv_pos)
+    #     print('term_inv_neg: ', term_inv_neg)
+
+    #     print('***** Total Sum (Excluding Prefactor) *****')
+    #     print(
+    #         term_1 + term_0_pos + term_0_neg + term_0_int
+    #         + term_log + term_x_log + term_x_log_a + term_log_a
+    #         + term_inv_pos + term_inv_neg
+    #     )
+    #     print('***** End Diagnostics *****')
+
+    #     return np.transpose(
+    #         prefac*np.transpose(
+    #             term_1 + term_0_pos + term_0_neg + term_0_int
+    #             + term_log + term_x_log + term_x_log_a 
+    #             + term_log_a + term_inv_pos + term_inv_neg
+    #         )
+    #     )
 
 
 
