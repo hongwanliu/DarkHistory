@@ -82,7 +82,7 @@ def compare_arr(ndarray_list):
 def log_1_plus_x(x):
     """ Computes log(1+x) with greater floating point accuracy. 
 
-    See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.
+    Unlike scipy.special.log1p, this can take float128. However the performance is certainly slower. See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.
 
     Parameters
     ----------
@@ -262,6 +262,52 @@ def spence_series_diff(b, a):
     #     + diff_pow(b, a, 9)/9**2 + diff_pow(b, a, 10)/10**2
     #     + diff_pow(b, a, 11)/11**2
     # )
+
+def exp_expn(n, x):
+    """ Returns exp(x)*E_n(n, x). 
+
+    Circumvents overflow error in np.exp by expanding the exponential integral in a series. 
+    
+    Parameters
+    ----------
+    n : {1,2}
+        The order of the exponential integral. 
+    x : ndarray
+        The argument of the function. 
+
+    Returns
+    -------
+    ndarray
+        The result of exp(x)*E_n(n, x)
+
+    """
+    import scipy.special as sp
+
+    x_flt64 = np.array(x, dtype='float64')
+
+    low = x < 700
+    high = ~low
+    expr = np.zeros_like(x)
+
+    if np.any(low):
+        expr[low] = np.exp(x[low])*sp.expn(n, x_flt64[low])
+    if np.any(high):
+        if n == 1:
+            # The relative error is roughly 1e-15 for 700, smaller for larger arguments. 
+            expr[high] = (
+                1/x[high] - 1/x[high]**2 + 2/x[high]**3 - 6/x[high]**4
+                + 24/x[high]**5
+            )
+        elif n == 2:
+            # The relative error is roughly 6e-17 for 700, smaller for larger arguments. 
+            expr[high] = (
+                1/x[high] - 2/x[high]**2 + 6/x[high]**3 - 24/x[high]**4
+                + 120/x[high]**5 - 720/x[high]**6
+            )
+        else:
+            raise TypeError('only supports n = 1 or 2 for x > 700.')
+
+    return expr
 
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.

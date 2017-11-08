@@ -8,6 +8,7 @@ from darkhistory.utilities import check_err
 from darkhistory.utilities import bernoulli as bern
 from darkhistory.utilities import log_series_diff
 from darkhistory.utilities import spence_series_diff
+from darkhistory.utilities import exp_expn
 
 # General series expressions for integrals over Planck distribution.
 
@@ -894,9 +895,9 @@ def F_log_a(lowlim, a, tol=1e-10):
         expr = np.zeros_like(x)
         expr[inf] = 0
         expr[~inf] = (
-            np.exp(k*a[~inf])
-            /k*(np.exp(-k*(x[~inf] + a[~inf]))*np.log(x[~inf] + a[~inf]) 
-                + sp.expn(1, k*(x_flt64[~inf] + a_flt64[~inf]))
+            np.exp(-k*x[~inf])/k*(
+                np.log(x[~inf] + a[~inf]) 
+                + exp_expn(1, k*(x[~inf] + a[~inf]))
             )
         )
 
@@ -1047,13 +1048,10 @@ def F_x_log_a(lowlim, a, tol=1e-10):
         expr = np.zeros_like(x)
         expr[inf] = 0
         expr[~inf] = (
-            np.exp(k*a[~inf])/k**2*(
-                (1+k*x[~inf])*np.exp(-k*(x[~inf]+a[~inf]))
-                    *np.log(x[~inf] + a[~inf])
-                + (1+k*x[~inf])*sp.expn(
-                    1, k*(x_flt64[~inf] + a_flt64[~inf])
-                )
-                + sp.expn(2, k*(x_flt64[~inf] + a_flt64[~inf]))
+            np.exp(-k*x[~inf])/k**2*(
+                (1+k*x[~inf])*np.log(x[~inf] + a[~inf])
+                + (1+k*x[~inf])*exp_expn(1, k*(x[~inf] + a[~inf]))
+                + exp_expn(2, k*(x[~inf] + a[~inf]))
             )
         )
 
