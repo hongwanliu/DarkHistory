@@ -1148,6 +1148,27 @@ def F_x_log_a(lowlim, a, tol=1e-10):
 # Low beta expansion functions
 
 def Q(beta, photeng, T, as_pairs=False):
+    """ Computes the Q term.
+
+    This term is used in the beta expansion method for computing the nonrelativistic ICS spectrum. 
+
+    Parameters
+    ----------
+    beta : ndarray
+        Velocity of the electron. 
+    photeng : ndarray
+        Secondary photon energy. 
+    T : float
+        CMB temperature
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+    Returns
+    -------
+    ndarray
+        The Q term. 
+
+    """
 
     eta = photeng/T
 
@@ -1294,7 +1315,27 @@ def Q(beta, photeng, T, as_pairs=False):
     return term, err
 
 def Q_and_K(beta, photeng, T, as_pairs=False):
+    """ Computes the Q and K term. 
 
+    This term is used in the beta expansion method for computing the nonrelativistic ICS spectrum.
+
+    Parameters
+    ----------
+    beta : ndarray
+        Velocity of the electron. 
+    photeng : ndarray
+        Secondary photon energy. 
+    T : float
+        CMB temperature
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+    Returns
+    -------
+    ndarray
+        The Q and K term. 
+
+    """
     eta = photeng/T
 
     large = (eta > 0.01)
@@ -1526,7 +1567,27 @@ def Q_and_K(beta, photeng, T, as_pairs=False):
     return term, err
 
 def H_and_G(beta, photeng, T, as_pairs=False):
+    """ Computes the H and G term. 
 
+    This term is used in the beta expansion method for computing the nonrelativistic ICS spectrum. 
+
+    Parameters
+    ----------
+    beta : ndarray
+        Velocity of the electron. 
+    photeng : ndarray
+        Secondary photon energy. 
+    T : float
+        CMB temperature
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+    Returns
+    -------
+    ndarray
+        The H and G term. 
+
+    """
     eta = photeng/T
 
     large = (eta > 0.01)
@@ -1765,8 +1826,81 @@ def H_and_G(beta, photeng, T, as_pairs=False):
 
     return term, err
     
+# Energy loss series
 
+def F1_up_down(beta, delta, T, as_pairs=False):
+    """ Computes the F1_upscatter - F1_downscatter term.
 
+    This term is used in the small parameter expansion method for computing the ICS energy loss spectrum. 
+
+    Parameters
+    ----------
+    beta : ndarray
+        Velocity of the electron. 
+    delta : ndarray
+        The energy gained from upscattering by the secondary photon. 
+    T : float
+        CMB temperature
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+    Returns
+    -------
+    ndarray
+        The F1_upscatter - F1_downscatter term. 
+
+    """
+
+    eta = delta/T 
+
+    if as_pairs:
+        A_all = eta/(2*beta)
+    else:
+        A_all = np.outer(1/(2*beta), eta)
+
+    large = A_all > 0.01
+    small = ~large
+
+    term_eta = np.zeros_like(A)
+    term_eta_3 = np.zeros_like(A)
+    term_eta_5 = np.zeros_like(A)
+
+    if np.any(large):
+
+        A = A_all[large]
+
+        term_eta[large] = A*np.exp(-A)/(1 - np.exp(-A))
+
+        term_eta_3[large] = (
+            (A-2)*np.exp(-A) + (A+2)*np.exp(-2A)
+        )/(24 * (1 - np.exp(-A))**3)
+
+        term_eta_5[large] = (
+            A*(np.exp(-A) + 11*np.exp(-2A) + 11*np.exp(-3A) + np.exp(-4A))
+            - 4*(np.exp(-A) + 3*np.exp(-2A) - 3*np.exp(-3A) - np.exp(-4A))
+        )/(1920 * (1 - np.exp(-A))**5)
+
+    if np.any(small):
+
+        A = A_all[small]
+
+        term_eta[small] = 1 - A/2 + A**2/12 - A**4/720
+
+        term_eta_3[small] = (840 - 84*A**2 + 5*A**4)/120960
+
+        term_eta_5[small] = (-168 + 60*A**2 - 7*A**4)/9676800
+
+    if as_pairs:
+
+        return term_eta*eta + term_eta_3*eta**3 + term_eta_5*eta**5
+
+    else:
+
+        return (
+            np.outer(term_eta, eta) 
+            + np.outer(term_eta_3, eta**3)
+            + np.outer(term_eta_5, eta**5)
+        )
 
 
 
