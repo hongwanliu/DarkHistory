@@ -775,13 +775,13 @@ def engloss_spec(eleceng, delta, T, as_pairs=False):
         ))
         print('***** End Diagnostics *****')
 
-        return np.transpose(
-            prefac*np.transpose(
-                term_1_up + term_0_up + term_inv_up + term_log_up
-                - term_1_down - term_0_down - term_inv_down
-                - term_log_down
-            )
+    return np.transpose(
+        prefac*np.transpose(
+            term_1_up + term_0_up + term_inv_up + term_log_up
+            - term_1_down - term_0_down - term_inv_down
+            - term_log_down
         )
+    )
 
     # print('Computing series 1/13...')
     # F1_int = F1(lowlim_pos, lowlim_neg)
