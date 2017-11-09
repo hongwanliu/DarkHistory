@@ -1838,7 +1838,7 @@ def F1_up_down(beta, delta, T, as_pairs=False):
     beta : ndarray
         Velocity of the electron. 
     delta : ndarray
-        The energy gained from upscattering by the secondary photon. 
+        Energy gained from upscattering by the secondary photon. 
     T : float
         CMB temperature
     as_pairs : bool, optional
@@ -1872,12 +1872,12 @@ def F1_up_down(beta, delta, T, as_pairs=False):
         term_eta[large] = A*np.exp(-A)/(1 - np.exp(-A))
 
         term_eta_3[large] = (
-            (A-2)*np.exp(-A) + (A+2)*np.exp(-2A)
+            (A-2)*np.exp(-A) + (A+2)*np.exp(-2*A)
         )/(24 * (1 - np.exp(-A))**3)
 
         term_eta_5[large] = (
-            A*(np.exp(-A) + 11*np.exp(-2A) + 11*np.exp(-3A) + np.exp(-4A))
-            - 4*(np.exp(-A) + 3*np.exp(-2A) - 3*np.exp(-3A) - np.exp(-4A))
+            A*(np.exp(-A) + 11*np.exp(-2*A) + 11*np.exp(-3*A) + np.exp(-4*A))
+            - 4*(np.exp(-A) + 3*np.exp(-2*A) - 3*np.exp(-3*A) - np.exp(-4*A))
         )/(1920 * (1 - np.exp(-A))**5)
 
     if np.any(small):
@@ -1918,7 +1918,7 @@ def F0_up_down_diff(beta, delta, T, as_pairs=False):
     beta : ndarray
         Velocity of the electron. 
     delta : ndarray
-        The energy gained from upscattering by the secondary photon. 
+        Energy gained from upscattering by the secondary photon. 
     T : float
         CMB temperature
     as_pairs : bool, optional
@@ -1999,7 +1999,7 @@ def F0_up_down_sum(beta, delta, T, as_pairs=False):
     beta : ndarray
         Velocity of the electron. 
     delta : ndarray
-        The energy gained from upscattering by the secondary photon. 
+        Energy gained from upscattering by the secondary photon. 
     T : float
         CMB temperature
     as_pairs : bool, optional
@@ -2028,8 +2028,7 @@ def F0_up_down_sum(beta, delta, T, as_pairs=False):
     if np.any(large):
 
         A = A_all[large]
-
-        term_eta[large] = -2*np.log(np.exp(A) - 1) + 2*A
+        term_eta[large] = -2*log_1_plus_x(-np.exp(-A))
 
         term_eta_3[large] = (
             np.exp(-A)/(4 * (1 - np.exp(-A))**2)
@@ -2077,7 +2076,7 @@ def F_inv_up_down(beta, delta, T, as_pairs=False):
     beta : ndarray
         Velocity of the electron. 
     delta : ndarray
-        The energy gained from upscattering by the secondary photon. 
+        Energy gained from upscattering by the secondary photon. 
     T : float
         CMB temperature
     as_pairs : bool, optional
@@ -2128,7 +2127,7 @@ def F_inv_up_down(beta, delta, T, as_pairs=False):
 
         term_eta_3[small] = 1/A**2 - 1/(2*A) + 1/12 - A**2/720 + A**4/30240
 
-        term_eta_5[small] = (
+        term_eta_5[small] = -(
             -241920/A**4 + 40320/A**3 + 112 - 16*A**2 + A**4
         )/967680
 
@@ -2165,7 +2164,7 @@ def F_inv2_up_down(beta, delta, T, as_pairs=False):
     beta : ndarray
         Velocity of the electron. 
     delta : ndarray
-        The energy gained from upscattering by the secondary photon. 
+        Energy gained from upscattering by the secondary photon. 
     T : float
         CMB temperature
     as_pairs : bool, optional
@@ -2229,7 +2228,7 @@ def F_inv2_up_down(beta, delta, T, as_pairs=False):
             + A**3/109486080 - 691*A**5/830269440000
         )
 
-    prefac = 1/3 - beta**2/6
+    prefac = -(1/3 - beta**2/6)
 
     if as_pairs:
 

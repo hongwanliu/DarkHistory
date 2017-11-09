@@ -605,7 +605,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         prefac*np.transpose(spec)
     )
 
-def engloss_spec(eleceng, delta, T, as_pairs=False):
+def engloss_spec_series(eleceng, delta, T, as_pairs=False):
     """Nonrelativistic ICS energy loss spectrum using the series method. 
 
     Parameters
@@ -630,7 +630,7 @@ def engloss_spec(eleceng, delta, T, as_pairs=False):
 
     """
 
-    print('Computing energy loss spectra by analytic series...')
+    print('Computing energy loss spectrum by analytic series...')
 
     gamma = eleceng/phys.me
     # Most accurate way of finding beta when beta is small, I think.
@@ -759,6 +759,12 @@ def engloss_spec(eleceng, delta, T, as_pairs=False):
         print('term_inv_down: ', term_inv_down)
         print('term_log_down: ', term_log_down)
 
+        print('***** Upscatter and Downscatter Differences*****')
+        print('term_1: ', term_1_up - term_1_down)
+        print('term_0: ', term_0_up - term_0_down)
+        print('term_inv: ', term_inv_up - term_inv_down)
+        print('term_log: ', term_log_up - term_log_down)
+
         print('***** Total Sum (Excluding Prefactor) *****')
         print('Upscattering loss spectrum: ')
         print(
@@ -783,132 +789,60 @@ def engloss_spec(eleceng, delta, T, as_pairs=False):
         )
     )
 
-    # print('Computing series 1/13...')
-    # F1_int = F1(lowlim_pos, lowlim_neg)
-    # print('Computing series 2/13...')
-    # F0_pos = F0(lowlim_pos, inf_array)
-    # print('Computing series 3/13...')
-    # F0_neg = F0(lowlim_neg, inf_array)
-    # print('Computing series 4/13...')
-    # F0_int = F0(lowlim_pos, lowlim_neg)
-    # print('Computing series 5/13...')
-    # F_log_int  = F_log(lowlim_pos, lowlim_neg)[0]
-    # print('Computing series 6/13...')
-    # F_x_log_pos = F_x_log(lowlim_pos, inf_array)[0]
-    # print('Computing series 7/13...')
-    # F_x_log_neg = F_x_log(lowlim_neg, inf_array)[0]
-    # print('Computing series 8/13...')
-    # F_x_log_a_pos = F_x_log_a(lowlim_pos, delta/T)[0]
-    # print('Computing series 9/13...')
-    # F_x_log_a_neg = F_x_log_a(lowlim_neg, -delta/T)[0]
-    # print('Computing series 10/13...')
-    # F_log_a_pos = F_log_a(lowlim_pos, delta/T)[0]
-    # print('Computing series 11/13...')
-    # F_log_a_neg = F_log_a(lowlim_neg, -delta/T)[0]
-    # print('Computing series 12/13...')
-    # F_inv_pos = F_inv(lowlim_pos, inf_array)[0]
-    # print('Computing series 13/13...')
-    # F_inv_neg = F_inv(lowlim_neg, inf_array)[0]
+def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
+    """Nonrelativistic ICS energy loss spectrum by beta expansion. 
 
-    # term_1 = T*np.transpose(
-    #     (
-    #         (2/beta)*np.sqrt((1+beta)/(1-beta))
-    #         + (2/beta)*np.sqrt((1-beta)/(1+beta))
-    #         + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
-    #     )*np.transpose(F1_int)
-    # )
+    Parameters
+    ----------
+    eleceng : ndarray
+        Incoming electron energy. 
+    delta : ndarray
+        Energy gained from upscattering by the secondary photon. 
+    T : float
+        CMB temperature. 
+    as_pairs : bool
+        If true, treats eleceng and delta as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleceng, return an array of length eleceng.size*delta.size. 
 
-    # term_0_pos = np.transpose(
-    #     (
-    #         (2/beta)*np.sqrt((1-beta)/(1+beta))
-    #         - 2*(1-beta)**2/(beta**2)*np.sqrt((1+beta)/(1-beta))
-    #         + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
-    #     )*np.transpose(delta*F0_pos)
-    # )
+    Returns
+    -------
+    ndarray
+        dN/(dt d(delta)) of the outgoing photons, with abscissa delta.
 
-    # term_0_neg = np.transpose(
-    #     (
-    #         (2/beta)*np.sqrt((1+beta)/(1-beta))
-    #         + 2*(1+beta)**2/(beta**2)*np.sqrt((1-beta)/(1+beta))
-    #         - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
-    #     )*np.transpose(delta*F0_neg)
-    # )
+    Note
+    ----
+    The final result dN/(dt d(delta)) is the *net* spectrum, i.e. the total number of photons upscattered by delta - number of photons downscattered by delta. 
 
-    # term_0_int = np.transpose(
-    #     2/(gamma*beta**2)*(2*np.log(T))
-    #     *np.transpose(delta*F0_int)
-    # )
+    """
 
-    # term_log = np.transpose(
-    #     2/(gamma*beta**2)*np.transpose(
-    #         delta*F_log_int
-    #     )
-    # )
+    print('Computing energy loss spectrum by beta expansion...')
 
-    # term_x_log = -np.transpose(
-    #     2*T/(gamma*beta**2)*np.transpose(
-    #         F_x_log_pos + F_x_log_neg
-    #     )
-    # )
+    gamma = eleceng/phys.me
+    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
 
-    # term_x_log_a = np.transpose(
-    #     2*T/(gamma*beta**2)*np.transpose(
-    #         F_x_log_a_pos + F_x_log_a_neg
-    #     )
-    # )
+    prefac = ( 
+        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+        * (8*np.pi/(phys.ele_compton*phys.me)**3)
+        * (T**2/beta**2)
+    )
 
-    # term_log_a = np.transpose(
-    #     2/(gamma*beta**2)*np.transpose(
-    #         delta*(F_log_a_pos - F_log_a_neg)
-    #     )
-    # )
+    print('(1/5) Computing F1_up - F1_down term...')
+    F1_up_down_term = F1_up_down(beta, delta, T, as_pairs=as_pairs)
+    print('(2/5) Computing F0_up - F0_down term...')
+    F0_up_down_diff_term = F0_up_down_diff(beta, delta, T, as_pairs=as_pairs)
+    print('(3/5) Computing F0_up + F0_down term...')
+    F0_up_down_sum_term = F0_up_down_sum(beta, delta, T, as_pairs=as_pairs)
+    print('(4/5) Computing F_inv_up - F_inv_down term...')
+    F_inv_up_down_term = F_inv_up_down(beta, delta, T, as_pairs=as_pairs)
+    print('(5/5) Computing F_inv2_up - F_inv2_down term...')
+    F_inv2_up_down_term = F_inv2_up_down(beta, delta, T, as_pairs=as_pairs)
 
-    # term_inv_pos = -np.transpose(
-    #     (1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*
-    #     np.transpose(F_inv_pos*delta**2)
-    # )
+    term = np.transpose(
+        prefac*np.transpose(
+            F1_up_down_term + F0_up_down_diff_term + F0_up_down_sum_term
+            + F_inv_up_down_term + F_inv2_up_down_term
+        )
+    )
 
-    # term_inv_neg = -np.transpose(
-    #     (1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))*
-    #     np.transpose(F_inv_neg*delta**2)
-    # )
+    print('Computation by expansion in beta complete!')
 
-    # testing = True
-    # if testing:
-    #     print('***** Diagnostics *****')
-    #     print('lowlim_neg: ', lowlim_neg)
-    #     print('lowlim_pos: ', lowlim_pos)
-    #     print('beta: ', beta)
-    #     print('delta/T: ', delta/T)
-
-    #     print('***** Individual terms *****')
-    #     print('term_1: ', term_1)
-    #     print('term_0_pos: ', term_0_pos)
-    #     print('term_0_neg: ', term_0_neg)
-    #     print('term_0_int: ', term_0_int)
-    #     print('term_log: ', term_log)
-    #     print('term_x_log: ', term_x_log)
-    #     print('term_x_log_a: ', term_x_log_a)
-    #     print('term_log_a: ', term_log_a)
-    #     print('term_inv_pos: ', term_inv_pos)
-    #     print('term_inv_neg: ', term_inv_neg)
-
-    #     print('***** Total Sum (Excluding Prefactor) *****')
-    #     print(
-    #         term_1 + term_0_pos + term_0_neg + term_0_int
-    #         + term_log + term_x_log + term_x_log_a + term_log_a
-    #         + term_inv_pos + term_inv_neg
-    #     )
-    #     print('***** End Diagnostics *****')
-
-    #     return np.transpose(
-    #         prefac*np.transpose(
-    #             term_1 + term_0_pos + term_0_neg + term_0_int
-    #             + term_log + term_x_log + term_x_log_a 
-    #             + term_log_a + term_inv_pos + term_inv_neg
-    #         )
-    #     )
-
-
-
-
+    return term
