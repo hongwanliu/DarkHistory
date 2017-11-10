@@ -286,7 +286,12 @@ def F_inv(a,b,tol=1e-10):
 
 
     def high_summand(x, k):
-        return sp.expn(1, k*np.array(x, dtype='float64'))
+
+        inf = (x == np.inf)
+        expr = np.zeros_like(x)
+        expr[~inf] = sp.expn(1, k*np.array(x[~inf], dtype='float64'))
+
+        return expr
 
     if a.ndim == 1 and b.ndim == 2:
         if b.shape[1] != a.size:
@@ -467,7 +472,13 @@ def F_inv_3(a,b,tol=1e-10):
 
 
     def high_summand(x, k):
-        return sp.expn(3, k*np.array(x, dtype='float64'))/x**2
+        inf = (x == np.inf)
+        expr = np.zeros_like(x)
+        expr[~inf] = (
+            sp.expn(3, k*np.array(x[~inf], dtype='float64'))/x[~inf]**2
+        )
+
+        return expr
 
     if a.ndim == 1 and b.ndim == 2:
         if b.shape[1] != a.size:
@@ -648,7 +659,13 @@ def F_inv_5(a,b,tol=1e-10):
 
 
     def high_summand(x, k):
-        return sp.expn(5, k*np.array(x, dtype='float64'))/x**4
+        inf = (x == np.inf)
+        expr = np.zeros_like(x)
+        expr[~inf] = (
+            sp.expn(5, k*np.array(x[~inf], dtype='float64'))/x[~inf]**4
+        )
+        
+        return expr
 
     if a.ndim == 1 and b.ndim == 2:
         if b.shape[1] != a.size:
