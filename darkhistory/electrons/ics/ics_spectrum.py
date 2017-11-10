@@ -764,6 +764,14 @@ def engloss_spec_series(eleceng, delta, T, as_pairs=False):
         print('term_0: ', term_0_up - term_0_down)
         print('term_inv: ', term_inv_up - term_inv_down)
         print('term_log: ', term_log_up - term_log_down)
+        print('Sum three terms: ', term_0_up - term_0_down
+            + term_inv_up - term_inv_down
+            + term_log_up - term_log_down
+        )
+        print('Sum: ', term_1_up - term_1_down
+            + term_0_up - term_0_down
+            + term_inv_up - term_inv_down
+            + term_log_up - term_log_down)
 
         print('***** Total Sum (Excluding Prefactor) *****')
         print('Upscattering loss spectrum: ')
@@ -836,9 +844,18 @@ def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
     print('(5/5) Computing F_inv2_up - F_inv2_down term...')
     F_inv2_up_down_term = F_inv2_up_down(beta, delta, T, as_pairs=as_pairs)
 
+    print(F1_up_down_term*T**2/beta**2)
+    print((F0_up_down_diff_term + F0_up_down_sum_term
+            + F_inv_up_down_term 
+            + F_inv2_up_down_term)*T**2/beta**2)
+    print((F1_up_down_term + F0_up_down_diff_term 
+            + F0_up_down_sum_term
+            + F_inv_up_down_term + F_inv2_up_down_term)*T**2/beta**2)
+
     term = np.transpose(
         prefac*np.transpose(
-            F1_up_down_term + F0_up_down_diff_term + F0_up_down_sum_term
+            F1_up_down_term + F0_up_down_diff_term 
+            + F0_up_down_sum_term
             + F_inv_up_down_term + F_inv2_up_down_term
         )
     )
