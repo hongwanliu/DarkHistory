@@ -3,7 +3,9 @@
 import numpy as np 
 from scipy.integrate import quad
 
-from darkhistory.electrons.ics.series import *
+from darkhistory.electrons.ics.bose_einstein_integrals import *
+from darkhistory.electrons.ics.nonrel_diff_terms import *
+from darkhistory.electrons.ics.engloss_diff_terms import *
 from darkhistory.utilities import log_1_plus_x
 from darkhistory.utilities import div_ignore_by_zero
 from darkhistory import physics as phys
