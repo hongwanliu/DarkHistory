@@ -186,7 +186,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
         )
     )
 
-def spec_quad(eleceng_arr, photeng_arr, T):
+def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
     """ Nonrelativistic ICS spectrum using quadrature.
 
     Parameters
@@ -365,8 +365,8 @@ def nonrel_spec(eleceng, photeng, T):
 
     Returns
     -------
-    tuple of ndarrays
-        dN/(dt dE) of the outgoing photons and the error, with abscissa given by (eleceng, photeng). 
+    ndarray
+        dN/(dt dE) of the outgoing photons, with abscissa given by (eleceng, photeng). 
 
     Note
     ----

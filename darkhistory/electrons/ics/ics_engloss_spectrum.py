@@ -17,7 +17,7 @@ def engloss_spec_series(eleceng, delta, T, as_pairs=False):
     eleceng : ndarray
         Incoming electron energy. 
     delta : ndarray
-        Upscattered photon energy (only positive values). 
+        Energy gained by photon after upscattering (only positive values). 
     T : float
         CMB temperature. 
     as_pairs : bool
@@ -145,7 +145,7 @@ def engloss_spec_series(eleceng, delta, T, as_pairs=False):
         )
     )
 
-    testing = True
+    testing = False
     if testing:
         print('***** Diagnostics *****')
         print('lowlim_up: ', lowlim_up)
@@ -209,7 +209,7 @@ def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
     eleceng : ndarray
         Incoming electron energy. 
     delta : ndarray
-        Energy gained from upscattering by the secondary photon. 
+        Energy gained by photon after upscattering (only positive values).  
     T : float
         CMB temperature. 
     as_pairs : bool
@@ -248,6 +248,32 @@ def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
     print('(5/5) Computing F_rem term...')
     F_rem_term = F_rem(beta, delta, T, as_pairs=as_pairs)
 
+    testing = False
+    if testing:
+        print('***** Diagnostics *****')
+        print('beta: ', beta)
+        print('delta/T: ', delta/T)
+        print('delta/(2*beta*T): ', delta/(2*beta*T))
+
+        print('***** Individual terms *****')
+        print('F1_up_down_term: ', F1_up_down_term)
+        print('F0_up_down_diff_term: ', F0_up_down_diff_term)
+        print('F0_up_down_sum_term: ', F0_up_down_sum_term)
+        print('F_inv_up_down_term: ', F_inv_up_down_term)
+        print('F_rem_term: ', F_rem_term)
+
+        print('***** Total Sum (Excluding Prefactor) *****')
+        print(
+            np.transpose(
+                prefac*np.transpose(
+                    F1_up_down_term + F0_up_down_diff_term 
+                    + F0_up_down_sum_term
+                    + F_inv_up_down_term + F_rem_term
+                )
+            )
+        )
+        print('***** End Diagnostics *****')
+
     term = np.transpose(
         prefac*np.transpose(
             F1_up_down_term + F0_up_down_diff_term 
@@ -259,3 +285,61 @@ def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
     print('Computation by expansion in beta complete!')
 
     return term
+
+def engloss_spec(eleceng, delta, T):
+    """ Energy loss ICS spectrum. 
+
+    Switches between `engloss_spec_series` and `engloss_spec_diff`. 
+
+    Parameters
+    ----------
+    eleceng : ndarray
+        Incoming electron energy. 
+    delta : ndarray
+        Energy gained by photon after upscattering (only positive values). 
+    T : float
+        CMB temperature. 
+
+    Returns
+    -------
+    ndarray
+        dN/(dt d delta) of the outgoing photons, with abscissa given by (eleceng, delta). 
+    """
+
+    print('Initializing...')
+
+    gamma = eleceng/phys.me
+    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
+    eta = delta/T
+
+    # 2D masks, dimensions (eleceng, delta)
+
+    beta_2D_mask = np.outer(beta, np.ones_like(eta))
+    eleceng_2D_mask = np.outer(eleceng, np.ones_like(eta))
+    delta_2D_mask = np.outer(np.ones_like(eleceng), delta)
+
+    beta_2D_small = beta_2D_mask < 0.05
+
+    spec = np.zeros((eleceng.size, delta.size), dtype='float128')
+
+    spec_with_diff = engloss_spec_diff(
+        eleceng_2D_mask[beta_2D_small].flatten(),
+        delta_2D_mask[beta_2D_small].flatten(),
+        T, as_pairs=True
+    )
+
+    spec[beta_2D_small] = spec_with_diff.flatten()
+
+    spec_with_series = engloss_spec_series(
+        eleceng_2D_mask[~beta_2D_small].flatten(),
+        delta_2D_mask[~beta_2D_small].flatten(),
+        T, as_pairs=True
+    )
+
+    spec[~beta_2D_small] = spec_with_series.flatten()
+
+    print('Energy loss spectrum computed!')
+
+    return spec
+
+

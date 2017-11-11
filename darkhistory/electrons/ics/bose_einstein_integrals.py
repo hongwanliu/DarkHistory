@@ -1382,25 +1382,25 @@ def F_x_log_a(lowlim, a, tol=1e-10):
         The resulting integral. 
     """
 
-    bound = np.ones_like(lowlim, dtype='float128')*2.
+    bound = np.ones_like(lowlim, dtype='float128')*2
 
     # Two different series to approximate this: below and above bound. 
 
     def low_summand(x, a, k):
-        x_flt64 = np.array(x, dtype='float64')
-        a_flt64 = np.array(a, dtype='float64')
+        # x_flt64 = np.array(x, dtype='float64')
+        # a_flt64 = np.array(a, dtype='float64')
         if k == 1:
             return (
                 x*(
                     np.log(a+x) - 1 
                     + np.real(sp.hyp2f1(
-                        1, 1, 2, -x_flt64/a_flt64 + 0j)
+                        1, 1, 2, -x/a + 0j)
                     )
                 )
                 -x**2/8*(
                     2*np.log(a+x) - 1
                     + np.real(sp.hyp2f1(
-                        1, 2, 3, -x_flt64/a_flt64 + 0j)
+                        1, 2, 3, -x/a + 0j)
                     )
                 )
             )
@@ -1409,15 +1409,15 @@ def F_x_log_a(lowlim, a, tol=1e-10):
                 bern(k)*x**(k+1)/(sp.factorial(k)*(k+1)**2)*(
                     (k+1)*np.log(x+a) - 1
                     + np.real(sp.hyp2f1(
-                        1, k+1, k+2, -x_flt64/a_flt64 + 0j
+                        1, k+1, k+2, -x/a + 0j
                     ))
                 )
             )
 
     def high_summand(x, a, k):
 
-        x_flt64 = np.array(x, dtype='float64')
-        a_flt64 = np.array(a, dtype='float64')
+        # x_flt64 = np.array(x, dtype='float64')
+        # a_flt64 = np.array(a, dtype='float64')
         inf = (x == np.inf)
 
         expr = np.zeros_like(x)
@@ -1460,11 +1460,14 @@ def F_x_log_a(lowlim, a, tol=1e-10):
         )
 
     if np.any(low):
+        bound_flt64 = np.array(bound, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
+        lowlim_flt64 = np.array(lowlim, dtype='float64')
 
         integral[low] = (
-            low_summand(bound[low], a[low], 1)
-            - low_summand(lowlim[low], a[low], 1)
-            + high_summand(bound[low], a[low], 1)
+            low_summand(bound_flt64[low], a_flt64[low], 1)
+            - low_summand(lowlim_flt64[low], a_flt64[low], 1)
+            + high_summand(bound_flt64[low], a_flt64[low], 1)
         )
         k_low = 2
         k_high = 2
@@ -1473,9 +1476,15 @@ def F_x_log_a(lowlim, a, tol=1e-10):
         while err_max > tol:
 
             next_term[low] = (
-                low_summand(bound[low], a[low], k_low) 
-                - low_summand(lowlim[low], a[low], k_low)
-                + high_summand(bound[low], a[low], k_high)
+                low_summand(
+                    bound_flt64[low], a_flt64[low], k_low
+                ) 
+                - low_summand(
+                    lowlim_flt64[low], a_flt64[low], k_low
+                )
+                + high_summand(
+                    bound_flt64[low], a_flt64[low], k_high
+                )
             )
             err[low] = np.abs(
                 np.divide(
@@ -1495,13 +1504,17 @@ def F_x_log_a(lowlim, a, tol=1e-10):
 
     if np.any(high):
 
-        integral[high] = high_summand(lowlim[high], a[high], 1)
+        integral[high] = high_summand(
+            lowlim_flt64[high], a_flt64[high], 1
+        )
 
         k_high = 2
         err_max = 10*tol
 
         while err_max > tol:
-            next_term[high] = high_summand(lowlim[high], a[high], k_high)
+            next_term[high] = high_summand(
+                lowlim_flt64[high], a_flt64[high], k_high
+            )
             err[high] = np.abs(
                 np.divide(
                     next_term[high],
