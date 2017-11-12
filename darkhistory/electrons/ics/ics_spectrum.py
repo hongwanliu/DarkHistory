@@ -7,6 +7,8 @@ from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.nonrel_diff_terms import *
 from darkhistory.utilities import log_1_plus_x
 from darkhistory import physics as phys
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
 from tqdm import tqdm_notebook as tqdm
@@ -402,7 +404,7 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     where_diff = (beta_small & eta_small)
 
-    testing = True
+    testing = False
 
     if testing:
         print('where_diff on (eleceng, photeng) grid: ')
@@ -571,7 +573,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     
 
 
-    testing = True
+    testing = False
     if testing:
         print('***** Diagnostics *****')
         print('gamma: ', gamma)
@@ -585,11 +587,6 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
         print('***** Integrals *****')
         print('term_1: ', term_1)
-        # term_1_quad = quad(
-        #     lambda x: x/(np.exp(x) - 1), lowlim[0,0], 
-        #     upplim[0,0], epsabs = 0, epsrel = 1e-10
-        # )[0]*(1 + Q)*T
-        # print('term_1 by quadrature: ', term_1_quad)
         print('term_2: ', term_2)
         print('term_3: ', term_3)
         print('term_4: ', term_4)
@@ -615,7 +612,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         prefac*np.transpose(spec)
     )
 
-def ics_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
+def ics_spec(eleceng, photeng, T, as_pairs=False):
     """ ICS spectrum of secondary photons.
 
     Switches between `nonrel_spec` and `rel_spec`. 
@@ -647,6 +644,32 @@ def ics_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     if as_pairs:
         if eleceng.size != photeng.size:
             raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
-        eleceng_mask = eleceng
+        gamma_mask = gamma
+        eleceng_mask = eleceng 
+        photeng_mask = photeng
+        spec = np.zeros(gamma)
     else:
+        gamma_mask = np.outer(gamma, np.ones(photeng.size))
         eleceng_mask = np.outer(eleceng, np.ones(photeng.size))
+        photeng_mask = np.outer(np.ones(eleceng.size), photeng)
+        spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
+
+    rel = (gamma_mask > 20)
+
+    y = T/phys.TCMB(1000)
+
+    spec[rel] = y**4*rel_spec(
+        y*eleceng_mask[rel], y*photeng_mask[rel], phys.TCMB(1000), 
+        inf_upp_bound=True, as_pairs=True
+    )
+    spec[~rel] = y**2*nonrel_spec(
+        eleceng_mask[~rel], photeng_mask[~rel]/y, phys.TCMB(1000), as_pairs=True
+    )
+
+    rs = T/phys.TCMB(1)
+    dlnz = 1/(phys.dtdz(rs)*rs)
+
+    spec_arr = [Spectrum(photeng, sp, rs = rs) for sp in spec]
+
+    return TransFuncAtRedshift(spec_arr, eleceng, dlnz)
+
