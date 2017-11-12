@@ -12,7 +12,7 @@ from darkhistory import physics as phys
 from tqdm import tqdm_notebook as tqdm
 
 def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
-    """ Nonrelativistic ICS spectrum using the series method.
+    """ Nonrelativistic ICS spectrum of secondary photons by series method.
 
     Parameters
     ----------
@@ -187,7 +187,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     )
 
 def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
-    """ Nonrelativistic ICS spectrum using quadrature.
+    """ Nonrelativistic ICS spectrum of secondary photons using quadrature.
 
     Parameters
     ----------
@@ -290,7 +290,7 @@ def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
     return integral
 
 def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
-    """ Nonrelativistic ICS spectrum by beta expansion.
+    """ Nonrelativistic ICS spectrum of secondary photons by beta expansion.
 
     Parameters
     ----------
@@ -349,8 +349,8 @@ def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
 
     return term, err
 
-def nonrel_spec(eleceng, photeng, T):
-    """ Nonrelativistic ICS spectrum.
+def nonrel_spec(eleceng, photeng, T, as_pairs=False):
+    """ Nonrelativistic ICS spectrum of secondary photons.
 
     Switches between `nonrel_spec_diff` and `nonrel_spec_series`. 
 
@@ -362,6 +362,8 @@ def nonrel_spec(eleceng, photeng, T):
         Outgoing photon energy. 
     T : float
         CMB temperature. 
+    as_pairs : bool
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.
 
     Returns
     -------
@@ -380,42 +382,52 @@ def nonrel_spec(eleceng, photeng, T):
     beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
     eta = photeng/T 
 
-    # 2D masks, dimensions (eleceng, photeng)
-    beta_2D_mask = np.outer(beta, np.ones(eta.size))
-    eta_2D_mask = np.outer(np.ones(beta.size), eta)
-    eleceng_2D_mask = np.outer(eleceng, np.ones(photeng.size))
-    photeng_2D_mask = np.outer(np.ones(eleceng.size), photeng)
+    # Masks, dimensions (eleceng, photeng) if as_pairs == False.
+    if as_pairs:
+        if eleceng.size != photeng.size:
+            raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
+        beta_mask = beta
+        eta_mask = eta
+        eleceng_mask = eleceng
+        photeng_mask = photeng
+    else:
+        beta_mask = np.outer(beta, np.ones(eta.size))
+        eta_mask = np.outer(np.ones(beta.size), eta)
+        eleceng_mask = np.outer(eleceng, np.ones(photeng.size))
+        photeng_mask = np.outer(np.ones(eleceng.size), photeng)
 
-    # 2D boolean arrays. 
-    beta_2D_small = (beta_2D_mask < 0.01)
-    eta_2D_small  = (eta_2D_mask < 0.1/beta_2D_mask)
+    # Boolean arrays. Depending on as_pairs, can be 1- or 2-D. 
+    beta_small = (beta_mask < 0.01)
+    eta_small  = (eta_mask < 0.1/beta_mask)
 
-    where_diff = (beta_2D_small & eta_2D_small)
-    
-    testing = False
+    where_diff = (beta_small & eta_small)
+
+    testing = True
 
     if testing:
         print('where_diff on (eleceng, photeng) grid: ')
         print(where_diff)
 
-    spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
-    epsrel = np.zeros((eleceng.size, photeng.size), dtype='float128')
+    if as_pairs:
+        spec = np.zeros_like(eleceng)
+        epsrel = np.zeros_like(eleceng)
+    else:
+        spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
+        epsrel = np.zeros((eleceng.size, photeng.size), dtype='float128')
 
-    spec_with_diff, err_with_diff = nonrel_spec_diff(
-        eleceng_2D_mask[where_diff].flatten(), 
-        photeng_2D_mask[where_diff].flatten(), 
+    spec[where_diff], err_with_diff = nonrel_spec_diff(
+        eleceng_mask[where_diff], 
+        photeng_mask[where_diff], 
         T, as_pairs=True
     )
 
-
     print('Computing errors for beta expansion method...')
 
-    spec[where_diff] = spec_with_diff.flatten()
     epsrel[where_diff] = np.abs(
         np.divide(
-            err_with_diff.flatten(),
+            err_with_diff,
             spec[where_diff],
-            out = np.zeros_like(err_with_diff.flatten()),
+            out = np.zeros_like(err_with_diff),
             where = (spec[where_diff] != 0)
         )
     )
@@ -433,13 +445,11 @@ def nonrel_spec(eleceng, photeng, T):
         print('where_series on (eleceng, photeng) grid: ')
         print(where_series)
 
-    spec_with_series = nonrel_spec_series(
-        eleceng_2D_mask[where_series].flatten(),
-        photeng_2D_mask[where_series].flatten(),
+    spec[where_series] = nonrel_spec_series(
+        eleceng_mask[where_series],
+        photeng_mask[where_series],
         T, as_pairs=True
     )
-
-    spec[where_series] = spec_with_series.flatten()
 
     if testing:
         spec_with_series = np.array(spec)
@@ -455,7 +465,7 @@ def nonrel_spec(eleceng, photeng, T):
     return spec
 
 def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
-    """ Relativistic ICS spectrum.
+    """ Relativistic ICS spectrum of secondary photons.
 
     Parameters
     ----------
@@ -482,9 +492,9 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
     gamma = eleceng/phys.me
 
-    # Most accurate way of finding beta when beta is small, I think.
-
     if as_pairs:
+        if eleceng.size != photeng.size:
+            raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
         Gamma_eps_q = (
             np.divide(
                 photeng/eleceng,
@@ -604,3 +614,39 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     return np.transpose(
         prefac*np.transpose(spec)
     )
+
+def ics_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
+    """ ICS spectrum of secondary photons.
+
+    Switches between `nonrel_spec` and `rel_spec`. 
+
+    Parameters
+    ----------
+    eleceng : ndarray
+        Incoming electron energy. 
+    photeng : ndarray
+        Outgoing photon energy. 
+    T : float
+        CMB temperature. 
+    as_pairs : bool
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+
+    Returns
+    -------
+    tuple of ndarrays
+        dN/(dt dE) of the outgoing photons and the error, with abscissa given by (eleceng, photeng). 
+
+    Note
+    ----
+    Insert note on the suitability of the method. 
+    """
+
+    gamma = eleceng/phys.me
+
+    if as_pairs:
+        if eleceng.size != photeng.size:
+            raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
+        eleceng_mask = eleceng
+    else:
+        eleceng_mask = np.outer(eleceng, np.ones(photeng.size))
