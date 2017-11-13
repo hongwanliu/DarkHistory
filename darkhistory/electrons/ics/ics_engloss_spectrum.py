@@ -4,6 +4,7 @@ import numpy as np
 
 from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.engloss_diff_terms import *
+import darkhistory.electrons.ics.ics_spectrum as ics_spectrum
 from darkhistory import physics as phys
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
@@ -290,7 +291,7 @@ def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
 
 def engloss_spec(
     eleceng, delta, T, 
-    as_pairs=False, engloss_tf=None
+    as_pairs=False, nonrel_tf=None, rel_tf=None
 ):
     """ Energy loss ICS spectrum. 
 
@@ -306,8 +307,11 @@ def engloss_spec(
         CMB temperature.
     as_pairs : bool, optional
         If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
-    engloss_tf : TransFuncAtRedshift, optional
-        Reference energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.  
+    nonrel_tf : TransFuncAtRedshift, optional
+        Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
+    rel_tf : TransFuncAtRedshift, optional
+        Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
+
 
     Returns
     -------
@@ -324,11 +328,13 @@ def engloss_spec(
     if as_pairs:
         if eleceng.size != delta.size:
             raise TypeError('delta and electron energy arrays must have the same length for pairwise computation.')
+        gamma_mask = gamma
         beta_mask = beta
-        eleceng_mask = eleceng
+        eleceng_mask = eleceng 
         delta_mask = delta
-        spec = np.zeros(gamma)
+        spec = np.zeros_like(gamma)
     else:
+        gamma_mask = np.outer(gamma, np.ones_like(eta))
         beta_mask = np.outer(beta, np.ones_like(eta))
         eleceng_mask = np.outer(eleceng, np.ones_like(eta))
         delta_mask = np.outer(np.ones_like(eleceng), delta)
@@ -337,38 +343,57 @@ def engloss_spec(
         )
 
     beta_small = beta_mask < 0.05
+    rel = gamma_mask > 20
 
     y = T/phys.TCMB(1000)
 
-    if engloss_tf != None:
+    if rel_tf != None:
         if as_pairs:
             raise TypeError('When reading from file, the keyword as_pairs is not supported.')
+        # If the electron energy at which interpolation is to be taken is outside rel_tf, then an error should be returned, since the file has not gone up to high enough energies.
+        rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > 20])
+        # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
+        rel_tf = rel_tf.at_eng(
+            y*delta, 
+            bounds_error = False,
+            fill_value = (np.nan, 0)
+        )
+        spec[rel] = y**4*rel_tf.grid_values.flatten()
+    else:
 
-        engloss_tf = engloss_tf.at_in_eng(eleceng - phys.me)
-        engloss_tf = engloss_tf.at_eng(
+        print('Computing relativistic energy loss spectrum...')
+
+        spec[rel] = ics_spectrum.rel_spec(
+            eleceng_mask[rel],
+            delta_mask[rel],
+            T, inf_upp_bound=True, as_pairs=True 
+        )
+
+        print('Relativistic energy loss spectrum complete!')
+
+    if nonrel_tf != None:
+        nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= 20] - phys.me)
+        nonrel_tf = nonrel_tf.at_eng(
             delta/y,
             bounds_error = False,
             fill_value = (np.nan, 0)
         )
-        spec = y**2*engloss_tf.grid_values
-
+        spec[~rel] = y**2*nonrel_tf.grid_values.flatten()
     else:
-
-        print('Initializing...')
-
+        print('Computing nonrelativistic energy loss spectrum...')
+        # beta_small obviously doesn't intersect with rel. 
         spec[beta_small] = engloss_spec_diff(
             eleceng_mask[beta_small],
             delta_mask[beta_small],
             T, as_pairs=True
         )
 
-        spec[~beta_small] = engloss_spec_series(
-            eleceng_mask[~beta_small],
-            delta_mask[~beta_small],
+        spec[~beta_small & ~rel] = engloss_spec_series(
+            eleceng_mask[~beta_small & ~rel],
+            delta_mask[~beta_small & ~rel],
             T, as_pairs=True
         )
-
-        print('Energy loss spectrum computed!')
+        print('Nonrelativistic energy loss spectrum computed!')
     
     rs = T/phys.TCMB(1)
     dlnz = 1/(phys.dtdz(rs)*rs)
