@@ -60,9 +60,9 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     N_arr : ndarray
         An array of number of particles in each bin. 
     in_eng : ndarray
-        An array of the energy abscissa for each bin. The total energy in each bin `i should be `N_arr[i]*in_eng[i]`.
+        An array of the energy abscissa for each bin. The total energy in each bin `i` should be `N_arr[i]*in_eng[i]`.
     out_eng : ndarray
-        The new abscissa to bin into. If `in_eng` has values that are smaller than 
+        The new abscissa to bin into.
 
     Returns
     -------
@@ -172,6 +172,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     out_spec.underflow['eng'] += eng_underflow
 
     return out_spec
+
 
 def discretize(func_dNdE, eng):
     """Discretizes a continuous function. 

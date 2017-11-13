@@ -45,17 +45,17 @@ class Spectrum:
         if eng.size != dNdE.size:
             raise TypeError("""abscissa and spectrum need to be of the
              same size.""")
-        if not all(np.diff(eng) > 0):
-            raise TypeError("abscissa must be ordered in increasing energy.")
+        if (
+            not all(np.diff(eng) > 0) 
+            or not all(np.diff(eng) < 0)
+        ):
+            raise TypeError("abscissa must be ordered in increasing or decreasing energy.")
 
         self.eng = eng
         self.dNdE = dNdE
         self.rs = rs
         self.length = eng.size
         self.underflow = {'N': 0., 'eng': 0.}
-
-        # self.bin_boundary = get_bin_bound(self.eng)
-        # self.log_bin_width = np.diff(np.log(self.bin_boundary))
 
     def __add__(self, other):
         """Adds two `Spectrum` instances together, or an array to the spectrum. The `Spectrum` object is on the left.
@@ -522,32 +522,45 @@ class Spectrum:
             return (np.dot(dNdlogE, eng * log_bin_width) 
                 + self.underflow['eng'])
 
-    def shift_eng(self, new_eng):
+    def shift_eng(self, new_eng, reverse=False):
         """ Shifts the abscissa while conserving number. 
 
         This function can be used to subtract or add some amount of energy from each bin in the spectrum. The dN/dE is adjusted to conserve number in each bin. 
 
         Parameters
         ----------
-
         new_eng : ndarray
             The new energy abscissa.
+        reverse : bool, optional
+            Set to true if new_eng is given in decreasing order. 
         """
         if new_eng.size != self.eng.size:
             return TypeError("The new abscissa must have the same length as the old one.")
-        if not all(np.diff(new_eng) > 0):
+        if not reverse and not all(np.diff(new_eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
+        if reverse and not all (np.diff(new_eng) < 0):
+            raise TypeError("abscissa must be ordered in decreasing energy with reverse=True.")
+
+        if reverse:
+            new_eng = new_eng[::-1]
 
         new_bin_boundary = get_bin_bound(new_eng)
         new_log_bin_width = np.diff(np.log(new_bin_boundary))
         
-        new_spec = Spectrum(new_eng, self.dNdE, self.rs)
-        new_dNdE = self.totN('bin',np.arange(new_eng.size+1))/(new_eng * new_log_bin_width)
+        if reverse:
+            new_spec = Spectrum(
+                self.eng[::-1], self.dNdE[::-1], self.rs
+            )
+            new_dNdE = new_spec.totN(
+                'bin', np.arange(new_eng.size+1)
+            )/(new_eng * new_log_bin_width)
+        else:
+            new_dNdE = self.totN(
+                'bin',np.arange(new_eng.size+1)
+            )/(new_eng * new_log_bin_width)
 
         self.eng = new_eng
         self.dNdE = new_dNdE
-        # self.bin_boundary = get_bin_bound(self.eng)
-        # self.log_bin_width = np.diff(np.log(self.bin_boundary))
 
 
     def rebin(self, out_eng):
