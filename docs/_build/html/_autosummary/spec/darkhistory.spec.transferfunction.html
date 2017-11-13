@@ -504,6 +504,8 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>new_rs</strong> (<em>ndarray</em>) – The redshifts or redshift bin indices at which to interpolate.</li>
 <li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual redshift.</li>
+<li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
+<li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
 </ul>
 </td>
 </tr>
@@ -542,7 +544,7 @@
 <li><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – The axis handle of the figure to show the plot in.</li>
 <li><strong>ind</strong> (<em>int</em><em>, </em><em>float</em><em>, </em><em>tuple</em><em> or </em><em>ndarray</em><em>, </em><em>optional.</em>) – Index or redshift of Spectrum to plot, or a tuple of indices or redshifts providing a range of Spectrum to plot, or a list of indices or redshifts of Spectrum to plot.</li>
 <li><strong>step</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to take before choosing one Spectrum to plot.</li>
-<li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'rs'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or a redshift.</li>
+<li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'rs'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or an abscissa value.</li>
 <li><strong>abs_plot</strong> (<em>bool</em><em>, </em><em>optional</em>) – Plots the absolute value if true.</li>
 <li><strong>**kwargs</strong> (<em>optional</em>) – All additional keyword arguments to pass to matplotlib.plt.plot.</li>
 </ul>
@@ -646,22 +648,25 @@
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.append" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(spec)</td>
 <td>Appends a new Spectrum.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng"><code class="xref py py-obj docutils literal"><span class="pre">at_in_eng</span></code></a>(new_eng[,&nbsp;interp_type])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng"><code class="xref py py-obj docutils literal"><span class="pre">at_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
+<td>Interpolates the transfer function at a new energy abscissa.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng"><code class="xref py py-obj docutils literal"><span class="pre">at_in_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new injection energy.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_eng[,&nbsp;interp_type])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_eng[,&nbsp;interp_type])</td>
 <td>Removes the inherited Spectra.at_rs from this class.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
 <td>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;abs_plot])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;abs_plot])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
 <td>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</td>
 </tr>
 </tbody>
@@ -889,18 +894,53 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng">
+<code class="descname">at_eng</code><span class="sig-paren">(</span><em>new_eng</em>, <em>interp_type='val'</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolates the transfer function at a new energy abscissa.</p>
+<p>Interpolation is logarithmic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>new_eng</strong> (<em>ndarray</em>) – The energy abscissa or energy abscissa bin indices at which to interpolate.</li>
+<li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual injection energies.</li>
+<li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
+<li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New transfer function at the new energy abscissa.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift">TransFuncAtRedshift</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng">
-<code class="descname">at_in_eng</code><span class="sig-paren">(</span><em>new_eng</em>, <em>interp_type='val'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="Permalink to this definition">¶</a></dt>
+<code class="descname">at_in_eng</code><span class="sig-paren">(</span><em>new_eng</em>, <em>interp_type='val'</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolates the transfer function at a new injection energy.</p>
 <p>Interpolation is logarithmic.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>new_eng</strong> (<em>ndarray</em>) – The injection energies or injection energy bin indices at which to interpolate.</li>
 <li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual injection energies.</li>
+<li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
+<li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New transfer function at the new injection energy.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift">TransFuncAtRedshift</a></p>
 </td>
 </tr>
 </tbody>
@@ -954,9 +994,9 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>ax</strong> (<em>matplotlib.axes.Axes</em>) – The axis handle of the figure to show the plot in.</li>
-<li><strong>ind</strong> (<em>int</em><em>, </em><em>float</em><em>, </em><em>tuple</em><em> or </em><em>ndarray</em><em>, </em><em>optional.</em>) – Index or redshift of Spectrum to plot, or a tuple of indices or redshifts providing a range of Spectrum to plot, or a list of indices or redshifts of Spectrum to plot.</li>
+<li><strong>ind</strong> (<em>int</em><em>, </em><em>float</em><em>, </em><em>tuple</em><em> or </em><em>ndarray</em><em>, </em><em>optional.</em>) – Index or injected energy of Spectrum to plot, or a tuple of indices or injected energies providing a range of Spectrum to plot, or a list of indices or injected energies of Spectrum to plot.</li>
 <li><strong>step</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to take before choosing one Spectrum to plot.</li>
-<li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'rs'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or a redshift.</li>
+<li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'in_eng'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or an abscissa value.</li>
 <li><strong>abs_plot</strong> (<em>bool</em><em>, </em><em>optional</em>) – Plots the absolute value if true.</li>
 <li><strong>**kwargs</strong> (<em>optional</em>) – All additional keyword arguments to pass to matplotlib.plt.plot.</li>
 </ul>

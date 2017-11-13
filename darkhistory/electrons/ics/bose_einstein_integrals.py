@@ -95,8 +95,6 @@ def F1(a,b,epsrel=0):
 
     if np.any(both_low):
 
-        # Use diff_pow to compute differences in powers accurately.
-
         integral[both_low] = (
                 b[both_low]-a[both_low]
                 - (b[both_low]-a[both_low])*(b[both_low]+a[both_low])/4 
@@ -135,7 +133,6 @@ def F1(a,b,epsrel=0):
             - spence_term[b_not_inf]
         )
 
-        # Use diff_pow if necessary
         if epsrel > 0:
             err = (
                 np.exp(-b[both_high])**11 
@@ -215,7 +212,6 @@ def F0(a,b,epsrel=0):
     both_low = (a < lowlim) & (b < lowlim)
     both_high = (a > upplim) & (b > upplim)
 
-    # Use diff_pow if necessary
     if np.any(both_low):
         integral[both_low] = (
             np.log(b[both_low]/a[both_low]) 

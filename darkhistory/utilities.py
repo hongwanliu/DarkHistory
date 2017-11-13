@@ -43,29 +43,6 @@ def is_log_spaced(arr):
     """
     return not bool(np.ptp(np.diff(np.log(arr))))
 
-def div_ignore_by_zero(a, b, val=0):
-    """ Divides `a` by `b`, returning `val` if a divide-by-zero error occurs.
-
-    Parameters
-    ----------
-    a : ndarray
-        Numerator of the division.
-    b : ndarray
-        Denominator of the division.
-    val : float
-        Value given as the result of the division if a divide-by-zero error occurs.
-
-    Returns
-    -------
-    ndarray
-        The result of the division of the two arrays.
-    
-    """
-    with np.errstate(divide = 'ignore', invalid = 'ignore'):
-        c = np.true_divide(a,b)
-        c[~ np.isfinite(c)] = val
-    return c
-
 def compare_arr(ndarray_list):
     """ Prints the arrays in a suitable format for comparison.
 
@@ -114,71 +91,21 @@ def log_1_plus_x(x):
         )
     return expr
 
-def diff_pow(a, b, n):
-    """ Computes a^n - b^n with greater floating point accuracy. 
+def bernoulli(k):
+    """ Returns the kth Bernoulli number. 
 
-    Factorizes out the difference between a and b first. 
+    This function is written as a look-up table for the first few Bernoulli numbers for speed. 
 
     Parameters
     ----------
-    a : ndarray
-        a^n to be computed. 
-    b : ndarray
-        b^n to be computed. 
-    n : int
-        The exponent. 
+    k : int
+        The Bernoulli number to return. 
 
     Returns
     -------
     float
-        The computed value. 
+        The kth Bernoulli number.
     """
-
-    return a**n - b**n
-
-    # if n == 0:
-    #     return 0
-    # elif n == 1:
-    #     return a - b
-    # elif n == 2:
-    #     return (a+b)*(a-b)
-    # elif n == 3:
-    #     return (a-b)*(a**2 + a*b + b**2)
-    # elif n == 4:
-    #     return (a-b)*(a+b)*(a**2 + b**2)
-    # elif n == 5:
-    #     return (a-b)*(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
-    # elif n == 6:
-    #     return (a-b)*(a+b)*(a**2 - a*b + b**2)*(a**2 + a*b + b**2)
-    # elif n == 7:
-    #     return (a-b)*(a**6 + a**5*b + a**4*b**2 
-    #                 + a**3*b**3 + a**2*b**4 + a*b**5 + b**6
-    #     )
-    # elif n == 8:
-    #     return (a-b)*(a+b)*(a**2 + b**2)*(a**4 + b**4)
-    # elif n == 9:
-    #     return (a-b)*(a**2 + a*b + b**2)*(a**6 + a**3*b**3 + b**6)
-    # elif n == 10:
-    #     return (a-b)*(a+b)*(
-    #         (a**4 - a**3*b + a**2*b**2 - a*b**3 + b**4)
-    #         *(a**4 + a**3*b + a**2*b**2 + a*b**3 + b**4)
-    #     )
-    # elif n == 11:
-    #     return (a-b)*(
-    #         a**10 + a**9*b + a**8*b**2 + a**7*b**3 + a**6*b**4
-    #         + a**5*b**5 + a**4*b**6 + a**3*b**7 + a**2*b**8
-    #         + a*b**9 + b**10
-    #     )
-    # elif n == 12:
-    #     return (a-b)*(a+b)*(a**2 + b**2)*(
-    #         (a**2 - a*b + b**2)
-    #         *(a**2 + a*b + b**2)
-    #         *(a**4 - a**2*b**2 + b**4)
-    #     )
-    # else: 
-    #     raise TypeError('n > 12 not supported.')
-
-def bernoulli(k):
 
     import scipy.special as sp
 
@@ -209,23 +136,12 @@ def log_series_diff(b, a):
         The Taylor series log(1+b) - log(1+a), up to the 11th order term. 
 
     """
-
-    # Use diff_pow if necessary
     return(
         - (b-a) - (b**2 - a**2)/2 - (b**3 - a**3)/3
         - (b**4 - a**4)/4 - (b**5 - a**5)/5 - (b**6 - a**6)/6
         - (b**7 - a**7)/7 - (b**8 - a**8)/8 - (b**9 - a**9)/9
         - (b**10 - a**10)/10 - (b**11 - a**11)/11
     )
-
-    # return (
-    #     - diff_pow(b, a, 1) - diff_pow(b, a, 2)/2 
-    #     - diff_pow(b, a, 3)/3 - diff_pow(b, a, 4)/4
-    #     - diff_pow(b, a, 5)/5 - diff_pow(b, a, 6)/6
-    #     - diff_pow(b, a, 7)/7 - diff_pow(b, a, 8)/8
-    #     - diff_pow(b, a, 9)/9 - diff_pow(b, a, 10)/10
-    #     - diff_pow(b, a, 11)/11
-    # )
 
 def spence_series_diff(b, a):
     """ Returns the Taylor series for Li2(b) - Li2(a). 
@@ -244,8 +160,6 @@ def spence_series_diff(b, a):
 
     """
 
-    # Use diff_pow if necessary
-    
     return(
         (b - a) + (b**2 - a**2)/2**2 + (b**3 - a**3)/3**2
         + (b**4 - a**4)/4**2 + (b**5 - a**5)/5**2
@@ -253,15 +167,6 @@ def spence_series_diff(b, a):
         + (b**8 - a**8)/8**2 + (b**9 - a**9)/9**2
         + (b**10 - a**10)/10**2 + (b**11 - a**11)/11**1
     )
-
-    # return (
-    #     diff_pow(b, a, 1) + diff_pow(b, a, 2)/2**2 
-    #     + diff_pow(b, a, 3)/3**2 + diff_pow(b, a, 4)/4**2
-    #     + diff_pow(b, a, 5)/5**2 + diff_pow(b, a, 6)/6**2
-    #     + diff_pow(b, a, 7)/7**2 + diff_pow(b, a, 8)/8**2
-    #     + diff_pow(b, a, 9)/9**2 + diff_pow(b, a, 10)/10**2
-    #     + diff_pow(b, a, 11)/11**2
-    # )
 
 def exp_expn(n, x):
     """ Returns exp(x)*E_n(n, x). 

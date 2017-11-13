@@ -1,0 +1,527 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>bose_einstein_integrals &mdash; DarkHistory  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../../genindex.html"/>
+        <link rel="search" title="Search" href="../../../search.html"/>
+    <link rel="top" title="DarkHistory  documentation" href="../../../index.html"/>
+        <link rel="up" title="ics" href="../darkhistory.electrons.ics.html"/>
+        <link rel="next" title="nonrel_diff_terms" href="darkhistory.electrons.ics.nonrel_diff_terms.html"/>
+        <link rel="prev" title="ics" href="../darkhistory.electrons.ics.html"/> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> DarkHistory
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../../modules.html">darkhistory</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../darkhistory.utilities.html">utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../darkhistory.spec.html">spec</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../darkhistory.electrons.html">electrons</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../darkhistory.electrons.xsecs.html">xsecs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../darkhistory.electrons.elec_cooling.html">elec_cooling</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../darkhistory.electrons.ics.html">ics</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">bose_einstein_integrals</a></li>
+<li class="toctree-l4"><a class="reference internal" href="darkhistory.electrons.ics.nonrel_diff_terms.html">nonrel_diff_terms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="darkhistory.electrons.ics.engloss_diff_terms.html">engloss_diff_terms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="darkhistory.electrons.ics.ics_spectrum.html">ics_spectrum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="darkhistory.electrons.ics.ics_engloss_spectrum.html">ics_engloss_spectrum</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DarkHistory</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../modules.html">darkhistory</a> &raquo;</li>
+        
+          <li><a href="../../darkhistory.electrons.html">electrons</a> &raquo;</li>
+        
+          <li><a href="../darkhistory.electrons.ics.html">ics</a> &raquo;</li>
+        
+      <li>bose_einstein_integrals</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/_autosummary/electrons/ics/darkhistory.electrons.ics.bose_einstein_integrals.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-darkhistory.electrons.ics.bose_einstein_integrals">
+<span id="bose-einstein-integrals"></span><h1>bose_einstein_integrals<a class="headerlink" href="#module-darkhistory.electrons.ics.bose_einstein_integrals" title="Permalink to this headline">¶</a></h1>
+<p>Integrals over the Bose-Einstein distribution.</p>
+<p class="rubric">Table of Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F1" title="darkhistory.electrons.ics.bose_einstein_integrals.F1"><code class="xref py py-obj docutils literal"><span class="pre">F1</span></code></a>(a,&nbsp;b[,&nbsp;epsrel])</td>
+<td>Definite integral of x/[(exp(x) - 1)].</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F0" title="darkhistory.electrons.ics.bose_einstein_integrals.F0"><code class="xref py py-obj docutils literal"><span class="pre">F0</span></code></a>(a,&nbsp;b[,&nbsp;epsrel])</td>
+<td>Definite integral of 1/[(exp(x) - 1)].</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_inv" title="darkhistory.electrons.ics.bose_einstein_integrals.F_inv"><code class="xref py py-obj docutils literal"><span class="pre">F_inv</span></code></a>(a,&nbsp;b[,&nbsp;tol])</td>
+<td>Definite integral of (1/x)/(exp(x) - 1).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_inv_3" title="darkhistory.electrons.ics.bose_einstein_integrals.F_inv_3"><code class="xref py py-obj docutils literal"><span class="pre">F_inv_3</span></code></a>(a,&nbsp;b[,&nbsp;tol])</td>
+<td>Definite integral of (1/x**3)/(exp(x) - 1).</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_inv_5" title="darkhistory.electrons.ics.bose_einstein_integrals.F_inv_5"><code class="xref py py-obj docutils literal"><span class="pre">F_inv_5</span></code></a>(a,&nbsp;b[,&nbsp;tol])</td>
+<td>Definite integral of (1/x**5)/(exp(x) - 1).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_log" title="darkhistory.electrons.ics.bose_einstein_integrals.F_log"><code class="xref py py-obj docutils literal"><span class="pre">F_log</span></code></a>(a,&nbsp;b[,&nbsp;tol])</td>
+<td>Definite integral of log(x)/(exp(x) - 1).</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_x_log" title="darkhistory.electrons.ics.bose_einstein_integrals.F_x_log"><code class="xref py py-obj docutils literal"><span class="pre">F_x_log</span></code></a>(a,&nbsp;b[,&nbsp;tol])</td>
+<td>Definite integral of x log(x)/(exp(x) - 1).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_log_a" title="darkhistory.electrons.ics.bose_einstein_integrals.F_log_a"><code class="xref py py-obj docutils literal"><span class="pre">F_log_a</span></code></a>(lowlim,&nbsp;a[,&nbsp;tol])</td>
+<td>Integral of log(x+a)/(exp(x) - 1) from lowlim to infinity.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_x_log_a" title="darkhistory.electrons.ics.bose_einstein_integrals.F_x_log_a"><code class="xref py py-obj docutils literal"><span class="pre">F_x_log_a</span></code></a>(lowlim,&nbsp;a[,&nbsp;tol])</td>
+<td>Integral of x log (x+a)/(exp(x) - 1) from lowlim to infinity.</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F1">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F1</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>epsrel=0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of x/[(exp(x) - 1)].</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration. Can be either 1D or 2D.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration. Can be either 1D or 2D.</li>
+<li><strong>err</strong> (<em>float</em>) – Error associated with series expansion. If zero, then the error is not computed.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">For a or b &gt; 0.01, the exact analytic expression is used, whereas below that we use a series expansion. This avoids numerical errors due to computation of log(1 - exp(-x)) and likewise in the <cite>spence</cite> function. Note that <cite>scipy.special.spence</cite> can only take <cite>float64</cite> numbers, so downcasting is necessary for 0.01 &lt; x &lt; 3.</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F0">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F0</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>epsrel=0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of 1/[(exp(x) - 1)].</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration. Can be either 1D or 2D.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration. Can be either 1D or 2D.</li>
+<li><strong>err</strong> (<em>float</em>) – Error associated with series expansion. If zero, then the error is not computed.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_inv">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_inv</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_inv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of (1/x)/(exp(x) - 1).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_inv_3">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_inv_3</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_inv_3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of (1/x**3)/(exp(x) - 1).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_inv_5">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_inv_5</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_inv_5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of (1/x**5)/(exp(x) - 1).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_log">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_log</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of log(x)/(exp(x) - 1).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_x_log">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_x_log</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_x_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Definite integral of x log(x)/(exp(x) - 1).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Upper limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_log_a">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_log_a</code><span class="sig-paren">(</span><em>lowlim</em>, <em>a</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_log_a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integral of log(x+a)/(exp(x) - 1) from lowlim to infinity.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Parameter in log(x+a).</li>
+<li><strong>lowlim</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.ics.bose_einstein_integrals.F_x_log_a">
+<code class="descclassname">darkhistory.electrons.ics.bose_einstein_integrals.</code><code class="descname">F_x_log_a</code><span class="sig-paren">(</span><em>lowlim</em>, <em>a</em>, <em>tol=1e-10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.bose_einstein_integrals.F_x_log_a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integral of x log (x+a)/(exp(x) - 1) from lowlim to infinity.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Parameter in x log(x+a).</li>
+<li><strong>lowlim</strong> (<em>ndarray</em>) – Lower limit of integration.</li>
+<li><strong>tol</strong> (<em>float</em>) – The relative tolerance to be reached.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The resulting integral.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="darkhistory.electrons.ics.nonrel_diff_terms.html" class="btn btn-neutral float-right" title="nonrel_diff_terms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../darkhistory.electrons.ics.html" class="btn btn-neutral" title="ics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Hongwan Liu.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

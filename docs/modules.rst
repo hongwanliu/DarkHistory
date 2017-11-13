@@ -15,3 +15,4 @@ darkhistory
    :toctree: _autosummary
    
    darkhistory.spec
+   darkhistory.electrons

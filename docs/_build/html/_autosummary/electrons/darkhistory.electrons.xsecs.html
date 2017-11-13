@@ -1,0 +1,407 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>xsecs &mdash; DarkHistory  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="DarkHistory  documentation" href="../../index.html"/>
+        <link rel="up" title="electrons" href="../darkhistory.electrons.html"/>
+        <link rel="next" title="elec_cooling" href="darkhistory.electrons.elec_cooling.html"/>
+        <link rel="prev" title="electrons" href="../darkhistory.electrons.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> DarkHistory
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.utilities.html">utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.spec.html">spec</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.electrons.html">electrons</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">xsecs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.electrons.elec_cooling.html">elec_cooling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.electrons.ics.html">ics</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DarkHistory</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../modules.html">darkhistory</a> &raquo;</li>
+        
+          <li><a href="../darkhistory.electrons.html">electrons</a> &raquo;</li>
+        
+      <li>xsecs</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/_autosummary/electrons/darkhistory.electrons.xsecs.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-darkhistory.electrons.xsecs">
+<span id="xsecs"></span><h1>xsecs<a class="headerlink" href="#module-darkhistory.electrons.xsecs" title="Permalink to this headline">¶</a></h1>
+<p>Atomic cooling cross sections.</p>
+<p class="rubric">Table of Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.xsecs.thermalize_cs" title="darkhistory.electrons.xsecs.thermalize_cs"><code class="xref py py-obj docutils literal"><span class="pre">thermalize_cs</span></code></a>(T[,&nbsp;f,&nbsp;lnV])</td>
+<td>Calculates the heating cross section (xsec) at a particular kinetic energy.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.xsecs.heating_dE" title="darkhistory.electrons.xsecs.heating_dE"><code class="xref py py-obj docutils literal"><span class="pre">heating_dE</span></code></a>(T,&nbsp;x_e,&nbsp;rs[,&nbsp;nH])</td>
+<td>Calculates the heating loss rate for electrons at a particular kinetic energy given some ionization fraction and redshift.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.xsecs.ionize_cs" title="darkhistory.electrons.xsecs.ionize_cs"><code class="xref py py-obj docutils literal"><span class="pre">ionize_cs</span></code></a>(Energy,&nbsp;atoms)</td>
+<td>Calculates the ionization cross section (xsec) for electrons impacting one of (H, He, He+) at a particular kinetic energy.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.xsecs.ionize_s_cs" title="darkhistory.electrons.xsecs.ionize_s_cs"><code class="xref py py-obj docutils literal"><span class="pre">ionize_s_cs</span></code></a>(E_in,&nbsp;E_sec,&nbsp;atoms)</td>
+<td>Calculates the singly-differential ionization cross section (xsec) for electrons impacting one of (H, He, He+) at a particular kinetic energy of the incident and one secondary electron.</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="darkhistory.electrons.xsecs.thermalize_cs">
+<code class="descclassname">darkhistory.electrons.xsecs.</code><code class="descname">thermalize_cs</code><span class="sig-paren">(</span><em>T</em>, <em>f=0.05</em>, <em>lnV=10</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.xsecs.thermalize_cs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the heating cross section (xsec) at a particular kinetic energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>T</strong> (<em>float</em><em>, </em><em>ndarray</em>) – The electron’s initial kinetic energy.</li>
+<li><strong>f</strong> (<em>float</em>) – The fraction of energy lost in each interaction.</li>
+<li><strong>lnV</strong> (<em>float</em>) – The Coulomb logarithm [ln(Lambda)]</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The cross section for heating at energy T
+(given in cm^2).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float, ndarray (same as T)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><a class="reference internal" href="#darkhistory.electrons.xsecs.heating_dE" title="darkhistory.electrons.xsecs.heating_dE"><code class="xref py py-func docutils literal"><span class="pre">heating_dE()</span></code></a></dt>
+<dd>Preferred; finds dE/dt</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.xsecs.heating_dE">
+<code class="descclassname">darkhistory.electrons.xsecs.</code><code class="descname">heating_dE</code><span class="sig-paren">(</span><em>T</em>, <em>x_e</em>, <em>rs</em>, <em>nH=1.8741315532120153e-07</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.xsecs.heating_dE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the heating loss rate for electrons at a particular
+kinetic energy given some ionization fraction and redshift.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>T</strong> (<em>float</em><em>, </em><em>ndarray</em>) – The electron’s initial kinetic energy</li>
+<li><strong>x_e</strong> (<em>float</em>) – The ionization fraction for Hydrogen.</li>
+<li><strong>rs</strong> (<em>float</em>) – The redshift (1+z) during heating; used for n_e.</li>
+<li><strong>nH</strong> (<em>float</em>) – Hydrogen density from physics.py</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The energy loss rate from heating (negative).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float, ndarray (same as T)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.xsecs.ionize_cs">
+<code class="descclassname">darkhistory.electrons.xsecs.</code><code class="descname">ionize_cs</code><span class="sig-paren">(</span><em>Energy</em>, <em>atoms</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.xsecs.ionize_cs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the ionization cross section (xsec) for electrons
+impacting one of (H, He, He+) at a particular kinetic energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>Energy</strong> (<em>ndarray</em>) – Each electron’s initial kinetic energy.</li>
+<li><strong>atoms</strong> (<em>ndarray</em><em> (</em><em>same size as Energy</em><em>)</em>) – Indicates a xsec corresponding to each
+element of Energy (1=H, 2=He, 3=He+)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The cross section for ionization for
+each pair (Energy[n],atoms[n])
+(given in cm^2).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><a class="reference internal" href="#darkhistory.electrons.xsecs.ionize_s_cs" title="darkhistory.electrons.xsecs.ionize_s_cs"><code class="xref py py-func docutils literal"><span class="pre">ionize_s_cs()</span></code></a></dt>
+<dd>Often preferred; gives singly differential xsec</dd>
+</dl>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.electrons.xsecs.ionize_s_cs">
+<code class="descclassname">darkhistory.electrons.xsecs.</code><code class="descname">ionize_s_cs</code><span class="sig-paren">(</span><em>E_in</em>, <em>E_sec</em>, <em>atoms</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.xsecs.ionize_s_cs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the singly-differential ionization cross section (xsec)
+for electrons impacting one of (H, He, He+) at a particular
+kinetic energy of the incident and one secondary electron.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>E_in</strong> (<em>ndarray</em>) – Each electron’s initial kinetic energy (eV).</li>
+<li><strong>E_out</strong> (<em>ndarray</em>) – The energy of one secondary electron for each initial electron (eV).</li>
+<li><strong>atoms</strong> (<em>ndarray</em>) – Atomic xsec relevant to each ionization; (1=H, 2=He, 3=He+)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The cross section for ionization at each incident energy (E_in[n]),
+secondary energy (E_out[n]), and atomic xsec (atoms[n]); (given in cm^2).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<dl class="last docutils">
+<dt><a class="reference internal" href="#darkhistory.electrons.xsecs.ionize_cs" title="darkhistory.electrons.xsecs.ionize_cs"><code class="xref py py-func docutils literal"><span class="pre">ionize_cs()</span></code></a></dt>
+<dd>Gives total ionization xsec</dd>
+</dl>
+</div>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="darkhistory.electrons.elec_cooling.html" class="btn btn-neutral float-right" title="elec_cooling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../darkhistory.electrons.html" class="btn btn-neutral" title="electrons" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Hongwan Liu.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

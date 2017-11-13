@@ -96,6 +96,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.electrons.html">electrons</a></li>
 </ul>
 </li>
 </ul>
@@ -179,11 +180,23 @@
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.compare_arr" title="darkhistory.utilities.compare_arr"><code class="xref py py-obj docutils literal"><span class="pre">compare_arr</span></code></a>(ndarray_list)</td>
 <td>Prints the arrays in a suitable format for comparison.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.div_ignore_by_zero" title="darkhistory.utilities.div_ignore_by_zero"><code class="xref py py-obj docutils literal"><span class="pre">div_ignore_by_zero</span></code></a>(a,&nbsp;b[,&nbsp;val])</td>
-<td>Divides <cite>a</cite> by <cite>b</cite>, returning <cite>val</cite> if a divide-by-zero error occurs.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.is_log_spaced" title="darkhistory.utilities.is_log_spaced"><code class="xref py py-obj docutils literal"><span class="pre">is_log_spaced</span></code></a>(arr)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.is_log_spaced" title="darkhistory.utilities.is_log_spaced"><code class="xref py py-obj docutils literal"><span class="pre">is_log_spaced</span></code></a>(arr)</td>
 <td>Checks if <cite>arr</cite> is a log-spaced array.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.log_1_plus_x" title="darkhistory.utilities.log_1_plus_x"><code class="xref py py-obj docutils literal"><span class="pre">log_1_plus_x</span></code></a>(x)</td>
+<td>Computes log(1+x) with greater floating point accuracy.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.bernoulli" title="darkhistory.utilities.bernoulli"><code class="xref py py-obj docutils literal"><span class="pre">bernoulli</span></code></a>(k)</td>
+<td>Returns the kth Bernoulli number.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.log_series_diff" title="darkhistory.utilities.log_series_diff"><code class="xref py py-obj docutils literal"><span class="pre">log_series_diff</span></code></a>(b,&nbsp;a)</td>
+<td>Returns the Taylor series for log(1+b) - log(1+a).</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.spence_series_diff" title="darkhistory.utilities.spence_series_diff"><code class="xref py py-obj docutils literal"><span class="pre">spence_series_diff</span></code></a>(b,&nbsp;a)</td>
+<td>Returns the Taylor series for Li2(b) - Li2(a).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.check_err" title="darkhistory.utilities.check_err"><code class="xref py py-obj docutils literal"><span class="pre">check_err</span></code></a>(val,&nbsp;err,&nbsp;epsrel)</td>
+<td>Checks the relative error given a tolerance.</td>
 </tr>
 </tbody>
 </table>
@@ -223,31 +236,6 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="darkhistory.utilities.div_ignore_by_zero">
-<code class="descclassname">darkhistory.utilities.</code><code class="descname">div_ignore_by_zero</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>val=0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.div_ignore_by_zero" title="Permalink to this definition">¶</a></dt>
-<dd><p>Divides <cite>a</cite> by <cite>b</cite>, returning <cite>val</cite> if a divide-by-zero error occurs.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>a</strong> (<em>ndarray</em>) – Numerator of the division.</li>
-<li><strong>b</strong> (<em>ndarray</em>) – Denominator of the division.</li>
-<li><strong>val</strong> (<em>float</em>) – Value given as the result of the division if a divide-by-zero error occurs.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The result of the division of the two arrays.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="darkhistory.utilities.is_log_spaced">
 <code class="descclassname">darkhistory.utilities.</code><code class="descname">is_log_spaced</code><span class="sig-paren">(</span><em>arr</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.is_log_spaced" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks if <cite>arr</cite> is a log-spaced array.</p>
@@ -260,6 +248,111 @@
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if equal, False otherwise.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.log_1_plus_x">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">log_1_plus_x</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.log_1_plus_x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes log(1+x) with greater floating point accuracy.</p>
+<p>Unlike scipy.special.log1p, this can take float128. However the performance is certainly slower. See “What every computer scientist should know about floating-point arithmetic” by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> (<em>ndarray</em>) – The input value.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">log(1+x).</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.bernoulli">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">bernoulli</code><span class="sig-paren">(</span><em>k</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.bernoulli" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the kth Bernoulli number.</p>
+<p>This function is written as a look-up table for the first few Bernoulli numbers for speed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>k</strong> (<em>int</em>) – The Bernoulli number to return.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The kth Bernoulli number.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">float</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.log_series_diff">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">log_series_diff</code><span class="sig-paren">(</span><em>b</em>, <em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.log_series_diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Taylor series for log(1+b) - log(1+a).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Input for log(1+a).</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Input for log(1+b).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The Taylor series log(1+b) - log(1+a), up to the 11th order term.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.spence_series_diff">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">spence_series_diff</code><span class="sig-paren">(</span><em>b</em>, <em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.spence_series_diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Taylor series for Li2(b) - Li2(a).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – Input for Li2(a).</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Input for Li2(b).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The Taylor series Li2(b) - Li2(a), up to the 11th order term.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.check_err">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">check_err</code><span class="sig-paren">(</span><em>val</em>, <em>err</em>, <em>epsrel</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.check_err" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks the relative error given a tolerance.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>val</strong> (<em>float</em><em> or </em><em>ndarray</em>) – The computed value.</li>
+<li><strong>err</strong> (<em>float</em><em> or </em><em>ndarray</em>) – The computed error.</li>
+<li><strong>epsrel</strong> (<em>float</em>) – The target tolerance.</li>
+</ul>
+</td>
 </tr>
 </tbody>
 </table>

@@ -1,7 +1,8 @@
+"""Atomic cooling cross sections.
+"""
 import numpy
 import sys
-sys.path.append("..")
-import physics
+import darkhistory.physics as physics
 from astropy.io import fits
 from scipy.interpolate import interp1d
 import math

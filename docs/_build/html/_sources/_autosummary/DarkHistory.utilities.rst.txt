@@ -9,16 +9,24 @@ utilities
    
       arrays_equal
       compare_arr
-      div_ignore_by_zero
       is_log_spaced
+      log_1_plus_x
+      bernoulli
+      log_series_diff
+      spence_series_diff
+      check_err
    
 Methods
 -------
 
    .. autofunction:: arrays_equal
    .. autofunction:: compare_arr
-   .. autofunction:: div_ignore_by_zero
    .. autofunction:: is_log_spaced
+   .. autofunction:: log_1_plus_x
+   .. autofunction:: bernoulli
+   .. autofunction:: log_series_diff
+   .. autofunction:: spence_series_diff
+   .. autofunction:: check_err
    
    
 
