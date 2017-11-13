@@ -55,10 +55,15 @@ class TransFuncAtEnergy(Spectra):
             The redshifts or redshift bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+        bounds_error : bool, optional
+            See scipy.interpolate.interp1d.
+        fill_value : array-like or (array-like, array-like) or "extrapolate", optional
+            See scipy.interpolate.interp1d.
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self.grid_values, axis=0
+            np.log(self.rs), self.grid_values, axis=0, 
+            bounds_error=bounds_error, fill_value=fill_value
         )
 
         if interp_type == 'val':
@@ -121,7 +126,7 @@ class TransFuncAtRedshift(Spectra):
             raise TypeError("all spectra must have identical redshifts.")
         self.rs = self.spec_arr[0].rs 
 
-    def at_in_eng(self, new_eng, interp_type='val'):
+    def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy. 
 
         Interpolation is logarithmic. 
@@ -131,7 +136,11 @@ class TransFuncAtRedshift(Spectra):
         new_eng : ndarray
             The injection energies or injection energy bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
-            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies.
+        bounds_error : bool, optional
+            See scipy.interpolate.interp1d.
+        fill_value : array-like or (array-like, array-like) or "extrapolate", optional
+            See scipy.interpolate.interp1d.
 
         Returns
         -------
@@ -140,21 +149,20 @@ class TransFuncAtRedshift(Spectra):
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.in_eng), self.grid_values, axis=0
+            np.log(self.in_eng), self.grid_values, axis=0, 
+            bounds_error=bounds_error, fill_value=fill_value
         )
 
         if interp_type == 'val':
             new_spec_arr = [
-                Spectrum(
-                    self.eng, 
-                    interp_func(np.log(eng)), 
-                    self.rs) for eng in new_eng
+                Spectrum(self.eng, interp_func(np.log(eng)), self.rs) 
+                for eng in new_eng
             ]
             return TransFuncAtRedshift(
                 new_spec_arr, new_eng, self.dlnz
             )
 
-        elif inter_type == 'bin':
+        elif interp_type == 'bin':
 
             log_new_eng = np.interp(
                 np.log(new_eng),
@@ -163,6 +171,55 @@ class TransFuncAtRedshift(Spectra):
             )
 
             return self.at_in_eng(np.exp(log_new_eng))
+
+    def at_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value= np.nan):
+        """Interpolates the transfer function at a new energy abscissa. 
+
+        Interpolation is logarithmic. 
+
+        Parameters
+        ----------
+        new_eng : ndarray
+            The energy abscissa or energy abscissa bin indices at which to interpolate. 
+        interp_type : {'val', 'bin'}
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+        bounds_error : bool, optional
+            See scipy.interpolate.interp1d.
+        fill_value : array-like or (array-like, array-like) or "extrapolate", optional
+            See scipy.interpolate.interp1d.
+
+        Returns
+        -------
+        TransFuncAtRedshift
+            New transfer function at the new energy abscissa. 
+        """
+
+        interp_func = interpolate.interp1d(
+            np.log(self.eng), self.grid_values, axis=1, 
+            bounds_error=bounds_error, fill_value=fill_value
+        )
+
+        if interp_type == 'val':
+            new_grid_values = np.transpose(
+                np.stack([interp_func(np.log(eng)) for eng in new_eng])
+            )
+            new_spec_arr = [
+                Spectrum(new_eng, spec, self.rs) 
+                for spec in new_grid_values
+            ]
+            return TransFuncAtRedshift(
+                new_spec_arr, self.in_eng, self.dlnz
+            )
+
+        elif interp_type == 'bin':
+
+            log_new_eng = np.interp(
+                np.log(new_eng),
+                np.arange(self.eng.size),
+                np.log(self.eng)
+            )
+
+            return self.at_eng(np.exp(log_new_eng))
 
     def at_rs(self, new_eng, interp_type='val'):
         """ Removes the inherited Spectra.at_rs from this class.

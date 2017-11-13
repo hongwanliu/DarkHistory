@@ -30,7 +30,7 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
     Returns
     -------
     ndarray
-        dN/(dt dE) of the outgoing photons, with abscissa photeng. 
+        dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa photeng. 
 
     Note
     ----
@@ -203,7 +203,7 @@ def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
     Returns
     -------
     ndarray
-        dN/(dt dE) of the outgoing photons, with abscissa photeng. 
+        dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa photeng. 
 
     Note
     ----
@@ -308,7 +308,7 @@ def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
     Returns
     -------
     tuple of ndarrays
-        dN/(dt dE) of the outgoing photons and the error, with abscissa given by (eleceng, photeng). 
+        dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleceng, photeng). 
 
     Note
     ----
@@ -370,7 +370,7 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
     Returns
     -------
     ndarray
-        dN/(dt dE) of the outgoing photons, with abscissa given by (eleceng, photeng). 
+        dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa given by (eleceng, photeng). 
 
     Note
     ----
@@ -484,7 +484,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     Returns
     -------
     tuple of ndarrays
-        dN/(dt dE) of the outgoing photons and the error, with abscissa given by (eleceng, photeng). 
+        dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleceng, photeng). 
 
     Note
     ----
@@ -612,7 +612,10 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         prefac*np.transpose(spec)
     )
 
-def ics_spec(eleceng, photeng, T, as_pairs=False):
+def ics_spec(
+    eleceng, photeng, T, as_pairs=False, 
+    nonrel_tf=None, rel_tf=None
+):
     """ ICS spectrum of secondary photons.
 
     Switches between `nonrel_spec` and `rel_spec`. 
@@ -625,14 +628,17 @@ def ics_spec(eleceng, photeng, T, as_pairs=False):
         Outgoing photon energy. 
     T : float
         CMB temperature. 
-    as_pairs : bool
+    as_pairs : bool, optional
         If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
-
+    nonrel_tf : TransFuncAtRedshift, optional
+        Reference nonrelativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
+    rel_tf : TransFuncAtRedshift, optional
+        Reference relativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
 
     Returns
     -------
-    tuple of ndarrays
-        dN/(dt dE) of the outgoing photons and the error, with abscissa given by (eleceng, photeng). 
+    TransFuncAtRedshift
+        dN/(dt dE) of the outgoing photons, dt = 1 s, with `self.in_eng = eleceng` and `self.eng = photeng`. `self.rs` is determined from `T`, and `self.dlnz` is normalized to 1 second. 
 
     Note
     ----
@@ -658,18 +664,42 @@ def ics_spec(eleceng, photeng, T, as_pairs=False):
 
     y = T/phys.TCMB(1000)
 
-    spec[rel] = y**4*rel_spec(
-        y*eleceng_mask[rel], y*photeng_mask[rel], phys.TCMB(1000), 
-        inf_upp_bound=True, as_pairs=True
-    )
-    spec[~rel] = y**2*nonrel_spec(
-        eleceng_mask[~rel], photeng_mask[~rel]/y, phys.TCMB(1000), as_pairs=True
-    )
+    if rel_tf != None:
+        if as_pairs:
+            raise TypeError('When reading from file, the keyword as_pairs is not supported.')
+        # If the electron energy at which interpolation is to be taken is outside rel_tf, then an error should be returned, since the file has not gone up to high enough energies. 
+        rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > 20])
+        # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
+        rel_tf = rel_tf.at_eng(
+            y*photeng, 
+            bounds_error = False, 
+            fill_value = (np.nan, 0)
+        )
+        spec[rel] = y**4*rel_tf.grid_values.flatten()
+    else: 
+        spec[rel] = y**4*rel_spec(
+            y*eleceng_mask[rel], y*photeng_mask[rel], phys.TCMB(1000), 
+            inf_upp_bound=True, as_pairs=True
+        )
+    if nonrel_tf != None:
+        nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= 20] - phys.me)
+        nonrel_tf = nonrel_tf.at_eng(
+            photeng/y,
+            bounds_error = False,
+            fill_value = (np.nan, 0)
+        )
+        spec[~rel] = y**2*nonrel_tf.grid_values.flatten()
+    else:
+        spec[~rel] = y**2*nonrel_spec(
+            eleceng_mask[~rel], photeng_mask[~rel]/y, 
+            phys.TCMB(1000), as_pairs=True
+        )
 
     rs = T/phys.TCMB(1)
     dlnz = 1/(phys.dtdz(rs)*rs)
 
     spec_arr = [Spectrum(photeng, sp, rs = rs) for sp in spec]
 
-    return TransFuncAtRedshift(spec_arr, eleceng, dlnz)
+    # Use kinetic energy of the electron for better interpolation when necessary. 
+    return TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
 
