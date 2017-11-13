@@ -5,6 +5,8 @@ import numpy as np
 from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.engloss_diff_terms import *
 from darkhistory import physics as phys
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
 from tqdm import tqdm_notebook as tqdm
@@ -286,7 +288,10 @@ def engloss_spec_diff(eleceng, delta, T, as_pairs=False):
 
     return term
 
-def engloss_spec(eleceng, delta, T):
+def engloss_spec(
+    eleceng, delta, T, 
+    as_pairs=False, engloss_tf=None
+):
     """ Energy loss ICS spectrum. 
 
     Switches between `engloss_spec_series` and `engloss_spec_diff`. 
@@ -298,7 +303,11 @@ def engloss_spec(eleceng, delta, T):
     delta : ndarray
         Energy gained by photon after upscattering (only positive values). 
     T : float
-        CMB temperature. 
+        CMB temperature.
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+    engloss_tf : TransFuncAtRedshift, optional
+        Reference energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.  
 
     Returns
     -------
@@ -306,40 +315,66 @@ def engloss_spec(eleceng, delta, T):
         dN/(dt d delta) of the outgoing photons, with abscissa given by (eleceng, delta). 
     """
 
-    print('Initializing...')
-
     gamma = eleceng/phys.me
     beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
     eta = delta/T
 
-    # 2D masks, dimensions (eleceng, delta)
+    # 2D masks have dimensions (eleceng, delta).
 
-    beta_2D_mask = np.outer(beta, np.ones_like(eta))
-    eleceng_2D_mask = np.outer(eleceng, np.ones_like(eta))
-    delta_2D_mask = np.outer(np.ones_like(eleceng), delta)
+    if as_pairs:
+        if eleceng.size != delta.size:
+            raise TypeError('delta and electron energy arrays must have the same length for pairwise computation.')
+        beta_mask = beta
+        eleceng_mask = eleceng
+        delta_mask = delta
+        spec = np.zeros(gamma)
+    else:
+        beta_mask = np.outer(beta, np.ones_like(eta))
+        eleceng_mask = np.outer(eleceng, np.ones_like(eta))
+        delta_mask = np.outer(np.ones_like(eleceng), delta)
+        spec = np.zeros(
+            (eleceng.size, delta.size), dtype='float128'
+        )
 
-    beta_2D_small = beta_2D_mask < 0.05
+    beta_small = beta_mask < 0.05
 
-    spec = np.zeros((eleceng.size, delta.size), dtype='float128')
+    y = T/phys.TCMB(1000)
 
-    spec_with_diff = engloss_spec_diff(
-        eleceng_2D_mask[beta_2D_small].flatten(),
-        delta_2D_mask[beta_2D_small].flatten(),
-        T, as_pairs=True
-    )
+    if engloss_tf != None:
+        if as_pairs:
+            raise TypeError('When reading from file, the keyword as_pairs is not supported.')
 
-    spec[beta_2D_small] = spec_with_diff.flatten()
+        engloss_tf = engloss_tf.at_in_eng(eleceng - phys.me)
+        engloss_tf = engloss_tf.at_eng(
+            delta/y,
+            bounds_error = False,
+            fill_value = (np.nan, 0)
+        )
+        spec = y**2*engloss_tf.grid_values
 
-    spec_with_series = engloss_spec_series(
-        eleceng_2D_mask[~beta_2D_small].flatten(),
-        delta_2D_mask[~beta_2D_small].flatten(),
-        T, as_pairs=True
-    )
+    else:
 
-    spec[~beta_2D_small] = spec_with_series.flatten()
+        print('Initializing...')
 
-    print('Energy loss spectrum computed!')
+        spec[beta_small] = engloss_spec_diff(
+            eleceng_mask[beta_small],
+            delta_mask[beta_small],
+            T, as_pairs=True
+        )
 
-    return spec
+        spec[~beta_small] = engloss_spec_series(
+            eleceng_mask[~beta_small],
+            delta_mask[~beta_small],
+            T, as_pairs=True
+        )
+
+        print('Energy loss spectrum computed!')
+    
+    rs = T/phys.TCMB(1)
+    dlnz = 1/(phys.dtdz(rs)*rs)
+
+    spec_arr = [Spectrum(delta, sp, rs=rs) for sp in spec]
+
+    return TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
 
 
