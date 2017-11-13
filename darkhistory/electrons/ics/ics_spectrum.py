@@ -660,7 +660,9 @@ def ics_spec(
         photeng_mask = np.outer(np.ones(eleceng.size), photeng)
         spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
 
-    rel = (gamma_mask > 20)
+    rel_bound = 20
+
+    rel = (gamma_mask > rel_bound)
 
     y = T/phys.TCMB(1000)
 
@@ -669,7 +671,7 @@ def ics_spec(
             raise TypeError('When reading from file, the keyword as_pairs is not supported.')
         # If the electron energy at which interpolation is to be taken is outside rel_tf, then an error should be returned, since the file has not gone up to high enough energies. 
         # Note relativistic spectrum is indexed by TOTAL electron energy.
-        rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > 20])
+        rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > rel_bound])
         # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
         rel_tf = rel_tf.at_eng(
             y*photeng, 
@@ -684,7 +686,7 @@ def ics_spec(
         )
 
     if nonrel_tf != None:
-        nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= 20] - phys.me)
+        nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= rel_bound] - phys.me)
         nonrel_tf = nonrel_tf.at_eng(
             photeng/y,
             bounds_error = False,
