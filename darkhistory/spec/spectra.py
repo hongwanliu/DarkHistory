@@ -39,31 +39,109 @@ class Spectra:
     # ndarray first, which isn't what we want.
     __array_priority__ = 1
 
+    class _List(list):
+        """ This class allows the update of all properties in the class when an element of spec_arr is changed. see goo.gl/ojHCZi.
+
+        spec_arr will be an instance of _List. The owner of _List is Spectra. Whenever we try to set an item in spec_arr, the updates to the rest of the attributes are given below.
+        """
+        def __init__(self, owner, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.owner = owner
+
+        def __setitem__(self, index, value):
+            super().__setitem__(index, value)
+            self.owner.rs[index] = value.rs
+            self.owner.grid_values[index] = values.dNdE
+
+        def append(self, value):
+            print('here!')
+            super().append(value)
+            # appending to self.spec_arr does not trigger the setter. Need to set the redshift explicitly to do that. 
+            self.owner.rs = np.append(self.owner.rs, value.rs)            
+
     def __init__(self, spec_arr, rebin_eng=None):
-        if len(set([spec.length for spec in spec_arr])) > 1:
-            raise TypeError("all spectra must have the same length.")
+        # if len(set([spec.length for spec in spec_arr])) > 1:
+        #     raise TypeError("all spectra must have the same length.")
 
-        if not np.all(np.diff(spec_arr[0].eng) > 0):
-            raise TypeError("abscissa must be ordered in increasing energy.")
+        # if not np.all(np.diff(spec_arr[0].eng) > 0):
+        #     raise TypeError("abscissa must be ordered in increasing energy.")
 
-        self.spec_arr = spec_arr
+        # if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+        #     raise TypeError("all abscissae must be the same.")
+
+        # self is the owner, which is why it is the first argument.
+        self.spec_arr = Spectra._List(self, spec_arr)
         
         if rebin_eng is not None:
             self.rebin(rebin_eng)
 
-        if not utils.arrays_equal([spec.eng for spec in spec_arr]):
-            raise TypeError("all abscissae must be the same.")
-
-        self.eng = spec_arr[0].eng
+        # self.eng = spec_arr[0].eng
         
-        self.rs = np.array([spec.rs for spec in spec_arr])
+        # self.rs = np.array([spec.rs for spec in spec_arr])
 
-        if self.rs.size > 1 and not np.all(np.diff(self.rs) <= 0):
-            raise TypeError("redshift must be in increasing order.")
+        # if self.rs.size > 1 and not np.all(np.diff(self.rs) <= 0):
+        #     raise TypeError("redshift must be in increasing order.")
 
-        # self.log_bin_width = np.diff(np.log(self.bin_boundary))
+        # # self.log_bin_width = np.diff(np.log(self.bin_boundary))
 
-        self.grid_values = np.stack([spec.dNdE for spec in self.spec_arr])
+        # self.grid_values = np.stack([spec.dNdE for spec in self.spec_arr])
+
+    @property
+    def spec_arr(self):
+        return self._spec_arr
+
+    @spec_arr.setter
+    def spec_arr(self, new_arr):
+        print('am i here for append?')
+        if len(set([spec.length for spec in new_arr])) > 1:
+            raise TypeError("all spectra must have the same length.")
+        if not utils.arrays_equal([spec.eng for spec in new_arr]):
+            raise TypeError("all abscissae must be the same.")
+        self._spec_arr = Spectra._List(self, new_arr)
+        self._eng = new_arr[0].eng 
+        self._rs = np.array([spec.rs for spec in new_arr])
+        self._grid_values = np.stack([spec.dNdE for spec in new_arr])
+
+    @property
+    def rs(self):
+        return self._rs 
+
+    @rs.setter
+    def rs(self, new_rs):
+        new_spec_arr = [spec for spec in self._spec_arr]
+        for z,spec in zip(new_rs, new_spec_arr):
+            spec.rs = z
+        self.spec_arr = new_spec_arr
+
+    @property
+    def eng(self):
+        return self._eng
+
+    @eng.setter
+    def eng(self, new_eng):
+        if not np.all(np.diff(spec_arr[0].eng) > 0):
+            raise TypeError("abscissa must be ordered in increasing energy.")
+        if len(new_eng) != len(spec_arr[0].eng):
+            raise TypeError("new abscissa must have the same length as the old one.")
+        new_spec_arr = [spec for spec in self.spec_arr]
+        for spec in new_spec_arr:
+            spec.eng = new_eng
+        self.spec_arr = new_spec_arr
+
+    @property
+    def grid_values(self):
+        return self._grid_values
+    @grid_values.setter
+    def grid_values(self, value):
+        if value.shape != (self.rs.size, self.eng.size):
+            raise TypeError("cannot change the dimension of grid_values.")
+        new_spec_arr = [
+            Spectrum(self.eng, dNdE, z) 
+            for (dNdE, z) in zip(grid_values, self.rs)
+        ]
+        self.spec_arr = new_spec_arr
+
+    # Cannot set grid_values: set spec_arr instead. 
 
 
     def __iter__(self):
@@ -407,10 +485,10 @@ class Spectra:
         for spec in self:
             spec.rebin(out_eng)
 
-        self.eng = out_eng
-        self.grid_values = np.stack(
-            [spec.dNdE for spec in self.spec_arr]
-        )
+        # self.eng = out_eng
+        # self.grid_values = np.stack(
+        #     [spec.dNdE for spec in self.spec_arr]
+        # )
 
     def append(self, spec):
         """Appends a new Spectrum. 
@@ -426,10 +504,7 @@ class Spectra:
             raise TypeError("new Spectrum has a larger redshift than the current last entry.")
 
         self.spec_arr.append(spec)
-        self.rs = np.append(self.rs, spec.rs)
-        self.grid_values = np.stack(
-            [spec.dNdE for spec in self.spec_arr]
-        )
+        
 
     def at_rs(self, new_rs, interp_type='val',bounds_err=True):
         """Interpolates the transfer function at a new redshift. 
