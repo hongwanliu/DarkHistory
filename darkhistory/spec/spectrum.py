@@ -674,22 +674,6 @@ class Spectrum:
         eng_underflow = np.sum(toteng_arr_low) - eng_above_underflow
         low_dNdE = N_above_underflow/new_E_dlogE[1]
 
-
-        # print("reg_bin_low: ", reg_bin_low)
-        # print("reg_N_low: ", reg_N_low)
-        # print("reg_dNdE_low: ", reg_dNdE_low)
-        # print("reg_bin_upp: ", reg_bin_upp)
-        # print("reg_N_upp: ", reg_N_upp)
-        # print("reg_dNdE_upp: ", reg_dNdE_upp)
-        # print("bin_ind[ind_reg]", bin_ind[ind_reg])
-        # print("new_eng: ", new_eng)
-        # print("bin_ind[ind_low]", bin_ind[ind_low])
-        # print("N_arr_low: ", N_arr_low)
-        # print("toteng_arr_low: ", toteng_arr_low)
-        # print("high_dNdE_low: ", high_dNdE_low)
-        # print("high_dNdE_upp: ", high_dNdE_upp)
-        # print("low_dNdE: ", low_dNdE)
-
         # Add up, obtain the new dNdE. 
         new_dNdE = np.zeros(new_eng.size)
         new_dNdE[1] += low_dNdE
@@ -703,9 +687,7 @@ class Spectrum:
         self.eng = new_eng[1:]
         self.dNdE = new_dNdE[1:]
         self.length = self.eng.size 
-        # self.bin_boundary = get_bin_bound(self.eng)
-        # self.log_bin_width = np.diff(np.log(self.bin_boundary))
-
+        
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow 
 
@@ -726,9 +708,6 @@ class Spectrum:
         self.eng = self.eng*fac
         self.dNdE = self.dNdE/fac
         self.underflow['eng'] *= fac
-        # self.length = self.eng.size 
-        # self.bin_boundary = get_bin_bound(self.eng)
-        # self.log_bin_width = np.diff(np.log(self.bin_boundary))
-
+        
         self.rebin(eng_orig)
         self.rs = new_rs
