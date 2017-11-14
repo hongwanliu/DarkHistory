@@ -225,7 +225,7 @@ class Spectra:
 
         Parameters
         ----------
-        other : Spectra, int or float
+        other : Spectra, int, float, list or ndarray
 
         Returns
         -------
@@ -242,6 +242,12 @@ class Spectra:
         """
         if np.issubdtype(type(other), float) or np.issubdtype(type(other), int):
             return Spectra([other*spec for spec in self])
+        elif isinstance(other, list) or isinstance(other, np.ndarray):
+            if len(other) != len(self.spec_arr):
+                raise TypeError("list must be the same length as self.spec_arr.")
+            return Spectra(
+                [num*spec for num,spec in zip(other,self)]
+            )
         elif np.issubclass_(type(other), Spectra):
             if (not np.array_equal(self.rs, other.rs) 
                 or not np.array_equal(self.eng, other.eng)):
@@ -255,7 +261,7 @@ class Spectra:
 
         Parameters
         ----------
-        other : Spectra, int or float
+        other : Spectra, int, float, list or ndarray
 
         Returns
         -------
@@ -272,6 +278,12 @@ class Spectra:
         """
         if np.issubdtype(type(other), float) or np.issubdtype(type(other), int):
             return Spectra([other*spec for spec in self])
+        elif isinstance(other, list) or isinstance(other, np.ndarray):
+            if len(other) != len(self.spec_arr):
+                raise TypeError("list must be the same length as self.spec_arr.")
+            return Spectra(
+                [spec*num for num,spec in zip(other,self)]
+            )
         elif np.issubclass_(type(other), Spectra):
             if self.rs != other.rs or self.eng != other.eng:
                 raise TypeError("the two spectra do not have the same redshift or abscissae.")
@@ -415,6 +427,9 @@ class Spectra:
 
         self.spec_arr.append(spec)
         self.rs = np.append(self.rs, spec.rs)
+        self.grid_values = np.stack(
+            [spec.dNdE for spec in self.spec_arr]
+        )
 
     def at_rs(self, new_rs, interp_type='val',bounds_err=True):
         """Interpolates the transfer function at a new redshift. 
