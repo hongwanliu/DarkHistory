@@ -302,7 +302,26 @@ def CMB_spec(eng, temp):
 
     """
     prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
-    if eng/temp < 500:
-        return prefactor/(np.exp(eng/temp) - 1)
+    if isinstance(eng, (list, np.ndarray)):
+        small = eng/temp < 1e-10
+        expr = np.zeros_like(eng)
+        if np.any(small):
+            expr[small] = prefactor[small]*1/(
+                eng[small]/temp + (1/2)*(eng[small]/temp)**2
+                + (1/6)*(eng[small]/temp)**3
+            )
+        if np.any(~small):
+            expr[~small] = (
+                prefactor[~small]*np.exp(-eng[~small]/temp)
+                /(1 - np.exp(-eng[~small]/temp))
+            )
     else:
-        return 0
+        expr = 0
+        if eng/temp < 1e-10:
+            expr = prefactor*1/(
+                eng/temp + (1/2)*(eng/temp)**2 + (1/6)*(eng/temp)**3
+            )
+        else:
+            expr = prefactor*np.exp(-eng/temp)/(1 - np.exp(-eng/temp))    
+
+    return expr

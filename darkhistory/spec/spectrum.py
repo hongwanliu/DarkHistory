@@ -47,7 +47,7 @@ class Spectrum:
              same size.""")
         if (
             not all(np.diff(eng) > 0) 
-            or not all(np.diff(eng) < 0)
+            and not all(np.diff(eng) < 0)
         ):
             raise TypeError("abscissa must be ordered in increasing or decreasing energy.")
 
