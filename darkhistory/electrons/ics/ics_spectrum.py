@@ -464,6 +464,9 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     print('Spectrum computed!')
 
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
+    spec[spec < 1e-100] = 0.
+
     if as_pairs:
         return spec
     else:
@@ -623,6 +626,9 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         prefac*np.transpose(spec)
     )
 
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
+    spec[spec < 1e-100] = 0.
+
     if as_pairs:
         return spec 
     else:
@@ -722,11 +728,19 @@ def ics_spec(
             T, as_pairs=True
         )
 
-    rs = T/phys.TCMB(1)
-    dlnz = 1/(phys.dtdz(rs)*rs)
 
-    spec_arr = [Spectrum(photeng, sp, rs = rs) for sp in spec]
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
+    spec[spec < 1e-100] = 0.
 
-    # Use kinetic energy of the electron for better interpolation when necessary. 
-    return TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
+    if as_pairs:
+        return spec
+    else:
+
+        rs = T/phys.TCMB(1)
+        dlnz = 1/(phys.dtdz(rs)*rs)
+
+        spec_arr = [Spectrum(photeng, sp, rs = rs) for sp in spec]
+
+        # Use kinetic energy of the electron for better interpolation when necessary. 
+        return TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
 

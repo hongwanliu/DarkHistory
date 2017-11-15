@@ -403,6 +403,9 @@ def engloss_spec(
             T, as_pairs=True
         )
         print('Nonrelativistic energy loss spectrum computed!')
+
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
+    spec[spec < 1e-100] = 0.
     
     if as_pairs:
         return spec 
