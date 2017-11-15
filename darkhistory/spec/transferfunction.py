@@ -44,7 +44,9 @@ class TransFuncAtEnergy(Spectra):
         self.dlnz = dlnz
         super().__init__(spec_arr, rebin_eng)
 
-    def at_rs(self, new_rs, interp_type='val'):
+    def at_rs(
+        self, new_rs, interp_type='val', bounds_error=None, fill_value=np.nan
+    ):
         """Interpolates the transfer function at a new redshift. 
 
         Interpolation is logarithmic. 

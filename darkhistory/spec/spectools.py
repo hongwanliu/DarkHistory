@@ -256,6 +256,7 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
 
         for i in np.arange(rs_last_ind):
             append_spec(tflist[i].sum_specs(out_specs[-1]))
+            out_specs[-1].rs = tflist.rs[i+1]
 
         return out_specs
 

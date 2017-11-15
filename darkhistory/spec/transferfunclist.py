@@ -41,7 +41,9 @@ class TransferFuncList:
 
             raise TypeError('transfer functions must be of the same type.')
 
-        if not arrays_equal([tfunc.eng for tfunc in self.tflist]):
+        if not arrays_equal(
+            [tfunc.get_eng() for tfunc in self.tflist]
+        ):
             raise TypeError('all transfer functions must have the same \
                 energy abscissa.')
 

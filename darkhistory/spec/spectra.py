@@ -379,7 +379,7 @@ class Spectra:
             new_dNdE = np.dot(weight.dNdE, self.get_grid_values())
             return Spectrum(self.get_eng(), new_dNdE)
         else:
-            raise TypeError("mat must be an ndarray.")
+            raise TypeError("weight must be an ndarray or Spectrum.")
 
     def rebin(self, out_eng):
         """ Re-bins all `Spectrum` objects according to a new abscissa.
@@ -430,7 +430,7 @@ class Spectra:
         bounds_err : bool, optional
             Whether to return an error if outside of the bounds for the interpolation. 
         """
-
+        
         interp_func = interpolate.interp1d(
             np.log(self.get_rs()), self.get_grid_values(), axis=0
         )
