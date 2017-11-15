@@ -369,8 +369,8 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     Returns
     -------
-    ndarray
-        dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa given by (eleceng, photeng). 
+    TransFuncAtRedshift or ndarray
+        dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleceng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleceng, photeng).  
 
     Note
     ----
@@ -464,7 +464,18 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     print('Spectrum computed!')
 
-    return spec
+    if as_pairs:
+        return spec
+    else:
+        rs = T/phys.TCMB(1)
+        dlnz = 1/(phys.dtdz(rs)*rs)
+
+        spec_arr = [Spectrum(photeng, s, rs) for s in spec]
+
+        # Injection energy is kinetic energy of the electron.
+        spec_tf = TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
+
+        return spec_tf
 
 def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     """ Relativistic ICS spectrum of secondary photons.
@@ -483,8 +494,8 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
     Returns
     -------
-    tuple of ndarrays
-        dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleceng, photeng). 
+    TransFuncAtRedshift or ndarray
+        dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleceng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleceng, photeng). 
 
     Note
     ----
@@ -608,9 +619,21 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         term_1[good] + term_2[good] + term_3[good] + term_4[good]
     )
 
-    return np.transpose(
+    spec = np.transpose(
         prefac*np.transpose(spec)
     )
+
+    if as_pairs:
+        return spec 
+    else:
+        rs = T/phys.TCMB(1)
+        dlnz = 1/(phys.dtdz(rs)*rs)
+        
+        spec_arr = [Spectrum(photeng, s, rs) for s in spec]
+
+        spec_tf = TransFuncAtRedshift(spec_arr, eleceng, dlnz)
+
+        return spec_tf 
 
 def ics_spec(
     eleceng, photeng, T, as_pairs=False, 
@@ -678,7 +701,7 @@ def ics_spec(
             bounds_error = False, 
             fill_value = (np.nan, 0)
         )
-        spec[rel] = y**4*rel_tf.grid_values.flatten()
+        spec[rel] = y**4*rel_tf.get_grid_values().flatten()
     else: 
         spec[rel] = rel_spec(
             eleceng_mask[rel], photeng_mask[rel], T, 
@@ -692,7 +715,7 @@ def ics_spec(
             bounds_error = False,
             fill_value = (np.nan, 0)
         )
-        spec[~rel] = y**2*nonrel_tf.grid_values.flatten()
+        spec[~rel] = y**2*nonrel_tf.get_grid_values().flatten()
     else:
         spec[~rel] = nonrel_spec(
             eleceng_mask[~rel], photeng_mask[~rel], 
