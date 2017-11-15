@@ -4,6 +4,7 @@ import numpy as np
 from darkhistory import utilities as utils
 from darkhistory.spec.spectools import get_bin_bound
 from darkhistory.spec.spectools import get_log_bin_width
+from darkhistory.spec.spectools import rebin_N_arr
 import matplotlib.pyplot as plt
 import warnings
 
@@ -45,11 +46,8 @@ class Spectrum:
         if eng.size != dNdE.size:
             raise TypeError("""abscissa and spectrum need to be of the
              same size.""")
-        if (
-            not all(np.diff(eng) > 0) 
-            and not all(np.diff(eng) < 0)
-        ):
-            raise TypeError("abscissa must be ordered in increasing or decreasing energy.")
+        if not all(np.diff(eng) > 0):
+            raise TypeError("abscissa must be ordered in increasing energy.")
 
         self.eng = eng
         self.dNdE = dNdE
@@ -366,7 +364,7 @@ class Spectrum:
             The type of bounds to use. Bound values do not have to be within the [0:length] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
 
         bound_arr : ndarray, optional
-            An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
+            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
 
         Returns
         -------
@@ -378,7 +376,12 @@ class Spectrum:
         length = self.length
         log_bin_width = get_log_bin_width(self.eng)
 
-        if bound_type is not None and bound_arr.size is not None:
+        if bound_type is not None:
+
+            if bound_arr == None:
+
+                bound_type = 'bin'
+                bound_arr  = np.arange(self.eng.size+1)
 
             if bound_type == 'bin':
 
@@ -461,7 +464,12 @@ class Spectrum:
         length = self.length
         log_bin_width = get_log_bin_width(self.eng)
 
-        if bound_type is not None and bound_arr.size is not None:
+        if bound_type is not None:
+
+            if bound_arr == None:
+
+                bound_type = 'bin'
+                bound_arr = np.arange(self.eng.size+1)
 
             if bound_type == 'bin':
 
@@ -522,7 +530,7 @@ class Spectrum:
             return (np.dot(dNdlogE, eng * log_bin_width) 
                 + self.underflow['eng'])
 
-    def shift_eng(self, new_eng, reverse=False):
+    def shift_eng(self, new_eng):
         """ Shifts the abscissa while conserving number. 
 
         This function can be used to subtract or add some amount of energy from each bin in the spectrum. The dN/dE is adjusted to conserve number in each bin. 
@@ -531,37 +539,20 @@ class Spectrum:
         ----------
         new_eng : ndarray
             The new energy abscissa.
-        reverse : bool, optional
-            Set to true if new_eng is given in decreasing order. 
         """
         if new_eng.size != self.eng.size:
             return TypeError("The new abscissa must have the same length as the old one.")
-        if not reverse and not all(np.diff(new_eng) > 0):
+        if not all(np.diff(new_eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
-        if reverse and not all (np.diff(new_eng) < 0):
-            raise TypeError("abscissa must be ordered in decreasing energy with reverse=True.")
-
-        if reverse:
-            new_eng = new_eng[::-1]
-
+        
         new_bin_boundary = get_bin_bound(new_eng)
         new_log_bin_width = np.diff(np.log(new_bin_boundary))
-        
-        if reverse:
-            new_spec = Spectrum(
-                self.eng[::-1], self.dNdE[::-1], self.rs
-            )
-            new_dNdE = new_spec.totN(
-                'bin', np.arange(new_eng.size+1)
-            )/(new_eng * new_log_bin_width)
-        else:
-            new_dNdE = self.totN(
-                'bin',np.arange(new_eng.size+1)
-            )/(new_eng * new_log_bin_width)
+        new_dNdE = self.totN(
+            'bin',np.arange(new_eng.size+1)
+        )/(new_eng * new_log_bin_width)
 
         self.eng = new_eng
         self.dNdE = new_dNdE
-
 
     def rebin(self, out_eng):
         """ Re-bins the `Spectrum` object according to a new abscissa.
