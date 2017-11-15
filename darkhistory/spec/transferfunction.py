@@ -28,12 +28,12 @@ class TransFuncAtEnergy(Spectra):
 
     Attributes
     ----------
-    eng : ndarray
-        Energy abscissa for the Spectrum. 
-    rs : ndarray
-        Redshift abscissa for the Spectrum objects. 
-    grid_values : ndarray
-        2D array with the spectra laid out in (rs, eng).
+    spec_arr : list of Spectrum
+        List of Spectrum stored together. 
+    in_eng : float
+        Injection energy of this transfer function. 
+    dlnz : float
+        The d ln(1+z) step for the transfer function. 
 
     """
     def __init__(self, spec_arr, in_eng, dlnz, rebin_eng=None):
@@ -62,14 +62,14 @@ class TransFuncAtEnergy(Spectra):
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self.grid_values, axis=0, 
+            np.log(self.get_rs()), self.get_grid_values(), axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
         if interp_type == 'val':
             
             new_spec_arr = [
-                Spectrum(self.eng, interp_func(np.log(rs)), rs)
+                Spectrum(self.get_eng(), interp_func(np.log(rs)), rs)
                     for rs in new_rs
             ]
             return TransFuncAtEnergy(
@@ -80,8 +80,8 @@ class TransFuncAtEnergy(Spectra):
             
             log_new_rs = np.interp(
                 np.log(new_rs), 
-                np.arange(self.rs.size), 
-                np.log(self.rs)
+                np.arange(self.get_rs().size), 
+                np.log(self.get_rs())
             )
 
             return self.at_rs(np.exp(log_new_rs))
@@ -108,13 +108,15 @@ class TransFuncAtRedshift(Spectra):
 
     Attributes
     ----------
-    eng : ndarray
-        Energy abscissa for the Spectrum. 
+    spec_arr : list of Spectrum
+        List of Spectrum to be stored together. 
+    in_eng : ndarray
+        Injection energies of this transfer function. 
+    dlnz : float
+        The d ln(1+z) step for the transfer function. 
     rs : float
         The redshift of the Spectrum objects. 
-    grid_values : ndarray
-        2D array with the spectra laid out in (in_eng, eng).
-
+    
     """
 
     def __init__(self, spec_arr, in_eng, dlnz, rebin_eng=None):
@@ -122,7 +124,7 @@ class TransFuncAtRedshift(Spectra):
         self.in_eng = in_eng
         self.dlnz = dlnz
         super().__init__(spec_arr, rebin_eng)
-        if len(set([rs for rs in self.rs])) > 1:
+        if len(set([rs for rs in self.get_rs()])) > 1:
             raise TypeError("all spectra must have identical redshifts.")
         self.rs = self.spec_arr[0].rs 
 
@@ -149,13 +151,13 @@ class TransFuncAtRedshift(Spectra):
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.in_eng), self.grid_values, axis=0, 
+            np.log(self.in_eng), self.get_grid_values(), axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
         if interp_type == 'val':
             new_spec_arr = [
-                Spectrum(self.eng, interp_func(np.log(eng)), self.rs) 
+                Spectrum(self.get_eng(), interp_func(np.log(eng)), self.rs) 
                 for eng in new_eng
             ]
             return TransFuncAtRedshift(
@@ -195,7 +197,7 @@ class TransFuncAtRedshift(Spectra):
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.eng), self.grid_values, axis=1, 
+            np.log(self.get_eng()), self.get_grid_values(), axis=1, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -215,8 +217,8 @@ class TransFuncAtRedshift(Spectra):
 
             log_new_eng = np.interp(
                 np.log(new_eng),
-                np.arange(self.eng.size),
-                np.log(self.eng)
+                np.arange(self.get_eng().size),
+                np.log(self.get_eng())
             )
 
             return self.at_eng(np.exp(log_new_eng))
@@ -269,13 +271,13 @@ class TransFuncAtRedshift(Spectra):
             if np.issubdtype(type(ind), int):
                 if abs_plot:
                     return ax.plot(
-                        self.eng, 
+                        self.get_eng(), 
                         np.abs(self.spec_arr[ind].dNdE), 
                         **kwargs
                     )
                 else:
                     return ax.plot(
-                        self.eng, 
+                        self.get_eng(), 
                         self.spec_arr[ind].dNdE, 
                         **kwargs
                     )
@@ -297,7 +299,7 @@ class TransFuncAtRedshift(Spectra):
                         ], 
                         axis=-1
                     )
-                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                return ax.plot(self.get_eng(), spec_to_plot, **kwargs)
                 
             
             elif isinstance(ind, np.ndarray):
@@ -313,7 +315,7 @@ class TransFuncAtRedshift(Spectra):
                             for i in ind
                         ], axis=-1
                     )
-                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                return ax.plot(self.get_eng(), spec_to_plot, **kwargs)
                 
 
             else:

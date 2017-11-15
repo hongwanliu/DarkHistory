@@ -24,125 +24,26 @@ class Spectra:
     Attributes
     ----------
     spec_arr : list of Spectrum
-        List of Spectrum to be stored together.
-    eng : ndarray
-        Energy abscissa for the Spectrum.
-    rs : ndarray
-        The redshifts of the `Spectrum` objects.  
-    grid_values : ndarray
-        2D array with the spectra laid out in (rs, eng). 
-    
+        List of Spectrum stored together.    
 
     """
     # __array_priority__ must be larger than 0, so that radd can work.
     # Otherwise, ndarray + Spectrum works by iterating over the elements of
     # ndarray first, which isn't what we want.
-    __array_priority__ = 1
-
-    class _List(list):
-        """ This class allows the update of all properties in the class when an element of spec_arr is changed. see goo.gl/ojHCZi.
-
-        spec_arr will be an instance of _List. The owner of _List is Spectra. Whenever we try to set an item in spec_arr, the updates to the rest of the attributes are given below.
-        """
-        def __init__(self, owner, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.owner = owner
-
-        def __setitem__(self, index, value):
-            super().__setitem__(index, value)
-            self.owner.rs[index] = value.rs
-            self.owner.grid_values[index] = values.dNdE
-
-        def append(self, value):
-            print('here!')
-            super().append(value)
-            # appending to self.spec_arr does not trigger the setter. Need to set the redshift explicitly to do that. 
-            self.owner.rs = np.append(self.owner.rs, value.rs)            
+    __array_priority__ = 1           
 
     def __init__(self, spec_arr, rebin_eng=None):
-        # if len(set([spec.length for spec in spec_arr])) > 1:
-        #     raise TypeError("all spectra must have the same length.")
+        
+        if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+            raise TypeError("all abscissae must be the same.")
 
-        # if not np.all(np.diff(spec_arr[0].eng) > 0):
-        #     raise TypeError("abscissa must be ordered in increasing energy.")
+        self.spec_arr = spec_arr
 
-        # if not utils.arrays_equal([spec.eng for spec in spec_arr]):
-        #     raise TypeError("all abscissae must be the same.")
-
-        # self is the owner, which is why it is the first argument.
-        self.spec_arr = Spectra._List(self, spec_arr)
+        if not np.all(np.diff(spec_arr[0].eng) > 0):
+            raise TypeError("abscissa must be ordered in increasing energy.")
         
         if rebin_eng is not None:
             self.rebin(rebin_eng)
-
-        # self.eng = spec_arr[0].eng
-        
-        # self.rs = np.array([spec.rs for spec in spec_arr])
-
-        # if self.rs.size > 1 and not np.all(np.diff(self.rs) <= 0):
-        #     raise TypeError("redshift must be in increasing order.")
-
-        # # self.log_bin_width = np.diff(np.log(self.bin_boundary))
-
-        # self.grid_values = np.stack([spec.dNdE for spec in self.spec_arr])
-
-    @property
-    def spec_arr(self):
-        return self._spec_arr
-
-    @spec_arr.setter
-    def spec_arr(self, new_arr):
-        print('am i here for append?')
-        if len(set([spec.length for spec in new_arr])) > 1:
-            raise TypeError("all spectra must have the same length.")
-        if not utils.arrays_equal([spec.eng for spec in new_arr]):
-            raise TypeError("all abscissae must be the same.")
-        self._spec_arr = Spectra._List(self, new_arr)
-        self._eng = new_arr[0].eng 
-        self._rs = np.array([spec.rs for spec in new_arr])
-        self._grid_values = np.stack([spec.dNdE for spec in new_arr])
-
-    @property
-    def rs(self):
-        return self._rs 
-
-    @rs.setter
-    def rs(self, new_rs):
-        new_spec_arr = [spec for spec in self._spec_arr]
-        for z,spec in zip(new_rs, new_spec_arr):
-            spec.rs = z
-        self.spec_arr = new_spec_arr
-
-    @property
-    def eng(self):
-        return self._eng
-
-    @eng.setter
-    def eng(self, new_eng):
-        if not np.all(np.diff(spec_arr[0].eng) > 0):
-            raise TypeError("abscissa must be ordered in increasing energy.")
-        if len(new_eng) != len(spec_arr[0].eng):
-            raise TypeError("new abscissa must have the same length as the old one.")
-        new_spec_arr = [spec for spec in self.spec_arr]
-        for spec in new_spec_arr:
-            spec.eng = new_eng
-        self.spec_arr = new_spec_arr
-
-    @property
-    def grid_values(self):
-        return self._grid_values
-    @grid_values.setter
-    def grid_values(self, value):
-        if value.shape != (self.rs.size, self.eng.size):
-            raise TypeError("cannot change the dimension of grid_values.")
-        new_spec_arr = [
-            Spectrum(self.eng, dNdE, z) 
-            for (dNdE, z) in zip(grid_values, self.rs)
-        ]
-        self.spec_arr = new_spec_arr
-
-    # Cannot set grid_values: set spec_arr instead. 
-
 
     def __iter__(self):
         return iter(self.spec_arr)
@@ -174,6 +75,15 @@ class Spectra:
         else:
             raise TypeError("index must be int.")
 
+    def get_rs(self):
+        return np.array([spec.rs for spec in self.spec_arr])
+
+    def get_eng(self):
+        return self.spec_arr[0].eng
+
+    def get_grid_values(self):
+        return np.stack([spec.dNdE for spec in self.spec_arr])
+
 
     def __add__(self, other): 
         """Adds two `Spectra` instances together.
@@ -197,7 +107,7 @@ class Spectra:
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not np.array_equal(self.eng, other.eng):
+            if not np.array_equal(self.get_eng(), other.get_eng()):
                 raise TypeError('abscissae are different for the two Spectra.')
 
             # Need to remove this in order to add transfer functions for TransferFuncList.at_val
@@ -232,7 +142,7 @@ class Spectra:
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not np.array_equal(self.eng, other.eng):
+            if not np.array_equal(self.get_eng(), other.get_eng()):
                 raise TypeError('abscissae are different for the two Spectra.')
             
             # Need to remove this in order to add transfer functions for TransferFuncList.at_val
@@ -327,8 +237,8 @@ class Spectra:
                 [num*spec for num,spec in zip(other,self)]
             )
         elif np.issubclass_(type(other), Spectra):
-            if (not np.array_equal(self.rs, other.rs) 
-                or not np.array_equal(self.eng, other.eng)):
+            if (not np.array_equal(self.get_rs(), other.get_rs()) 
+                or not np.array_equal(self.get_eng(), other.get_eng())):
                 raise TypeError("the two spectra do not have the same redshift or abscissae.")
             return Spectra([spec1*spec2 for spec1,spec2 in zip(self, other)])
         else:
@@ -363,7 +273,10 @@ class Spectra:
                 [spec*num for num,spec in zip(other,self)]
             )
         elif np.issubclass_(type(other), Spectra):
-            if self.rs != other.rs or self.eng != other.eng:
+            if (
+                self.get_rs() != other.get_rs() 
+                or self.get_eng() != other.get_eng()
+            ):
                 raise TypeError("the two spectra do not have the same redshift or abscissae.")
             return Spectra([spec2*spec1 for spec1,spec2 in zip(self, other)])
         else:
@@ -433,7 +346,7 @@ class Spectra:
             An array of weighted sums, one for each redshift in `self.rs`, with length `self.rs.size`. 
         """
         if weight is None:
-            weight = np.ones(self.eng.size)
+            weight = np.ones(self.get_eng().size)
 
         if isinstance(weight,np.ndarray):
             return np.array([spec.contract(weight) for spec in self])
@@ -442,9 +355,9 @@ class Spectra:
             raise TypeError("mat must be an ndarray.")
 
     def sum_specs(self,weight=None):
-        """Sums the spectrum in each energy bin, weighted by `mat`. 
+        """Sums the spectrum in each energy bin, weighted by `weight`. 
 
-        Equivalent to contracting `mat` with `[spec.dNdE[i] for spec in spec_arr]` for all `i`. `mat` should have length `self.rs.size`. 
+        Equivalent to contracting `weight` with `[spec.dNdE[i] for spec in spec_arr]` for all `i`. `weight` should have length `self.rs.size`. 
 
         Parameters
         ----------
@@ -458,13 +371,13 @@ class Spectra:
 
         """
         if weight is None:
-            weight = np.ones(self.rs.size)
+            weight = np.ones(self.get_rs().size)
 
         if isinstance(weight, np.ndarray):
-            return np.dot(weight, self.grid_values)
+            return np.dot(weight, self.get_grid_values())
         elif isinstance(weight, Spectrum):
-            new_dNdE = np.dot(weight.dNdE, self.grid_values)
-            return Spectrum(self.eng, new_dNdE)
+            new_dNdE = np.dot(weight.dNdE, self.get_grid_values())
+            return Spectrum(self.get_eng(), new_dNdE)
         else:
             raise TypeError("mat must be an ndarray.")
 
@@ -485,10 +398,6 @@ class Spectra:
         for spec in self:
             spec.rebin(out_eng)
 
-        # self.eng = out_eng
-        # self.grid_values = np.stack(
-        #     [spec.dNdE for spec in self.spec_arr]
-        # )
 
     def append(self, spec):
         """Appends a new Spectrum. 
@@ -498,9 +407,10 @@ class Spectra:
         spec : Spectrum
             The new spectrum to append.
         """
-        if not np.array_equal(self.eng, spec.eng):
+        
+        if not np.array_equal(self.get_eng(), spec.eng):
             raise TypeError("new Spectrum does not have the same energy abscissa.")
-        if self.rs.size > 1 and self.rs[-1] < spec.rs: 
+        if self.get_rs().size > 1 and self.get_rs()[-1] < spec.rs: 
             raise TypeError("new Spectrum has a larger redshift than the current last entry.")
 
         self.spec_arr.append(spec)
@@ -522,13 +432,13 @@ class Spectra:
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self.grid_values, axis=0
+            np.log(self.get_rs()), self.get_grid_values(), axis=0
         )
         
         if interp_type == 'val':
             
             new_spec_arr = [
-                Spectrum(self.eng, interp_func(np.log(rs)), rs)
+                Spectrum(self.get_eng(), interp_func(np.log(rs)), rs)
                     for rs in new_rs
             ]
             return Spectra(new_spec_arr)
@@ -537,8 +447,8 @@ class Spectra:
             
             log_new_rs = np.interp(
                 np.log(new_rs), 
-                np.arange(self.rs.size), 
-                np.log(self.rs)
+                np.arange(self.get_rs().size), 
+                np.log(self.get_rs())
             )
 
             return self.at_rs(np.exp(log_new_rs))
@@ -572,7 +482,7 @@ class Spectra:
         
         if ind is None:
             return self.plot(
-                ax, ind=np.arange(self.rs.size), 
+                ax, ind=np.arange(self.get_rs().size), 
                 abs_plot=abs_plot, **kwargs
             )
 
@@ -581,13 +491,13 @@ class Spectra:
             if np.issubdtype(type(ind), int):
                 if abs_plot:
                     return ax.plot(
-                        self.eng, 
+                        self.get_eng(), 
                         np.abs(self.spec_arr[ind].dNdE), 
                         **kwargs
                     )
                 else:
                     return ax.plot(
-                        self.eng, 
+                        self.get_eng(), 
                         self.spec_arr[ind].dNdE, 
                         **kwargs
                     )
@@ -609,7 +519,7 @@ class Spectra:
                         ], 
                         axis=-1
                     )
-                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                return ax.plot(self.get_eng(), spec_to_plot, **kwargs)
                 
             
             elif isinstance(ind, np.ndarray):
@@ -625,7 +535,7 @@ class Spectra:
                             for i in ind
                         ], axis=-1
                     )
-                return ax.plot(self.eng, spec_to_plot, **kwargs)
+                return ax.plot(self.get_eng(), spec_to_plot, **kwargs)
                 
 
             else:

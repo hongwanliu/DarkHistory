@@ -56,7 +56,7 @@ class TransferFuncList:
             self.dlnz = tflist[0].dlnz
         elif isinstance(tflist[0], tf.TransFuncAtEnergy):
             self.tftype = 'in_eng'
-            self.rs = tflist[0].rs
+            self.rs = tflist[0].get_rs()
             self.in_eng = np.array([tfunc.in_eng for tfunc in self.tflist])
             self.dlnz = tflist[0].dlnz
         else:
@@ -180,9 +180,9 @@ class TransferFuncList:
 
         for i,tfunc in zip(np.arange(len(new_tflist)),new_tflist):
             
-            new_grid_val = matrix_power(tfunc.grid_values,dlnz_factor)
+            new_grid_val = matrix_power(tfunc.get_grid_values(),dlnz_factor)
             new_spec_arr = [
-                Spectrum(tfunc.eng, new_grid_val[i], tfunc.rs)
+                Spectrum(tfunc.get_eng(), new_grid_val[i], tfunc.rs)
                 for i in np.arange(tfunc.in_eng.size)
             ]
 
