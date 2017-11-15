@@ -1,7 +1,7 @@
 """Functions for electron cooling."""
 
 import numpy as np
-from darkhistory.spec.transferfunction import TransFuncAtRedshiftd
+from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 def cool_elec(
     elec_spec, sec_phot_tf, sec_elec_tf, 
