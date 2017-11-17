@@ -378,7 +378,7 @@ class Spectrum:
 
         if bound_type is not None:
 
-            if bound_arr == None:
+            if bound_arr is None:
 
                 bound_type = 'bin'
                 bound_arr  = np.arange(self.eng.size+1)
@@ -466,7 +466,7 @@ class Spectrum:
 
         if bound_type is not None:
 
-            if bound_arr == None:
+            if bound_arr is None:
 
                 bound_type = 'bin'
                 bound_arr = np.arange(self.eng.size+1)
