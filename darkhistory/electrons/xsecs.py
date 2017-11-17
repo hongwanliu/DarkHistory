@@ -69,7 +69,7 @@ def heating_dE(T, x_e, rs, nH=physics.nH):
     numfac=(10**-14*physics.ele**-2*physics.c)
 
     dE_dt = numfac*(-4*math.pi*(e_charge)**4*n_e*lnV)/mv
-
+    
 
     return dE_dt
 
@@ -165,7 +165,7 @@ def ionize_s_cs(E_in, E_sec, atoms):
 
     See Also
     --------
-    ionize_cs : Gives total ionization xsec
+    ionize_cs : Gives singly-differential ionization xsec (cm^2/eV)
     '''
 
     #initialize return variable
@@ -211,7 +211,7 @@ def ionize_s_cs(E_in, E_sec, atoms):
         S=4*math.pi*p.value('Bohr radius')**2*N*(13.6057/B)**2 #m^2
 
         sigma_i=S/(B*t+(u+1))*((N_i/N-2)/(t+2)*(1/(w+1)+1/(t-w))+(2-N_i/N)*(1/(W+1)**2+1/(t-w)**2)+ \
-                               numpy.log(t)/(N*(w+1))*df_dw) #cm^2
+                               numpy.log(t)/(N*(w+1))*df_dw) #cm^2/eV
         
         #replace negatives with zero
         if sigma_i < 0:
