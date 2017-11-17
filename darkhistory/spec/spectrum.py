@@ -713,6 +713,8 @@ class Spectrum:
 
         self.eng  = out_eng 
         self.dNdE = new_spec.dNdE
+        self.underflow['N'] = new_spec.underflow['N']
+        self.underflow['eng'] = new_spec.underflow['eng']
 
     def redshift(self, new_rs):
         """Redshifts the `Spectrum` object as a photon spectrum. 
