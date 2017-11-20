@@ -696,10 +696,7 @@ class Spectrum:
         ----
         This is primarily useful only when the spectrum represents an energy loss spectrum, i.e. when `self.eng` represents some *loss* in energy Delta. The loss spectrum can be directly converted into a secondary spectrum by using dN/(d Delta)* (d Delta) = dN/dE*dE, where the LHS is evaluated at Delta, and the RHS is evaluated at in_eng - Delta. 
 
-        """
-
-        if out_eng is None:
-            out_eng = self.eng 
+        """ 
 
         # sec_spec_eng is the injected energy - delta, 
         sec_spec_eng = np.flipud(in_eng - self.eng)
@@ -707,9 +704,9 @@ class Spectrum:
 
         pos_eng = sec_spec_eng > 0
 
-        new_spec = rebin_N_arr(N_arr[pos_eng], sec_spec_eng[pos_eng], out_eng)
+        # utils.compare_arr([sec_spec_eng, out_eng, sec_spec_eng - out_eng])
 
-        utils.compare_arr([sec_spec_eng, N_arr, out_eng, new_spec.dNdE])
+        new_spec = rebin_N_arr(N_arr[pos_eng], sec_spec_eng[pos_eng], out_eng)
 
         self.eng  = out_eng 
         self.dNdE = new_spec.dNdE
