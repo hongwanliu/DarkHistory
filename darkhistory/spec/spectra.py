@@ -39,11 +39,11 @@ class Spectra:
 
         self.spec_arr = spec_arr
 
-        if not np.all(np.diff(spec_arr[0].eng) > 0):
-            raise TypeError("abscissa must be ordered in increasing energy.")
-        
         if rebin_eng is not None:
             self.rebin(rebin_eng)
+
+        if not np.all(np.diff(spec_arr[0].eng) > 0):
+            raise TypeError("abscissa must be ordered in increasing energy.")
 
     def __iter__(self):
         return iter(self.spec_arr)
@@ -80,6 +80,9 @@ class Spectra:
 
     def get_eng(self):
         return self.spec_arr[0].eng
+
+    def get_in_eng(self):
+        return np.array([spec.in_eng for spec in self.spec_arr])
 
     def get_grid_values(self):
         return np.stack([spec.dNdE for spec in self.spec_arr])
@@ -331,9 +334,9 @@ class Spectra:
         return other*invSpec   
 
     def integrate_each_spec(self,weight=None):
-        """Sums each Spectrum, each `eng` bin weighted by `weight`. 
+        """Sums each `Spectrum`, each `eng` bin weighted by `weight`. 
 
-        Equivalent to contracting `weight` with each `dNdE` in Spectra, `weight` should have length `self.length`. 
+        Equivalent to contracting `weight` with each `dNdE` in `Spectra`, `weight` should have length `self.length`. 
 
         Parameters
         ----------
@@ -367,7 +370,7 @@ class Spectra:
         Returns
         -------
         ndarray or Spectrum
-            An array or Spectrum of weight sums, one for each energy in `self.eng`, with length `self.length`. 
+            An array or `Spectrum` of weight sums, one for each energy in `self.eng`, with length `self.length`. 
 
         """
         if weight is None:
@@ -410,51 +413,8 @@ class Spectra:
         
         if not np.array_equal(self.get_eng(), spec.eng):
             raise TypeError("new Spectrum does not have the same energy abscissa.")
-        if self.get_rs().size > 1 and self.get_rs()[-1] < spec.rs: 
-            raise TypeError("new Spectrum has a larger redshift than the current last entry.")
-
+        
         self.spec_arr.append(spec)
-        
-
-    def at_rs(self, new_rs, interp_type='val',bounds_err=True):
-        """Interpolates the transfer function at a new redshift. 
-
-        Interpolation is logarithmic. 
-
-        Parameters
-        ----------
-        new_rs : ndarray
-            The redshifts or redshift bin indices at which to interpolate. 
-        interp_type : {'val', 'bin'}
-            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
-        bounds_err : bool, optional
-            Whether to return an error if outside of the bounds for the interpolation. 
-        """
-        
-        interp_func = interpolate.interp1d(
-            np.log(self.get_rs()), self.get_grid_values(), axis=0
-        )
-        
-        if interp_type == 'val':
-            
-            new_spec_arr = [
-                Spectrum(self.get_eng(), interp_func(np.log(rs)), rs)
-                    for rs in new_rs
-            ]
-            return Spectra(new_spec_arr)
-
-        elif interp_type == 'bin':
-            
-            log_new_rs = np.interp(
-                np.log(new_rs), 
-                np.arange(self.get_rs().size), 
-                np.log(self.get_rs())
-            )
-
-            return self.at_rs(np.exp(log_new_rs))
-
-        else:
-            raise TypeError("invalid interp_type specified.")
 
     def plot(self, ax, ind=None, step=1, indtype='ind', 
         abs_plot=False, **kwargs):
