@@ -48,6 +48,8 @@ class Spectrum:
         if eng.size != dNdE.size:
             raise TypeError("""abscissa and spectrum need to be of the
              same size.""")
+        if eng.size == 1:
+            raise TypeError("abscissa must be more than length 1.")
         if not all(np.diff(eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
 
