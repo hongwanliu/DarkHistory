@@ -414,8 +414,11 @@ def engloss_spec(
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [Spectrum(delta, sp, rs=rs) for sp in spec]
+        spec_arr = [
+            Spectrum(delta, sp, rs=rs, in_eng=in_eng) 
+            for sp, in_eng in zip(spec, eleceng-phys.me)
+        ]
 
-        return TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
+        return TransFuncAtRedshift(spec_arr, dlnz)
 
 

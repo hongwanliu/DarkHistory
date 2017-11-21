@@ -203,7 +203,7 @@ class TransFuncAtRedshift(Spectra):
                 for eng in new_eng
             ]
             return TransFuncAtRedshift(
-                new_spec_arr, new_eng, self.dlnz
+                new_spec_arr, self.dlnz
             )
 
         elif interp_type == 'bin':

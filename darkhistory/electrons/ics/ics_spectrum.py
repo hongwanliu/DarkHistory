@@ -473,10 +473,13 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [Spectrum(photeng, s, rs) for s in spec]
+        spec_arr = [
+            Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
+            for s, in_eng in zip(spec, eleceng-phys.me)
+        ]
 
         # Injection energy is kinetic energy of the electron.
-        spec_tf = TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
+        spec_tf = TransFuncAtRedshift(spec_arr, dlnz)
 
         return spec_tf
 
@@ -635,9 +638,12 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
         
-        spec_arr = [Spectrum(photeng, s, rs) for s in spec]
+        spec_arr = [
+            Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
+            for s, in_eng in zip(spec, eleceng)
+        ]
 
-        spec_tf = TransFuncAtRedshift(spec_arr, eleceng, dlnz)
+        spec_tf = TransFuncAtRedshift(spec_arr, dlnz)
 
         return spec_tf 
 
@@ -739,8 +745,11 @@ def ics_spec(
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [Spectrum(photeng, sp, rs = rs) for sp in spec]
+        spec_arr = [
+            Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
+            for sp, in_eng in zip(spec, eleceng-phys.me)
+        ]
 
         # Use kinetic energy of the electron for better interpolation when necessary. 
-        return TransFuncAtRedshift(spec_arr, eleceng-phys.me, dlnz)
+        return TransFuncAtRedshift(spec_arr, dlnz)
 

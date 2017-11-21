@@ -87,12 +87,17 @@ class Spectrum:
         if np.issubclass_(type(other), Spectrum):
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
-                raise TypeError("abscissae are different for the two `Spectrum` objects.")
-            if not np.array_equal(self.rs, other.rs):
-                raise TypeError("redshifts are different for the two `Spectrum` objects.")
+                raise TypeError("abscissae are different for the two Spectrum objects.")
+            new_rs = -1
+            new_in_eng = -1
+            if self.rs == other.rs:
+                new_rs = self.rs 
+            if self.in_eng == other.in_eng:
+                new_in_eng = self.in_eng 
 
             new_spectrum = Spectrum(
-                self.eng, self.dNdE+other.dNdE, self.rs, self.in_eng
+                self.eng, self.dNdE+other.dNdE, 
+                rs = new_rs, in_eng = new_in_eng
             )
             new_spectrum.underflow['N'] = (self.underflow['N'] 
                                           + other.underflow['N'])
@@ -139,11 +144,16 @@ class Spectrum:
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two `Spectrum` objects.")
-            if not np.array_equal(self.rs, other.rs):
-                raise TypeError("redshifts are different for the two `Spectrum` objects.")
+            new_rs = -1
+            new_in_eng = -1
+            if self.rs == other.rs:
+                new_rs = self.rs 
+            if self.in_eng == other.in_eng:
+                new_in_eng = self.in_eng 
 
             new_spectrum = Spectrum(
-                self.eng, self.dNdE+other.dNdE, self.rs, self.in_eng
+                self.eng, self.dNdE+other.dNdE, 
+                rs = new_rs, in_eng = new_in_eng
             )
             new_spectrum.underflow['N'] = (self.underflow['N'] 
                                           + other.underflow['N'])
@@ -254,12 +264,17 @@ class Spectrum:
             return Spectrum(self.eng, self.dNdE*other, self.rs, self.in_eng)
 
         elif isinstance(other, Spectrum):
+            
+            new_rs = -1
+            new_in_eng = -1
+            if self.rs == other.rs:
+                new_rs = self.rs 
+            if self.in_eng == other.in_eng:
+                new_in_eng = self.in_eng 
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("energy abscissae are not the same.")
-            if self.rs != other.rs:
-                raise TypeError("redshifts are not the same.")
             return Spectrum(
-                self.eng, self.dNdE*other.dNdE, self.rs, self.in_eng
+                self.eng, self.dNdE*other.dNdE, new_rs, new_in_eng
             )
 
         else:
@@ -297,7 +312,7 @@ class Spectrum:
             new_spectrum.underflow['eng'] = self.underflow['eng']*other
             return new_spectrum
 
-        # Removed ability to multiply two `Spectrum` objects, doesn't seem like there's a physical reason for us to implement this.
+        # Multiplication by Spectrum covered by __mul__
 
         elif isinstance(other, np.ndarray):
 
