@@ -174,18 +174,18 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     return out_spec
 
 
-def discretize(func_dNdE, eng):
+def discretize(eng, func_dNdE):
     """Discretizes a continuous function. 
 
     The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**. 
 
     Parameters
     ----------
-    func_dNdE : function
-        A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value. 
     eng : ndarray
         Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers). 
-
+    func_dNdE : function
+        A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value. 
+    
     Returns
     -------
     Spectrum
