@@ -39,11 +39,10 @@ class Spectra:
         if rebin_eng is not None:
             self.rebin(rebin_eng)
 
-        if not utils.arrays_equal([spec.eng for spec in spec_arr]):
-            raise TypeError("all abscissae must be the same.")
+        if spec_arr != []:
 
-        if not np.all(np.diff(spec_arr[0].eng) > 0):
-            raise TypeError("abscissa must be ordered in increasing energy.")
+            if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+                raise TypeError("all abscissae must be the same.")
 
     def __iter__(self):
         return iter(self.spec_arr)
@@ -375,11 +374,10 @@ class Spectra:
         """
         if weight is None:
             weight = np.ones(self.get_rs().size)
+    
+        if isinstance(weight, np.ndarray):
             new_dNdE = np.dot(weight, self.get_grid_values())
             return Spectrum(self.get_eng(), new_dNdE)
-
-        if isinstance(weight, np.ndarray):
-            return np.dot(weight, self.get_grid_values())
         elif isinstance(weight, Spectrum):
             new_dNdE = np.dot(weight.dNdE, self.get_grid_values())
             return Spectrum(self.get_eng(), new_dNdE)
@@ -413,8 +411,10 @@ class Spectra:
             The new spectrum to append.
         """
         
-        if not np.array_equal(self.get_eng(), spec.eng):
-            raise TypeError("new Spectrum does not have the same energy abscissa.")
+        # Checks if spec_arr is empty
+        if self.spec_arr:
+            if not np.array_equal(self.get_eng(), spec.eng):
+                raise TypeError("new Spectrum does not have the same energy abscissa.")
         
         self.spec_arr.append(spec)
 
@@ -432,6 +432,11 @@ class Spectra:
         bounds_err : bool, optional
          Whether to return an error if outside of the bounds for the interpolation. 
         """
+        if (
+            not np.all(np.diff(self.get_rs()) > 0) 
+            and not np.all(np.diff(self.get_rs()) < 0)
+        ):
+            raise TypeError('redshift abscissa must be strictly increasing or decreasing for interpolation to be correct.')
          
         interp_func = interpolate.interp1d(
             np.log(self.get_rs()), self.get_grid_values(), axis=0

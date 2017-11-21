@@ -174,7 +174,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     return out_spec
 
 
-def discretize(eng, func_dNdE):
+def discretize(eng, func_dNdE, *args):
     """Discretizes a continuous function. 
 
     The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**. 
@@ -185,6 +185,8 @@ def discretize(eng, func_dNdE):
         Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers). 
     func_dNdE : function
         A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value. 
+    *args : optional
+        Additional arguments and keyword arguments to be passed to `func_dNdE`. 
     
     Returns
     -------
@@ -192,8 +194,8 @@ def discretize(eng, func_dNdE):
         The discretized spectrum. rs is set to -1, and must be set manually. 
 
     """
-    def func_EdNdE(eng):
-        return func_dNdE(eng)*eng
+    def func_EdNdE(eng, *args):
+        return func_dNdE(eng, *args)*eng
 
     # Generate a list of particle number N and mean energy eng_mean, so that N*eng_mean = total energy in each bin. eng_mean != eng. 
     N = np.zeros(eng.size)
@@ -202,10 +204,12 @@ def discretize(eng, func_dNdE):
     for low, upp, i in zip(eng[:-1], eng[1:], 
         np.arange(eng.size-1)):
     # Perform an integral over the spectrum for each bin.
-        N[i] = integrate.quad(func_dNdE, low, upp)[0]
+        N[i] = integrate.quad(func_dNdE, low, upp, args= args)[0]
     # Get the total energy stored in each bin. 
         if N[i] > 0:
-            eng_mean[i] = integrate.quad(func_EdNdE, low, upp)[0]/N[i]
+            eng_mean[i] = integrate.quad(
+                func_EdNdE, low, upp, args=args
+            )[0]/N[i]
         else:
             eng_mean[i] = 0
 
