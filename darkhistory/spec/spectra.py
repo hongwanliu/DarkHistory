@@ -33,14 +33,14 @@ class Spectra:
     __array_priority__ = 1           
 
     def __init__(self, spec_arr, rebin_eng=None):
-        
-        if not utils.arrays_equal([spec.eng for spec in spec_arr]):
-            raise TypeError("all abscissae must be the same.")
 
         self.spec_arr = spec_arr
 
         if rebin_eng is not None:
             self.rebin(rebin_eng)
+
+        if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+            raise TypeError("all abscissae must be the same.")
 
         if not np.all(np.diff(spec_arr[0].eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
@@ -375,6 +375,8 @@ class Spectra:
         """
         if weight is None:
             weight = np.ones(self.get_rs().size)
+            new_dNdE = np.dot(weight, self.get_grid_values())
+            return Spectrum(self.get_eng(), new_dNdE)
 
         if isinstance(weight, np.ndarray):
             return np.dot(weight, self.get_grid_values())
@@ -438,7 +440,7 @@ class Spectra:
         if interp_type == 'val':
              
             new_spec_arr = [
-                Spectrum(self.get_eng(), interp_func(np.log(rs)), rs)
+                Spectrum(self.get_eng(), interp_func(np.log(rs)), rs=rs)
                     for rs in new_rs
             ]
             return Spectra(new_spec_arr)
