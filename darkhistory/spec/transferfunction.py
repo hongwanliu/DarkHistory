@@ -299,9 +299,13 @@ class TransFuncAtRedshift(Spectra):
         TransFuncAtRedshift
             New transfer function at the new abscissa. 
         """
+
+        # 2D interpolation, specified by vectors of length eng, in_eng, 
+        # and grid dimensions in_eng x eng. 
+        # interp_func takes (eng, in_eng) as argument. 
         interp_func = interpolate.interp2d(
-            np.log(self.get_in_eng()), 
-            np.log(self.get_eng()), 
+            np.log(self.get_eng()),
+            np.log(self.get_in_eng()),  
             np.log(self.get_grid_values()), 
             bounds_error=bounds_error, fill_value=fill_value
         )
@@ -309,8 +313,8 @@ class TransFuncAtRedshift(Spectra):
         if interp_type == 'val':
 
             new_grid_values = np.exp(
-                np.stack([
-                    interp_func(np.log(new_in_eng), np.log(new_eng)) 
+                np.array([
+                    interp_func(np.log(new_eng), np.log(in_eng)) 
                     for in_eng in new_in_eng
                 ])
             )
@@ -343,8 +347,10 @@ class TransFuncAtRedshift(Spectra):
             )
 
 
-    def plot(self, ax, ind=None, step=1, indtype='ind', 
-        abs_plot=False, **kwargs):
+    def plot(
+        self, ax, ind=None, step=1, indtype='ind', 
+        abs_plot=False, **kwargs
+    ):
         """Plots the contained `Spectrum` objects. 
 
         Parameters
@@ -432,23 +438,23 @@ class TransFuncAtRedshift(Spectra):
 
             if (np.issubdtype(type(ind),int) or 
                     np.issubdtype(type(ind), float)):
-                return self.at_in_eng(
-                        np.array([ind]), interp_type='val'
+                return self.at_val(
+                        np.array([ind]), self.get_eng(), interp_type='val'
                     ).plot(
                     ax, ind=0, abs_plot=abs_plot, **kwargs
                 )
 
             elif isinstance(ind, tuple):
                 eng_to_plot = np.arange(ind[0], ind[1], step)
-                return self.at_in_eng(
-                        eng_to_plot, interp_type='val'
+                return self.at_val(
+                        eng_to_plot, self.get_eng(), interp_type='val'
                     ).plot(
                     ax, abs_plot=abs_plot,**kwargs
                 )
 
             elif isinstance(ind, np.ndarray):
-                return self.at_in_eng(
-                        ind, interp_type='val'
+                return self.at_val(
+                        ind, self.get_eng(), interp_type='val'
                     ).plot(
                     ax, abs_plot=abs_plot, **kwargs
                 )

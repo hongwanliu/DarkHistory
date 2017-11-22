@@ -464,8 +464,8 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     print('Spectrum computed!')
 
-    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
-    spec[spec < 1e-100] = 0.
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero so that we can take log interpolations later.
+    spec[spec < 1e-100] = 1e-200
 
     if as_pairs:
         return spec
@@ -629,8 +629,8 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         prefac*np.transpose(spec)
     )
 
-    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
-    spec[spec < 1e-100] = 0.
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero to take log interpolation later.
+    spec[spec < 1e-100] = 1e-200
 
     if as_pairs:
         return spec 
@@ -735,8 +735,8 @@ def ics_spec(
         )
 
 
-    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
-    spec[spec < 1e-100] = 0.
+    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero to take log interpolations later.
+    spec[spec < 1e-100] = 1e-200
 
     if as_pairs:
         return spec
