@@ -214,9 +214,15 @@ class TransFuncAtRedshift(Spectra):
                 np.log(self.get_in_eng())
             )
 
-            return self.at_in_eng(np.exp(log_new_eng))
+            return self.at_in_eng(
+                np.exp(log_new_eng), interp_type='val',
+                bounds_error=bounds_error, fill_value=fill_value
+            )
 
-    def at_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value= np.nan):
+    def at_eng(
+        self, new_eng, interp_type='val', 
+        bounds_error=None, fill_value= np.nan
+    ):
         """Interpolates the transfer function at a new energy abscissa. 
 
         Interpolation is logarithmic. 
@@ -252,9 +258,7 @@ class TransFuncAtRedshift(Spectra):
                 Spectrum(new_eng, spec, rs=self.rs, in_eng=in_eng) 
                 for in_eng,spec in zip(in_eng_arr,new_grid_values)
             ]
-            return TransFuncAtRedshift(
-                new_spec_arr, self.dlnz
-            )
+            return TransFuncAtRedshift(new_spec_arr, self.dlnz)
 
         elif interp_type == 'bin':
 
@@ -264,7 +268,80 @@ class TransFuncAtRedshift(Spectra):
                 np.log(self.get_eng())
             )
 
-            return self.at_eng(np.exp(log_new_eng))
+            return self.at_eng(
+                np.exp(log_new_eng), interp_type='val',
+                bounds_error=bounds_error, fill_value=fill_value
+            )
+
+    def at_val(
+        self, new_in_eng, new_eng, interp_type='val', 
+        bounds_error=None, fill_value= np.nan
+    ):
+        """2D interpolation at specified abscissa. 
+
+        Interpolation is logarithmic. 2D interpolation should be preferred over 1D interpolation over each abscissa in the interest of accuracy.
+
+        Parameters
+        ----------
+        new_in_eng : ndarray
+            The injection energy abscissa or injection energy bin indices at which to interpolate.
+        new_eng : ndarray
+            The energy abscissa or energy abscissa bin indices at which to interpolate. 
+        interp_type : {'val', 'bin'}
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+        bounds_error : bool, optional
+            See scipy.interpolate.interp1d.
+        fill_value : array-like or (array-like, array-like) or "extrapolate", optional
+            See scipy.interpolate.interp1d.
+
+        Returns
+        -------
+        TransFuncAtRedshift
+            New transfer function at the new abscissa. 
+        """
+        interp_func = interpolate.interp2d(
+            np.log(self.get_in_eng()), 
+            np.log(self.get_eng()), 
+            np.log(self.get_grid_values()), 
+            bounds_error=bounds_error, fill_value=fill_value
+        )
+
+        if interp_type == 'val':
+
+            new_grid_values = np.exp(
+                np.stack([
+                    interp_func(np.log(new_in_eng), np.log(new_eng)) 
+                    for in_eng in new_in_eng
+                ])
+            )
+
+            new_spec_arr = [
+                Spectrum(new_eng, spec, rs=self.rs, in_eng=in_eng) 
+                for in_eng, spec in zip(new_in_eng, new_grid_values)
+            ]
+
+            return TransFuncAtRedshift(new_spec_arr, self.dlnz)
+
+        elif interp_type == 'bin':
+
+            log_new_in_eng = np.interp(
+                np.log(new_in_eng),
+                np.arange(self.get_in_eng().size),
+                np.log(self.get_in_eng())
+            )
+
+            log_new_eng = np.interp(
+                np.log(new_eng),
+                np.arange(self.get_eng().size),
+                np.log(self.get_eng())
+            )
+
+            return self.at_val(
+                np.exp(log_new_in_eng), np.exp(log_new_eng), 
+                interp_type = 'val', bounds_error = bounds_error, 
+                fill_value = fill_value
+            )
+
 
     def plot(self, ax, ind=None, step=1, indtype='ind', 
         abs_plot=False, **kwargs):

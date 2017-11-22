@@ -1,6 +1,7 @@
 """Functions useful for processing spectral data."""
 
 import numpy as np
+from darkhistory import physics as phys
 from darkhistory import utilities as utils
 import matplotlib.pyplot as plt
 import warnings
@@ -215,6 +216,56 @@ def discretize(eng, func_dNdE, *args):
 
 
     return rebin_N_arr(N, eng_mean, eng)
+
+def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
+    """Produces a secondary spectrum. 
+    
+    Parameters
+    ----------
+    spec : Spectrum
+        The primary spectrum. 
+    tf : TransFuncAtRedshift
+        The secondary spectrum scattering rate, given in dN/(dE dt).
+    new_eng : ndarray, optional
+        The output spectrum abscissa. If not specified, defaults to spec.eng.
+    dlnz : float, optional
+        The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt). 
+    frac : float or ndarray, optional
+        The fraction of the spectrum or each bin of the spectrum which produces the secondary spectrum. 
+    
+    Returns
+    -------
+    Spectrum
+        The secondary spectrum, dN/dE or dN/(dE dt). 
+
+    Note
+    ----
+    spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
+
+    """
+
+    # Interpolates the transfer function at spec.eng. 
+    if spec.eng != tf.get_in_eng():
+        tf.at_in_eng(spec.eng)
+
+    # Interpolates the transfer function at new_eng. 
+    if new_eng is None:
+        new_eng = spec.eng
+    if new_eng != tf.get_eng():
+        tf.at_eng(new_eng)
+
+    # Gets the factor associated with time interval (see Ex. 3).
+    if dlnz > 0:
+        if spec.rs < 0: 
+            raise TypeError('spec.rs must be initialized when dlnz is specified.')
+        fac = dlnz/phys.hubble(spec.rs)
+    else: 
+        fac = 1
+
+    tf *= fac
+    N_arr = spec.totN('bin')*frac
+
+    return tf.sum_specs(N_arr)
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 
