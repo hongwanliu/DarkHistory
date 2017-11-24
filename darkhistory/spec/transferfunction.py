@@ -303,10 +303,15 @@ class TransFuncAtRedshift(Spectra):
         # 2D interpolation, specified by vectors of length eng, in_eng, 
         # and grid dimensions in_eng x eng. 
         # interp_func takes (eng, in_eng) as argument. 
+
+        non_zero_grid = self.get_grid_values()
+        # set zero values to some small value for log interp.
+        non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+
         interp_func = interpolate.interp2d(
             np.log(self.get_eng()),
             np.log(self.get_in_eng()),  
-            np.log(self.get_grid_values()), 
+            np.log(non_zero_grid), 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -318,6 +323,9 @@ class TransFuncAtRedshift(Spectra):
                     for in_eng in new_in_eng
                 ])
             )
+
+            # re-zero small values
+            new_grid_values[np.abs(new_grid_values) < 1e-100] = 0
 
             new_spec_arr = [
                 Spectrum(new_eng, spec, rs=self.rs, in_eng=in_eng) 
