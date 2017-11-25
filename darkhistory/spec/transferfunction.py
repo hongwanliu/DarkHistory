@@ -161,11 +161,14 @@ class TransFuncAtRedshift(Spectra):
 
         self.dlnz = dlnz
         super().__init__(spec_arr, rebin_eng)
-        if np.any(np.abs(np.diff(self.get_rs())) > 0):
-            raise TypeError("spectra in TransFuncAtRedshift must have identical redshifts.")
-        self.rs = spec_arr[0].rs
-        if np.any(self.get_in_eng() <= 0):
-            raise TypeError("injection energy of all spectra must be set.") 
+        if spec_arr:
+            if np.any(np.abs(np.diff(self.get_rs())) > 0):
+                raise TypeError("spectra in TransFuncAtRedshift must have identical redshifts.")
+            self.rs = spec_arr[0].rs
+            if np.any(self.get_in_eng() <= 0):
+                raise TypeError("injection energy of all spectra must be set.") 
+        else:
+            self.rs = -1
 
     def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy. 
@@ -501,11 +504,12 @@ class TransFuncAtRedshift(Spectra):
         spec : Spectrum
             The new spectrum to append.
         """
-        if self.get_in_eng()[-1] > spec.in_eng: 
-            raise TypeError("new Spectrum has a smaller injection energy than the current last entry.")
+        if self.spec_arr:
+            if self.get_in_eng()[-1] > spec.in_eng: 
+                raise TypeError("new Spectrum has a smaller injection energy than the current last entry.")
 
-        if spec.rs != self.rs: 
-            raise TypeError("cannot append new spectrum with different injection energy.")
+            if spec.rs != self.rs: 
+                raise TypeError("cannot append new spectrum with different injection redshift.")
 
         super().append(spec)
 

@@ -249,8 +249,11 @@ def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
 
     # Interpolates the transfer function at new_eng and spec.eng
 
-    if spec.eng != tf.get_in_eng() or new_eng != tf.get_eng():
-        tf = tf.at_val(spec.eng, new_eng)
+
+    if (np.any(spec.eng != tf.get_in_eng()) 
+        or np.any(new_eng != tf.get_eng())
+    ):
+        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
 
     # Gets the factor associated with time interval (see Ex. 3).
     if dlnz > 0:
