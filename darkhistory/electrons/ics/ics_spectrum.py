@@ -725,8 +725,8 @@ def ics_spec(
         #     fill_value = (np.nan, 0)
         # )
         rel_tf = rel_tf.at_val(
-            y*eleceng[rel], y*photeng, 
-            bounds_error = False, fill_value = (np.nan, 0)
+            y*eleceng[gamma > rel_bound], y*photeng, 
+            bounds_error = False, fill_value = 1e-200
         )
         
         spec[rel] = y**4*rel_tf.get_grid_values().flatten()
@@ -744,8 +744,8 @@ def ics_spec(
         #     fill_value = (np.nan, 0)
         # )
         nonrel_tf = nonrel_tf.at_val(
-            eleckineng[~rel], photeng/y, 
-            bounds_error = False, fill_value = (np.nan, 0)
+            eleckineng[gamma <= rel_bound], photeng/y, 
+            bounds_error = False, fill_value = 1e-200
         )
         spec[~rel] = y**2*nonrel_tf.get_grid_values().flatten()
     else:

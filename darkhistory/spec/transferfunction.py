@@ -315,7 +315,8 @@ class TransFuncAtRedshift(Spectra):
             np.log(self.get_eng()),
             np.log(self.get_in_eng()),  
             np.log(non_zero_grid), 
-            bounds_error=bounds_error, fill_value=fill_value
+            bounds_error=bounds_error, 
+            fill_value=np.log(fill_value)
         )
 
         if interp_type == 'val':
@@ -353,7 +354,8 @@ class TransFuncAtRedshift(Spectra):
 
             return self.at_val(
                 np.exp(log_new_in_eng), np.exp(log_new_eng), 
-                interp_type = 'val', bounds_error = bounds_error, 
+                interp_type = 'val', 
+                bounds_error = bounds_error, 
                 fill_value = fill_value
             )
 
