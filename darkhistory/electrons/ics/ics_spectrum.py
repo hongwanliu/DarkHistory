@@ -13,19 +13,19 @@ from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 from tqdm import tqdm_notebook as tqdm
 
-def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
+def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False):
     """ Nonrelativistic ICS spectrum of secondary photons by series method.
 
     Parameters
     ----------
-    eleceng : ndarray
-        Incoming electron energy. 
+    eleckineng : ndarray
+        Incoming electron kinetic energy. 
     photeng : ndarray
         Outgoing photon energy. 
     T : float
         CMB temperature. 
     as_pairs : bool
-        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
 
     Returns
     -------
@@ -39,9 +39,9 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
 
     print('Computing spectra by analytic series...')
 
-    gamma = eleceng/phys.me
+    gamma = 1 + eleckineng/phys.me
     # Most accurate way of finding beta when beta is small, I think.
-    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
+    beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
     if as_pairs:
         lowlim = (1-beta)/(1+beta)*photeng/T 
@@ -78,9 +78,9 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
 
     # CMB photon energy less than outgoing photon energy.
 
-    # F1_low an array of size [eleceng, photeng]. 
+    # F1_low an array of size [eleckineng, photeng]. 
     # We can take photeng*F1_vec_low for element-wise products. 
-    # In the other dimension, we must take transpose(eleceng*transpose(x)).
+    # In the other dimension, we must take transpose(eleckineng*transpose(x)).
 
     term_low_1 = F1_low * T**2
 
@@ -188,13 +188,13 @@ def nonrel_spec_series(eleceng, photeng, T, as_pairs=False):
         )
     )
 
-def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
+def nonrel_spec_quad(eleckineng_arr, photeng_arr, T):
     """ Nonrelativistic ICS spectrum of secondary photons using quadrature.
 
     Parameters
     ----------
-    eleceng : ndarray
-        Incoming electron energy. 
+    eleckineng : ndarray
+        Incoming electron kinetic energy. 
     photeng : ndarray
         Outgoing photon energy. 
     T : float
@@ -210,18 +210,21 @@ def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
     Insert note on the suitability of the method. 
     """
 
-    gamma_arr = eleceng_arr/phys.me
+    gamma_arr = eleceng_arr/phys.me + 1
 
     # Most accurate way of finding beta when beta is small, I think.
-    beta_arr = np.sqrt((eleceng_arr**2/phys.me**2 - 1)/(gamma_arr**2))
+    beta_arr = np.sqrt(
+        eleckineng_arr/phys.me*(gamma_arr+1)/gamma_arr**2
+    )
 
     lowlim = np.array([(1-b)/(1+b)*photeng_arr for b in beta_arr])
     upplim = np.array([(1+b)/(1-b)*photeng_arr for b in beta_arr])
 
-    def integrand(eps, eleceng, photeng):
+    def integrand(eps, eleckineng, photeng):
 
-        gamma = eleceng/phys.me
-        beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
+        gamma = eleckineng/phys.me + 1
+        beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
+
 
 
         prefac = ( 
@@ -261,10 +264,10 @@ def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
         return prefac*fac
 
     integral = np.array([
-        [quad(integrand, low, upp, args=(eleceng, photeng), epsabs=0)[0] 
+        [quad(integrand, low, upp, args=(eleckineng, photeng), epsabs=0)[0] 
         for (low, upp, photeng) in zip(low_part, upp_part, photeng_arr)
-        ] for (low_part, upp_part, eleceng) 
-            in zip(tqdm(lowlim), upplim, eleceng_arr)
+        ] for (low_part, upp_part, eleckineng) 
+            in zip(tqdm(lowlim), upplim, eleckineng_arr)
     ]) 
 
     testing = False
@@ -278,37 +281,41 @@ def nonrel_spec_quad(eleceng_arr, photeng_arr, T):
         print(np.transpose(np.transpose(integral)/prefac))
         print('***** Integration with Error *****')
         print(np.array([
-            [quad(integrand, low, upp, args=(eleceng, photeng), 
-                epsabs = 0, epsrel=1e-10)
+            [
+                quad(
+                    integrand, low, upp, 
+                    args=(eleckineng, photeng), 
+                    epsabs = 0, epsrel=1e-10
+                )
                 for (low, upp, photeng) in zip(
                     low_part, upp_part, photeng_arr
                 )
-            ] for (low_part, upp_part, eleceng) 
-                in zip(lowlim, upplim, eleceng_arr)
+            ] for (low_part, upp_part, eleckineng) 
+                in zip(lowlim, upplim, eleckineng_arr)
         ]))
         print('***** End Diagnostics *****')
 
 
     return integral
 
-def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
+def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False):
     """ Nonrelativistic ICS spectrum of secondary photons by beta expansion.
 
     Parameters
     ----------
-    eleceng : ndarray
-        Incoming electron energy. 
+    eleckineng : ndarray
+        Incoming electron kinetic energy. 
     photeng : ndarray
         Outgoing photon energy. 
     T : float
         CMB temperature.
     as_pairs : bool
-        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
 
     Returns
     -------
     tuple of ndarrays
-        dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleceng, photeng). 
+        dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleckineng, photeng). 
 
     Note
     ----
@@ -317,9 +324,9 @@ def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
 
     print('Computing spectra by an expansion in beta...')
 
-    gamma = eleceng/phys.me
+    gamma = eleckineng/phys.me + 1
     # Most accurate way of finding beta when beta is small, I think.
-    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
+    beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
     testing = False
     if testing: 
@@ -351,26 +358,26 @@ def nonrel_spec_diff(eleceng, photeng, T, as_pairs=False):
 
     return term, err
 
-def nonrel_spec(eleceng, photeng, T, as_pairs=False):
+def nonrel_spec(eleckineng, photeng, T, as_pairs=False):
     """ Nonrelativistic ICS spectrum of secondary photons.
 
     Switches between `nonrel_spec_diff` and `nonrel_spec_series`. 
 
     Parameters
     ----------
-    eleceng : ndarray
-        Incoming electron energy. 
+    eleckineng : ndarray
+        Incoming electron kinetic energy. 
     photeng : ndarray
         Outgoing photon energy. 
     T : float
         CMB temperature. 
     as_pairs : bool
-        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.
+        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.
 
     Returns
     -------
     TransFuncAtRedshift or ndarray
-        dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleceng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleceng, photeng).  
+        dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, photeng).  
 
     Note
     ----
@@ -379,24 +386,24 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     print('Initializing...')
 
-    gamma = eleceng/phys.me
+    gamma = eleckineng/phys.me + 1
     # Most accurate way of finding beta when beta is small, I think.
-    beta = np.sqrt((eleceng**2/phys.me**2 - 1)/(gamma**2))
+    beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
     eta = photeng/T 
 
-    # Masks, dimensions (eleceng, photeng) if as_pairs == False.
+    # Masks, dimensions (eleckineng, photeng) if as_pairs == False.
     if as_pairs:
-        if eleceng.size != photeng.size:
+        if eleckineng.size != photeng.size:
             raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
         beta_mask = beta
         eta_mask = eta
-        eleceng_mask = eleceng
+        eleckineng_mask = eleckineng
         photeng_mask = photeng
     else:
         beta_mask = np.outer(beta, np.ones(eta.size))
         eta_mask = np.outer(np.ones(beta.size), eta)
-        eleceng_mask = np.outer(eleceng, np.ones(photeng.size))
-        photeng_mask = np.outer(np.ones(eleceng.size), photeng)
+        eleckineng_mask = np.outer(eleckineng, np.ones(photeng.size))
+        photeng_mask = np.outer(np.ones(eleckineng.size), photeng)
 
     # Boolean arrays. Depending on as_pairs, can be 1- or 2-D. 
     beta_small = (beta_mask < 0.01)
@@ -407,18 +414,18 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
     testing = False
 
     if testing:
-        print('where_diff on (eleceng, photeng) grid: ')
+        print('where_diff on (eleckineng, photeng) grid: ')
         print(where_diff)
 
     if as_pairs:
-        spec = np.zeros_like(eleceng)
-        epsrel = np.zeros_like(eleceng)
+        spec = np.zeros_like(eleckineng)
+        epsrel = np.zeros_like(eleckineng)
     else:
-        spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
-        epsrel = np.zeros((eleceng.size, photeng.size), dtype='float128')
+        spec = np.zeros((eleckineng.size, photeng.size), dtype='float128')
+        epsrel = np.zeros((eleckineng.size, photeng.size), dtype='float128')
 
     spec[where_diff], err_with_diff = nonrel_spec_diff(
-        eleceng_mask[where_diff], 
+        eleckineng_mask[where_diff], 
         photeng_mask[where_diff], 
         T, as_pairs=True
     )
@@ -444,11 +451,11 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
     if testing:
     
-        print('where_series on (eleceng, photeng) grid: ')
+        print('where_series on (eleckineng, photeng) grid: ')
         print(where_series)
 
     spec[where_series] = nonrel_spec_series(
-        eleceng_mask[where_series],
+        eleckineng_mask[where_series],
         photeng_mask[where_series],
         T, as_pairs=True
     )
@@ -475,7 +482,7 @@ def nonrel_spec(eleceng, photeng, T, as_pairs=False):
 
         spec_arr = [
             Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
-            for s, in_eng in zip(spec, eleceng-phys.me)
+            for s, in_eng in zip(spec, eleckineng)
         ]
 
         # Injection energy is kinetic energy of the electron.
@@ -505,7 +512,8 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
     Note
     ----
-    Insert note on the suitability of the method. 
+    This function accepts the *energy* of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions. This enables the evaluation of the relativistic rate at unphysical values of the electron energy, a mathematical trick that we use when we obtain the ICS rates at a low temperature by interpolating over the result at a higher temperature.
+
     """
     print('Initializing...')
 
@@ -648,7 +656,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         return spec_tf 
 
 def ics_spec(
-    eleceng, photeng, T, as_pairs=False, 
+    eleckineng, photeng, T, as_pairs=False, 
     nonrel_tf=None, rel_tf=None
 ):
     """ ICS spectrum of secondary photons.
@@ -657,14 +665,14 @@ def ics_spec(
 
     Parameters
     ----------
-    eleceng : ndarray
+    eleckineng : ndarray
         Incoming electron energy. 
     photeng : ndarray
         Outgoing photon energy. 
     T : float
         CMB temperature. 
     as_pairs : bool, optional
-        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
     nonrel_tf : TransFuncAtRedshift, optional
         Reference nonrelativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
@@ -673,25 +681,28 @@ def ics_spec(
     Returns
     -------
     TransFuncAtRedshift
-        dN/(dt dE) of the outgoing photons, dt = 1 s, with `self.in_eng = eleceng` and `self.eng = photeng`. `self.rs` is determined from `T`, and `self.dlnz` is normalized to 1 second. 
+        dN/(dt dE) of the outgoing photons, dt = 1 s, with `self.in_eng = eleckineng` and `self.eng = photeng`. `self.rs` is determined from `T`, and `self.dlnz` is normalized to 1 second. 
 
     Note
     ----
     Insert note on the suitability of the method. 
     """
 
-    gamma = eleceng/phys.me
+    gamma = eleckineng/phys.me + 1
+    eleceng = eleckineng + phys.me
 
     if as_pairs:
         if eleceng.size != photeng.size:
             raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
         gamma_mask = gamma
-        eleceng_mask = eleceng 
+        eleceng_mask = eleceng
+        eleckineng_mask = eleckineng
         photeng_mask = photeng
         spec = np.zeros(gamma)
     else:
         gamma_mask = np.outer(gamma, np.ones(photeng.size))
         eleceng_mask = np.outer(eleceng, np.ones(photeng.size))
+        eleckineng_mask = np.outer(eleckineng, np.ones(photeng.size))
         photeng_mask = np.outer(np.ones(eleceng.size), photeng)
         spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
 
@@ -706,13 +717,18 @@ def ics_spec(
             raise TypeError('When reading from file, the keyword as_pairs is not supported.')
         # If the electron energy at which interpolation is to be taken is outside rel_tf, then an error should be returned, since the file has not gone up to high enough energies. 
         # Note relativistic spectrum is indexed by TOTAL electron energy.
-        rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > rel_bound])
+        # rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > rel_bound])
         # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
-        rel_tf = rel_tf.at_eng(
-            y*photeng, 
-            bounds_error = False, 
-            fill_value = (np.nan, 0)
+        # rel_tf = rel_tf.at_eng(
+        #     y*photeng, 
+        #     bounds_error = False, 
+        #     fill_value = (np.nan, 0)
+        # )
+        rel_tf = rel_tf.at_val(
+            y*eleceng[rel], y*photeng, 
+            bounds_error = False, fill_value = (np.nan, 0)
         )
+        
         spec[rel] = y**4*rel_tf.get_grid_values().flatten()
     else: 
         spec[rel] = rel_spec(
@@ -721,16 +737,20 @@ def ics_spec(
         )
 
     if nonrel_tf != None:
-        nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= rel_bound] - phys.me)
-        nonrel_tf = nonrel_tf.at_eng(
-            photeng/y,
-            bounds_error = False,
-            fill_value = (np.nan, 0)
+        # nonrel_tf = nonrel_tf.at_in_eng(eleckineng[gamma <= rel_bound])
+        # nonrel_tf = nonrel_tf.at_eng(
+        #     photeng/y,
+        #     bounds_error = False,
+        #     fill_value = (np.nan, 0)
+        # )
+        nonrel_tf = nonrel_tf.at_val(
+            eleckineng[~rel], photeng/y, 
+            bounds_error = False, fill_value = (np.nan, 0)
         )
         spec[~rel] = y**2*nonrel_tf.get_grid_values().flatten()
     else:
         spec[~rel] = nonrel_spec(
-            eleceng_mask[~rel], photeng_mask[~rel], 
+            eleckineng_mask[~rel], photeng_mask[~rel], 
             T, as_pairs=True
         )
 
@@ -747,7 +767,7 @@ def ics_spec(
 
         spec_arr = [
             Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
-            for sp, in_eng in zip(spec, eleceng-phys.me)
+            for sp, in_eng in zip(spec, eleckineng)
         ]
 
         # Use kinetic energy of the electron for better interpolation when necessary. 
