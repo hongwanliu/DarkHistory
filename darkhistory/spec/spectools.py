@@ -217,17 +217,28 @@ def discretize(eng, func_dNdE, *args):
 
     return rebin_N_arr(N, eng_mean, eng)
 
-def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
+def scatter(
+    tf, mode='dNdE', spec=None, eng_arr=None, N_arr=None,
+    new_eng=None, dlnz=-1., rs=-1, frac=1.
+):
     """Produces a secondary spectrum. 
+
+    Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a Spectrum object (dN/dE) or with an array of number of particles (N) and an energy abscissa.
     
     Parameters
     ----------
+    mode : {'dNdE', 'N'}
+        Specifies the type of input for the calculation.
     spec : Spectrum
-        The primary spectrum. 
+        The primary spectrum. Required if type is 'dNdE'.
+    eng_arr : ndarray
+        The primary enerby abscissa. Required if type is 'N'.
+    N_arr : ndarray
+        An array representing the number of particles in each energy bin. Required if type is 'N'. 
     tf : TransFuncAtRedshift
         The secondary spectrum scattering rate, given in dN/(dE dt).
     new_eng : ndarray, optional
-        The output spectrum abscissa. If not specified, defaults to spec.eng.
+        The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.
     dlnz : float, optional
         The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt). 
     frac : float or ndarray, optional
@@ -240,31 +251,45 @@ def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
 
     Note
     ----
-    spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
+    For 'dNdE', spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
 
     """
 
-    if new_eng is None:
-        new_eng = spec.eng
-
-    # Interpolates the transfer function at new_eng and spec.eng
-
-
-    if (np.any(spec.eng != tf.get_in_eng()) 
-        or np.any(new_eng != tf.get_eng())
-    ):
-        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
+    if mode == 'dNdE':
+        in_eng = spec.eng
+    elif mode == 'N':
+        in_eng = eng_arr
+    else:
+        raise TypeError('Invalid type specified.')
 
     # Gets the factor associated with time interval (see Ex. 3).
     if dlnz > 0:
-        if spec.rs < 0: 
-            raise TypeError('spec.rs must be initialized when dlnz is specified.')
-        fac = dlnz/phys.hubble(spec.rs)
+        if mode == 'dNdE':
+            if spec.rs < 0: 
+                raise TypeError('spec.rs must be initialized when dlnz is specified.')
+            fac = dlnz/phys.hubble(spec.rs)
+        elif mode == 'N':
+            if rs < 0:
+                raise TypeError('rs must be initialized when dlnz is specified')
+            fac = dlnz/phys.hubble(rs)
     else: 
         fac = 1
 
-    tf *= fac
-    N_arr = spec.totN('bin')*frac
+    if new_eng is None:
+            new_eng = in_eng
+
+    # Interpolates the transfer function at new_eng and spec.eng
+
+    if (np.any(in_eng != tf.get_in_eng()) 
+        or np.any(new_eng != tf.get_eng())
+    ):
+        tf = tf.at_val(in_eng, new_eng, bounds_error=True)
+
+    # Current fac is disabled because it is too slow.
+    # tf *= fac
+
+    if mode == 'dNdE':
+        N_arr = spec.totN('bin')*frac
 
     return tf.sum_specs(N_arr)
 
