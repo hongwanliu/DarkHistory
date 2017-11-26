@@ -218,8 +218,8 @@ def discretize(eng, func_dNdE, *args):
     return rebin_N_arr(N, eng_mean, eng)
 
 def scatter(
-    tf, mode='dNdE', spec=None, eng_arr=None, N_arr=None,
-    new_eng=None, dlnz=-1., rs=-1, frac=1.
+    tf, mode='dNdE', out_mode='dNdE', spec=None, eng_arr=None, 
+    N_arr=None, new_eng=None, dlnz=-1., rs=-1, frac=1.
 ):
     """Produces a secondary spectrum. 
 
@@ -229,6 +229,8 @@ def scatter(
     ----------
     mode : {'dNdE', 'N'}
         Specifies the type of input for the calculation.
+    out_mode : {'dNdE', 'N'}
+        Specifies the type of output.
     spec : Spectrum
         The primary spectrum. Required if type is 'dNdE'.
     eng_arr : ndarray
@@ -246,8 +248,8 @@ def scatter(
     
     Returns
     -------
-    Spectrum
-        The secondary spectrum, dN/dE or dN/(dE dt). 
+    Spectrum or ndarray
+        The secondary spectrum, dN/dE or dN/(dE dt). If outmode is 'dNdE', stored as `Spectrum`, otherwise returns N or dN/dt, with the abscissa given by `eng_arr` implied.
 
     Note
     ----
@@ -288,10 +290,11 @@ def scatter(
     # Current fac is disabled because it is too slow.
     # tf *= fac
 
-    if mode == 'dNdE':
+    if out_mode == 'dNdE':
         N_arr = spec.totN('bin')*frac
-
-    return tf.sum_specs(N_arr)
+        return tf.sum_specs(N_arr)
+    elif out_mode == 'N':
+        return np.dot(N_arr, tf.get_grid_values())
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 
