@@ -54,7 +54,7 @@ class TransferFuncList:
         if isinstance(tflist[0], tf.TransFuncAtRedshift):
             self.tftype = 'rs'
             self.rs = np.array([tfunc.rs for tfunc in self.tflist])
-            self.in_eng = tflist[0].in_eng
+            self.in_eng = tflist[0].get_in_eng()
             self.dlnz = tflist[0].dlnz
         elif isinstance(tflist[0], tf.TransFuncAtEnergy):
             self.tftype = 'in_eng'
@@ -124,8 +124,7 @@ class TransferFuncList:
         if self.tftype == 'in_eng':
 
             new_tflist = [tf.TransFuncAtRedshift(
-                    [tfunc.spec_arr[i] for tfunc in self.tflist],
-                    self.in_eng, self.dlnz
+                    [tfunc.spec_arr[i] for tfunc in self.tflist], self.dlnz
                 ) for i,rs in zip(
                     np.arange(self.rs.size), self.rs
                 )
@@ -137,8 +136,7 @@ class TransferFuncList:
         elif self.tftype == 'rs':
 
             new_tflist = [tf.TransFuncAtEnergy(
-                    [tfunc.spec_arr[i] for tfunc in self.tflist],
-                    self.in_eng[i], self.dlnz
+                    [tfunc.spec_arr[i] for tfunc in self.tflist], self.dlnz
                 ) for i,in_eng in zip(
                     np.arange(self.in_eng.size), self.in_eng
                 )
@@ -180,17 +178,21 @@ class TransferFuncList:
 
         self.tflist = []
 
-        for i,tfunc in zip(np.arange(len(new_tflist)),new_tflist):
+        for i,tfunc in zip(np.arange(len(new_tflist)), new_tflist):
             
+            in_eng_arr = tfunc.get_in_eng()
             new_grid_val = matrix_power(tfunc.get_grid_values(),dlnz_factor)
             new_spec_arr = [
-                Spectrum(tfunc.get_eng(), new_grid_val[i], tfunc.rs)
-                for i in np.arange(tfunc.in_eng.size)
+                Spectrum(
+                    tfunc.get_eng(), new_grid_val[i], 
+                    rs = tfunc.rs, in_eng = in_eng_arr[i]
+                )
+                for i in np.arange(in_eng_arr.size)
             ]
 
             self.tflist.append(
                 tf.TransFuncAtRedshift(
-                    new_spec_arr, self.in_eng, self.dlnz*dlnz_factor
+                    new_spec_arr, self.dlnz*dlnz_factor
                 )
             )
 

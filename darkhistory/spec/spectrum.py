@@ -21,6 +21,8 @@ class Spectrum:
         Spectrum stored as dN/dE. 
     rs : float, optional
         The redshift (1+z) of the spectrum. Set to -1 if not specified.
+    in_eng : float, optional
+        The injection energy of the primary, if this is a secondary spectrum. Set to -1 if not specified.
 
     Attributes
     ----------
@@ -41,17 +43,20 @@ class Spectrum:
     # ndarray first, which isn't what we want.
     __array_priority__ = 1
 
-    def __init__(self, eng, dNdE, rs=-1.):
+    def __init__(self, eng, dNdE, rs=-1., in_eng=-1.):
 
         if eng.size != dNdE.size:
             raise TypeError("""abscissa and spectrum need to be of the
              same size.""")
+        if eng.size == 1:
+            raise TypeError("abscissa must be more than length 1.")
         if not all(np.diff(eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
 
         self.eng = eng
         self.dNdE = dNdE
         self.rs = rs
+        self.in_eng = in_eng
         self.length = eng.size
         self.underflow = {'N': 0., 'eng': 0.}
 
@@ -84,11 +89,18 @@ class Spectrum:
         if np.issubclass_(type(other), Spectrum):
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
-                raise TypeError("abscissae are different for the two `Spectrum` objects.")
-            if not np.array_equal(self.rs, other.rs):
-                raise TypeError("redshifts are different for the two `Spectrum` objects.")
+                raise TypeError("abscissae are different for the two Spectrum objects.")
+            new_rs = -1
+            new_in_eng = -1
+            if self.rs == other.rs:
+                new_rs = self.rs 
+            if self.in_eng == other.in_eng:
+                new_in_eng = self.in_eng 
 
-            new_spectrum = Spectrum(self.eng, self.dNdE+other.dNdE, self.rs)
+            new_spectrum = Spectrum(
+                self.eng, self.dNdE+other.dNdE, 
+                rs = new_rs, in_eng = new_in_eng
+            )
             new_spectrum.underflow['N'] = (self.underflow['N'] 
                                           + other.underflow['N'])
             new_spectrum.underflow['eng'] = (self.underflow['eng']
@@ -98,7 +110,7 @@ class Spectrum:
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE + other, self.rs)
+            return Spectrum(self.eng, self.dNdE + other, self.rs, self.in_eng)
 
         else:
 
@@ -134,10 +146,17 @@ class Spectrum:
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two `Spectrum` objects.")
-            if not np.array_equal(self.rs, other.rs):
-                raise TypeError("redshifts are different for the two `Spectrum` objects.")
+            new_rs = -1
+            new_in_eng = -1
+            if self.rs == other.rs:
+                new_rs = self.rs 
+            if self.in_eng == other.in_eng:
+                new_in_eng = self.in_eng 
 
-            new_spectrum = Spectrum(self.eng, self.dNdE+other.dNdE, self.rs)
+            new_spectrum = Spectrum(
+                self.eng, self.dNdE+other.dNdE, 
+                rs = new_rs, in_eng = new_in_eng
+            )
             new_spectrum.underflow['N'] = (self.underflow['N'] 
                                           + other.underflow['N'])
             new_spectrum.underflow['eng'] = (self.underflow['eng']
@@ -147,7 +166,7 @@ class Spectrum:
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE + other, self.rs)
+            return Spectrum(self.eng, self.dNdE + other, self.rs, self.in_eng)
 
         else:
 
@@ -235,21 +254,30 @@ class Spectrum:
 
         """
         if np.issubdtype(type(other),float) or np.issubdtype(type(other),int):
-            new_spectrum = Spectrum(self.eng, self.dNdE*other, self.rs)
+            new_spectrum = Spectrum(
+                self.eng, self.dNdE*other, self.rs, self.in_eng
+            )
             new_spectrum.underflow['N'] = self.underflow['N']*other
             new_spectrum.underflow['eng'] = self.underflow['eng']*other
             return new_spectrum
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE*other, self.rs)
+            return Spectrum(self.eng, self.dNdE*other, self.rs, self.in_eng)
 
         elif isinstance(other, Spectrum):
+            
+            new_rs = -1
+            new_in_eng = -1
+            if self.rs == other.rs:
+                new_rs = self.rs 
+            if self.in_eng == other.in_eng:
+                new_in_eng = self.in_eng 
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("energy abscissae are not the same.")
-            if self.rs != other.rs:
-                raise TypeError("redshifts are not the same.")
-            return Spectrum(self.eng, self.dNdE*other.dNdE, self.rs)
+            return Spectrum(
+                self.eng, self.dNdE*other.dNdE, new_rs, new_in_eng
+            )
 
         else:
 
@@ -279,16 +307,18 @@ class Spectrum:
 
         """
         if np.issubdtype(type(other),float) or np.issubdtype(type(other),int):
-            new_spectrum = Spectrum(self.eng, self.dNdE*other, self.rs)
+            new_spectrum = Spectrum(
+                self.eng, self.dNdE*other, self.rs, self.in_eng
+            )
             new_spectrum.underflow['N'] = self.underflow['N']*other
             new_spectrum.underflow['eng'] = self.underflow['eng']*other
             return new_spectrum
 
-        # Removed ability to multiply two `Spectrum` objects, doesn't seem like there's a physical reason for us to implement this.
+        # Multiplication by Spectrum covered by __mul__
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE*other, self.rs)
+            return Spectrum(self.eng, self.dNdE*other, self.rs, self.in_eng)
 
         else:
 
@@ -334,7 +364,7 @@ class Spectrum:
         The returned `Spectrum` object `underflow` is reset to zero.
 
         """
-        invSpec = Spectrum(self.eng, 1/self.dNdE, self.rs)
+        invSpec = Spectrum(self.eng, 1/self.dNdE, self.rs, self.in_eng)
         return other*invSpec
 
     def contract(self, mat):
@@ -609,22 +639,9 @@ class Spectrum:
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
             # raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
 
-
-        # Filters to pick out the correct parts of arrays. Correct indices are set to 1, incorrect indices set to 0. 
-        # filter_low = np.where(bin_ind < 0, np.ones(self.length), 
-        #     np.zeros(self.length))
-        # filter_high = np.where(bin_ind == self.length, np.ones(self.length), 
-        #     np.zeros(self.length))
-        # filter_reg = np.where( (bin_ind >= 0) | (bin_ind <= self.length-1), 
-        #     np.ones(self.length),np.zeros(self.length))
-
         # Get the total N and toteng in each bin of self.dNdE
         N_arr = self.totN('bin', np.arange(self.length + 1))
         toteng_arr = self.toteng('bin', np.arange(self.length + 1))
-
-        # N_arr_low = N_arr * filter_low
-        # N_arr_high = N_arr * filter_high
-        # N_arr_reg = N_arr * filter_reg
 
         N_arr_low = N_arr[ind_low]
         N_arr_high = N_arr[ind_high]
@@ -710,6 +727,7 @@ class Spectrum:
 
         self.eng  = out_eng 
         self.dNdE = new_spec.dNdE
+        self.length = out_eng.size
         self.underflow['N'] = new_spec.underflow['N']
         self.underflow['eng'] = new_spec.underflow['eng']
 

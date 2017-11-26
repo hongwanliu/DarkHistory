@@ -1,6 +1,7 @@
 """Functions useful for processing spectral data."""
 
 import numpy as np
+from darkhistory import physics as phys
 from darkhistory import utilities as utils
 import matplotlib.pyplot as plt
 import warnings
@@ -174,26 +175,28 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     return out_spec
 
 
-def discretize(func_dNdE, eng):
+def discretize(eng, func_dNdE, *args):
     """Discretizes a continuous function. 
 
     The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**. 
 
     Parameters
     ----------
-    func_dNdE : function
-        A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value. 
     eng : ndarray
         Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers). 
-
+    func_dNdE : function
+        A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value. 
+    *args : optional
+        Additional arguments and keyword arguments to be passed to `func_dNdE`. 
+    
     Returns
     -------
     Spectrum
         The discretized spectrum. rs is set to -1, and must be set manually. 
 
     """
-    def func_EdNdE(eng):
-        return func_dNdE(eng)*eng
+    def func_EdNdE(eng, *args):
+        return func_dNdE(eng, *args)*eng
 
     # Generate a list of particle number N and mean energy eng_mean, so that N*eng_mean = total energy in each bin. eng_mean != eng. 
     N = np.zeros(eng.size)
@@ -202,15 +205,68 @@ def discretize(func_dNdE, eng):
     for low, upp, i in zip(eng[:-1], eng[1:], 
         np.arange(eng.size-1)):
     # Perform an integral over the spectrum for each bin.
-        N[i] = integrate.quad(func_dNdE, low, upp)[0]
+        N[i] = integrate.quad(func_dNdE, low, upp, args= args)[0]
     # Get the total energy stored in each bin. 
         if N[i] > 0:
-            eng_mean[i] = integrate.quad(func_EdNdE, low, upp)[0]/N[i]
+            eng_mean[i] = integrate.quad(
+                func_EdNdE, low, upp, args=args
+            )[0]/N[i]
         else:
             eng_mean[i] = 0
 
 
     return rebin_N_arr(N, eng_mean, eng)
+
+def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
+    """Produces a secondary spectrum. 
+    
+    Parameters
+    ----------
+    spec : Spectrum
+        The primary spectrum. 
+    tf : TransFuncAtRedshift
+        The secondary spectrum scattering rate, given in dN/(dE dt).
+    new_eng : ndarray, optional
+        The output spectrum abscissa. If not specified, defaults to spec.eng.
+    dlnz : float, optional
+        The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt). 
+    frac : float or ndarray, optional
+        The fraction of the spectrum or each bin of the spectrum which produces the secondary spectrum. 
+    
+    Returns
+    -------
+    Spectrum
+        The secondary spectrum, dN/dE or dN/(dE dt). 
+
+    Note
+    ----
+    spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
+
+    """
+
+    if new_eng is None:
+        new_eng = spec.eng
+
+    # Interpolates the transfer function at new_eng and spec.eng
+
+
+    if (np.any(spec.eng != tf.get_in_eng()) 
+        or np.any(new_eng != tf.get_eng())
+    ):
+        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
+
+    # Gets the factor associated with time interval (see Ex. 3).
+    if dlnz > 0:
+        if spec.rs < 0: 
+            raise TypeError('spec.rs must be initialized when dlnz is specified.')
+        fac = dlnz/phys.hubble(spec.rs)
+    else: 
+        fac = 1
+
+    tf *= fac
+    N_arr = spec.totN('bin')*frac
+
+    return tf.sum_specs(N_arr)
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 

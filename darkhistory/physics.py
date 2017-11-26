@@ -133,21 +133,6 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
 
     return 1/(rs*hubble(rs, H0, omega_m, omega_rad, omega_lambda))
 
-def TCMB(rs):
-    """ CMB temperature in eV.
-
-    Parameters
-    ----------
-    rs : float
-        Redshift (1+z).
-
-    Returns
-    -------
-    float
-    """
-
-    return 2.7255 * 8.61733e-5 * rs
-
 def get_inj_rate(inj_type, inj_fac):
     """Dark matter injection rate function.
 
@@ -282,6 +267,21 @@ def tau_sobolev(rs):
     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
 
 # CMB
+
+def TCMB(rs):
+    """ CMB temperature in eV.
+
+    Parameters
+    ----------
+    rs : float
+        Redshift (1+z).
+
+    Returns
+    -------
+    float
+    """
+
+    return 2.7255 * 8.61733e-5 * rs
 
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons/cm^3/eV. 

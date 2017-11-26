@@ -36,13 +36,15 @@ class TransFuncAtEnergy(Spectra):
         The d ln(1+z) step for the transfer function. 
 
     """
-    def __init__(self, spec_arr, in_eng, dlnz, rebin_eng=None):
+    def __init__(self, spec_arr, dlnz, rebin_eng=None):
 
-        if isinstance(in_eng, (list, tuple, np.ndarray)):
-            raise TypeError("can only have a single injection energy.")
-        self.in_eng = in_eng
         self.dlnz = dlnz
         super().__init__(spec_arr, rebin_eng)
+        if np.any(np.abs(np.diff(self.get_in_eng())) > 0):
+            raise TypeError('spectra in TransFuncAtEnergy must have the same injection energy.')
+        self.in_eng = spec_arr[0].in_eng
+        if np.any(self.get_rs() < 0):
+            raise TypeError('redshift of spectra must be set.')
 
     def at_rs(
         self, new_rs, interp_type='val', bounds_error=None, fill_value=np.nan
@@ -71,11 +73,13 @@ class TransFuncAtEnergy(Spectra):
         if interp_type == 'val':
             
             new_spec_arr = [
-                Spectrum(self.get_eng(), interp_func(np.log(rs)), rs)
-                    for rs in new_rs
+                Spectrum(
+                    self.get_eng(), interp_func(np.log(rs)), 
+                    rs=rs, in_eng=self.in_eng 
+                ) for rs in new_rs
             ]
             return TransFuncAtEnergy(
-                new_spec_arr, self.in_eng, self.dlnz
+                new_spec_arr, self.dlnz
             )
 
         elif interp_type == 'bin':
@@ -90,7 +94,46 @@ class TransFuncAtEnergy(Spectra):
 
         else:
             raise TypeError("invalid interp_type specified.")
-        
+
+    def sum_specs(self, weight=None):
+        """Sums the spectrum in each energy bin, weighted by `weight`. 
+
+        Applies Spectra.sum_specs, but sets `in_eng` of the output `Spectrum` correctly. 
+
+        Parameters
+        ----------
+        weight : ndarray or Spectrum, optional
+            The weight in each redshift bin, with weight of 1 for every bin if not specified.
+
+        Returns
+        -------
+        ndarray or Spectrum
+            An array or `Spectrum` of weight sums, one for each energy in `self.eng`, with length `self.length`. 
+
+        """
+        out_spec = super().sum_specs(weight)
+        out_spec.in_eng = self.in_eng
+
+        return out_spec
+
+    def append(self, spec):
+        """Appends a new Spectrum. 
+
+        Applies Spectra.append, but first checks that the appended `Spectrum` has the same injection energy, and is correctly ordered. 
+
+        Parameters
+        ----------
+        spec : Spectrum
+            The new spectrum to append.
+        """
+        if self.get_rs()[-1] < spec.rs: 
+            raise TypeError("new Spectrum has a larger redshift than the current last entry.")
+
+        if spec.in_eng != self.in_eng: 
+            raise TypeError("cannot append new spectrum with different injection energy.")
+
+        super().append(spec)
+
 
 class TransFuncAtRedshift(Spectra):
     """Transfer function at a given redshift. 
@@ -101,34 +144,31 @@ class TransFuncAtRedshift(Spectra):
     ----------
     spec_arr : list of Spectrum
         List of Spectrum to be stored together. 
-    in_eng : ndarray
-        Injection energies of this transfer function. 
-    dlnz : float
-        The d ln(1+z) step for the transfer function. 
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the Spectrum objects into. 
 
     Attributes
     ----------
     spec_arr : list of Spectrum
-        List of Spectrum to be stored together. 
-    in_eng : ndarray
-        Injection energies of this transfer function. 
+        List of Spectrum to be stored together.
     dlnz : float
-        The d ln(1+z) step for the transfer function. 
+        d ln(1+z) associated with this transfer function.
     rs : float
-        The redshift of the Spectrum objects. 
-    
+        Redshift of this transfer function.      
     """
 
-    def __init__(self, spec_arr, in_eng, dlnz, rebin_eng=None):
+    def __init__(self, spec_arr, dlnz, rebin_eng=None):
 
-        self.in_eng = in_eng
         self.dlnz = dlnz
         super().__init__(spec_arr, rebin_eng)
-        if len(set([rs for rs in self.get_rs()])) > 1:
-            raise TypeError("all spectra must have identical redshifts.")
-        self.rs = self.spec_arr[0].rs 
+        if spec_arr:
+            if np.any(np.abs(np.diff(self.get_rs())) > 0):
+                raise TypeError("spectra in TransFuncAtRedshift must have identical redshifts.")
+            self.rs = spec_arr[0].rs
+            if np.any(self.get_in_eng() <= 0):
+                raise TypeError("injection energy of all spectra must be set.") 
+        else:
+            self.rs = -1
 
     def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy. 
@@ -153,30 +193,39 @@ class TransFuncAtRedshift(Spectra):
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.in_eng), self.get_grid_values(), axis=0, 
+            np.log(self.get_in_eng()), self.get_grid_values(), axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
         if interp_type == 'val':
             new_spec_arr = [
-                Spectrum(self.get_eng(), interp_func(np.log(eng)), self.rs) 
+                Spectrum(
+                    self.get_eng(), interp_func(np.log(eng)), 
+                    rs = self.rs, in_eng = eng
+                ) 
                 for eng in new_eng
             ]
             return TransFuncAtRedshift(
-                new_spec_arr, new_eng, self.dlnz
+                new_spec_arr, self.dlnz
             )
 
         elif interp_type == 'bin':
 
             log_new_eng = np.interp(
                 np.log(new_eng),
-                np.arange(self.in_eng.size),
-                np.log(self.in_eng)
+                np.arange(self.get_in_eng().size),
+                np.log(self.get_in_eng())
             )
 
-            return self.at_in_eng(np.exp(log_new_eng))
+            return self.at_in_eng(
+                np.exp(log_new_eng), interp_type='val',
+                bounds_error=bounds_error, fill_value=fill_value
+            )
 
-    def at_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value= np.nan):
+    def at_eng(
+        self, new_eng, interp_type='val', 
+        bounds_error=None, fill_value= np.nan
+    ):
         """Interpolates the transfer function at a new energy abscissa. 
 
         Interpolation is logarithmic. 
@@ -207,13 +256,12 @@ class TransFuncAtRedshift(Spectra):
             new_grid_values = np.transpose(
                 np.stack([interp_func(np.log(eng)) for eng in new_eng])
             )
+            in_eng_arr = self.get_in_eng()
             new_spec_arr = [
-                Spectrum(new_eng, spec, self.rs) 
-                for spec in new_grid_values
+                Spectrum(new_eng, spec, rs=self.rs, in_eng=in_eng) 
+                for in_eng,spec in zip(in_eng_arr,new_grid_values)
             ]
-            return TransFuncAtRedshift(
-                new_spec_arr, self.in_eng, self.dlnz
-            )
+            return TransFuncAtRedshift(new_spec_arr, self.dlnz)
 
         elif interp_type == 'bin':
 
@@ -223,23 +271,99 @@ class TransFuncAtRedshift(Spectra):
                 np.log(self.get_eng())
             )
 
-            return self.at_eng(np.exp(log_new_eng))
+            return self.at_eng(
+                np.exp(log_new_eng), interp_type='val',
+                bounds_error=bounds_error, fill_value=fill_value
+            )
 
-    def at_rs(self, new_eng, interp_type='val'):
-        """ Removes the inherited Spectra.at_rs from this class.
+    def at_val(
+        self, new_in_eng, new_eng, interp_type='val', 
+        bounds_error=None, fill_value= np.nan
+    ):
+        """2D interpolation at specified abscissa. 
+
+        Interpolation is logarithmic. 2D interpolation should be preferred over 1D interpolation over each abscissa in the interest of accuracy.
 
         Parameters
         ----------
-        new_rs : ndarray
-            The redshifts or redshift bin indices at which to interpolate. 
+        new_in_eng : ndarray
+            The injection energy abscissa or injection energy bin indices at which to interpolate.
+        new_eng : ndarray
+            The energy abscissa or energy abscissa bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
-            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+        bounds_error : bool, optional
+            See scipy.interpolate.interp1d.
+        fill_value : array-like or (array-like, array-like) or "extrapolate", optional
+            See scipy.interpolate.interp1d.
+
+        Returns
+        -------
+        TransFuncAtRedshift
+            New transfer function at the new abscissa. 
         """
 
-        raise AttributeError("Not implemented for TransFuncAtRedshift class.")
+        # 2D interpolation, specified by vectors of length eng, in_eng, 
+        # and grid dimensions in_eng x eng. 
+        # interp_func takes (eng, in_eng) as argument. 
 
-    def plot(self, ax, ind=None, step=1, indtype='ind', 
-        abs_plot=False, **kwargs):
+        non_zero_grid = self.get_grid_values()
+        # set zero values to some small value for log interp.
+        non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+
+        interp_func = interpolate.interp2d(
+            np.log(self.get_eng()),
+            np.log(self.get_in_eng()),  
+            np.log(non_zero_grid), 
+            bounds_error=bounds_error, 
+            fill_value=np.log(fill_value)
+        )
+
+        if interp_type == 'val':
+
+            new_grid_values = np.exp(
+                np.array([
+                    interp_func(np.log(new_eng), np.log(in_eng)) 
+                    for in_eng in new_in_eng
+                ])
+            )
+
+            # re-zero small values
+            new_grid_values[np.abs(new_grid_values) < 1e-100] = 0
+
+            new_spec_arr = [
+                Spectrum(new_eng, spec, rs=self.rs, in_eng=in_eng) 
+                for in_eng, spec in zip(new_in_eng, new_grid_values)
+            ]
+
+            return TransFuncAtRedshift(new_spec_arr, self.dlnz)
+
+        elif interp_type == 'bin':
+
+            log_new_in_eng = np.interp(
+                np.log(new_in_eng),
+                np.arange(self.get_in_eng().size),
+                np.log(self.get_in_eng())
+            )
+
+            log_new_eng = np.interp(
+                np.log(new_eng),
+                np.arange(self.get_eng().size),
+                np.log(self.get_eng())
+            )
+
+            return self.at_val(
+                np.exp(log_new_in_eng), np.exp(log_new_eng), 
+                interp_type = 'val', 
+                bounds_error = bounds_error, 
+                fill_value = fill_value
+            )
+
+
+    def plot(
+        self, ax, ind=None, step=1, indtype='ind', 
+        abs_plot=False, **kwargs
+    ):
         """Plots the contained `Spectrum` objects. 
 
         Parameters
@@ -264,7 +388,7 @@ class TransFuncAtRedshift(Spectra):
         
         if ind is None:
             return self.plot(
-                ax, ind=np.arange(self.in_eng.size), 
+                ax, ind=np.arange(self.get_in_eng().size), 
                 abs_plot=abs_plot, **kwargs
             )
 
@@ -327,29 +451,69 @@ class TransFuncAtRedshift(Spectra):
 
             if (np.issubdtype(type(ind),int) or 
                     np.issubdtype(type(ind), float)):
-                return self.at_in_eng(
-                        np.array([ind]), interp_type='val'
+                return self.at_val(
+                        np.array([ind]), self.get_eng(), interp_type='val'
                     ).plot(
                     ax, ind=0, abs_plot=abs_plot, **kwargs
                 )
 
             elif isinstance(ind, tuple):
                 eng_to_plot = np.arange(ind[0], ind[1], step)
-                return self.at_in_eng(
-                        eng_to_plot, interp_type='val'
+                return self.at_val(
+                        eng_to_plot, self.get_eng(), interp_type='val'
                     ).plot(
                     ax, abs_plot=abs_plot,**kwargs
                 )
 
             elif isinstance(ind, np.ndarray):
-                return self.at_in_eng(
-                        ind, interp_type='val'
+                return self.at_val(
+                        ind, self.get_eng(), interp_type='val'
                     ).plot(
                     ax, abs_plot=abs_plot, **kwargs
                 )
 
         else:
             raise TypeError("indtype must be either ind or in_eng.")
+
+    def sum_specs(self, weight=None):
+        """Sums the spectrum in each energy bin, weighted by `weight`. 
+
+        Applies Spectra.sum_specs, but sets `rs` of the output `Spectrum` correctly. 
+
+        Parameters
+        ----------
+        weight : ndarray or Spectrum, optional
+            The weight in each redshift bin, with weight of 1 for every bin if not specified.
+
+        Returns
+        -------
+        ndarray or Spectrum
+            An array or `Spectrum` of weight sums, one for each energy in `self.eng`, with length `self.length`. 
+
+        """
+        out_spec = super().sum_specs(weight)
+        out_spec.rs = self.rs
+
+        return out_spec
+
+    def append(self, spec):
+        """Appends a new Spectrum. 
+
+        Applies Spectra.append, but first checks that the appended spectrum has the same redshift, and is correctly ordered. 
+
+        Parameters
+        ----------
+        spec : Spectrum
+            The new spectrum to append.
+        """
+        if self.spec_arr:
+            if self.get_in_eng()[-1] > spec.in_eng: 
+                raise TypeError("new Spectrum has a smaller injection energy than the current last entry.")
+
+            if spec.rs != self.rs: 
+                raise TypeError("cannot append new spectrum with different injection redshift.")
+
+        super().append(spec)
 
 
 def process_raw_tf(file):
@@ -431,9 +595,17 @@ def process_raw_tf(file):
     norm_fac = (in_eng_absc/init_inj_eng_arr)*2
     # The transfer function is expressed as a dN/dE spectrum as a result of injecting approximately 2 particles in out_eng_absc[-1]. The exact number is computed and the transfer function appropriately normalized to 1 particle injection (at energy out_eng_absc[-1]).
 
+    test = Spectrum(
+                out_eng_absc_arr[0], tf_raw[0,0,:,0]/norm_fac[0], 
+                rs=np.exp(log_rs_absc[0]), in_eng = init_inj_eng_arr[0]
+            )
+
     tf_raw_list = [
-        [Spectrum(out_eng_absc_arr[i], tf_raw[j,0,:,i]/norm_fac[i], 
-            np.exp(log_rs_absc[j])) for j in np.arange(tf_raw.shape[0])
+        [
+            Spectrum(
+                out_eng_absc_arr[i], tf_raw[j,0,:,i]/norm_fac[i], 
+                rs=np.exp(log_rs_absc[j]), in_eng = init_inj_eng_arr[i]
+            ) for j in np.arange(tf_raw.shape[0])
         ]
         for i in np.arange(tf_raw.shape[-1])
     ]
@@ -446,11 +618,9 @@ def process_raw_tf(file):
     
 
     transfer_func_table = TransferFuncList([
-        TransFuncAtEnergy(spec_arr/N, init_inj_eng, 
-            0.002, rebin_eng = init_inj_eng_arr
-        ) for N, init_inj_eng, spec_arr in zip(normfac2,
-            init_inj_eng_arr, tqdm(tf_raw_list)
-        )
+        TransFuncAtEnergy(
+            spec_arr/N, 0.002, rebin_eng = init_inj_eng_arr
+        ) for N, spec_arr in zip(normfac2, tqdm(tf_raw_list))
     ])
 
     # This further rescales the spectrum so that it is now the transfer
