@@ -699,14 +699,14 @@ class Spectrum:
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow
 
-    def engloss_rebin(self, in_eng, out_eng=None):
+    def engloss_rebin(self, in_eng, out_eng):
         """ Converts an energy loss spectrum to a secondary spectrum.
 
         Parameters
         ----------
         in_eng : float
             The injection energy of the primary which gives rise to self.dNdE as the energy loss spectrum. 
-        out_eng : ndarray, optional
+        out_eng : ndarray
             The final energy abscissa to bin into. If not specified, it is assumed to be the same as the initial abscissa.
 
         Note
@@ -723,7 +723,9 @@ class Spectrum:
 
         # utils.compare_arr([sec_spec_eng, out_eng, sec_spec_eng - out_eng])
 
-        new_spec = rebin_N_arr(N_arr[pos_eng], sec_spec_eng[pos_eng], out_eng)
+        new_spec = rebin_N_arr(
+            N_arr[pos_eng], sec_spec_eng[pos_eng], out_eng
+        )
 
         self.eng  = out_eng 
         self.dNdE = new_spec.dNdE
