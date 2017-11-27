@@ -31,12 +31,14 @@ def get_bin_bound(eng):
     log_bin_width_low = np.log(eng[1]) - np.log(eng[0])
     log_bin_width_upp = np.log(eng[-1]) - np.log(eng[-2])
 
-    bin_boundary = np.sqrt(eng[:-1] * eng[1:])
+    bin_boundary = np.zeros(eng.size + 1)
+
+    bin_boundary[1:-1] = np.sqrt(eng[:-1] * eng[1:])
 
     low_lim = np.exp(np.log(eng[0]) - log_bin_width_low / 2)
     upp_lim = np.exp(np.log(eng[-1]) + log_bin_width_upp / 2)
-    bin_boundary = np.insert(bin_boundary, 0, low_lim)
-    bin_boundary = np.append(bin_boundary, upp_lim)
+    bin_boundary[0] = low_lim
+    bin_boundary[-1] = upp_lim
 
     return bin_boundary
 
@@ -51,7 +53,7 @@ def get_log_bin_width(eng):
     bin_boundary = get_bin_bound(eng)
     return np.diff(np.log(bin_boundary))
 
-def rebin_N_arr(N_arr, in_eng, out_eng):
+def rebin_N_arr(N_arr, in_eng, out_eng=None):
     """Rebins an array of particle number with fixed energy.
     
     Returns a `Spectrum` object. The rebinning conserves both total number and total energy.
@@ -62,8 +64,8 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
         An array of number of particles in each bin. 
     in_eng : ndarray
         An array of the energy abscissa for each bin. The total energy in each bin `i` should be `N_arr[i]*in_eng[i]`.
-    out_eng : ndarray
-        The new abscissa to bin into.
+    out_eng : ndarray, optional
+        The new abscissa to bin into. If unspecified, assumed to be in_eng.
 
     Returns
     -------
@@ -94,6 +96,10 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     if N_arr.size != in_eng.size:
         raise TypeError("The array for number of particles has a different length from the abscissa.")
 
+    if out_eng is None:
+        log_bin_width = get_log_bin_width(in_eng)
+        return Spectrum(in_eng, N_arr/(in_eng*log_bin_width))
+
     if not np.all(np.diff(out_eng) > 0):
         raise TypeError("new abscissa must be ordered in increasing energy.")
     if out_eng[-1] < in_eng[-1]:
@@ -105,17 +111,20 @@ def rebin_N_arr(N_arr, in_eng, out_eng):
     first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
     new_eng = np.insert(out_eng, 0, first_bin_eng)
 
-    # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
-    bin_ind = np.interp(in_eng, new_eng, 
-        np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
+    # Find the relative bin indices for in_eng wrt new_eng. The first bin in new_eng has bin index -1.
+    
+    bin_ind = np.interp(
+        in_eng, new_eng, np.arange(new_eng.size)-1, 
+        left = -2, right = new_eng.size
+    )
 
     # Locate where bin_ind is below 0, above self.length-1 and in between.
     ind_low = np.where(bin_ind < 0)
     ind_high = np.where(bin_ind == new_eng.size)
     ind_reg = np.where( (bin_ind >= 0) & (bin_ind <= new_eng.size - 1) )
 
-    if ind_high[0].size > 0: 
-        raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
+    # if ind_high[0].size > 0: 
+    #     raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
 
     # Get the total N and toteng in each bin
     toteng_arr = N_arr*in_eng
@@ -217,17 +226,30 @@ def discretize(eng, func_dNdE, *args):
 
     return rebin_N_arr(N, eng_mean, eng)
 
-def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
+def scatter(
+    tf, mode='dNdE', out_mode='dNdE', spec=None, eng_arr=None, 
+    N_arr=None, new_eng=None, dlnz=-1., rs=-1, frac=1.
+):
     """Produces a secondary spectrum. 
+
+    Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a `Spectrum` object (dN/dE) or with an array of number of particles (N) and an energy abscissa. Similarly, output in the form of a `Spectrum` object (dN/dE) or with an array of number of particles (N) is possible (the energy abscissa is implicitly assumed to be `eng_arr` in this case). 
     
     Parameters
     ----------
+    mode : {'dNdE', 'N'}
+        Specifies the type of input for the calculation.
+    out_mode : {'dNdE', 'N'}
+        Specifies the type of output for the calculation. 
     spec : Spectrum
-        The primary spectrum. 
+        The primary spectrum. Required if type is 'dNdE'.
+    eng_arr : ndarray
+        The primary enerby abscissa. Required if type is 'N'.
+    N_arr : ndarray
+        An array representing the number of particles in each energy bin. Required if type is 'N'. 
     tf : TransFuncAtRedshift
         The secondary spectrum scattering rate, given in dN/(dE dt).
     new_eng : ndarray, optional
-        The output spectrum abscissa. If not specified, defaults to spec.eng.
+        The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.
     dlnz : float, optional
         The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt). 
     frac : float or ndarray, optional
@@ -235,38 +257,60 @@ def scatter(spec, tf, new_eng=None, dlnz=-1., frac=1.):
     
     Returns
     -------
-    Spectrum
-        The secondary spectrum, dN/dE or dN/(dE dt). 
+    Spectrum or ndarray
+        The secondary spectrum, dN/dE or dN/(dE dt). If outmode is 'dNdE', stored as `Spectrum`, otherwise returns N or dN/dt, with the abscissa given by `eng_arr` implied.
 
     Note
     ----
-    spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
+    For 'dNdE', spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
 
     """
 
-    if new_eng is None:
-        new_eng = spec.eng
-
-    # Interpolates the transfer function at new_eng and spec.eng
-
-
-    if (np.any(spec.eng != tf.get_in_eng()) 
-        or np.any(new_eng != tf.get_eng())
-    ):
-        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
+    if mode == 'dNdE':
+        in_eng = spec.eng
+    elif mode == 'N':
+        in_eng = eng_arr
+    else:
+        raise TypeError('Invalid type specified.')
 
     # Gets the factor associated with time interval (see Ex. 3).
     if dlnz > 0:
-        if spec.rs < 0: 
-            raise TypeError('spec.rs must be initialized when dlnz is specified.')
-        fac = dlnz/phys.hubble(spec.rs)
+        if mode == 'dNdE':
+            if spec.rs < 0: 
+                raise TypeError('spec.rs must be initialized when dlnz is specified.')
+            fac = dlnz/phys.hubble(spec.rs)
+        elif mode == 'N':
+            if rs < 0:
+                raise TypeError('rs must be initialized when dlnz is specified')
+            fac = dlnz/phys.hubble(rs)
     else: 
         fac = 1
 
-    tf *= fac
-    N_arr = spec.totN('bin')*frac
+    if new_eng is None:
+            new_eng = in_eng
 
-    return tf.sum_specs(N_arr)
+    # Interpolates the transfer function at new_eng and spec.eng
+
+    if (np.any(in_eng != tf.get_in_eng()) 
+        or np.any(new_eng != tf.get_eng())
+    ):
+        tf = tf.at_val(in_eng, new_eng, bounds_error=True)
+
+    # Current fac is disabled because it is too slow.
+    # tf *= fac
+
+    if mode == 'dNdE':
+        N_arr = spec.totN('bin')*frac
+    elif mode == 'N':
+        N_arr *= frac
+
+    if out_mode == 'dNdE':
+        return tf.sum_specs(N_arr)
+    elif out_mode == 'N':
+        return (
+            np.dot(N_arr, tf.get_grid_values())
+            *new_eng*get_log_bin_width(new_eng)
+        )
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 
