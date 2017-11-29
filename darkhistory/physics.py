@@ -25,7 +25,7 @@ ele         = 1.60217662e-19
 thomson_xsec = 6.652458734e-25
 """Thomson cross section in cm^2."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
-"""Stefan-Boltzmann constant in eV^-3 cm^-2 s^2."""
+"""Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
 rydberg      = 13.60569253
 """Ionization potential of ground state hydrogen in eV."""
 lya_eng      = rydberg*3/4
@@ -325,3 +325,19 @@ def CMB_spec(eng, temp):
             expr = prefactor*np.exp(-eng/temp)/(1 - np.exp(-eng/temp))    
 
     return expr
+
+def CMB_eng_density(T):
+    """CMB energy density in eV/cm^3. 
+
+    Parameters
+    ----------
+    T : float or ndarray
+        CMB temperature
+
+    Returns
+    -------
+    float or ndarray
+        The energy density of the CMB.
+    """
+
+    return 4*stefboltz/c*T**4
