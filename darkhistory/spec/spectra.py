@@ -464,7 +464,7 @@ class Spectra:
              raise TypeError("invalid interp_type specified.")
 
     def plot(self, ax, ind=None, step=1, indtype='ind', 
-        abs_plot=False, **kwargs):
+        abs_plot=False, fac=1, **kwargs):
         """Plots the contained `Spectrum` objects. 
 
         Parameters
@@ -479,6 +479,8 @@ class Spectra:
             Specifies whether ind is an index or an abscissa value.
         abs_plot :  bool, optional
             Plots the absolute value if true.
+        fac : ndarray, optional
+            Factor to multiply the dN/dE array by. 
         **kwargs : optional
             All additional keyword arguments to pass to matplotlib.plt.plot. 
 
@@ -490,7 +492,7 @@ class Spectra:
         if ind is None:
             return self.plot(
                 ax, ind=np.arange(self.get_rs().size), 
-                abs_plot=abs_plot, **kwargs
+                abs_plot=abs_plot, fac=fac, **kwargs
             )
 
         if indtype == 'ind':
@@ -499,20 +501,20 @@ class Spectra:
                 if abs_plot:
                     return ax.plot(
                         self.get_eng(), 
-                        np.abs(self.spec_arr[ind].dNdE), 
+                        np.abs(self.spec_arr[ind].dNdE*fac), 
                         **kwargs
                     )
                 else:
                     return ax.plot(
                         self.get_eng(), 
-                        self.spec_arr[ind].dNdE, 
+                        self.spec_arr[ind].dNdE*fac, 
                         **kwargs
                     )
 
             elif isinstance(ind, tuple):
                 if abs_plot:
                     spec_to_plot = np.stack(
-                        [np.abs(self.spec_arr[i].dNdE) 
+                        [np.abs(self.spec_arr[i].dNdE*fac) 
                             for i in 
                                 np.arange(ind[0], ind[1], step)
                         ], 
@@ -520,7 +522,7 @@ class Spectra:
                     )
                 else:
                     spec_to_plot = np.stack(
-                        [self.spec_arr[i].dNdE 
+                        [self.spec_arr[i].dNdE*fac
                             for i in 
                                 np.arange(ind[0], ind[1], step)
                         ], 
@@ -532,13 +534,13 @@ class Spectra:
             elif isinstance(ind, np.ndarray):
                 if abs_plot:
                     spec_to_plot = np.stack(
-                        [np.abs(self.spec_arr[i].dNdE)
+                        [np.abs(self.spec_arr[i].dNdE*fac)
                             for i in ind
                         ], axis=-1
                     ) 
                 else:
                     spec_to_plot = np.stack(
-                        [self.spec_arr[i].dNdE
+                        [self.spec_arr[i].dNdE*fac
                             for i in ind
                         ], axis=-1
                     )
@@ -553,18 +555,18 @@ class Spectra:
             if (np.issubdtype(type(ind),int) or 
                     np.issubdtype(type(ind), float)):
                 return self.at_rs(np.array([ind])).plot(
-                    ax, ind=0, abs_plot=abs_plot, **kwargs
+                    ax, ind=0, abs_plot=abs_plot, fac=fac, **kwargs
                 )
 
             elif isinstance(ind, tuple):
                 rs_to_plot = np.arange(ind[0], ind[1], step)
                 return self.at_rs(rs_to_plot).plot(
-                    ax, abs_plot=abs_plot,**kwargs
+                    ax, abs_plot=abs_plot, fac=fac, **kwargs
                 )
 
             elif isinstance(ind, np.ndarray):
                 return self.at_rs(ind).plot(
-                    ax, abs_plot=abs_plot, **kwargs
+                    ax, abs_plot=abs_plot, fac=fac, **kwargs
                 )
 
         else:
