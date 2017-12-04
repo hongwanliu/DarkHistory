@@ -381,7 +381,7 @@ class TransFuncAtRedshift(Spectra):
 
     def plot(
         self, ax, ind=None, step=1, indtype='ind', 
-        abs_plot=False, **kwargs
+        abs_plot=False, fac=1, **kwargs
     ):
         """Plots the contained `Spectrum` objects. 
 
@@ -408,7 +408,7 @@ class TransFuncAtRedshift(Spectra):
         if ind is None:
             return self.plot(
                 ax, ind=np.arange(self.get_in_eng().size), 
-                abs_plot=abs_plot, **kwargs
+                abs_plot=abs_plot, fac=fac, **kwargs
             )
 
         if indtype == 'ind':
@@ -417,20 +417,20 @@ class TransFuncAtRedshift(Spectra):
                 if abs_plot:
                     return ax.plot(
                         self.get_eng(), 
-                        np.abs(self.spec_arr[ind].dNdE), 
+                        np.abs(self.spec_arr[ind].dNdE*fac), 
                         **kwargs
                     )
                 else:
                     return ax.plot(
                         self.get_eng(), 
-                        self.spec_arr[ind].dNdE, 
+                        self.spec_arr[ind].dNdE*fac, 
                         **kwargs
                     )
 
             elif isinstance(ind, tuple):
                 if abs_plot:
                     spec_to_plot = np.stack(
-                        [np.abs(self.spec_arr[i].dNdE) 
+                        [np.abs(self.spec_arr[i].dNdE*fac) 
                             for i in 
                                 np.arange(ind[0], ind[1], step)
                         ], 
@@ -438,7 +438,7 @@ class TransFuncAtRedshift(Spectra):
                     )
                 else:
                     spec_to_plot = np.stack(
-                        [self.spec_arr[i].dNdE 
+                        [self.spec_arr[i].dNdE*fac
                             for i in 
                                 np.arange(ind[0], ind[1], step)
                         ], 
@@ -450,13 +450,13 @@ class TransFuncAtRedshift(Spectra):
             elif isinstance(ind, np.ndarray):
                 if abs_plot:
                     spec_to_plot = np.stack(
-                        [np.abs(self.spec_arr[i].dNdE)
+                        [np.abs(self.spec_arr[i].dNdE*fac)
                             for i in ind
                         ], axis=-1
                     ) 
                 else:
                     spec_to_plot = np.stack(
-                        [self.spec_arr[i].dNdE
+                        [self.spec_arr[i].dNdE*fac
                             for i in ind
                         ], axis=-1
                     )
@@ -473,7 +473,7 @@ class TransFuncAtRedshift(Spectra):
                 return self.at_val(
                         np.array([ind]), self.get_eng(), interp_type='val'
                     ).plot(
-                    ax, ind=0, abs_plot=abs_plot, **kwargs
+                    ax, ind=0, abs_plot=abs_plot, fac=fac, **kwargs
                 )
 
             elif isinstance(ind, tuple):
@@ -481,14 +481,14 @@ class TransFuncAtRedshift(Spectra):
                 return self.at_val(
                         eng_to_plot, self.get_eng(), interp_type='val'
                     ).plot(
-                    ax, abs_plot=abs_plot,**kwargs
+                    ax, abs_plot=abs_plot, fac=fac, **kwargs
                 )
 
             elif isinstance(ind, np.ndarray):
                 return self.at_val(
                         ind, self.get_eng(), interp_type='val'
                     ).plot(
-                    ax, abs_plot=abs_plot, **kwargs
+                    ax, abs_plot=abs_plot, fac=fac, **kwargs
                 )
 
         else:
