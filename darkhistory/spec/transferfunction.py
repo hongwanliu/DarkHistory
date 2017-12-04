@@ -144,6 +144,10 @@ class TransFuncAtRedshift(Spectra):
     ----------
     spec_arr : list of Spectrum
         List of Spectrum to be stored together. 
+    dlnz : float
+        d ln(1+z) associated with this transfer function. 
+    rs : float
+        Redshift of this transfer function.
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the Spectrum objects into. 
 
@@ -157,10 +161,10 @@ class TransFuncAtRedshift(Spectra):
         Redshift of this transfer function.      
     """
 
-    def __init__(self, spec_arr, dlnz, rebin_eng=None):
+    def __init__(self, spec_arr, dlnz, rs=-1, rebin_eng=None):
 
         self.dlnz = dlnz
-        self.rs = -1
+        self.rs = rs
         super().__init__(spec_arr, rebin_eng)
         if spec_arr:
             if np.any(np.abs(np.diff(self.get_rs())) > 0):
