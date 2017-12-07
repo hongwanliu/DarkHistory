@@ -109,7 +109,7 @@ def peebles_C(xe, rs):
 	# Rate is averaged over 3/4 of excited state being in 2p, 1/4 in 2s. 
 	return (
 		(3*rate_2p1s/4 + rate_2s1s/4)
-		/(3*rate_2p_1s/4 + rate_2s1s/4 + rate_ion)
+		/(3*rate_2p1s/4 + rate_2s1s/4 + rate_ion)
 	)
 
 def get_history(
@@ -156,7 +156,7 @@ def get_history(
 				2*T_matter/rs - phys.dtdz(rs) * (
 					compton_cooling_rate(xe(y), T_matter, rs)
 					+ (
-						1/(1 + xe(y) + phys.nHe/nH)
+						1/(1 + xe(y) + phys.nHe/phys.nH)
 						* 2/(3 * phys.nH * rs**3)
 						* f_heating(rs, xe(y))
 						* dm_injection_rate(rs)
@@ -185,9 +185,17 @@ def get_history(
 				)
 			)
 
-		T_matter = var[0]
-		y = np.arctanh(2*(var[1] - 0.5))
+		T_matter, y = var[0], var[1]
 
 		return [dT_dz(T_matter, y, rs), dy_dz(T_matter, y, rs)]
 
-	return odeint(tla_diff_eq, init_cond, rs_vec, mxstep = 500)
+	if init_cond[1] == 1:
+		init_cond[1] = 1 - 1e-12
+	else:
+		init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
+
+	soln = odeint(tla_diff_eq, init_cond, rs_vec, mxstep = 500)
+
+	soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
+
+	return soln

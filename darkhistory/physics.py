@@ -133,6 +133,32 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
 
     return 1/(rs*hubble(rs, H0, omega_m, omega_rad, omega_lambda))
 
+def get_optical_depth(rs_vec, xe_vec):
+    """Computes the optical depth given an ionization history.
+    
+    Parameters
+    ----------
+    rs_vec : ndarray
+        Redshift (1+z). 
+    xe_vec : ndarray
+        Free electron fraction xe = ne/nH. 
+
+    Returns
+    -------
+    float
+        The optical depth. 
+    """
+    from darkhistory.spec.spectools import get_log_bin_width
+
+    rs_log_bin_width = get_log_bin_width(rs_vec)
+    dtdz_vec = dtdz(rs_vec)
+
+    return np.dot(
+        xe_vec*nH*thomson_xsec*c*dtdz_vec,
+        rs_vec**4*rs_log_bin_width
+    )
+
+
 def get_inj_rate(inj_type, inj_fac):
     """Dark matter injection rate function.
 
