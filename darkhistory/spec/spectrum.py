@@ -416,7 +416,6 @@ class Spectrum:
             if bound_type == 'bin':
 
                 if not all(np.diff(bound_arr) >= 0):
-                    print(bound_arr)
                     raise TypeError("bound_arr must have increasing entries.")
 
                 N_in_bin = np.zeros(bound_arr.size-1)
@@ -437,22 +436,31 @@ class Spectrum:
                     upp_ceil  = int(np.ceil(upp))
                     upp_floor = int(np.floor(upp))
                     # Sum the bins that are completely between the bounds.
-                    N_full_bins = np.dot(dNdlogE[low_ceil:upp_floor],log_bin_width[low_ceil:upp_floor])
+                    N_full_bins = np.dot(
+                        dNdlogE[low_ceil:upp_floor],
+                        log_bin_width[low_ceil:upp_floor]
+                    )
 
                     N_part_bins = 0
 
                     if low_floor == upp_floor or low_ceil == upp_ceil:
                         # Bin indices are within the same bin. The second requirement covers the case where upp_ceil is length. 
-                        N_part_bins += (dNdlogE[low_floor] * (upp - low)
-                            * log_bin_width[low_floor])
+                        N_part_bins += (
+                            dNdlogE[low_floor] * (upp - low)
+                            * log_bin_width[low_floor]
+                        )
                     else:
                         # Add up part of the bin for the low partial bin and the high partial bin. 
-                        N_part_bins += (dNdlogE[low_floor] * (low_ceil - low)
-                            * log_bin_width[low_floor])
+                        N_part_bins += (
+                            dNdlogE[low_floor] * (low_ceil - low)
+                            * log_bin_width[low_floor]
+                        )
                         if upp_floor < length:
                         # If upp_floor is length, then there is no partial bin for the upper index. 
-                            N_part_bins += (dNdlogE[upp_floor]
-                                * (upp-upp_floor) * log_bin_width[upp_floor])
+                            N_part_bins += (
+                                dNdlogE[upp_floor]
+                                * (upp-upp_floor) * log_bin_width[upp_floor]
+                            )
 
                     N_in_bin[i] = N_full_bins + N_part_bins
 

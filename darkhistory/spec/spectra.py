@@ -3,6 +3,7 @@
 import numpy as np
 from darkhistory import utilities as utils
 from darkhistory.spec.spectools import get_bin_bound
+from darkhistory.spec.spectools import get_log_bin_width
 from darkhistory.spec.spectrum import Spectrum
 import matplotlib.pyplot as plt
 import warnings
@@ -330,7 +331,72 @@ class Spectra:
         """
         invSpec = Spectra([1./spec for spec in self])
 
-        return other*invSpec   
+        return other*invSpec 
+
+    def totN(self, bound_type=None, bound_arr=None):
+        """Returns the total number of particles in the spectra.
+
+        The part of the `Spectrum` objects to find the total number of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`. 
+
+        Parameters
+        ----------
+        bound_type : {'bin', 'eng', None}
+            The type of bounds to use. Bound values do not have to be within the [0:length] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
+
+        bound_arr : ndarray, optional
+            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
+
+        Returns
+        -------
+        ndarray
+            Total number of particles in the spectrum. 
+
+        """
+        in_eng = self.get_in_eng()
+        eng = self.get_eng()
+        gridval = self.get_grid_values()
+
+        # np.dot is sum(x[i,j,:] * y[:, k])
+        grid_dNdlogE_val = np.dot(gridval, eng)
+        log_bin_width = get_log_bin_width(eng)
+
+        if bound_type is not None:
+
+            if bound_arr is None:
+
+                bound_type = 'bin'
+                bound_arr  = np.arange(eng.size + 1)
+
+            if bound_type == 'bin':
+
+                if not all(np.diff(bound_arr) >= 0):
+                    raise TypeError(
+                        "bound_arr must have increasing entries."
+                    )
+
+                # Size is number of totals requested x number of Spectrums
+                N_in_bin = np.zeros((bound_arr.size - 1, in_eng.size))
+
+                if bound_arr[0] > eng.size or bound_arr[-1] < 0:
+                    return N_in_bin
+
+                for i, (low,upp) in enumerate(
+                    (bound_arr[:-1], bound_arr[1:])
+                ):
+
+                    # Set the lower and upper bounds, including case where
+                    # low and upp are outside of the bins. 
+                    if low > length or upp < 0:
+                        continue
+
+                    low_ceil  = int(np.ceil(low))
+                    low_floor = int(np.floor(low))
+                    upp_ceil  = int(np.ceil(upp))
+                    upp_floor = int(np.floor(upp))
+
+                    # Sum the bins that are completely between the bounds. 
+                    N_full_bins = 
+
 
     def integrate_each_spec(self,weight=None):
         """Sums each `Spectrum`, each `eng` bin weighted by `weight`. 
@@ -398,8 +464,35 @@ class Spectra:
         --------
         spectrum.Spectrum.rebin
         """
-        for spec in self:
-            spec.rebin(out_eng)
+
+        if not np.all(np.diff(out_eng) > 0):
+            raise TypeError('new abscissa must be ordered in increasing energy.')
+
+        # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.length-1. Bin indices are wrt the bin centers.
+
+        # Add an additional bin at the lower end of out_eng so that underflow can be treated easily.
+
+        first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
+        new_eng = np.insert(out_eng, 0, first_bin_eng)
+
+        # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
+        bin_ind = np.interp(self.eng, new_eng, 
+            np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
+
+        # Locate where bin_ind is below 0, above self.length-1 and in between.
+        ind_low = np.where(bin_ind < 0)
+        ind_high = np.where(bin_ind == new_eng.size)
+        ind_reg = np.where( (bin_ind >= 0) & (bin_ind <= new_eng.size - 1) )
+
+        if ind_high[0].size > 0: 
+            warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
+
+
+
+
+
+        # for spec in self:
+        #     spec.rebin(out_eng)
 
 
     def append(self, spec):
