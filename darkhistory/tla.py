@@ -112,75 +112,82 @@ def peebles_C(xe, rs):
 		/(3*rate_2p_1s/4 + rate_2s1s/4 + rate_ion)
 	)
 
+def get_history(
+	init_cond, f_H_ion, f_H_exc, f_heating, 
+	dm_injection_rate, rs_vec
+):
+	"""Returns the ionization and thermal history of the IGM. 
 
+	Parameters
+	----------
+	init_cond : array
+		Array containing [initial temperature, initial xe]
+	fz_H_ion : function
+		f(xe, rs) for hydrogen ionization. 
+	fz_H_exc : function
+		f(xe, rs) for hydrogen Lyman-alpha excitation. 
+	f_heating : function
+		f(xe, rs) for heating. 
+	dm_injection_rate : function
+		Injection rate of DM as a function of redshift. 
+	rs_vec : ndarray
+		Abscissa for the solution. 
 
+	Returns
+	-------
+	list of ndarray
+		[temperature solution (in eV), xe solution]. 
 
+	Note
+	----
+	The actual differential equation that we solve is expressed in terms of y = arctanh(2*(xe - 0.5)). 
 
-# def comptonCMB(xe, Tm, rs): 
-# 	# Compton cooling rate
-# 	return (xe/(1 + xe + nHe/nH)) * (TCMB(rs) - Tm)*32*thomsonXSec*stefBoltz*TCMB(rs)**4/(3*me)
+	"""
 
-# def KLyman(rs, omegaM=omegaM, omegaRad=omegaRad, omegaLambda=omegaLambda): 
-# 	# Rate at which Lya-photons cross the line
-# 	return (c/lyaFreq)**3/(8*pi*hubblerates(rs, H0, omegaM, omegaRad, omegaLambda))
+	def tla_diff_eq(var, rs):
+		# Returns an array of values for [dT/dz, dy/dz].
+		# var is the [temperature, xe] inputs. 
 
-# def alphae(Tm): 
-# 	# Case-B recombination coefficient
-# 	return 1e-13 * (4.309 * (1.16405*Tm)**(-0.6166))/(1 + 0.6703*(1.16405*Tm)**0.5300)
+		def xe(y):
+			return 0.5 + 0.5*np.tanh(y)
 
-# def betae(Tr):
-# 	# Case-B photoionization coefficient
-# 	thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
-# 	return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3) 
-
-# def CPeebles(xe,rs):
-# 	# Peebles C-factor 
-# 	num = Lambda2s*(1-xe) + 1/(KLyman(rs) * nH * rs**3)
-# 	den = Lambda2s*(1-xe) + 1/(KLyman(rs) * nH * rs**3) + betae(TCMB(rs))*(1-xe)
-# 	return num/den
-
-def getTLADE(fz, injRate):
-
-	def TLADE(var,rs):
-
-		def xe(y): 
-			return 0.5 + 0.5*tanh(y)
-
-		def dTmdz(Tm,y,rs):
-			return 2*Tm/rs - dtdz(rs) * (
-				comptonCMB(xe(y), Tm, rs) 
-				+ 1./(1. + xe(y) + nHe/nH)*2/(3*nH*rs**3)*fz['Heat'](rs,xe(y))*injRate(rs)
+		def dT_dz(T_matter, y, rs):
+			return (
+				2*T_matter/rs - phys.dtdz(rs) * (
+					compton_cooling_rate(xe(y), T_matter, rs)
+					+ (
+						1/(1 + xe(y) + phys.nHe/nH)
+						* 2/(3 * phys.nH * rs**3)
+						* f_heating(rs, xe(y))
+						* dm_injection_rate(rs)
+					)
 				)
-
-		def dydz(Tm,y,rs):
-			return (2*cosh(y)**2) * dtdz(rs) * (
-				CPeebles(xe(y),rs)*(
-					alphae(Tm)*xe(y)**2*nH*rs**3  
-					- betae(TCMB(rs))*(1.-xe(y))*exp(-lyaEng/Tm)
-					) 
-				- fz['HIon'](rs,xe(y))*injRate(rs)/(rydberg*nH*rs**3) 
-				- (1 - CPeebles(xe(y),rs))*fz['HLya'](rs,xe(y))*injRate(rs)/(lyaEng*nH*rs**3)
-				)
-
-		Tm, y = var
-
-		# dvardz = ([
-		# 	(2*Tm/rs - 
-		# 	dtdz(rs)*(comptonCMB(xe(y), Tm, rs))),
-		# 	(2*cosh(y)**2) * dtdz(rs) * (CPeebles(xe(y),rs)*
-		# 		(alphae(Tm)*xe(y)**2*nH*rs**3 - 
-		# 			betae(TCMB(rs))*(1-xe(y))*exp(-lyaEng/Tm)))])
-
-	
-		dvardz = (
-			[dTmdz(Tm,y,rs), dydz(Tm,y,rs)]
 			)
-		
-		return dvardz
 
-	return TLADE
+		def dy_dz(T_matter, y, rs):
+			return (
+				2 * np.cosh(y)**2 * phys.dtdz(rs) * (
+					peebles_C(xe(y), rs) * (
+						alpha_recomb(T_matter) * xe(y)**2 * phys.nH * rs**3
+						- (
+							beta_ion(phys.TCMB(rs)) * (1 - xe(y))
+							* np.exp(-phys.lya_eng/T_matter)
+						)
+					)
+					- (
+						f_H_ion(rs, xe(y)) * dm_injection_rate(rs)
+						/ (phys.rydberg * phys.nH * rs**3)
+					)
+					- (1 - peebles_C(xe(y), rs)) * (
+						f_H_exc(rs, xe(y)) * dm_injection_rate(rs) 
+						/ (phys.lya_eng * phys.nH * rs**3)
+					)
+				)
+			)
 
-def getIonThermHist(initrs,initCond,fz,injRate,rsVec):
+		T_matter = var[0]
+		y = np.arctanh(2*(var[1] - 0.5))
 
-	ionThermHistDE = getTLADE(fz,injRate)
-	return odeint(ionThermHistDE,initCond,rsVec,mxstep=500)
+		return [dT_dz(T_matter, y, rs), dy_dz(T_matter, y, rs)]
+
+	return odeint(tla_diff_eq, init_cond, rs_vec, mxstep = 500)
