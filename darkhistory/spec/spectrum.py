@@ -647,8 +647,8 @@ class Spectrum:
             # raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
 
         # Get the total N and toteng in each bin of self.dNdE
-        N_arr = self.totN('bin', np.arange(self.length + 1))
-        toteng_arr = self.toteng('bin', np.arange(self.length + 1))
+        N_arr = self.totN('bin')
+        toteng_arr = self.toteng('bin')
 
         N_arr_low = N_arr[ind_low]
         N_arr_high = N_arr[ind_high]
