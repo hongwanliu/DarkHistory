@@ -36,7 +36,7 @@ class TransFuncAtEnergy(Spectra):
         The d ln(1+z) step for the transfer function. 
 
     """
-    def __init__(self, spec_arr, dlnz, rebin_eng=None):
+    def __init__(self, spec_arr, dlnz=-1, rebin_eng=None):
 
         self.dlnz = dlnz
         super().__init__(spec_arr, rebin_eng)
@@ -602,7 +602,9 @@ def process_raw_tf(file):
         for in_eng,out_eng_absc in zip(in_eng_absc, out_eng_absc_arr)
     ])
 
-    # Import raw data. 
+    # Import raw data.
+    # Raw data has shape in_eng, rs, xe, out_eng, 
+    # type:{photonspectrum, lowengphot, lowengelec}
 
     tf_raw = np.load(file)
     tf_raw = np.swapaxes(tf_raw, 0, 1)
@@ -616,11 +618,6 @@ def process_raw_tf(file):
 
     norm_fac = (in_eng_absc/init_inj_eng_arr)*2
     # The transfer function is expressed as a dN/dE spectrum as a result of injecting approximately 2 particles in out_eng_absc[-1]. The exact number is computed and the transfer function appropriately normalized to 1 particle injection (at energy out_eng_absc[-1]).
-
-    test = Spectrum(
-                out_eng_absc_arr[0], tf_raw[0,0,:,0]/norm_fac[0], 
-                rs=np.exp(log_rs_absc[0]), in_eng = init_inj_eng_arr[0]
-            )
 
     tf_raw_list = [
         [
