@@ -410,8 +410,7 @@ class Spectrum:
 
             if bound_arr is None:
 
-                bound_type = 'bin'
-                bound_arr  = np.arange(self.eng.size+1)
+                return dNdlogE * log_bin_width 
 
             if bound_type == 'bin':
 
@@ -471,7 +470,8 @@ class Spectrum:
                 eng_bin_ind = np.interp( 
                     np.log(bound_arr), 
                     np.log(bin_boundary), np.arange(bin_boundary.size), 
-                    left = -1, right = length + 1)
+                    left = -1, right = length + 1
+                )
 
                 return self.totN('bin', eng_bin_ind)
 
@@ -506,8 +506,7 @@ class Spectrum:
 
             if bound_arr is None:
 
-                bound_type = 'bin'
-                bound_arr = np.arange(self.eng.size+1)
+                return dNdlogE * eng * log_bin_width 
 
             if bound_type == 'bin':
 

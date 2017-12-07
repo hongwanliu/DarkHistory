@@ -341,7 +341,7 @@ class Spectra:
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:length] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
 
         bound_arr : ndarray, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
@@ -352,12 +352,14 @@ class Spectra:
             Total number of particles in the spectrum. 
 
         """
+
         in_eng = self.get_in_eng()
         eng = self.get_eng()
         gridval = self.get_grid_values()
 
         # np.dot is sum(x[i,j,:] * y[:, k])
-        grid_dNdlogE_val = np.dot(gridval, eng)
+        # dNdlogE has size in_eng x eng, we make use of broadcasting.
+        dNdlogE = gridval * eng 
         log_bin_width = get_log_bin_width(eng)
 
         if bound_type is not None:
@@ -386,7 +388,7 @@ class Spectra:
 
                     # Set the lower and upper bounds, including case where
                     # low and upp are outside of the bins. 
-                    if low > length or upp < 0:
+                    if low > eng.size or upp < 0:
                         continue
 
                     low_ceil  = int(np.ceil(low))
@@ -395,7 +397,55 @@ class Spectra:
                     upp_floor = int(np.floor(upp))
 
                     # Sum the bins that are completely between the bounds. 
-                    N_full_bins = 
+                    N_full_bins = np.dot(
+                        dNdlogE[:,low_ceil:upp_floor],
+                        log_bin_width[low_ceil:upp_floor]
+                    )
+
+                    N_part_bins = np.zeros_like(in_eng)
+
+                    if low_floor == upp_floor or low_ceil == upp_ceil:
+                        # Bin indices are within the same bin. The second requirement covers the case where upp_ceil is eng.size.
+                        N_part_bins += (
+                            dNdlogE[:,low_floor] * (upp - low)
+                            * log_bin_width[low_floor]
+                        )
+                    else:
+                        # Add up part of the bin for the low partial bin and
+                        # the high partial bin. 
+                        N_part_bins += (
+                            dNdlogE[:,low_floor] * (low_ceil - low)
+                            * log_bin_width[low_floor]
+                        )
+                        if upp_floor < eng.size:
+                            # If upp_floor is eng.size, then there is no
+                            # partial bin for the upper index. 
+                            N_part_bins += (
+                                dNdlogE[:,upp_floor] * (upp - upp_floor)
+                                * log_bin_width[upp_floor]
+                            )
+
+                    N_in_bin[i] = N_full_bins + N_part_bins
+
+                return N_in_bin
+
+            if bound_type == 'eng':
+                bin_boundary = get_bin_bound(eng)
+                eng_bin_ind = np.interp(
+                    np.log(bound_arr),
+                    np.log(bin_boundary), np.arange(bin_boundary.size),
+                    left = -1, right = eng.size + 1
+                )
+
+                return self.totN('bin', eng_bin_ind)
+
+        else:
+            underflow_vec = np.array([spec.underflow['N'] for spec in self])
+            return np.dot(dNdlogE, log_bin_width) + underflow_vec
+
+
+
+
 
 
     def integrate_each_spec(self,weight=None):
@@ -468,7 +518,7 @@ class Spectra:
         if not np.all(np.diff(out_eng) > 0):
             raise TypeError('new abscissa must be ordered in increasing energy.')
 
-        # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.length-1. Bin indices are wrt the bin centers.
+        # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.eng.size-1. Bin indices are wrt the bin centers.
 
         # Add an additional bin at the lower end of out_eng so that underflow can be treated easily.
 
