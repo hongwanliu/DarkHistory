@@ -21,6 +21,8 @@ class Spectra:
         List of Spectrum to be stored together.
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the `Spectrum` objects into.
+    rebin_type : {'1D', '2D'}, optional
+        Whether to rebin each `Spectrum` separately (`'1D'`), or the whole `Spectra` object at once (`'2D'`). Default is `'2D'`. 
 
     Attributes
     ----------
@@ -33,12 +35,12 @@ class Spectra:
     # ndarray first, which isn't what we want.
     __array_priority__ = 1           
 
-    def __init__(self, spec_arr, rebin_eng=None):
+    def __init__(self, spec_arr, rebin_eng=None, rebin_type='2D'):
 
         self.spec_arr = spec_arr
 
         if rebin_eng is not None:
-            self.rebin(rebin_eng)
+            self.rebin(rebin_eng, rebin_type)
 
         if spec_arr != []:
 
@@ -616,7 +618,7 @@ class Spectra:
         else:
             raise TypeError("weight must be an ndarray or Spectrum.")
 
-    def rebin(self, out_eng):
+    def rebin(self, out_eng, rebin_type='2D'):
         """ Re-bins all `Spectrum` objects according to a new abscissa.
 
         Rebinning conserves total number and total energy.
@@ -626,93 +628,119 @@ class Spectra:
         out_eng : ndarray
             The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]`, then the new underflow will be filled. If `self.eng` has values that exceed `out_eng[-1]`, then an error is returned.
 
+        rebin_type : {'1D', '2D'}, optional
+            Whether to rebin each `Spectrum` separately (`'1D'`), or the whole `Spectra` object at once (`'2D'`). Default is `'2D'`.
+
         See Also
         --------
         spec.spectools.rebin_N_2D_arr
         """
 
-        if not np.all(np.diff(out_eng) > 0):
-            raise TypeError('new abscissa must be ordered in increasing energy.')
+        if rebin_type == '2D':
 
-        # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.eng.size-1. Bin indices are wrt the bin centers.
+            if not np.all(np.diff(out_eng) > 0):
+                raise TypeError('new abscissa must be ordered in increasing energy.')
 
-        # Add an additional bin at the lower end of out_eng so that underflow can be treated easily.
+            # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.eng.size-1. Bin indices are wrt the bin centers.
 
-        first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
-        new_eng = np.insert(out_eng, 0, first_bin_eng)
+            # Add an additional bin at the lower end of out_eng so that underflow can be treated easily.
 
-        # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
-        bin_ind = np.interp(self.eng, new_eng, 
-            np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
+            first_bin_eng = np.exp(
+                np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0]))
+            )
+            new_eng = np.insert(out_eng, 0, first_bin_eng)
 
-        # Locate where bin_ind is below 0, above self.length-1 and in between.
-        ind_low = np.where(bin_ind < 0)
-        ind_high = np.where(bin_ind == new_eng.size)
-        ind_reg = np.where( (bin_ind >= 0) & (bin_ind <= new_eng.size - 1) )
+            # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
+            bin_ind = np.interp(self.eng, new_eng, 
+                np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
 
-        if ind_high[0].size > 0: 
-            warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
+            # Locate where bin_ind is below 0, above self.length-1 and in between.
+            ind_low = np.where(bin_ind < 0)
+            ind_high = np.where(bin_ind == new_eng.size)
+            ind_reg = np.where( 
+                (bin_ind >= 0) & (bin_ind <= new_eng.size - 1) 
+            )
 
-        # These arrays are of size in_eng x eng. 
-        N_arr = self.totN('bin')
-        toteng_arr = self.toteng('bin')
+            if ind_high[0].size > 0: 
+                warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
 
-        N_arr_low  = N_arr[:,ind_low]
-        N_arr_high = N_arr[:,ind_high]
-        N_arr_reg  = N_arr[:,ind_reg]
+            # These arrays are of size in_eng x eng. 
+            N_arr = self.totN('bin')
+            toteng_arr = self.toteng('bin')
 
-        toteng_arr_low = toteng_arr[:,ind_low]
+            N_arr_low  = N_arr[:,ind_low]
+            N_arr_high = N_arr[:,ind_high]
+            N_arr_reg  = N_arr[:,ind_reg]
 
-        # Bin width of the new array. Use only the log bin width. 
-        new_E_dlogE = new_eng * get_log_bin_width(new_eng)
+            toteng_arr_low = toteng_arr[:,ind_low]
 
-        # Regular bins first. 
+            # Bin width of the new array. Use only the log bin width. 
+            new_E_dlogE = new_eng * get_log_bin_width(new_eng)
 
-        # reg_bin_low is the array of the lower bins to be allocated the
-        # particles in N_arr_reg, similarly reg_bin_upp. This should also
-        # take care of the case where bin_ind is an integer. 
+            # Regular bins first. 
 
-        reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
-        reg_bin_upp = reg_bin_low + 1
+            # reg_bin_low is the array of the lower bins to be allocated the
+            # particles in N_arr_reg, similarly reg_bin_upp. This should also
+            # take care of the case where bin_ind is an integer. 
 
-        # Takes care of the case where eng[-1] = new_eng[-1], which falls
-        # under regular indices. Remember the extra bin on the left.
-        reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
-        reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
+            reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
+            reg_bin_upp = reg_bin_low + 1
 
-        # Split the particles up into the lower bin and upper bin. 
-        # Remember there's an extra bin on the left when indexing into
-        # new_E_dlogE. 
-        reg_dNdE_low = (
-            (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
-            / new_E_dlogE[reg_bin_low+1]
-        )
-        reg_dNdE_upp = (
-            (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
-            / new_E_dlogE[reg_bin_upp+1]
-        )
+            # Takes care of the case where eng[-1] = new_eng[-1], which falls
+            # under regular indices. Remember the extra bin on the left.
+            reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
+            reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
 
-        # Handle low bins. 
-        low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
+            # Split the particles up into the lower bin and upper bin. 
+            # Remember there's an extra bin on the left when indexing into
+            # new_E_dlogE. 
+            reg_dNdE_low = (
+                (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
+                / new_E_dlogE[reg_bin_low+1]
+            )
+            reg_dNdE_upp = (
+                (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
+                / new_E_dlogE[reg_bin_upp+1]
+            )
 
-        N_above_underflow = np.sum(
-            (bin_ind[ind_low] - low_bin_low) * N_arr_low, axis = 1
-        )
-        eng_above_underflow = N_above_underflow * new_eng[1]
+            # Handle low bins. 
+            low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
 
-        N_underflow = np.sum(N_arr_low, axis=1) - N_above_underflow
-        eng_underflow = np.sum(toteng_arr_low, axis=1) - eng_above_underflow
-        low_dNdE = N_above_underflow/new_E_dlogE[1]
+            N_above_underflow = np.sum(
+                (bin_ind[ind_low] - low_bin_low) * N_arr_low, axis = 1
+            )
+            eng_above_underflow = N_above_underflow * new_eng[1]
 
-        # Add up, obtain the new dN/dE. 
-        new_dNdE = np.zeros(self.get_in_eng().size, new_eng.size)
-        new_dNdE[:,1] += low_dNdE 
-        # reg_dNde_low = -1 refers to new_eng[0]
+            N_underflow = np.sum(N_arr_low, axis=1) - N_above_underflow
+            eng_underflow = (
+                np.sum(toteng_arr_low, axis=1) - eng_above_underflow
+            )
+            low_dNdE = N_above_underflow/new_E_dlogE[1]
 
+            # Add up, obtain the new dN/dE. 
+            new_dNdE = np.zeros(self.get_in_eng().size, new_eng.size)
+            new_dNdE[:,1] += low_dNdE 
+            # reg_dNde_low = -1 refers to new_eng[0]
+            new_dNdE[reg_bin_low+1] += reg_dNdE_low 
+            new_dNdE[reg_bin_upp+1] += reg_dNdE_upp
 
+            rs_vec = self.get_rs()
+            in_eng_vec = self.get_in_eng()
 
-        # for spec in self:
-        #     spec.rebin(out_eng)
+            new_spec_arr = [
+                Spectrum(
+                    new_eng[1:], new_dNdE[i,1:], rs=rs, in_eng=in_eng
+                ) for i, (rs, in_eng) in enumerate(rs_vec, in_eng_vec)
+            ]
+
+            self.spec_arr = new_spec_arr 
+
+        elif rebin_type == '1D':
+            for spec in self:
+                spec.rebin(out_eng)
+
+        else:
+            raise TypeError('invalid rebin_type specified.')
 
 
     def append(self, spec):
