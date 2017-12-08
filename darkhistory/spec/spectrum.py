@@ -462,12 +462,10 @@ class Spectrum:
         """
         log_bin_width = get_log_bin_width(self.eng)
         if self._spec_type == 'N':
-            self.dNdE = self.N/(self.eng*log_bin_width)
-            self._data = self.dNdE 
+            self.N /= (self.eng*log_bin_width) 
             self._spec_type = 'dNdE'
         elif self._spec_type == 'dNdE':
-            self.N = self.dNdE*self.eng*log_bin_width 
-            self._data = self.N 
+            self.dNdE *= self.eng*log_bin_width 
             self._spec_type = 'N'
 
     def contract(self, mat):
