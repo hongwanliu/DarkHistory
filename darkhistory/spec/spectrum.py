@@ -17,21 +17,23 @@ class Spectrum:
     ----------
     eng : ndarray
         Abscissa for the spectrum. 
-    dNdE : ndarray
-        Spectrum stored as dN/dE. 
+    data : ndarray
+        Spectrum stored as N or dN/dE. 
     rs : float, optional
         The redshift (1+z) of the spectrum. Set to -1 if not specified.
     in_eng : float, optional
         The injection energy of the primary, if this is a secondary spectrum. Set to -1 if not specified.
     mode : {'N', 'dNdE'}, optional
-        Whether the spectrum stores N or dN/dE in each bin. Default is 'dNdE'.
+        Whether the input is N or dN/dE in each bin. Default is 'dNdE'.
 
     Attributes
     ----------
     eng : ndarray
         Abscissa for the spectrum. 
     dNdE : ndarray
-        Spectrum stored as dN/dE. 
+        dN/dE of the spectrum.
+    N : ndarray
+        N of the spectrum.
     rs : float, optional
         The redshift (1+z) of the spectrum. Set to -1 if not specified.
     length : int
@@ -45,9 +47,9 @@ class Spectrum:
     # ndarray first, which isn't what we want.
     __array_priority__ = 1
 
-    def __init__(self, eng, dNdE, rs=-1., in_eng=-1., spec_type='dNdE'):
+    def __init__(self, eng, data, rs=-1., in_eng=-1., spec_type='dNdE'):
 
-        if eng.size != dNdE.size:
+        if eng.size != data.size:
             raise TypeError("""abscissa and spectrum need to be of the
              same size.""")
         if eng.size == 1:
@@ -58,13 +60,41 @@ class Spectrum:
             raise TypeError("invalid spec_type specified.")
 
         self.eng = eng
-        # Called dNdE for backward compatibility, but can be N as well.
-        self.dNdE = dNdE
+        self._data = data
         self.rs = rs
         self.in_eng = in_eng
         self._spec_type = spec_type 
         self.length = eng.size
         self.underflow = {'N': 0., 'eng': 0.}
+
+    @property
+    def dNdE(self):
+        if self._spec_type == 'dNdE':
+            return self._data
+        elif self._spec_type == 'N':
+            return self._data/(self.eng * get_log_bin_width(self.eng))
+            
+    @dNdE.setter
+    def dNdE(self, value):
+        if self._spec_type == 'dNdE':
+            self._data = value
+        elif self._spec_type == 'N':
+            self._data = value/(self.eng * get_log_bin_width(self.eng))
+
+    @property
+    def N(self):
+        if self._spec_type == 'dNdE':
+            return self._data * self.eng * get_log_bin_width(self.eng)
+        elif self._spec_type == 'N':
+            return self._data
+
+    @N.setter
+    def N(self, value):
+        if self._spec_type == 'dNdE':
+            self._data = value * self.eng * get_log_bin_width(self.eng)
+        elif self._spec_type == 'N':
+            self._data = value
+
 
     def __add__(self, other):
         """Adds two `Spectrum` instances together, or an array to the spectrum. The `Spectrum` object is on the left.
@@ -96,6 +126,8 @@ class Spectrum:
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two Spectrum objects.")
+            if self._spec_type != other._spec_type:
+                raise TypeError("cannot add N to dN/dE.")
             new_rs = -1
             new_in_eng = -1
             if self.rs == other.rs:
@@ -104,8 +136,9 @@ class Spectrum:
                 new_in_eng = self.in_eng 
 
             new_spectrum = Spectrum(
-                self.eng, self.dNdE+other.dNdE, 
-                rs = new_rs, in_eng = new_in_eng
+                self.eng, self._data+other._data, 
+                rs = new_rs, in_eng = new_in_eng, 
+                spec_type = self._spec_type
             )
             new_spectrum.underflow['N'] = (self.underflow['N'] 
                                           + other.underflow['N'])
@@ -116,7 +149,11 @@ class Spectrum:
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE + other, self.rs, self.in_eng)
+            return Spectrum(
+                self.eng, self._data + other, 
+                rs = self.rs, in_eng = self.in_eng, 
+                spec_type = self._spec_type
+            )
 
         else:
 
@@ -152,6 +189,8 @@ class Spectrum:
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two `Spectrum` objects.")
+            if self._spec_type != other._spec_type:
+                raise TypeError("cannot add N to dN/dE.")
             new_rs = -1
             new_in_eng = -1
             if self.rs == other.rs:
@@ -160,8 +199,9 @@ class Spectrum:
                 new_in_eng = self.in_eng 
 
             new_spectrum = Spectrum(
-                self.eng, self.dNdE+other.dNdE, 
-                rs = new_rs, in_eng = new_in_eng
+                self.eng, self._data+other._data, 
+                rs = new_rs, in_eng = new_in_eng,
+                spec_type = self._spec_type
             )
             new_spectrum.underflow['N'] = (self.underflow['N'] 
                                           + other.underflow['N'])
@@ -172,7 +212,11 @@ class Spectrum:
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE + other, self.rs, self.in_eng)
+            return Spectrum(
+                self.eng, self._data + other, 
+                rs = self.rs, in_eng = self.in_eng, 
+                spec_type = self._spec_type 
+                )
 
         else:
 
@@ -259,9 +303,14 @@ class Spectrum:
         spectrum.Spectrum.__rmul__
 
         """
-        if np.issubdtype(type(other),float) or np.issubdtype(type(other),int):
+        if (
+            np.issubdtype(type(other),float) 
+            or np.issubdtype(type(other),int)
+        ):
             new_spectrum = Spectrum(
-                self.eng, self.dNdE*other, self.rs, self.in_eng
+                self.eng, self._data*other, 
+                rs = self.rs, in_eng = self.in_eng,
+                spec_type = self._spec_type
             )
             new_spectrum.underflow['N'] = self.underflow['N']*other
             new_spectrum.underflow['eng'] = self.underflow['eng']*other
@@ -269,10 +318,19 @@ class Spectrum:
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE*other, self.rs, self.in_eng)
+            return Spectrum(
+                self.eng, self._data*other, 
+                rs = self.rs, in_eng = self.in_eng, 
+                spec_type = self._spec_type
+            )
 
         elif isinstance(other, Spectrum):
-            
+
+            fin_spec_type = self._spec_type
+            if self._spec_type != other._spec_type:
+                # If they are not the same, defaults to dNdE.
+                fin_spec_type = 'dNdE'
+
             new_rs = -1
             new_in_eng = -1
             if self.rs == other.rs:
@@ -282,7 +340,9 @@ class Spectrum:
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("energy abscissae are not the same.")
             return Spectrum(
-                self.eng, self.dNdE*other.dNdE, new_rs, new_in_eng
+                self.eng, self._data*other._data, 
+                rs = new_rs, in_eng = new_in_eng,
+                spec_type = fin_spec_type
             )
 
         else:
@@ -312,9 +372,13 @@ class Spectrum:
         spectrum.Spectrum.__mul__
 
         """
-        if np.issubdtype(type(other),float) or np.issubdtype(type(other),int):
+        if (np.issubdtype(type(other),float) 
+            or np.issubdtype(type(other),int)
+        ):
             new_spectrum = Spectrum(
-                self.eng, self.dNdE*other, self.rs, self.in_eng
+                self.eng, self._data*other, 
+                rs = self.rs, in_eng = self.in_eng,
+                spec_type = self._spec_type 
             )
             new_spectrum.underflow['N'] = self.underflow['N']*other
             new_spectrum.underflow['eng'] = self.underflow['eng']*other
@@ -324,7 +388,11 @@ class Spectrum:
 
         elif isinstance(other, np.ndarray):
 
-            return Spectrum(self.eng, self.dNdE*other, self.rs, self.in_eng)
+            return Spectrum(
+                self.eng, self._data*other, 
+                self.rs, self.in_eng,
+                spec_type = self._spec_type
+            )
 
         else:
 
@@ -370,19 +438,37 @@ class Spectrum:
         The returned `Spectrum` object `underflow` is reset to zero.
 
         """
-        invSpec = Spectrum(self.eng, 1/self.dNdE, self.rs, self.in_eng)
+        invSpec = Spectrum(self.eng, 1/self._data, self.rs, self.in_eng)
         return other*invSpec
 
+    def get_spec_type(self):
+        """ Returns the type of values stored in the object.
+
+        Returns
+        -------
+        str
+            Either `'N'` or `'dNdE'`.
+        """
+
+        return self._spec_type
+
     def switch_spec_type(self):
+        """Switches between the type of values to be stored.
+
+        Although both N and dN/dE can be accessed regardless of which values
+        are stored, performing a switch before repeated computations can
+        speed up the computation. 
+
+        """
         log_bin_width = get_log_bin_width(self.eng)
         if self._spec_type == 'N':
-            self.dNdE /= self.eng*log_bin_width
+            self.dNdE = self.N/(self.eng*log_bin_width)
+            self._data = self.dNdE 
             self._spec_type = 'dNdE'
         elif self._spec_type == 'dNdE':
-            self.dNdE *= self.eng*log_bin_width 
+            self.N = self.dNdE*self.eng*log_bin_width 
+            self._data = self.N 
             self._spec_type = 'N'
-        else: 
-            raise TypeError('invalid spec_type specified')
 
     def contract(self, mat):
         """Performs a dot product on the spectrum with `mat`.
@@ -398,7 +484,7 @@ class Spectrum:
             The resulting dot product.
 
         """
-        return np.dot(mat,self.dNdE)
+        return np.dot(mat,self._data)
 
     def totN(self, bound_type=None, bound_arr=None):
         """Returns the total number of particles in part of the spectrum. 
@@ -421,10 +507,10 @@ class Spectrum:
 
         length = self.length
         log_bin_width = get_log_bin_width(self.eng)
-        if _spec_type == 'dNdE':
-            dNdlogE = self.eng*self.dNdE
-        elif _spec_type == 'N':
-            dNdlogE = self.dNdE/log_bin_width 
+        if self._spec_type == 'dNdE':
+            dNdlogE = self.eng*self.dNdE 
+        elif self._spec_type == 'N':
+            dNdlogE = self.N/log_bin_width 
 
         if bound_type is not None:
 
@@ -521,10 +607,10 @@ class Spectrum:
         length = self.length
         log_bin_width = get_log_bin_width(self.eng)
 
-        if _spec_type == 'dNdE':
+        if self._spec_type == 'dNdE':
             dNdlogE = self.eng*self.dNdE
-        elif _spec_type == 'N':
-            dNdlogE = self.dNdE/log_bin_width 
+        elif self._spec_type == 'N':
+            dNdlogE = self.N/log_bin_width 
 
         if bound_type is not None:
 
@@ -606,14 +692,14 @@ class Spectrum:
         if not all(np.diff(new_eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
         
-        new_bin_boundary = get_bin_bound(new_eng)
-        new_log_bin_width = np.diff(np.log(new_bin_boundary))
-        new_dNdE = self.totN(
-            'bin',np.arange(new_eng.size+1)
-        )/(new_eng * new_log_bin_width)
-
-        self.eng = new_eng
-        self.dNdE = new_dNdE
+        new_log_bin_width = get_log_bin_width(new_eng)
+        
+        if self._spec_type == 'dNdE':
+            new_dNdE = self.totN('bin')/(new_eng * new_log_bin_width)
+            self.eng = new_eng
+            self._data = new_dNdE
+        elif self._spec_type == 'N':
+            self.eng = new_eng
 
     def rebin(self, out_eng):
         """ Re-bins the `Spectrum` object according to a new abscissa.
@@ -644,6 +730,7 @@ class Spectrum:
         spec.spectools.rebin_N_arr
 
         """
+        
         if not np.all(np.diff(out_eng) > 0):
             raise TypeError("new abscissa must be ordered in increasing energy.")
         # if out_eng[-1] < self.eng[-1]:
@@ -670,9 +757,13 @@ class Spectrum:
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
             # raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
 
-        # Get the total N and toteng in each bin of self.dNdE
-        N_arr = self.totN('bin')
-        toteng_arr = self.toteng('bin')
+        # Get the total N and toteng in each bin of self._data
+        if self._spec_type == 'dNdE':
+            N_arr = self.totN('bin')
+            toteng_arr = self.toteng('bin')
+        elif self._spec_type == 'N':
+            N_arr = self.N
+            toteng_arr = self.N*self.eng 
 
         N_arr_low = N_arr[ind_low]
         N_arr_high = N_arr[ind_high]
@@ -681,7 +772,8 @@ class Spectrum:
         toteng_arr_low = toteng_arr[ind_low]
 
         # Bin width of the new array. Use only the log bin width, so that dN/dE = N/(E d log E)
-        new_E_dlogE = new_eng * get_log_bin_width(new_eng)
+        if self._spec_type == 'dNdE':
+            new_E_dlogE = new_eng * get_log_bin_width(new_eng)
 
         # Regular bins first, done in a completely vectorized fashion. 
 
@@ -693,11 +785,18 @@ class Spectrum:
         reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
         reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
 
-        reg_dNdE_low = ((reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
-                       /new_E_dlogE[reg_bin_low+1])
-        reg_dNdE_upp = ((bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
-                       /new_E_dlogE[reg_bin_upp+1])
-
+        if self._spec_type == 'dNdE':
+            reg_dNdE_low = (
+                (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
+                /new_E_dlogE[reg_bin_low+1]
+            )
+            reg_dNdE_upp = (
+                (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
+                           /new_E_dlogE[reg_bin_upp+1]
+            )
+        elif self._spec_type == 'N':
+            reg_N_low = (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
+            reg_N_upp = (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
 
         # Low bins. 
         low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
@@ -708,24 +807,25 @@ class Spectrum:
 
         N_underflow = np.sum(N_arr_low) - N_above_underflow
         eng_underflow = np.sum(toteng_arr_low) - eng_above_underflow
-        low_dNdE = N_above_underflow/new_E_dlogE[1]
+        if self._spec_type == 'dNdE':
+            low_dNdE = N_above_underflow/new_E_dlogE[1]
 
-        # Add up, obtain the new dNdE. 
-        new_dNdE = np.zeros(new_eng.size)
-        new_dNdE[1] += low_dNdE
-        # reg_dNdE_low = -1 refers to new_eng[0]
-        new_dNdE[reg_bin_low+1] += reg_dNdE_low
-        new_dNdE[reg_bin_upp+1] += reg_dNdE_upp
-        # for i,ind in zip(np.arange(reg_bin_low.size), reg_bin_low):
-        #     new_dNdE[ind+1] += reg_dNdE_low[i]
-        # for i,ind in zip(np.arange(reg_bin_upp.size), reg_bin_upp):
-        #     new_dNdE[ind+1] += reg_dNdE_upp[i]
-
+        # Add up, obtain the new data.
+        new_data = np.zeros(new_eng.size)
+        if self._spec_type == 'dNdE':
+            new_data[1] += low_dNdE
+            # reg_dNdE_low = -1 refers to new_eng[0]
+            new_data[reg_bin_low+1] += reg_dNdE_low
+            new_data[reg_bin_upp+1] += reg_dNdE_upp
+        elif self._spec_type == 'N':
+            new_data[1] += N_above_underflow 
+            new_data[reg_bin_low+1] += reg_N_low
+            new_data[reg_bin_upp+1] += reg_N_upp 
+        
         # Implement changes.
         self.eng = new_eng[1:]
-        self.dNdE = new_dNdE[1:]
+        self._data = new_data[1:]
         self.length = self.eng.size 
-        
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow
 
@@ -747,18 +847,21 @@ class Spectrum:
 
         # sec_spec_eng is the injected energy - delta, 
         sec_spec_eng = np.flipud(in_eng - self.eng)
-        N_arr = np.flipud(self.totN('bin'))
+        if self._spec_type == 'dNdE':
+            N_arr = np.flipud(self.totN('bin'))
+        elif self._spec_type == 'N':
+            N_arr = self.N 
 
+        # consider only positive energy
         pos_eng = sec_spec_eng > 0
 
-        # utils.compare_arr([sec_spec_eng, out_eng, sec_spec_eng - out_eng])
-
         new_spec = rebin_N_arr(
-            N_arr[pos_eng], sec_spec_eng[pos_eng], out_eng
+            N_arr[pos_eng], sec_spec_eng[pos_eng], 
+            out_eng, spec_type = self._spec_type
         )
 
         self.eng  = out_eng 
-        self.dNdE = new_spec.dNdE
+        self._data = new_spec._data
         self.length = out_eng.size
         self.underflow['N'] = new_spec.underflow['N']
         self.underflow['eng'] = new_spec.underflow['eng']
@@ -778,7 +881,8 @@ class Spectrum:
         eng_orig = self.eng
 
         self.eng = self.eng*fac
-        self.dNdE = self.dNdE/fac
+        if self._spec_type == 'dNdE':
+            self.dNdE = self.dNdE/fac
         self.underflow['eng'] *= fac
         
         self.rebin(eng_orig)
