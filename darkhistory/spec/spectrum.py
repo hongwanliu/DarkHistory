@@ -689,11 +689,13 @@ class Spectrum:
         # Add up, obtain the new dNdE. 
         new_dNdE = np.zeros(new_eng.size)
         new_dNdE[1] += low_dNdE
-        # reg_dNdE_low = -1 refers to new_eng[0]  
-        for i,ind in zip(np.arange(reg_bin_low.size), reg_bin_low):
-            new_dNdE[ind+1] += reg_dNdE_low[i]
-        for i,ind in zip(np.arange(reg_bin_upp.size), reg_bin_upp):
-            new_dNdE[ind+1] += reg_dNdE_upp[i]
+        # reg_dNdE_low = -1 refers to new_eng[0]
+        new_dNdE[reg_bin_low+1] += reg_dNdE_low
+        new_dNdE[reg_bin_upp+1] += reg_dNdE_upp
+        # for i,ind in zip(np.arange(reg_bin_low.size), reg_bin_low):
+        #     new_dNdE[ind+1] += reg_dNdE_low[i]
+        # for i,ind in zip(np.arange(reg_bin_upp.size), reg_bin_upp):
+        #     new_dNdE[ind+1] += reg_dNdE_upp[i]
 
         # Implement changes.
         self.eng = new_eng[1:]
