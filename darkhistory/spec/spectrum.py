@@ -383,7 +383,7 @@ class Spectrum:
             self._spec_type = 'N'
         else: 
             raise TypeError('invalid spec_type specified')
-            
+
     def contract(self, mat):
         """Performs a dot product on the spectrum with `mat`.
 
@@ -418,10 +418,13 @@ class Spectrum:
         ndarray or float
             Total number of particles in the spectrum. 
         """
-        
-        dNdlogE = self.eng*self.dNdE
+
         length = self.length
         log_bin_width = get_log_bin_width(self.eng)
+        if _spec_type == 'dNdE':
+            dNdlogE = self.eng*self.dNdE
+        elif _spec_type == 'N':
+            dNdlogE = self.dNdE/log_bin_width 
 
         if bound_type is not None:
 
@@ -515,9 +518,13 @@ class Spectrum:
             Total energy in the spectrum. 
         """
         eng = self.eng
-        dNdlogE = eng*self.dNdE
         length = self.length
         log_bin_width = get_log_bin_width(self.eng)
+
+        if _spec_type == 'dNdE':
+            dNdlogE = self.eng*self.dNdE
+        elif _spec_type == 'N':
+            dNdlogE = self.dNdE/log_bin_width 
 
         if bound_type is not None:
 
