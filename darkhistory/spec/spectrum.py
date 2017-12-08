@@ -23,6 +23,8 @@ class Spectrum:
         The redshift (1+z) of the spectrum. Set to -1 if not specified.
     in_eng : float, optional
         The injection energy of the primary, if this is a secondary spectrum. Set to -1 if not specified.
+    mode : {'N', 'dNdE'}, optional
+        Whether the spectrum stores N or dN/dE in each bin. Default is 'dNdE'.
 
     Attributes
     ----------
@@ -43,7 +45,7 @@ class Spectrum:
     # ndarray first, which isn't what we want.
     __array_priority__ = 1
 
-    def __init__(self, eng, dNdE, rs=-1., in_eng=-1.):
+    def __init__(self, eng, dNdE, rs=-1., in_eng=-1., spec_type='dNdE'):
 
         if eng.size != dNdE.size:
             raise TypeError("""abscissa and spectrum need to be of the
@@ -52,11 +54,15 @@ class Spectrum:
             raise TypeError("abscissa must be more than length 1.")
         if not all(np.diff(eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
+        if spec_type != 'N' and spec_type != 'dNdE':
+            raise TypeError("invalid spec_type specified.")
 
         self.eng = eng
+        # Called dNdE for backward compatibility, but can be N as well.
         self.dNdE = dNdE
         self.rs = rs
         self.in_eng = in_eng
+        self._spec_type = spec_type 
         self.length = eng.size
         self.underflow = {'N': 0., 'eng': 0.}
 
@@ -367,6 +373,17 @@ class Spectrum:
         invSpec = Spectrum(self.eng, 1/self.dNdE, self.rs, self.in_eng)
         return other*invSpec
 
+    def switch_spec_type(self):
+        log_bin_width = get_log_bin_width(self.eng)
+        if self._spec_type == 'N':
+            self.dNdE /= self.eng*log_bin_width
+            self._spec_type = 'dNdE'
+        elif self._spec_type == 'dNdE':
+            self.dNdE *= self.eng*log_bin_width 
+            self._spec_type = 'N'
+        else: 
+            raise TypeError('invalid spec_type specified')
+            
     def contract(self, mat):
         """Performs a dot product on the spectrum with `mat`.
 
