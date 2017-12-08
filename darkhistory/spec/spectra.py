@@ -628,7 +628,7 @@ class Spectra:
 
         See Also
         --------
-        spectrum.Spectrum.rebin
+        spec.spectools.rebin_N_2D_arr
         """
 
         if not np.all(np.diff(out_eng) > 0):
@@ -653,7 +653,61 @@ class Spectra:
         if ind_high[0].size > 0: 
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
 
+        # These arrays are of size in_eng x eng. 
+        N_arr = self.totN('bin')
+        toteng_arr = self.toteng('bin')
 
+        N_arr_low  = N_arr[:,ind_low]
+        N_arr_high = N_arr[:,ind_high]
+        N_arr_reg  = N_arr[:,ind_reg]
+
+        toteng_arr_low = toteng_arr[:,ind_low]
+
+        # Bin width of the new array. Use only the log bin width. 
+        new_E_dlogE = new_eng * get_log_bin_width(new_eng)
+
+        # Regular bins first. 
+
+        # reg_bin_low is the array of the lower bins to be allocated the
+        # particles in N_arr_reg, similarly reg_bin_upp. This should also
+        # take care of the case where bin_ind is an integer. 
+
+        reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
+        reg_bin_upp = reg_bin_low + 1
+
+        # Takes care of the case where eng[-1] = new_eng[-1], which falls
+        # under regular indices. Remember the extra bin on the left.
+        reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
+        reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
+
+        # Split the particles up into the lower bin and upper bin. 
+        # Remember there's an extra bin on the left when indexing into
+        # new_E_dlogE. 
+        reg_dNdE_low = (
+            (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
+            / new_E_dlogE[reg_bin_low+1]
+        )
+        reg_dNdE_upp = (
+            (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
+            / new_E_dlogE[reg_bin_upp+1]
+        )
+
+        # Handle low bins. 
+        low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
+
+        N_above_underflow = np.sum(
+            (bin_ind[ind_low] - low_bin_low) * N_arr_low, axis = 1
+        )
+        eng_above_underflow = N_above_underflow * new_eng[1]
+
+        N_underflow = np.sum(N_arr_low, axis=1) - N_above_underflow
+        eng_underflow = np.sum(toteng_arr_low, axis=1) - eng_above_underflow
+        low_dNdE = N_above_underflow/new_E_dlogE[1]
+
+        # Add up, obtain the new dN/dE. 
+        new_dNdE = np.zeros(self.get_in_eng().size, new_eng.size)
+        new_dNdE[:,1] += low_dNdE 
+        # reg_dNde_low = -1 refers to new_eng[0]
 
 
 

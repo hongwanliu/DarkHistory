@@ -657,7 +657,7 @@ class Spectrum:
         toteng_arr_low = toteng_arr[ind_low]
 
         # Bin width of the new array. Use only the log bin width, so that dN/dE = N/(E d log E)
-        new_E_dlogE = new_eng * np.diff(np.log(get_bin_bound(new_eng)))
+        new_E_dlogE = new_eng * get_log_bin_width(new_eng)
 
         # Regular bins first, done in a completely vectorized fashion. 
 
@@ -665,12 +665,9 @@ class Spectrum:
         reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
         reg_bin_upp = reg_bin_low + 1
 
-        # Takes care of the case where in_eng[-1] = out_eng[-1]
+        # Takes care of the case where eng[-1] = new_eng[-1]
         reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
         reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
-
-        reg_N_low = (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
-        reg_N_upp = (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
 
         reg_dNdE_low = ((reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
                        /new_E_dlogE[reg_bin_low+1])
