@@ -95,6 +95,10 @@ class Spectrum:
         elif self._spec_type == 'N':
             self._data = value
 
+    @property
+    def spec_type(self):
+        return self._spec_type
+
 
     def __add__(self, other):
         """Adds two `Spectrum` instances together, or an array to the spectrum. The `Spectrum` object is on the left.
@@ -440,17 +444,6 @@ class Spectrum:
         """
         invSpec = Spectrum(self.eng, 1/self._data, self.rs, self.in_eng)
         return other*invSpec
-
-    def get_spec_type(self):
-        """ Returns the type of values stored in the object.
-
-        Returns
-        -------
-        str
-            Either `'N'` or `'dNdE'`.
-        """
-
-        return self._spec_type
 
     def switch_spec_type(self):
         """Switches between the type of values to be stored.
