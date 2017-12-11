@@ -756,10 +756,7 @@ class Spectra:
             new_data = np.dot(weight, self._grid_vals)
             return Spectrum(self.eng, new_data, spec_type=self.spec_type)
         elif isinstance(weight, Spectrum):
-            if weight.spec_type == 'N':
-                new_data = np.dot(weight.N, self._grid_vals)
-            elif weight.spec_type == 'dNdE':
-                new_data = np.dot(weight.dNdE, self._grid_vals)
+            new_data = np.dot(weight._data, self._grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type
             )
