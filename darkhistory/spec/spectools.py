@@ -56,7 +56,7 @@ def get_log_bin_width(eng):
 def rebin_N_arr(N_arr, in_eng, out_eng=None):
     """Rebins an array of particle number with fixed energy.
     
-    Returns a `Spectrum` object. The rebinning conserves both total number and total energy.
+    Returns an array or a `Spectrum` object. The rebinning conserves both total number and total energy.
 
     Parameters
     ----------
