@@ -42,7 +42,7 @@ class TransferFuncList:
             raise TypeError('transfer functions must be of the same type.')
 
         if not arrays_equal(
-            [tfunc.get_eng() for tfunc in self.tflist]
+            [tfunc.eng for tfunc in self.tflist]
         ):
             raise TypeError('all transfer functions must have the same \
                 energy abscissa.')
@@ -53,13 +53,13 @@ class TransferFuncList:
 
         if isinstance(tflist[0], tf.TransFuncAtRedshift):
             self.tftype = 'rs'
-            self.rs = np.array([tfunc.rs for tfunc in self.tflist])
-            self.in_eng = tflist[0].get_in_eng()
+            self.rs = np.array([tfunc.rs[0] for tfunc in self.tflist])
+            self.in_eng = tflist[0].in_eng
             self.dlnz = tflist[0].dlnz
         elif isinstance(tflist[0], tf.TransFuncAtEnergy):
             self.tftype = 'in_eng'
-            self.rs = tflist[0].get_rs()
-            self.in_eng = np.array([tfunc.in_eng for tfunc in self.tflist])
+            self.rs = tflist[0].rs
+            self.in_eng = np.array([tfunc.in_eng[0] for tfunc in self.tflist])
             self.dlnz = tflist[0].dlnz
         else:
             raise TypeError('can only be list of valid transfer functions.')
@@ -124,7 +124,8 @@ class TransferFuncList:
         if self.tftype == 'in_eng':
 
             new_tflist = [tf.TransFuncAtRedshift(
-                    [tfunc.spec_arr[i] for tfunc in self.tflist], self.dlnz
+                    [tfunc[i] for tfunc in self.tflist], 
+                    self.dlnz
                 ) for i,rs in zip(
                     np.arange(self.rs.size), self.rs
                 )
@@ -136,7 +137,8 @@ class TransferFuncList:
         elif self.tftype == 'rs':
 
             new_tflist = [tf.TransFuncAtEnergy(
-                    [tfunc.spec_arr[i] for tfunc in self.tflist], self.dlnz
+                    [tfunc[i] for tfunc in self.tflist], 
+                    self.dlnz
                 ) for i,in_eng in zip(
                     np.arange(self.in_eng.size), self.in_eng
                 )
@@ -180,12 +182,14 @@ class TransferFuncList:
 
         for i,tfunc in zip(np.arange(len(new_tflist)), new_tflist):
             
-            in_eng_arr = tfunc.get_in_eng()
-            new_grid_val = matrix_power(tfunc.get_grid_values(),dlnz_factor)
+            in_eng_arr = tfunc.in_eng
+            new_grid_val = matrix_power(
+                tfunc._grid_vals,dlnz_factor
+            )
             new_spec_arr = [
                 Spectrum(
-                    tfunc.get_eng(), new_grid_val[i], 
-                    rs = tfunc.rs, in_eng = in_eng_arr[i]
+                    tfunc.eng, new_grid_val[i], 
+                    rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                 )
                 for i in np.arange(in_eng_arr.size)
             ]
@@ -196,7 +200,7 @@ class TransferFuncList:
                 )
             )
 
-        self.rs = np.array([tfunc.rs for tfunc in new_tflist])
+        self.rs = np.array([tfunc.rs[0] for tfunc in new_tflist])
         self.dlnz *= dlnz_factor
 
 

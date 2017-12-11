@@ -349,12 +349,13 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
 
     if save_steps is True:
 
-        out_specs = Spectra([spec])
+        out_specs = Spectra([spec], spec_type=spec.spec_type)
         append_spec = out_specs.append
 
         for i in np.arange(rs_last_ind):
-            append_spec(tflist[i].sum_specs(out_specs[-1]))
-            out_specs[-1].rs = tflist.rs[i+1]
+            next_spec = tflist[i].sum_specs(out_specs[-1])
+            next_spec.rs = tflist.rs[i+1]
+            append_spec(next_spec)
 
         return out_specs
 

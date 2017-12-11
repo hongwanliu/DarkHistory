@@ -43,7 +43,7 @@ class Spectra:
 
     def __init__(self, spec_arr, spec_type='dNdE', rebin_eng=None):
 
-        if spec_arr:
+        if spec_arr != []:
 
             if len(set([spec.spec_type for spec in spec_arr])) != 1:
                 raise TypeError(
@@ -116,8 +116,9 @@ class Spectra:
                 in_eng=self.in_eng[key], rs=self.rs[key], 
                 spec_type=self.spec_type
             )
-            out_spec.underflow['N']   = self.N_underflow[key]
-            out_spec.underflow['eng'] = self.eng_underflow[key]
+            if self.N_underflow.size > 0 and self.eng_underflow.size > 0:
+                out_spec.underflow['N']   = self.N_underflow[key]
+                out_spec.underflow['eng'] = self.eng_underflow[key]
             return out_spec
         elif isinstance(key, slice):
             data_arr          = self._grid_vals[key]
@@ -628,7 +629,7 @@ class Spectra:
 
         # Using the broadcasting rules here. 
         if self.spec_type == 'dNdE':
-            dNdlogE = self._grid_vals * eng
+            dNdlogE = self._grid_vals * self.eng
         elif self.spec_type == 'N':
             dNdlogE = self._grid_vals / log_bin_width
 
@@ -636,7 +637,7 @@ class Spectra:
 
             if bound_arr is None:
 
-                return dNdlogE * eng * log_bin_width
+                return dNdlogE * self.eng * log_bin_width
 
             if bound_type == 'bin':
 
@@ -814,20 +815,20 @@ class Spectra:
         # corresponds to new_eng.size
 
         bin_ind = np.interp(
-            self.eng, new.eng, np.arange(new_eng.size)-1, 
+            self.eng, new_eng, np.arange(new_eng.size)-1, 
             left = -2, right = new_eng.size
         )
 
         # Locate where bin_ind is below 0, above self.length-1 
         # or in between. 
 
-        ind_low  = np.where(bin_ind < 0)
-        ind_high = np.where(bin_ind == new_eng.size)
+        ind_low  = np.where(bin_ind < 0)[0]
+        ind_high = np.where(bin_ind == new_eng.size)[0]
         ind_reg  = np.where(
             (bin_ind >= 0) & (bin_ind <= new_eng.size - 1)
-        )
+        )[0]
 
-        if ind_high[0].size > 0: 
+        if ind_high.size > 0: 
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
 
         # These arrays are of size in_eng x eng. 
@@ -912,6 +913,9 @@ class Spectra:
         # Checks if spec_arr is empty
         if self.eng.size != 0:
             if not np.array_equal(self.eng, spec.eng):
+                print(self.eng)
+                print('*******')
+                print(spec.eng)
                 raise TypeError("new Spectrum does not have the same energy abscissa.")
 
         if self.spec_type != spec.spec_type:
@@ -957,7 +961,7 @@ class Spectra:
 
         interp_func = interpolate.interp1d(
             np.log(self.rs), self._grid_vals, axis=0,
-            bounds_error=bounds_error, fill_value=fill_value
+            bounds_error=bounds_err, fill_value=fill_value
         )
 
         if interp_type == 'val':
@@ -999,7 +1003,7 @@ class Spectra:
         abs_plot :  bool, optional
             Plots the absolute value if true.
         fac : ndarray, optional
-            Factor to multiply the dN/dE array by. 
+            Factor to multiply the array by. 
         **kwargs : optional
             All additional keyword arguments to pass to matplotlib.plt.plot. 
 

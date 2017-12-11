@@ -48,6 +48,32 @@ class TransFuncAtEnergy(Spectra):
         super().__init__(
             spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
         )
+
+        if spec_arr != []:
+            self._grid_vals = np.atleast_2d(
+                    np.stack([spec._data for spec in spec_arr])
+                )
+            self._spec_type = spec_arr[0].spec_type
+            self._eng = spec_arr[0].eng
+            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+            self._rs = np.array([spec.rs for spec in spec_arr])
+            self._N_underflow = np.array(
+                [spec.underflow['N'] for spec in spec_arr]
+            )
+            self._eng_underflow = np.array(
+                [spec.underflow['eng'] for spec in spec_arr]
+            )
+
+        else:
+
+            self._grid_vals = np.atleast_2d([])
+            self._spec_type = spec_type
+            self._eng = np.array([])
+            self._in_eng = np.array([])
+            self._rs = np.array([])
+            self._N_underflow = np.array([])
+            self._eng_underflow = np.array([])
+
         if self.eng.size > 0:
             if np.any(np.abs(np.diff(self.in_eng)) > 0):
                 raise TypeError('spectra in TransFuncAtEnergy must have the same injection energy.')
@@ -162,6 +188,8 @@ class TransFuncAtRedshift(Spectra):
         List of Spectrum to be stored together. 
     dlnz : float
         d ln(1+z) associated with this transfer function. 
+    spec_type : {'N', 'dNdE'}, optional
+        The type of spectrum saved.
     rs : float
         Redshift of this transfer function.
     rebin_eng : ndarray, optional
@@ -177,14 +205,44 @@ class TransFuncAtRedshift(Spectra):
         Redshift of this transfer function.      
     """
 
-    def __init__(self, spec_arr, dlnz, rebin_eng=None):
+    def __init__(
+        self, spec_arr, dlnz=-1, spec_type='dNdE', rebin_eng=None
+    ):
 
-        super().__init__(spec_arr, spec_type=spec_type, rebin_eng=rebin_eng)
+        super().__init__(
+            spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
+        )
         self.dlnz = dlnz
+
+        if spec_arr != []:
+            self._grid_vals = np.atleast_2d(
+                    np.stack([spec._data for spec in spec_arr])
+                )
+            self._spec_type = spec_arr[0].spec_type
+            self._eng = spec_arr[0].eng
+            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+            self._rs = np.array([spec.rs for spec in spec_arr])
+            self._N_underflow = np.array(
+                [spec.underflow['N'] for spec in spec_arr]
+            )
+            self._eng_underflow = np.array(
+                [spec.underflow['eng'] for spec in spec_arr]
+            )
+
+        else:
+
+            self._grid_vals = np.atleast_2d([])
+            self._spec_type = spec_type
+            self._eng = np.array([])
+            self._in_eng = np.array([])
+            self._rs = np.array([])
+            self._N_underflow = np.array([])
+            self._eng_underflow = np.array([])
+
         if self.eng.size > 0:
             if np.any(np.abs(np.diff(self.rs) > 0)):
                 raise TypeError("spectra in TransFuncAtRedshift must have identical redshifts.")
-            if np.any(self.get_in_eng() <= 0):
+            if np.any(self.in_eng <= 0):
                 raise TypeError("injection energy of all spectra must be set.")
 
     def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
@@ -599,15 +657,17 @@ def process_raw_tf(file):
     ]
 
     normfac2 = rebin_N_arr(np.ones(init_inj_eng_arr.size), 
-        init_inj_eng_arr, init_inj_eng_arr
+        init_inj_eng_arr
     ).dNdE
     # This rescales the transfer function so that it is now normalized to
     # dN/dE = 1. 
+
+    # print(normfac2)
     
 
     transfer_func_table = TransferFuncList([
         TransFuncAtEnergy(
-            spec_arr/N, 0.002, rebin_eng = init_inj_eng_arr
+            spec_arr/N, dlnz=0.002, rebin_eng = init_inj_eng_arr
         ) for N, spec_arr in zip(normfac2, tqdm(tf_raw_list))
     ])
 

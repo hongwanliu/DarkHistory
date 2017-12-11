@@ -455,10 +455,19 @@ class Spectrum:
         """
         log_bin_width = get_log_bin_width(self.eng)
         if self._spec_type == 'N':
+<<<<<<< HEAD
             self._data = self._data/(self.eng*log_bin_width) 
             self._spec_type = 'dNdE'
         elif self._spec_type == 'dNdE':
             self._data = self._data*self.eng*log_bin_width 
+=======
+            self.dNdE = self.N/(self.eng*log_bin_width)
+            self._data = self.dNdE 
+            self._spec_type = 'dNdE'
+        elif self._spec_type == 'dNdE':
+            self.N = self.dNdE*self.eng*log_bin_width 
+            self._data = self.N 
+>>>>>>> parent of cae93e2... spectrum.py N and dNdE error
             self._spec_type = 'N'
 
     def contract(self, mat):
