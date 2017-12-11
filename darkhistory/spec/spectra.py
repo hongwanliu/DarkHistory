@@ -237,7 +237,7 @@ class Spectra:
                 raise TypeError('adding spectra of N to spectra of dN/dE.')
 
             out_spectra = Spectra([])
-            out_spectra.spec_type = self.spec_type
+            out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self._grid_vals + other._grid_vals
             out_spectra._eng = self.eng 
             if np.array_equal(self.in_eng, other.in_eng):
@@ -932,7 +932,10 @@ class Spectra:
                 (self._grid_vals, np.atleast_2d(spec._data))
             )
 
-    def at_rs(self, new_rs, interp_type='val',bounds_err=True):
+    def at_rs(
+        self, new_rs, interp_type='val', 
+        bounds_err=None, fill_value=np.nan
+    ):
         """Interpolates the transfer function at a new redshift. 
 
         Interpolation is logarithmic. 
@@ -953,13 +956,15 @@ class Spectra:
             raise TypeError('redshift abscissa must be strictly increasing or decreasing for interpolation.')
 
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self._grid_vals, axis=0
+            np.log(self.rs), self._grid_vals, axis=0,
+            bounds_error=bounds_error, fill_value=fill_value
         )
 
         if interp_type == 'val':
 
             new_spectra = Spectra([])
             new_spectra._eng = self.eng
+            new_spectra._in_eng = -np.ones_like(new_rs)
             new_spectra._rs = new_rs
             new_spectra._grid_vals = interp_func(np.log(new_rs))
             new_spectra._spec_type = self.spec_type
