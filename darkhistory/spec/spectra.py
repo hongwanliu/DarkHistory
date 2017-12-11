@@ -54,9 +54,9 @@ class Spectra:
                 np.stack([spec._data for spec in spec_arr])
             )
             self._spec_type = spec_arr[0].spec_type
-            self.eng = spec_arr[0].eng
-            self.in_eng = np.array([spec.in_eng for spec in spec_arr])
-            self.rs = np.array([spec.rs for spec in spec_arr])
+            self._eng = spec_arr[0].eng
+            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+            self._rs = np.array([spec.rs for spec in spec_arr])
             self._N_underflow = np.array(
                 [spec.underflow['N'] for spec in spec_arr]
             )
@@ -76,11 +76,23 @@ class Spectra:
 
             self._grid_vals = np.atleast_2d([])
             self._spec_type = spec_type
-            self.eng = np.array([])
-            self.in_eng = np.array([])
-            self.rs = np.array([])
+            self._eng = np.array([])
+            self._in_eng = np.array([])
+            self._rs = np.array([])
             self._N_underflow = np.array([])
             self._eng_underflow = np.array([])
+
+    @property
+    def eng(self):
+        return self._eng
+
+    @property
+    def in_eng(self):
+        return self._in_eng
+
+    @property
+    def rs(self):
+        return self._rs
 
     @property
     def spec_type(self):
@@ -129,8 +141,8 @@ class Spectra:
         if np.issubdtype(type(key), int):
             if value.eng != self.eng:
                     raise TypeError("the energy abscissa of the new Spectrum does not agree with this Spectra.")
-            self.in_eng[key] = value.in_eng
-            self.rs[key] = value.rs
+            self._in_eng[key] = value.in_eng
+            self._rs[key] = value.rs
             if self.spec_type == 'N':
                 self._grid_vals[key] = value.N
             elif self.spec_type == 'dNdE':
@@ -141,8 +153,8 @@ class Spectra:
             for i,spec in zip(key, value):
                 if value.eng != self.eng:
                     raise TypeError("the energy abscissa of the new Spectrum does not agree with this Spectra.")
-                self.in_eng[i] = spec.in_eng
-                self.rs[i] = spec.rs
+                self._in_eng[i] = spec.in_eng
+                self._rs[i] = spec.rs
                 if self.spec_type == 'N':
                     self._grid_vals[i] = spec.N
                 elif self.spec_type == 'dNdE':
@@ -227,11 +239,11 @@ class Spectra:
             out_spectra = Spectra([])
             out_spectra.spec_type = self.spec_type
             out_spectra._grid_vals = self._grid_vals + other._grid_vals
-            out_spectra.eng = self.eng 
+            out_spectra._eng = self.eng 
             if np.array_equal(self.in_eng, other.in_eng):
-                out_spectra.in_eng = self.in_eng
+                out_spectra._in_eng = self.in_eng
             if np.array_equal(self.rs, other.rs):
-                out_spectra.rs = self.rs
+                out_spectra._rs = self.rs
 
             return out_spectra
 
@@ -317,18 +329,18 @@ class Spectra:
             or np.issubdtype(type(other), int)
         ):
             out_spectra = Spectra([])
-            out_spectra.eng = self.eng
-            out_spectra.in_eng = self.in_eng
-            out_spectra.rs = self.rs
+            out_spectra._eng = self.eng
+            out_spectra._in_eng = self.in_eng
+            out_spectra._rs = self.rs
             out_spectra._grid_vals = self._grid_vals*other
             
             return out_spectra
 
         elif isinstance(other, np.ndarray):
             out_spectra = Spectra([])
-            out_spectra.eng = self.eng
-            out_spectra.in_eng = self.in_eng
-            out_spectra.rs = self.rs
+            out_spectra._eng = self.eng
+            out_spectra._in_eng = self.in_eng
+            out_spectra._rs = self.rs
             out_spectra._grid_vals = np.einsum(
                 'ij,i->ij',self._grid_vals, other
             )
@@ -341,11 +353,11 @@ class Spectra:
                 raise TypeError('the two spectra do not have the same abscissa.')
 
             out_spectra = Spectra([])
-            out_spectra.eng = self.eng
+            out_spectra._eng = self.eng
             if np.array_equal(self.in_eng, other.in_eng):
-                out_spectra.in_eng = self.in_eng
+                out_spectra._in_eng = self.in_eng
             if np.array_equal(self.rs, other.rs):
-                out_spectra.rs = self.rs
+                out_spectra._rs = self.rs
             out_spectra._grid_vals = self._grid_vals * other._grid_vals
 
             return out_spectra
@@ -373,9 +385,9 @@ class Spectra:
             or isinstance(other, np.ndarray)
         ):
             out_spectra = Spectra([])
-            out_spectra.eng = self.eng
-            out_spectra.in_eng = self.in_eng
-            out_spectra.rs = self.rs
+            out_spectra._eng = self.eng
+            out_spectra._in_eng = self.in_eng
+            out_spectra._rs = self.rs
             out_spectra._grid_vals = self._grid_vals*other
             
             return out_spectra
@@ -386,11 +398,11 @@ class Spectra:
                 raise TypeError('the two spectra do not have the same abscissa.')
 
             out_spectra = Spectra([])
-            out_spectra.eng = self.eng
+            out_spectra._eng = self.eng
             if np.array_equal(self.in_eng, other.in_eng):
-                out_spectra.in_eng = self.in_eng
+                out_spectra._in_eng = self.in_eng
             if np.array_equal(self.rs, other.rs):
-                out_spectra.rs = self.rs
+                out_spectra._rs = self.rs
             out_spectra._grid_vals = self._grid_vals * other._grid_vals
 
             return out_spectra
@@ -416,10 +428,10 @@ class Spectra:
         """
         if np.issubclass_(type(other), Spectra):
             inv_spectra = Spectra([])
-            inv_spectra.eng = other.eng
-            inv_spectra.in_eng = other.in_eng
+            inv_spectra._eng = other.eng
+            inv_spectra._in_eng = other.in_eng
             inv_spectra._grid_vals = 1/other._grid_vals
-            inv_spectra.rs = other.rs
+            inv_spectra._rs = other.rs
             return self * inv_spectra
         else:
             return self * (1/other)
@@ -444,10 +456,10 @@ class Spectra:
         spectrum.Spectra.__truediv__
         """
         inv_spectra = Spectra([])
-        inv_spectra.eng = self.eng
-        inv_spectra.in_eng = self.in_eng
+        inv_spectra._eng = self.eng
+        inv_spectra._in_eng = self.in_eng
         inv_spectra._grid_vals = 1/self._grid_vals
-        inv_spectra.rs = self.rs
+        inv_spectra._rs = self.rs
 
         return other * inv_spectra
 
@@ -479,7 +491,7 @@ class Spectra:
             self.N_underflow[i] += spec.underflow['N']
             self.eng_underflow[i] += spec.underflow['eng']
 
-        self.rs = rs_arr
+        self._rs = rs_arr
 
     def totN(self, bound_type=None, bound_arr=None):
         """Returns the total number of particles in part of the spectra.
@@ -884,10 +896,10 @@ class Spectra:
         new_data[:,reg_bin_low+1] += reg_data_low
         new_data[:,reg_bin_upp+1] += reg_data_upp
 
-        self.eng = new_eng[1:]
+        self._eng = new_eng[1:]
         self._grid_vals = new_data[:,1:]
-        self.N_underflow += N_underflow
-        self.eng_underflow += eng_underflow
+        self._N_underflow += N_underflow
+        self._eng_underflow += eng_underflow
 
     def append(self, spec):
         """Appends a new Spectrum. 
@@ -905,15 +917,15 @@ class Spectra:
         if self.spec_type != spec.spec_type:
             raise TypeError("new Spectrum is not of the same type as the Spectra.")
 
-        self.in_eng = np.append(self.in_eng, spec.in_eng)
-        self.rs = np.append(self.rs, spec.rs)
+        self._in_eng = np.append(self.in_eng, spec.in_eng)
+        self._rs = np.append(self.rs, spec.rs)
         self._N_underflow = np.append(self._N_underflow, spec.underflow['N'])
         self._eng_underflow = np.append(
             self._eng_underflow, spec.underflow['eng']
         )
         
         if self.eng.size == 0:
-            self.eng = spec.eng
+            self._eng = spec.eng
             self._grid_vals = np.atleast_2d(spec._data)
         else:
             self._grid_vals = np.concatenate(
@@ -940,9 +952,6 @@ class Spectra:
         ):
             raise TypeError('redshift abscissa must be strictly increasing or decreasing for interpolation.')
 
-        print(self.rs.shape)
-        print(self._grid_vals.shape)
-
         interp_func = interpolate.interp1d(
             np.log(self.rs), self._grid_vals, axis=0
         )
@@ -950,8 +959,8 @@ class Spectra:
         if interp_type == 'val':
 
             new_spectra = Spectra([])
-            new_spectra.eng = self.eng
-            new_spectra.rs = new_rs
+            new_spectra._eng = self.eng
+            new_spectra._rs = new_rs
             new_spectra._grid_vals = interp_func(np.log(new_rs))
             new_spectra._spec_type = self.spec_type
 
@@ -1047,49 +1056,4 @@ class Spectra:
 
         else: 
             raise TypeError('indtype must be either ind or rs.')
-
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
