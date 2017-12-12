@@ -374,7 +374,7 @@ def engloss_spec(
                 y*eleceng[gamma > rel_bound], y*delta, 
                 bounds_error=False, fill_value = 1e-200
             )
-            spec[rel] = y**4*rel_tf.get_grid_values().flatten()
+            spec[rel] = y**4*rel_tf.grid_vals.flatten()
         else:
 
             print('Computing relativistic energy loss spectrum...')
@@ -398,7 +398,7 @@ def engloss_spec(
             eleckineng[gamma <= rel_bound], delta/y,
             bounds_error = False, fill_value = 1e-200
         )
-        spec[~rel] = y**2*nonrel_tf.get_grid_values().flatten()
+        spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
     else:
         print('Computing nonrelativistic energy loss spectrum...')
         # beta_small obviously doesn't intersect with rel. 
@@ -430,6 +430,6 @@ def engloss_spec(
             for sp, in_eng in zip(spec, eleckineng)
         ]
 
-        return TransFuncAtRedshift(spec_arr, dlnz)
+        return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 
 

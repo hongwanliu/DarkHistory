@@ -56,6 +56,11 @@ class TransFuncAtEnergy(Spectra):
             self._spec_type = spec_arr[0].spec_type
             self._eng = spec_arr[0].eng
             self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+            if len(set(self._in_eng)) > 1:
+                raise TypeError('injection energies must be the same.')
+            
+            if np.any(self.rs <= 0):
+                raise TypeError("injection energy of all spectra must be set.")
             self._rs = np.array([spec.rs for spec in spec_arr])
             self._N_underflow = np.array(
                 [spec.underflow['N'] for spec in spec_arr]
@@ -74,12 +79,8 @@ class TransFuncAtEnergy(Spectra):
             self._N_underflow = np.array([])
             self._eng_underflow = np.array([])
 
-        if self.eng.size > 0:
-            if np.any(np.abs(np.diff(self.in_eng)) > 0):
-                raise TypeError('spectra in TransFuncAtEnergy must have the same injection energy.')
-            self._in_eng = spec_arr[0].in_eng * np.ones_like(self.rs)
-            if np.any(self.rs < 0):
-                raise TypeError('redshift of spectra must be set.')
+    def __iter__(self):
+        return iter(self.grid_vals)
 
     def at_rs(
         self, new_rs, interp_type='val', bounds_error=None, fill_value=np.nan
@@ -106,8 +107,12 @@ class TransFuncAtEnergy(Spectra):
         ):
             raise TypeError('redshift abscissa must be strictly increasing or decreasing for interpolation.')
 
+        non_zero_grid = self.grid_vals
+        # set zero values to some small value for log interp.
+        non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self.grid_vals, axis=0, 
+            np.log(self.rs), np.log(non_zero_grid), axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -116,7 +121,9 @@ class TransFuncAtEnergy(Spectra):
             new_tf = TransFuncAtEnergy([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = interp_func(np.log(new_rs))
+            interp_vals = np.exp(interp_func(np.log(new_rs)))
+            interp_vals[interp_vals < 1e-100] = 0
+            new_tf._grid_vals = interp_vals
             new_tf._eng = self.eng
             new_tf._in_eng = self.in_eng[0]*np.ones_like(new_rs)
             new_tf._rs = new_rs
@@ -171,7 +178,7 @@ class TransFuncAtEnergy(Spectra):
         if self.rs[-1] < spec.rs: 
             raise TypeError("new Spectrum has a larger redshift than the current last entry.")
 
-        if spec.in_eng != self.in_eng: 
+        if spec.in_eng != self.in_eng[-1]: 
             raise TypeError("cannot append new spectrum with different injection energy.")
 
         super().append(spec)
@@ -220,8 +227,12 @@ class TransFuncAtRedshift(Spectra):
                 )
             self._spec_type = spec_arr[0].spec_type
             self._eng = spec_arr[0].eng
+            if np.any(self.in_eng <= 0):
+                raise TypeError("injection energy of all spectra must be set.")
             self._in_eng = np.array([spec.in_eng for spec in spec_arr])
             self._rs = np.array([spec.rs for spec in spec_arr])
+            if len(set(self._rs)) > 1:
+                raise TypeError('all spectra must have the same redshift.')
             self._N_underflow = np.array(
                 [spec.underflow['N'] for spec in spec_arr]
             )
@@ -239,11 +250,7 @@ class TransFuncAtRedshift(Spectra):
             self._N_underflow = np.array([])
             self._eng_underflow = np.array([])
 
-        if self.eng.size > 0:
-            if np.any(np.abs(np.diff(self.rs) > 0)):
-                raise TypeError("spectra in TransFuncAtRedshift must have identical redshifts.")
-            if np.any(self.in_eng <= 0):
-                raise TypeError("injection energy of all spectra must be set.")
+    
 
     def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy. 
@@ -273,8 +280,12 @@ class TransFuncAtRedshift(Spectra):
         ):
             raise TypeError('injection energy must be strictly increasing or decreasing for interpolation.')
 
+        non_zero_grid = self.grid_vals
+        # set zero values to some small value for log interp.
+        non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+
         interp_func = interpolate.interp1d(
-            np.log(self.in_eng), self.grid_vals, axis=0, 
+            np.log(self.in_eng), np.log(non_zero_grid), axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -283,10 +294,12 @@ class TransFuncAtRedshift(Spectra):
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = interp_func(np.log(new_eng))
+            interp_vals = np.exp(interp_func(np.log(new_eng)))
+            interp_vals[interp_vals < 1e-100] = 0
+            new_tf._grid_vals = interp_vals
             new_tf._eng = self.eng
             new_tf._in_eng = new_eng
-            new_tf._rs = self.rs[0]*np.ones_like(new_eng)
+            new_tf._rs = self.rs
             new_tf.dlnz = self.dlnz
 
             return new_tf
@@ -328,9 +341,12 @@ class TransFuncAtRedshift(Spectra):
         TransFuncAtRedshift
             New transfer function at the new energy abscissa. 
         """
+        non_zero_grid = self.grid_vals
+        # set zero values to some small value for log interp.
+        non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
 
         interp_func = interpolate.interp1d(
-            np.log(self.eng), self.grid_vals, axis=1, 
+            np.log(self.eng), np.log(non_zero_grid), axis=1, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -339,7 +355,9 @@ class TransFuncAtRedshift(Spectra):
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = interp_func(np.log(new_eng))
+            interp_vals = np.exp(interp_func(np.log(new_eng)))
+            interp_vals[interp_vals < 1e-100] = 0
+            new_tf._grid_vals = interp_vals
             new_tf._eng = new_eng
             new_tf._in_eng = self.in_eng
             new_tf._rs = self.rs
@@ -408,12 +426,14 @@ class TransFuncAtRedshift(Spectra):
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = interp_func(np.log(new_eng), np.log(new_in_eng))
+            new_tf._grid_vals = np.exp(
+                interp_func(np.log(new_eng), np.log(new_in_eng))
+            )
             # Re-zero small values.
             new_tf._grid_vals[np.abs(new_tf.grid_vals) < 1e-100] = 0
             new_tf._eng = new_eng
             new_tf._in_eng = new_in_eng
-            new_tf._rs = self.rs[0]*np.ones_like(new_in_eng)
+            new_tf._rs = self.rs
 
             return new_tf
 
@@ -428,14 +448,14 @@ class TransFuncAtRedshift(Spectra):
 
             log_new_in_eng = np.interp(
                 np.log(new_in_eng),
-                np.arange(self.get_in_eng().size),
-                np.log(self.get_in_eng())
+                np.arange(self.in_eng.size),
+                np.log(self.in_eng)
             )
 
             log_new_eng = np.interp(
                 np.log(new_eng),
-                np.arange(self.get_eng().size),
-                np.log(self.get_eng())
+                np.arange(self.eng.size),
+                np.log(self.eng)
             )
 
             return self.at_val(
@@ -543,6 +563,8 @@ class TransFuncAtRedshift(Spectra):
         """
         out_spec = super().sum_specs(weight)
         out_spec.rs = self.rs
+        if self.spec_type == 'dNdE':
+            out_spec._spec_type = 'dNdE'
         return out_spec
 
     def append(self, spec):
@@ -555,12 +577,11 @@ class TransFuncAtRedshift(Spectra):
         spec : Spectrum
             The new spectrum to append.
         """
-        if self.spec_arr:
-            if self.get_in_eng()[-1] > spec.in_eng: 
+        if self.in_eng.size > 0:
+            if self.in_eng[-1] > spec.in_eng: 
                 raise TypeError("new Spectrum has a smaller injection energy than the current last entry.")
-
-            if spec.rs != self.rs: 
-                raise TypeError("cannot append new spectrum with different injection redshift.")
+            if self.rs[-1] != spec.rs:
+                raise TypeError('redshift of the new Spectrum must be the same.')
 
         super().append(spec)
 

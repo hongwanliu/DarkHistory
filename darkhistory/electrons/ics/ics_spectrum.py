@@ -486,7 +486,7 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False):
         ]
 
         # Injection energy is kinetic energy of the electron.
-        spec_tf = TransFuncAtRedshift(spec_arr, dlnz)
+        spec_tf = TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 
         return spec_tf
 
@@ -651,7 +651,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
             for s, in_eng in zip(spec, eleceng)
         ]
 
-        spec_tf = TransFuncAtRedshift(spec_arr, dlnz)
+        spec_tf = TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 
         return spec_tf 
 
@@ -729,7 +729,7 @@ def ics_spec(
             bounds_error = False, fill_value = 1e-200
         )
         
-        spec[rel] = y**4*rel_tf.get_grid_values().flatten()
+        spec[rel] = y**4*rel_tf.grid_vals.flatten()
     else: 
         spec[rel] = rel_spec(
             eleceng_mask[rel], photeng_mask[rel], T, 
@@ -747,7 +747,7 @@ def ics_spec(
             eleckineng[gamma <= rel_bound], photeng/y, 
             bounds_error = False, fill_value = 1e-200
         )
-        spec[~rel] = y**2*nonrel_tf.get_grid_values().flatten()
+        spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
     else:
         spec[~rel] = nonrel_spec(
             eleckineng_mask[~rel], photeng_mask[~rel], 
@@ -771,5 +771,5 @@ def ics_spec(
         ]
 
         # Use kinetic energy of the electron for better interpolation when necessary. 
-        return TransFuncAtRedshift(spec_arr, dlnz)
+        return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 

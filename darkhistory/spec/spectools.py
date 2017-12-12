@@ -52,7 +52,7 @@ def get_log_bin_width(eng):
     bin_boundary = get_bin_bound(eng)
     return np.diff(np.log(bin_boundary))
 
-def rebin_N_arr(N_arr, in_eng, out_eng=None):
+def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     """Rebins an array of particle number with fixed energy.
     
     Returns an array or a `Spectrum` object. The rebinning conserves both total number and total energy.
@@ -65,6 +65,8 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None):
         An array of the energy abscissa for each bin. The total energy in each bin `i` should be `N_arr[i]*in_eng[i]`.
     out_eng : ndarray, optional
         The new abscissa to bin into. If unspecified, assumed to be in_eng.
+    spec_type : {'N', 'dNdE'}, optional
+        The spectrum type to be output. Default is 'dNdE'.
 
     Returns
     -------
@@ -169,12 +171,18 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None):
     new_dNdE = np.zeros(new_eng.size)
     new_dNdE[1] += low_dNdE
     # reg_dNdE_low = -1 refers to new_eng[0]
-    new_dNdE[reg_bin_low+1] += reg_dNdE_low
-    new_dNdE[reg_bin_upp+1] += reg_dNdE_upp
+    np.add.at(new_dNdE, reg_bin_low+1, reg_dNdE_low)
+    np.add.at(new_dNdE, reg_bin_upp+1, reg_dNdE_upp)
+    # new_dNdE[reg_bin_low+1] += reg_dNdE_low
+    # new_dNdE[reg_bin_upp+1] += reg_dNdE_upp
 
     # Generate the new Spectrum.
 
     out_spec = Spectrum(new_eng[1:], new_dNdE[1:])
+    if spec_type == 'N':
+        out_spec.switch_spec_type()
+    elif spec_type != 'dNdE':
+        raise TypeError('invalid spec_type.')
     out_spec.underflow['N'] += N_underflow
     out_spec.underflow['eng'] += eng_underflow
 
@@ -266,14 +274,14 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
         fac = 1
 
     if new_eng is None:
-            new_eng = in_eng
+            new_eng = spec.eng
 
     # Interpolates the transfer function at new_eng and spec.eng
 
-    if np.any(in_eng != tf.in_eng) or np.any(new_eng != tf.eng):
-        tf = tf.at_val(in_eng, new_eng, bounds_error=True)
+    if np.any(spec.eng != tf.in_eng) or np.any(new_eng != tf.eng):
+        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
 
-    tf *= fac
+    # tf *= fac
 
     return tf.sum_specs(spec*frac)
 
