@@ -27,7 +27,6 @@ def get_bin_bound(eng):
     if eng.size <= 1:
         raise TypeError("There needs to be more than 1 bin to get a bin width.")
 
-
     log_bin_width_low = np.log(eng[1]) - np.log(eng[0])
     log_bin_width_upp = np.log(eng[-1]) - np.log(eng[-2])
 
