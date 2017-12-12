@@ -107,7 +107,7 @@ class TransFuncAtEnergy(Spectra):
             raise TypeError('redshift abscissa must be strictly increasing or decreasing for interpolation.')
 
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self._grid_vals, axis=0, 
+            np.log(self.rs), self.grid_vals, axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -274,7 +274,7 @@ class TransFuncAtRedshift(Spectra):
             raise TypeError('injection energy must be strictly increasing or decreasing for interpolation.')
 
         interp_func = interpolate.interp1d(
-            np.log(self.in_eng), self._grid_vals, axis=0, 
+            np.log(self.in_eng), self.grid_vals, axis=0, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -330,7 +330,7 @@ class TransFuncAtRedshift(Spectra):
         """
 
         interp_func = interpolate.interp1d(
-            np.log(self.eng), self._grid_vals, axis=1, 
+            np.log(self.eng), self.grid_vals, axis=1, 
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -391,7 +391,7 @@ class TransFuncAtRedshift(Spectra):
         # and grid dimensions in_eng x eng. 
         # interp_func takes (eng, in_eng) as argument. 
 
-        non_zero_grid = self._grid_vals()
+        non_zero_grid = self.grid_vals
         # set zero values to some small value for log interp.
         non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
 
@@ -410,7 +410,7 @@ class TransFuncAtRedshift(Spectra):
             new_tf._spec_type = self.spec_type
             new_tf._grid_vals = interp_func(np.log(new_eng), np.log(new_in_eng))
             # Re-zero small values.
-            new_tf._grid_vals[np.abs(new_tf._grid_vals) < 1e-100] = 0
+            new_tf._grid_vals[np.abs(new_tf.grid_vals) < 1e-100] = 0
             new_tf._eng = new_eng
             new_tf._in_eng = new_in_eng
             new_tf._rs = self.rs[0]*np.ones_like(new_in_eng)
@@ -480,12 +480,12 @@ class TransFuncAtRedshift(Spectra):
 
             if np.issubdtype(type(ind), int):
                 return ax.plot(
-                    self.eng, self._grid_vals[ind]*fac, **kwargs
+                    self.eng, self.grid_vals[ind]*fac, **kwargs
                 )
 
             elif isinstance(ind, tuple):
                 spec_to_plot = np.stack(
-                    [self._grid_vals[i]*fac
+                    [self.grid_vals[i]*fac
                         for i in np.arange(ind[0], ind[1], step)
                     ], axis = -1
                 )
@@ -494,7 +494,7 @@ class TransFuncAtRedshift(Spectra):
             
             elif isinstance(ind, np.ndarray) or isinstance(ind, list):
                 spec_to_plot = np.stack(
-                    [self._grid_vals[i]*fac for i in ind], axis=-1
+                    [self.grid_vals[i]*fac for i in ind], axis=-1
                 )
                 return ax.plot(self.eng, spec_to_plot, **kwargs)
 

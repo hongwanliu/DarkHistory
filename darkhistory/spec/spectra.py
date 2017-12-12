@@ -95,6 +95,10 @@ class Spectra:
         return self._rs
 
     @property
+    def grid_vals(self):
+        return self._grid_vals
+
+    @property
     def spec_type(self):
         return self._spec_type
 
@@ -107,7 +111,7 @@ class Spectra:
         return self._eng_underflow
 
     def __iter__(self):
-        return iter(self._grid_vals)
+        return iter(self.grid_vals)
 
     def __getitem__(self, key):
         if np.issubdtype(type(key), int):
@@ -194,7 +198,7 @@ class Spectra:
 
             out_spectra = Spectra([])
             out_spectra._spec_type = self.spec_type
-            out_spectra._grid_vals = self._grid_vals + other._grid_vals
+            out_spectra._grid_vals = self.grid_vals + other.grid_vals
             out_spectra._eng = self.eng 
             if np.array_equal(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
@@ -240,7 +244,9 @@ class Spectra:
 
             out_spectra = Spectra([])
             out_spectra._spec_type = self.spec_type
-            out_spectra._grid_vals = self._grid_vals + other._grid_vals
+            out_spectra._grid_vals = (
+                self.grid_vals + other.grid_vals
+            )
             out_spectra._eng = self.eng 
             if np.array_equal(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
@@ -335,7 +341,7 @@ class Spectra:
             out_spectra._in_eng = self.in_eng
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
-            out_spectra._grid_vals = self._grid_vals*other
+            out_spectra._grid_vals = self.grid_vals*other
             
             return out_spectra
 
@@ -346,7 +352,7 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = np.einsum(
-                'ij,i->ij',self._grid_vals, other
+                'ij,i->ij',self.grid_vals, other
             )
 
             return out_spectra
@@ -364,7 +370,9 @@ class Spectra:
                 out_spectra._rs = self.rs
             if self.spec_type == other.spec_type:
                 out_spectra._spec_type = self.spec_type
-            out_spectra._grid_vals = self._grid_vals * other._grid_vals
+            out_spectra._grid_vals = (
+                self.grid_vals * other.grid_vals
+            )
 
             return out_spectra
 
@@ -395,7 +403,7 @@ class Spectra:
             out_spectra._in_eng = self.in_eng
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
-            out_spectra._grid_vals = self._grid_vals*other
+            out_spectra._grid_vals = self.grid_vals*other
             
             return out_spectra
 
@@ -412,7 +420,9 @@ class Spectra:
                 out_spectra._rs = self.rs
             if self.spec_type == other.spec_type:
                 out_spectra._spec_type = self.spec_type
-            out_spectra._grid_vals = self._grid_vals * other._grid_vals
+            out_spectra._grid_vals = (
+                self.grid_vals * other.grid_vals
+            )
 
             return out_spectra
 
@@ -439,7 +449,7 @@ class Spectra:
             inv_spectra = Spectra([])
             inv_spectra._eng = other.eng
             inv_spectra._in_eng = other.in_eng
-            inv_spectra._grid_vals = 1/other._grid_vals
+            inv_spectra._grid_vals = 1/other.grid_vals
             inv_spectra._rs = other.rs
             inv_spectra._spec_type = other.spec_type
             return self * inv_spectra
@@ -468,7 +478,7 @@ class Spectra:
         inv_spectra = Spectra([])
         inv_spectra._eng = self.eng
         inv_spectra._in_eng = self.in_eng
-        inv_spectra._grid_vals = 1/self._grid_vals
+        inv_spectra._grid_vals = 1/self.grid_vals
         inv_spectra._spec_type = self.spec_type
         inv_spectra._rs = self.rs
 
@@ -478,10 +488,10 @@ class Spectra:
 
         log_bin_width = get_log_bin_width(self.eng)
         if self.spec_type == 'N':
-            self._grid_vals = self._grid_vals/(self.eng * log_bin_width)
+            self._grid_vals = self.grid_vals/(self.eng * log_bin_width)
             self._spec_type == 'dNdE'
         elif self.spec_type == 'dNdE':
-            self._grid_vals = self._grid_vals*self.eng*log_bin_width
+            self._grid_vals = self.grid_vals*self.eng*log_bin_width
             self._spec_type == 'N'
 
     def redshift(self, rs_arr):
@@ -528,11 +538,11 @@ class Spectra:
         # Using the broadcasting rules here. 
         if self.spec_type == 'dNdE':
             dNdlogE = np.einsum(
-                'ij,j->ij',self._grid_vals,self.eng
+                'ij,j->ij',self.grid_vals,self.eng
             )
         elif self.spec_type == 'N':
             dNdlogE = np.einsum(
-                'ij,j->ij', self._grid_vals, 1/log_bin_width
+                'ij,j->ij', self.grid_vals, 1/log_bin_width
             )
 
         if bound_type is not None:
@@ -639,9 +649,9 @@ class Spectra:
 
         # Using the broadcasting rules here. 
         if self.spec_type == 'dNdE':
-            dNdlogE = self._grid_vals * self.eng
+            dNdlogE = self.grid_vals * self.eng
         elif self.spec_type == 'N':
-            dNdlogE = self._grid_vals / log_bin_width
+            dNdlogE = self.grid_vals / log_bin_width
 
         if bound_type is not None:
 
@@ -751,7 +761,7 @@ class Spectra:
             weight = np.ones_like(self.eng)
 
         if isinstance(weight, np.ndarray):
-            return np.dot(self._grid_vals, weight)
+            return np.dot(self.grid_vals, weight)
 
         else:
             raise TypeError('mat must be an ndarray.')
@@ -776,10 +786,10 @@ class Spectra:
             weight = np.ones_like(self.rs)
 
         if isinstance(weight, np.ndarray):
-            new_data = np.dot(weight, self._grid_vals)
+            new_data = np.dot(weight, self.grid_vals)
             return Spectrum(self.eng, new_data, spec_type=self.spec_type)
         elif isinstance(weight, Spectrum):
-            new_data = np.dot(weight._data, self._grid_vals)
+            new_data = np.dot(weight._data, self.grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type
             )
@@ -943,7 +953,7 @@ class Spectra:
             self._grid_vals = np.atleast_2d(spec._data)
         else:
             self._grid_vals = np.concatenate(
-                (self._grid_vals, np.atleast_2d(spec._data))
+                (self.grid_vals, np.atleast_2d(spec._data))
             )
 
     def at_rs(
@@ -970,7 +980,7 @@ class Spectra:
             raise TypeError('redshift abscissa must be strictly increasing or decreasing for interpolation.')
 
         interp_func = interpolate.interp1d(
-            np.log(self.rs), self._grid_vals, axis=0,
+            np.log(self.rs), self.grid_vals, axis=0,
             bounds_error=bounds_err, fill_value=fill_value
         )
 
@@ -1031,13 +1041,13 @@ class Spectra:
 
             if np.issubdtype(type(ind), int):
                 return ax.plot(
-                    self.eng, self._grid_vals[ind]*fac, **kwargs
+                    self.eng, self.grid_vals[ind]*fac, **kwargs
                 )
 
             elif isinstance(ind, tuple):
                 spec_to_plot = np.stack(
                     [
-                        self._grid_vals[i]*fac 
+                        self.grid_vals[i]*fac 
                         for i in np.arange(ind[0], ind[1], step)
                     ], axis = -1
                 )
@@ -1045,7 +1055,7 @@ class Spectra:
 
             elif isinstance(ind, np.ndarray) or isinstance(ind, list):
                 spec_to_plot = np.stack(
-                    [self._grid_vals[i]*fac for i in ind], axis=-1
+                    [self.grid_vals[i]*fac for i in ind], axis=-1
                 )
                 return ax.plot(self.eng, spec_to_plot, **kwargs)
 
