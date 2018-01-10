@@ -53,11 +53,13 @@ class TransferFuncList:
 
         if isinstance(tflist[0], tf.TransFuncAtRedshift):
             self.tftype = 'rs'
+            self.eng = tflist[0].eng
             self.rs = np.array([tfunc.rs[0] for tfunc in self.tflist])
             self.in_eng = tflist[0].in_eng
             self.dlnz = tflist[0].dlnz
         elif isinstance(tflist[0], tf.TransFuncAtEnergy):
             self.tftype = 'in_eng'
+            self.eng = tflist[0].eng
             self.rs = tflist[0].rs
             self.in_eng = np.array([tfunc.in_eng[0] for tfunc in self.tflist])
             self.dlnz = tflist[0].dlnz

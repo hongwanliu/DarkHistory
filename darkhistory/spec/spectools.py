@@ -262,14 +262,16 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     # Gets the factor associated with time interval (see Ex. 3).
     if dlnz > 0:
-        if mode == 'dNdE':
-            if spec.rs < 0: 
-                raise TypeError('spec.rs must be initialized when dlnz is specified.')
-            fac = dlnz/phys.hubble(spec.rs)
-        elif mode == 'N':
-            if rs < 0:
-                raise TypeError('rs must be initialized when dlnz is specified')
-            fac = dlnz/phys.hubble(rs)
+        # need to think about this.
+        fac = 1
+        # if mode == 'dNdE':
+        #     if spec.rs < 0: 
+        #         raise TypeError('spec.rs must be initialized when dlnz is specified.')
+        #     fac = dlnz/phys.hubble(spec.rs)
+        # elif mode == 'N':
+        #     if rs < 0:
+        #         raise TypeError('rs must be initialized when dlnz is specified')
+        #     fac = dlnz/phys.hubble(rs)
     else: 
         fac = 1
 
@@ -282,6 +284,8 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
         tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
 
     # tf *= fac
+
+    
 
     return tf.sum_specs(spec*frac)
 
