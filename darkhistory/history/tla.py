@@ -3,8 +3,8 @@
 """
 
 import numpy as np 
-from darkhistory import physics as phys
-from darkhistory.history import reionization as reion 
+import darkhistory.physics as phys
+import darkhistory.history.reionization as reion 
 from scipy.integrate import odeint
 
 def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
@@ -213,7 +213,7 @@ def get_history(
 			# The reionization rates and the Compton rate
 			# are expressed in *energy loss* *per second*.
 			
-			photoheat_total_rate = phys.nH * rs**3 (
+			photoheat_total_rate = phys.nH * rs**3 * (
 				xHI * photoheat_rate_HI(rs)
 				+ xHeI * photoheat_rate_HeI(rs) 
 				+ xHeII(yHeII) * photoheat_rate_HeII(rs)
@@ -315,11 +315,18 @@ def get_history(
 
 		T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
+		print("rs: ", rs, "xHII: ", xHII(yHII), "T_m: ", T_m)
+		print("Rates: ", dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
+			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+		)
+
 		return [
-			dT_dz(yHII, yHeII, yHeIII, rs, T_m), 
-			dyHII_dz(yHII, yHeII, yHeIII, rs, T_m),
-			dyHeII_dz(yHII, yHeII, yHeIII, rs, T_m),
-			dyHeIII_dz(yHII, yHeII, yHeIII, rs, T_m)
+			dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
+			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
 		]
 
 	if init_cond[1] == 1:

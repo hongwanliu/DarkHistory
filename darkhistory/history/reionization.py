@@ -3,7 +3,7 @@
 """
 
 import numpy as np 
-from darkhistory import physics as phys
+import darkhistory.physics as phys
 
 def photoion_rate(species):
     """ Photoionization rate. 
@@ -261,9 +261,9 @@ def coll_ion_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 
 	return (
 		-6.24e11 * xe * (phys.nH * rs**3)**2 * (
-			2.18e-11 * reion.coll_ion_rate('HI', T_m) * xHI
-			+ 3.94e-11 * reion.coll_ion_rate('HeI', T_m) * xHeI
-			+ 8.72e-11 * reion.coll_ion_rate('HeII', T_m) * xHeII
+			2.18e-11 * coll_ion_rate('HI', T_m) * xHI
+			+ 3.94e-11 * coll_ion_rate('HeI', T_m) * xHeI
+			+ 8.72e-11 * coll_ion_rate('HeII', T_m) * xHeII
 		)
 	)
 
