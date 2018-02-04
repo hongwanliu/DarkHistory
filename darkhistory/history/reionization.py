@@ -6,7 +6,7 @@ import numpy as np
 from darkhistory import physics as phys
 
 def photoion_rate(species):
-    """ Photoionization rate from 1801.04931. 
+    """ Photoionization rate. 
 
     Parameters
     ----------
@@ -15,7 +15,7 @@ def photoion_rate(species):
     Returns
     -------
     function
-        Interpolating function which takes redshift as an argument, and returns the photoionization rate of the species in s^-1. 
+        Interpolating function which takes redshift as an argument, and returns the photoionization rate of the species in s^-1. See 1801.04931. 
     """
     rs_vec = 1. + np.array([
         0, 0.0491, 0.101, 0.155, 0.211, 0.271, 0.333, 0.399, 0.468, 0.54, 
@@ -69,7 +69,7 @@ def photoion_rate(species):
     return ion_rate
 
 def photoheat_rate(species):
-    """ Photoheating rate from 1801.04931. 
+    """ Photoheating rate. 
 
     Parameters
     ----------
@@ -78,7 +78,7 @@ def photoheat_rate(species):
     Returns
     -------
     function
-        Interpolating function which takes redshift as an argument, and returns the photoionization rate of the species in s^-1. 
+        Interpolating function which takes redshift as an argument, and returns the photoionization rate of the species in s^-1. See 1801.04931. 
     """
     rs_vec = 1. + np.array([
         0, 0.0491, 0.101, 0.155, 0.211, 0.271, 0.333, 0.399, 0.468, 0.54, 
@@ -131,7 +131,7 @@ def photoheat_rate(species):
     return heat_rate
 
 def alphaA_recomb(species, T):
-    """Case-A recombination coefficient. See astro-ph/0607331. 
+    """Case-A recombination coefficient.  
 
     Parameters
     ----------
@@ -143,7 +143,7 @@ def alphaA_recomb(species, T):
     Returns
     -------
     float
-        Case-A recombination coefficient in cm^3/s
+        Case-A recombination coefficient in cm^3/s. See astro-ph/0607331.
     """
     if species == 'HII':
         return np.exp(
@@ -168,22 +168,22 @@ def alphaA_recomb(species, T):
     elif species == 'HeIII':
         return 2*alphaA_recomb('HII',T/4)
 
-def coll_ion_rate(species, T):
-    """Collisional ionization rate. See astro-ph/0607331. 
+def coll_ion_rate(species, T_m):
+    """Collisional ionization rate.  
 
     Parameters
     ----------
     species : {'HI', 'HeI', 'HeII'}
         Species of interest. 
-    T : float
+    T_m : float
         Matter temperature in eV. 
 
     Returns
     -------
     float
-        Collisional ionization rate in s^-1. 
+        Collisional ionization rate in s^-1. See astro-ph/0607331.
     """
-    TinK = T/phys.kB
+    TinK = T_m/phys.kB
     T5_factor = 1/(1 + np.sqrt(TinK/1e5))
 
     if species == 'HI':
@@ -194,3 +194,122 @@ def coll_ion_rate(species, T):
         return 1.14e-11 * np.sqrt(TinK) * np.exp(-631515.0/TinK) * T5_factor
     else:
         raise TypeError('invalid species.')
+
+def recomb_cooling_rate(xHII, xHeII, xHeIII, T_m): 
+	"""Recombination cooling rate. 
+
+	Parameters
+	----------
+	xHII : float
+		n_HII/n_H. 
+	xHeII : float
+		n_HeII/n_H. 
+	xHeIII : float
+		n_HeIII/n_H. 
+	T_m : float
+		Matter temperature in eV. 
+
+	Returns
+	-------
+	float
+		Recombination cooling rate in eV s^-1. See astro-ph/0607331.
+	"""
+	xe   = xHII + xHeII + 2*xHeIII
+	xHI  = 1 - xHII
+	xHeI = phys.nHe/phys.nH - xHeII - xHeIII 
+
+	return (
+		-6.24e11 * (phys.nH * rs**3)**2 * (
+			1.036e-16 * T_m * alphaA_recomb('HII', T_m) 
+				* xe * xHII
+			+ (
+				1.036e-16 * T_m * alphaA_recomb('HeIIr', T_m)
+				+ 6.526e-11 * alphaA_recomb('HeIId', T_m)
+			) * xe * xHII
+			+ 1.036e-16 * T_m * alphaA_recomb('HeIII', T_m)
+				* xe * xHeIII
+		) 
+	)
+
+def coll_ion_cooling_rate(xHII, xHeII, xHeIII, T_m):
+	""" Collisional ionization cooling rate.
+	
+	Parameters
+	----------
+	xHII : float
+		n_HII/n_H. 
+	xHeII : float
+		n_HeII/n_H. 
+	xHeIII : float
+		n_HeIII/n_H. 
+	T_m : float
+		Matter temperature in eV. 
+
+	Returns
+	-------
+	float
+		Collisional ionization cooling rate in eV s^-1. See astro-ph/0607331.
+
+	"""
+	xe   = xHII + xHeII + 2*xHeIII
+	xHI  = 1 - xHII
+	xHeI = phys.nHe/phys.nH - xHeII - xHeIII 
+
+	return (
+		-6.24e11 * xe * (phys.nH * rs**3)**2 * (
+			2.18e-11 * reion.coll_ion_rate('HI', T_m) * xHI
+			+ 3.94e-11 * reion.coll_ion_rate('HeI', T_m) * xHeI
+			+ 8.72e-11 * reion.coll_ion_rate('HeII', T_m) * xHeII
+		)
+	)
+
+def coll_exc_cooling_rate(xHII, xHeII, xHeIII, T_m):
+	""" Collisional excitation cooling rate.
+	
+	Parameters
+	----------
+	xHII : float
+		n_HII/n_H. 
+	xHeII : float
+		n_HeII/n_H. 
+	xHeIII : float
+		n_HeIII/n_H. 
+	T_m : float
+		Matter temperature in eV. 
+
+	Returns
+	-------
+	float
+		Collisional excitation cooling rate in eV s^-1. See astro-ph/0607331.
+
+	"""
+	xe   = xHII + xHeII + 2*xHeIII
+	xHI  = 1 - xHII
+	xHeI = phys.nHe/phys.nH - xHeII - xHeIII 
+
+	T_in_K = T_m/phys.kB
+	T_5_factor = (1 + np.sqrt(T_in_K/1e5))**-1
+
+	return (
+		-6.24e11 * xe * (phys.nH * rs**3)**2 * (
+			7.50e-19 * np.exp(-118348/T_in_K) * T_5_factor * xHI
+			+ 9.10e-27 * T_in_K**-0.1687 * np.exp(-13179.0/T_in_K)
+				* T_5_factor * xe * (phys.nH * rs**3) * xHeII
+			+ 5.54e-17 * T_in_K**-0.397 *  np.exp(-473638 /T_in_K)
+				* T_5_factor * xHeII
+		)
+	)
+
+def brem_cooling_rate(xHII, xHeII, xHeIII, T_m):
+
+
+
+
+
+
+
+
+
+
+
+
