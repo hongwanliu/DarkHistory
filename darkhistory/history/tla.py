@@ -230,7 +230,7 @@ def get_history(
 						)
 						+ f_heating(rs, xHII(yHII)) * dm_injection_rate(rs)
 					)
-					- phys.dtdz(rs) * reion_fac(
+					- phys.dtdz(rs) * reion_fac * (
 						+ photoheat_total_rate
 						+ reion.recomb_cooling_rate(
 							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -248,30 +248,79 @@ def get_history(
 				) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
 			)
 
-		def dy_dz(T_matter, y, rs):
-			return (
-				2 * np.cosh(y)**2 * phys.dtdz(rs) * (
-					peebles_C(xe(y), rs) * (
-						alpha_recomb(T_matter) * xe(y)**2 * phys.nH * rs**3
-						- (
-							beta_ion(phys.TCMB(rs)) * (1 - xe(y))
-							* np.exp(-phys.lya_eng/T_matter)
-						)
-					)
-					- (
-						f_H_ion(rs, xe(y)) * dm_injection_rate(rs)
-						/ (phys.rydberg * phys.nH * rs**3)
-					)
-					- (1 - peebles_C(xe(y), rs)) * (
-						f_H_exc(rs, xe(y)) * dm_injection_rate(rs) 
-						/ (phys.lya_eng * phys.nH * rs**3)
-					)
+		def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			ne = xe * phys.nH*rs**3 
+			xHI = 1 - xHII(yHII)
+			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
+
+			return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
+				# Recombination processes
+				- peebles_C(xHII(yHII), rs) * (1 - reion_fac) * (
+					alpha_recomb(T_m) * xHII(yHII)*xe * phys.nH * rs**3
+					- beta_ion(phys.TCMB(rs)) * xHI 
+						* np.exp(-phys.lya_eng/T_m)
 				)
+				# DM injection. Note that C = 1 at late times. 
+				+ f_H_ion(rs, xHII(yHII)) * dm_injection_rate(rs)
+					/ (phys.rydberg * phys.nH * rs**3)
+				+ (1 - peebles_C(xHII(yHII), rs)) * (
+					f_H_exc(rs, xHII(yHII)) * dm_injection_rate(rs) 
+					/ (phys.lya_eng * phys.nH * rs**3)
+				)
+				# Reionization rates.
+				+ reion_fac * (
+					# Photoionization.
+					xHI * photoion_rate_HI(rs)
+					# Collisional ionization.
+					+ xHI * ne * reion.coll_ion_rate('HI', T_m)
+					# Recombination.
+					- xHI * ne * reion.alphaA_recomb('HII', T_m)
+				) 	
 			)
 
-		T_matter, y = var[0], var[1]
+		def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			ne = xe * phys.nH*rs**3 
+			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-		return [dT_dz(T_matter, y, rs), dy_dz(T_matter, y, rs)]
+			return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * reion_fac * (
+				# Photoionization of HeI into HeII. 
+				xHeI * photoion_rate_HeI(rs)
+				# Collisional ionization of HeI to HeII.
+				+ xHeI * ne * reion.coll_ion_rate('HeI', T_m)
+				# Recombination of HeIII to HeII. 
+				- xHeIII(yHeIII) * ne * reion.alphaA_recomb('HeIII', T_m)
+				# Photoionization of HeII to HeIII. 
+				- xHeII(yHeII) * photoion_rate_HeII(rs)
+				# Collisional ionization of HeII to HeIII. 
+				- xHeII(yHeII) * ne * reion.coll_ion_rate('HeII', T_m)
+				# Recombination of HeII into HeI. 
+				- xHeII(yHeII) * ne * reion.alphaA_recomb('HeIII', T_m)
+			)
+
+		def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			ne = xe * phys.nH*rs**3
+
+			return 2/chi * np.cosh(yHeIII)**2 * -phys.dtdz(rs) * reion_fac *(
+				# Photoionization of HeII into HeIII. 
+				xHeII(yHeII) * photoion_rate_HeII(rs)
+				# Collisional ionization of HeII into HeIII. 
+				+ xHeII(yHeII) * ne * reion.coll_ion_rate('HeII', T_m)
+				# Recombination of HeIII into HeII. 
+				- xHeIII(yHeIII) * ne * reion.alphaA_recomb('HeIII', T_m)
+			)
+
+		T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
+
+		return [
+			dT_dz(yHII, yHeII, yHeIII, rs, T_m), 
+			dyHII_dz(yHII, yHeII, yHeIII, rs, T_m),
+			dyHeII_dz(yHII, yHeII, yHeIII, rs, T_m),
+			dyHeIII_dz(yHII, yHeII, yHeIII, rs, T_m)
+		]
 
 	if init_cond[1] == 1:
 		init_cond[1] = 1 - 1e-12
