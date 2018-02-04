@@ -195,7 +195,7 @@ def coll_ion_rate(species, T_m):
     else:
         raise TypeError('invalid species.')
 
-def recomb_cooling_rate(xHII, xHeII, xHeIII, T_m): 
+def recomb_cooling_rate(xHII, xHeII, xHeIII, T_m, rs): 
 	"""Recombination cooling rate. 
 
 	Parameters
@@ -208,6 +208,8 @@ def recomb_cooling_rate(xHII, xHeII, xHeIII, T_m):
 		n_HeIII/n_H. 
 	T_m : float
 		Matter temperature in eV. 
+	rs : float
+		Redshift (1+z). 
 
 	Returns
 	-------
@@ -231,7 +233,7 @@ def recomb_cooling_rate(xHII, xHeII, xHeIII, T_m):
 		) 
 	)
 
-def coll_ion_cooling_rate(xHII, xHeII, xHeIII, T_m):
+def coll_ion_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 	""" Collisional ionization cooling rate.
 	
 	Parameters
@@ -244,6 +246,8 @@ def coll_ion_cooling_rate(xHII, xHeII, xHeIII, T_m):
 		n_HeIII/n_H. 
 	T_m : float
 		Matter temperature in eV. 
+	rs : float
+		Redshift (1+z). 
 
 	Returns
 	-------
@@ -263,7 +267,7 @@ def coll_ion_cooling_rate(xHII, xHeII, xHeIII, T_m):
 		)
 	)
 
-def coll_exc_cooling_rate(xHII, xHeII, xHeIII, T_m):
+def coll_exc_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 	""" Collisional excitation cooling rate.
 	
 	Parameters
@@ -276,6 +280,8 @@ def coll_exc_cooling_rate(xHII, xHeII, xHeIII, T_m):
 		n_HeIII/n_H. 
 	T_m : float
 		Matter temperature in eV. 
+	rs : float
+		Redshift (1+z). 
 
 	Returns
 	-------
@@ -300,10 +306,40 @@ def coll_exc_cooling_rate(xHII, xHeII, xHeIII, T_m):
 		)
 	)
 
-def brem_cooling_rate(xHII, xHeII, xHeIII, T_m):
+def brem_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
+	""" Bremsstrahlung cooling rate.
+	
+	Parameters
+	----------
+	xHII : float
+		n_HII/n_H. 
+	xHeII : float
+		n_HeII/n_H. 
+	xHeIII : float
+		n_HeIII/n_H. 
+	T_m : float
+		Matter temperature in eV. 
+	rs : float
+		Redshift (1+z). 
 
+	Returns
+	-------
+	float
+		Bremsstrahlung cooling rate in eV s^-1. See astro-ph/0607331.
 
+	"""
+	xe   = xHII + xHeII + 2*xHeIII
 
+	T_in_K = T_m/phys.kB
+
+	gaunt_fac = 1.1 + 0.34 * np.exp(-(5.5 - np.log10(T_in_K))**2)
+
+	return (
+		-xe * 6.24e11 * (phys.nH*rs**3)**2 * (
+			1.43e-27 * np.sqrt(T_in_K) * gaunt_fac
+				* (xHII + xHeII + 4*xHeIII)
+		)
+	)
 
 
 
