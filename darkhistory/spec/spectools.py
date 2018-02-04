@@ -27,7 +27,6 @@ def get_bin_bound(eng):
     if eng.size <= 1:
         raise TypeError("There needs to be more than 1 bin to get a bin width.")
 
-
     log_bin_width_low = np.log(eng[1]) - np.log(eng[0])
     log_bin_width_upp = np.log(eng[-1]) - np.log(eng[-2])
 
@@ -53,10 +52,10 @@ def get_log_bin_width(eng):
     bin_boundary = get_bin_bound(eng)
     return np.diff(np.log(bin_boundary))
 
-def rebin_N_arr(N_arr, in_eng, out_eng=None):
+def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     """Rebins an array of particle number with fixed energy.
     
-    Returns a `Spectrum` object. The rebinning conserves both total number and total energy.
+    Returns an array or a `Spectrum` object. The rebinning conserves both total number and total energy.
 
     Parameters
     ----------
@@ -66,6 +65,8 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None):
         An array of the energy abscissa for each bin. The total energy in each bin `i` should be `N_arr[i]*in_eng[i]`.
     out_eng : ndarray, optional
         The new abscissa to bin into. If unspecified, assumed to be in_eng.
+    spec_type : {'N', 'dNdE'}, optional
+        The spectrum type to be output. Default is 'dNdE'.
 
     Returns
     -------
@@ -169,15 +170,19 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None):
 
     new_dNdE = np.zeros(new_eng.size)
     new_dNdE[1] += low_dNdE
-    # reg_dNdE_low = -1 refers to new_eng[0]  
-    for i,ind in zip(np.arange(reg_bin_low.size), reg_bin_low):
-        new_dNdE[ind+1] += reg_dNdE_low[i]
-    for i,ind in zip(np.arange(reg_bin_upp.size), reg_bin_upp):
-        new_dNdE[ind+1] += reg_dNdE_upp[i]
+    # reg_dNdE_low = -1 refers to new_eng[0]
+    np.add.at(new_dNdE, reg_bin_low+1, reg_dNdE_low)
+    np.add.at(new_dNdE, reg_bin_upp+1, reg_dNdE_upp)
+    # new_dNdE[reg_bin_low+1] += reg_dNdE_low
+    # new_dNdE[reg_bin_upp+1] += reg_dNdE_upp
 
     # Generate the new Spectrum.
 
     out_spec = Spectrum(new_eng[1:], new_dNdE[1:])
+    if spec_type == 'N':
+        out_spec.switch_spec_type()
+    elif spec_type != 'dNdE':
+        raise TypeError('invalid spec_type.')
     out_spec.underflow['N'] += N_underflow
     out_spec.underflow['eng'] += eng_underflow
 
@@ -226,26 +231,15 @@ def discretize(eng, func_dNdE, *args):
 
     return rebin_N_arr(N, eng_mean, eng)
 
-def scatter(
-    tf, mode='dNdE', out_mode='dNdE', spec=None, eng_arr=None, 
-    N_arr=None, new_eng=None, dlnz=-1., rs=-1, frac=1.
-):
+def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     """Produces a secondary spectrum. 
 
     Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a `Spectrum` object (dN/dE) or with an array of number of particles (N) and an energy abscissa. Similarly, output in the form of a `Spectrum` object (dN/dE) or with an array of number of particles (N) is possible (the energy abscissa is implicitly assumed to be `eng_arr` in this case). 
     
     Parameters
-    ----------
-    mode : {'dNdE', 'N'}
-        Specifies the type of input for the calculation.
-    out_mode : {'dNdE', 'N'}
-        Specifies the type of output for the calculation. 
+    ---------- 
     spec : Spectrum
         The primary spectrum. Required if type is 'dNdE'.
-    eng_arr : ndarray
-        The primary enerby abscissa. Required if type is 'N'.
-    N_arr : ndarray
-        An array representing the number of particles in each energy bin. Required if type is 'N'. 
     tf : TransFuncAtRedshift
         The secondary spectrum scattering rate, given in dN/(dE dt).
     new_eng : ndarray, optional
@@ -266,51 +260,34 @@ def scatter(
 
     """
 
-    if mode == 'dNdE':
-        in_eng = spec.eng
-    elif mode == 'N':
-        in_eng = eng_arr
-    else:
-        raise TypeError('Invalid type specified.')
-
     # Gets the factor associated with time interval (see Ex. 3).
     if dlnz > 0:
-        if mode == 'dNdE':
-            if spec.rs < 0: 
-                raise TypeError('spec.rs must be initialized when dlnz is specified.')
-            fac = dlnz/phys.hubble(spec.rs)
-        elif mode == 'N':
-            if rs < 0:
-                raise TypeError('rs must be initialized when dlnz is specified')
-            fac = dlnz/phys.hubble(rs)
+        # need to think about this.
+        fac = 1
+        # if mode == 'dNdE':
+        #     if spec.rs < 0: 
+        #         raise TypeError('spec.rs must be initialized when dlnz is specified.')
+        #     fac = dlnz/phys.hubble(spec.rs)
+        # elif mode == 'N':
+        #     if rs < 0:
+        #         raise TypeError('rs must be initialized when dlnz is specified')
+        #     fac = dlnz/phys.hubble(rs)
     else: 
         fac = 1
 
     if new_eng is None:
-            new_eng = in_eng
+            new_eng = spec.eng
 
     # Interpolates the transfer function at new_eng and spec.eng
 
-    if (np.any(in_eng != tf.get_in_eng()) 
-        or np.any(new_eng != tf.get_eng())
-    ):
-        tf = tf.at_val(in_eng, new_eng, bounds_error=True)
+    if np.any(spec.eng != tf.in_eng) or np.any(new_eng != tf.eng):
+        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
 
-    # Current fac is disabled because it is too slow.
     # tf *= fac
 
-    if mode == 'dNdE':
-        N_arr = spec.totN('bin')*frac
-    elif mode == 'N':
-        N_arr *= frac
+    
 
-    if out_mode == 'dNdE':
-        return tf.sum_specs(N_arr)
-    elif out_mode == 'N':
-        return (
-            np.dot(N_arr, tf.get_grid_values())
-            *new_eng*get_log_bin_width(new_eng)
-        )
+    return tf.sum_specs(spec*frac)
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 
@@ -351,12 +328,13 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
 
     if save_steps is True:
 
-        out_specs = Spectra([spec])
+        out_specs = Spectra([spec], spec_type=spec.spec_type)
         append_spec = out_specs.append
 
         for i in np.arange(rs_last_ind):
-            append_spec(tflist[i].sum_specs(out_specs[-1]))
-            out_specs[-1].rs = tflist.rs[i+1]
+            next_spec = tflist[i].sum_specs(out_specs[-1])
+            next_spec.rs = tflist.rs[i+1]
+            append_spec(next_spec)
 
         return out_specs
 

@@ -95,6 +95,10 @@ class Spectrum:
         elif self._spec_type == 'N':
             self._data = value
 
+    @property
+    def spec_type(self):
+        return self._spec_type
+
 
     def __add__(self, other):
         """Adds two `Spectrum` instances together, or an array to the spectrum. The `Spectrum` object is on the left.
@@ -130,9 +134,9 @@ class Spectrum:
                 raise TypeError("cannot add N to dN/dE.")
             new_rs = -1
             new_in_eng = -1
-            if self.rs == other.rs:
+            if np.array_equal(self.rs, other.rs):
                 new_rs = self.rs 
-            if self.in_eng == other.in_eng:
+            if np.array_equal(self.in_eng, other.in_eng):
                 new_in_eng = self.in_eng 
 
             new_spectrum = Spectrum(
@@ -441,17 +445,6 @@ class Spectrum:
         invSpec = Spectrum(self.eng, 1/self._data, self.rs, self.in_eng)
         return other*invSpec
 
-    def get_spec_type(self):
-        """ Returns the type of values stored in the object.
-
-        Returns
-        -------
-        str
-            Either `'N'` or `'dNdE'`.
-        """
-
-        return self._spec_type
-
     def switch_spec_type(self):
         """Switches between the type of values to be stored.
 
@@ -462,10 +455,10 @@ class Spectrum:
         """
         log_bin_width = get_log_bin_width(self.eng)
         if self._spec_type == 'N':
-            self.N /= (self.eng*log_bin_width) 
+            self._data = self._data/(self.eng*log_bin_width) 
             self._spec_type = 'dNdE'
         elif self._spec_type == 'dNdE':
-            self.dNdE *= self.eng*log_bin_width 
+            self._data = self._data*self.eng*log_bin_width 
             self._spec_type = 'N'
 
     def contract(self, mat):
@@ -741,7 +734,6 @@ class Spectrum:
         new_eng = np.insert(out_eng, 0, first_bin_eng)
 
 
-
         # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
         bin_ind = np.interp(self.eng, new_eng, 
             np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
@@ -797,8 +789,7 @@ class Spectrum:
             reg_N_upp = (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
 
         # Low bins. 
-        low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
-                      
+        low_bin_low = np.floor(bin_ind[ind_low]).astype(int) 
         N_above_underflow = np.sum((bin_ind[ind_low] - low_bin_low) 
             * N_arr_low)
         eng_above_underflow = N_above_underflow * new_eng[1]
@@ -813,12 +804,17 @@ class Spectrum:
         if self._spec_type == 'dNdE':
             new_data[1] += low_dNdE
             # reg_dNdE_low = -1 refers to new_eng[0]
-            new_data[reg_bin_low+1] += reg_dNdE_low
-            new_data[reg_bin_upp+1] += reg_dNdE_upp
+            np.add.at(new_data, reg_bin_low+1, reg_dNdE_low)
+            np.add.at(new_data, reg_bin_upp+1, reg_dNdE_upp)
+            # print(new_data[reg_bin_low+1])
+            # new_data[reg_bin_low+1] += reg_dNdE_low
+            # new_data[reg_bin_upp+1] += reg_dNdE_upp
         elif self._spec_type == 'N':
-            new_data[1] += N_above_underflow 
-            new_data[reg_bin_low+1] += reg_N_low
-            new_data[reg_bin_upp+1] += reg_N_upp 
+            new_data[1] += N_above_underflow
+            np.add.at(new_data, reg_bin_low+1, reg_N_low)
+            np.add.at(new_data, reg_bin_upp+1, reg_n_upp)
+            # new_data[reg_bin_low+1] += reg_N_low
+            # new_data[reg_bin_upp+1] += reg_N_upp 
         
         # Implement changes.
         self.eng = new_eng[1:]
@@ -863,6 +859,32 @@ class Spectrum:
         self.length = out_eng.size
         self.underflow['N'] = new_spec.underflow['N']
         self.underflow['eng'] = new_spec.underflow['eng']
+
+    def at_eng(self, new_eng, left=-200, right=-200):
+        """Interpolates the spectrum at a new abscissa. 
+
+        Interpolation is logarithmic. 
+
+        Parameters
+        ----------
+        new_eng : ndarray
+            The new energies to interpolate at. 
+        left : float, optional
+            Returns the value if beyond the first bin on the left. Default is to return -200, so that the exponential is small. 
+        right : float, optional
+            Returns the value if beyond the last bin on the right. Default is to return -200, so that the exponential is small.
+        """
+
+        self._data[self._data <= 1e-200] = 1e-200
+        
+        log_new_data = np.interp(
+            np.log(new_eng), np.log(self.eng), np.log(self._data), 
+            left=left, right=right
+        )
+
+        self.eng = new_eng
+        self._data = np.exp(log_new_data)
+        self._data[self._data <= 1e-200] = 0
 
     def redshift(self, new_rs):
         """Redshifts the `Spectrum` object as a photon spectrum. 
