@@ -1,3 +1,7 @@
+"""Three-level atom model.
+
+"""
+
 import numpy as np 
 from darkhistory import physics as phys
 from scipy.integrate import odeint
