@@ -4,6 +4,7 @@
 
 import numpy as np 
 from darkhistory import physics as phys
+from darkhistory.history import reionization as reion 
 from scipy.integrate import odeint
 
 def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
@@ -132,14 +133,14 @@ def peebles_C(xe, rs):
 
 def get_history(
 	init_cond, f_H_ion, f_H_exc, f_heating, 
-	dm_injection_rate, rs_vec
+	dm_injection_rate, rs_vec, reion_switch=True
 ):
 	"""Returns the ionization and thermal history of the IGM. 
 
 	Parameters
 	----------
 	init_cond : array
-		Array containing [initial temperature, initial xe]
+		Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII].
 	fz_H_ion : function
 		f(xe, rs) for hydrogen ionization. 
 	fz_H_exc : function
@@ -150,36 +151,101 @@ def get_history(
 		Injection rate of DM as a function of redshift. 
 	rs_vec : ndarray
 		Abscissa for the solution. 
+	reion_switch : bool
+		Reionization model included if true. 
 
 	Returns
 	-------
 	list of ndarray
-		[temperature solution (in eV), xe solution]. 
+		[temperature solution (in eV), xHII solution, xHeII, xHeIII]. 
 
 	Note
 	----
-	The actual differential equation that we solve is expressed in terms of y = arctanh(2*(xe - 0.5)). 
+	The actual differential equation that we solve is expressed in terms of y = arctanh(f*(x - f)), where f = 0.5 for x = xHII, and f = nHe/nH * 0.5 for x = xHeII or xHeIII, where nHe/nH is approximately 0.083. 
 
 	"""
 
+	chi = phys.nHe/phys.nH
+
+	photoion_rate_HI   = reion.photoion_rate('HI')
+	photoion_rate_HeI  = reion.photoion_rate('HeI')
+	photoion_rate_HeII = reion.photoion_rate('HeII')
+
+	photoheat_rate_HI   = reion.photoheat_rate('HI')
+	photoheat_rate_HeI  = reion.photoheat_rate('HeI')
+	photoheat_rate_HeII = reion.photoheat_rate('HeII')
+
 	def tla_diff_eq(var, rs):
-		# Returns an array of values for [dT/dz, dy/dz].
-		# var is the [temperature, xe] inputs. 
+		# Returns an array of values for [dT/dz, dyHII/dz, 
+		# dyHeII/dz, dyHeIII/dz].
+		# var is the [temperature, xHII, xHeII, xHeIII] inputs. 
 
-		def xe(y):
-			return 0.5 + 0.5*np.tanh(y)
+		reion_fac = 0
+		if reion_switch and rs <= 16.1:
+			reion_fac = 1
 
-		def dT_dz(T_matter, y, rs):
+		def xHII(yHII):
+			return 0.5 + 0.5*np.tanh(yHII)
+		def xHeII(yHeII):
+			return chi/2 + chi/2*np.tanh(yHeII)
+		def xHeIII(yHeIII):
+			return chi/2 + chi/2*np.tanh(yHeIII)
+
+		def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			xHI = 1 - xHII(yHII)
+			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
+
+			# This rate is temperature loss per redshift. 
+			adiabatic_cooling_rate = 2 * T_m/rs 
+
+			# This rate is *energy* loss per redshift.
+			entropy_cooling_rate = -3/2 * T_m * phys.nH * rs**3 * (
+				dyHII_dz(yHII, yHeII, yHeIII, T_m, rs) 
+					* 0.5/np.cosh(yHII)**2
+				+ dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs) 
+					* (chi/2)/np.cosh(yHeII)**2
+				+ dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+					* (chi/2)/np.cosh(yHeIII)**2
+			)
+
+			# The reionization rates and the Compton rate
+			# are expressed in *energy loss* *per second*.
+			
+			photoheat_total_rate = phys.nH * rs**3 (
+				xHI * photoheat_rate_HI(rs)
+				+ xHeI * photoheat_rate_HeI(rs) 
+				+ xHeII(yHeII) * photoheat_rate_HeII(rs)
+			)
+
+
 			return (
-				2*T_matter/rs - phys.dtdz(rs) * (
-					compton_cooling_rate(xe(y), T_matter, rs)
-					+ (
-						1/(1 + xe(y) + phys.nHe/phys.nH)
-						* 2/(3 * phys.nH * rs**3)
-						* f_heating(rs, xe(y))
-						* dm_injection_rate(rs)
+				adiabatic_cooling_rate
+				+ (
+					entropy_cooling_rate
+					- phys.dtdz(rs)*(
+						compton_cooling_rate(
+							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+						)
+						+ f_heating(rs, xHII(yHII)) * dm_injection_rate(rs)
 					)
-				)
+					- phys.dtdz(rs) * reion_fac(
+						+ photoheat_total_rate
+						+ reion.recomb_cooling_rate(
+							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+						)
+						+ reion.coll_ion_cooling_rate(
+							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+						)
+						+ reion.coll_exc_cooling_rate(
+							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+						)
+						+ reion.brem_cooling_rate(
+							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+						)
+					)
+				) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
 			)
 
 		def dy_dz(T_matter, y, rs):
