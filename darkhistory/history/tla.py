@@ -324,11 +324,23 @@ def get_history(
 
 	if init_cond[1] == 1:
 		init_cond[1] = 1 - 1e-12
-	else:
-		init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
+	if init_cond[2] == 0:
+		init_cond[2] = 1e-12
+	if init_cond[3] == 0:
+		init_cond[3] = 1e-12
 
-	soln = odeint(tla_diff_eq, init_cond, rs_vec, mxstep = 500)
+	init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
+	init_cond[2] = np.arctanh(
+		2/chi * (init_cond[2] - chi/2)
+	)
+	init_cond[3] = np.arctanh(
+		2/chi *(init_cond[3] - chi/2)
+	)
+
+	soln = odeint(tla_diff_eq, init_cond, rs_vec, mxstep = 1000)
 
 	soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
+	soln[:,2] = chi/2 + chi/2*np.tanh(soln[:,2])
+	soln[:,3] = chi/2 + chi/2*np.tanh(soln[:,3])
 
 	return soln
