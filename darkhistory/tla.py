@@ -37,10 +37,13 @@ def alpha_recomb(T_matter):
 	-------
 	float
 		Case-B recombination coefficient in cm^3/s. 
-	""" 
+	"""
+
+	# Fudge factor recommended in 1011.3758
+	fudge_fac = 1.126 
 	
 	return (
-		1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
+		fudge_fac * 1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
 		/ (1 + 0.6703 * (1.16405*T_matter)**0.5300)
 	)
 
