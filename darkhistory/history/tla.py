@@ -6,14 +6,18 @@ import numpy as np
 from darkhistory import physics as phys
 from scipy.integrate import odeint
 
-def compton_cooling_rate(xe, T_matter, rs):
+def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 	"""Returns the Compton cooling rate. 
 
 	Parameters
 	----------
-	xe : float
-		The ionization fraction ne/nH. 
-	Tm : float
+	xHII : float
+		n_HII/n_H. 
+	xHeII : float
+		n_HeII/n_H. 
+	xHeIII : float
+		n_HeIII/n_H.  
+	T_m : float
 		The matter temperature. 
 	rs : float
 		The redshift in 1+z. 
@@ -22,11 +26,18 @@ def compton_cooling_rate(xe, T_matter, rs):
 	-------
 	float
 		The Compton cooling rate in eV/s. 
+
+	Note
+	----
+	This is the energy loss rate, *not* the temperature loss rate. 
+
 	"""
+	xe = xHII + xHeII + 2*xHeIII
+
 	return (
-		xe / (1 + xe + phys.nHe/phys.nH) * (phys.TCMB(rs) - T_matter)
-		* 32 * phys.thomson_xsec * phys.stefboltz
-		* phys.TCMB(rs)**4 / (3 * phys.me)
+		4 * phys.thomson_xsec * 4 * phys.stefboltz / phys.me
+		* xe * phys.nH*rs**3 * (phys.TCMB(rs) - T_m)
+		* phys.TCMB(rs)**4
 	)
 
 def alpha_recomb(T_matter):
