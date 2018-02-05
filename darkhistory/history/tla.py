@@ -198,26 +198,26 @@ def get_history(
 
 			# This rate is *energy* loss per redshift, divided by 
 			# 3/2 * phys.nH * rs**3 * (1 + chi + xe).
-			entropy_cooling_rate = -T_m * (
+			entropy_cooling_rate = - 3/2 * phys.nH * rs**3 * T_m * (
 				dyHII_dz(yHII, yHeII, yHeIII, T_m, rs) 
 					* 0.5/np.cosh(yHII)**2
 				+ dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs) 
 					* (chi/2)/np.cosh(yHeII)**2
 				+ dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
 					* (chi/2)/np.cosh(yHeIII)**2
-			)/(1 + chi + xe)
+			)
 
 
-			return (
-				adiabatic_cooling_rate
-				+ entropy_cooling_rate
+			return adiabatic_cooling_rate + (
+				entropy_cooling_rate
 				- phys.dtdz(rs)*(
 					compton_cooling_rate(
 						xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
 					)
 					+ f_heating(rs, xHII(yHII)) * dm_injection_rate(rs)
-				) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
-			)
+				) 
+			)/ (3/2 * phys.nH*rs**3 * (1 + chi + xe))
+			
 
 		def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
@@ -256,13 +256,6 @@ def get_history(
 			return 0
 
 		T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
-
-		print("rs: ", rs, "xHII: ", xHII(yHII), "T_m: ", T_m)
-		print("Rates: ", dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
-			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
-			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
-			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
-		)
 
 		return [
 			dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
@@ -400,13 +393,6 @@ def get_history(
 			)
 
 		T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
-
-		print("rs: ", rs, "xHII: ", xHII(yHII), "T_m: ", T_m, "xHeII: ", xHeII(yHeII), "xHeIII: ", xHeIII(yHeIII))
-		print("Rates: ", dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
-			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
-			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
-			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
-		)
 
 		return [
 			dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
