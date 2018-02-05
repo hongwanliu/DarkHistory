@@ -175,14 +175,10 @@ def get_history(
 	photoheat_rate_HeI  = reion.photoheat_rate('HeI')
 	photoheat_rate_HeII = reion.photoheat_rate('HeII')
 
-	def tla_diff_eq(var, rs):
+	def tla_before_reion(var, rs):
 		# Returns an array of values for [dT/dz, dyHII/dz, 
 		# dyHeII/dz, dyHeIII/dz].
 		# var is the [temperature, xHII, xHeII, xHeIII] inputs. 
-
-		reion_fac = 0
-		if reion_switch and rs <= 16.1:
-			reion_fac = 1
 
 		def xHII(yHII):
 			return 0.5 + 0.5*np.tanh(yHII)
@@ -200,15 +196,112 @@ def get_history(
 			# This rate is temperature loss per redshift. 
 			adiabatic_cooling_rate = 2 * T_m/rs 
 
-			# This rate is *energy* loss per redshift.
-			entropy_cooling_rate = -3/2 * T_m * phys.nH * rs**3 * (
+			# This rate is *energy* loss per redshift, divided by 
+			# 3/2 * phys.nH * rs**3 * (1 + chi + xe).
+			entropy_cooling_rate = -T_m * (
 				dyHII_dz(yHII, yHeII, yHeIII, T_m, rs) 
 					* 0.5/np.cosh(yHII)**2
 				+ dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs) 
 					* (chi/2)/np.cosh(yHeII)**2
 				+ dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
 					* (chi/2)/np.cosh(yHeIII)**2
+			)/(1 + chi + xe)
+
+
+			return (
+				adiabatic_cooling_rate
+				+ entropy_cooling_rate
+				- phys.dtdz(rs)*(
+					compton_cooling_rate(
+						xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+					)
+					+ f_heating(rs, xHII(yHII)) * dm_injection_rate(rs)
+				) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
 			)
+
+		def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			ne = xe * phys.nH*rs**3 
+			xHI = 1 - xHII(yHII)
+			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
+
+			return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
+				# Recombination processes
+				- peebles_C(xHII(yHII), rs) * (
+					alpha_recomb(T_m) * xHII(yHII)*xe * phys.nH * rs**3
+					- beta_ion(phys.TCMB(rs)) * xHI 
+						* np.exp(-phys.lya_eng/T_m)
+				)
+				# DM injection. Note that C = 1 at late times. 
+				+ f_H_ion(rs, xHII(yHII)) * dm_injection_rate(rs)
+					/ (phys.rydberg * phys.nH * rs**3)
+				+ (1 - peebles_C(xHII(yHII), rs)) * (
+					f_H_exc(rs, xHII(yHII)) * dm_injection_rate(rs) 
+					/ (phys.lya_eng * phys.nH * rs**3)
+				)	
+			)
+
+		def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			ne = xe * phys.nH*rs**3 
+			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
+
+			return 0
+
+		def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			ne = xe * phys.nH*rs**3
+
+			return 0
+
+		T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
+
+		print("rs: ", rs, "xHII: ", xHII(yHII), "T_m: ", T_m)
+		print("Rates: ", dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
+			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+		)
+
+		return [
+			dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
+			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
+			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+		]
+
+	def tla_reion(var, rs):
+		# Returns an array of values for [dT/dz, dyHII/dz, 
+		# dyHeII/dz, dyHeIII/dz].
+		# var is the [temperature, xHII, xHeII, xHeIII] inputs. 
+
+		def xHII(yHII):
+			return 0.5 + 0.5*np.tanh(yHII)
+		def xHeII(yHeII):
+			return chi/2 + chi/2*np.tanh(yHeII)
+		def xHeIII(yHeIII):
+			return chi/2 + chi/2*np.tanh(yHeIII)
+
+		def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+			xHI = 1 - xHII(yHII)
+			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
+
+			# This rate is temperature loss per redshift. 
+			adiabatic_cooling_rate = 2 * T_m/rs 
+
+			# This rate is *energy* loss per redshift, divided by 
+			# 3/2 * phys.nH * rs**3 * (1 + chi + xe).
+			entropy_cooling_rate = -T_m * (
+				dyHII_dz(yHII, yHeII, yHeIII, T_m, rs) 
+					* 0.5/np.cosh(yHII)**2
+				+ dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs) 
+					* (chi/2)/np.cosh(yHeII)**2
+				+ dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+					* (chi/2)/np.cosh(yHeIII)**2
+			)/(1 + chi + xe)
 
 			# The reionization rates and the Compton rate
 			# are expressed in *energy loss* *per second*.
@@ -222,15 +315,15 @@ def get_history(
 
 			return (
 				adiabatic_cooling_rate
+				+ entropy_cooling_rate
 				+ (
-					entropy_cooling_rate
 					- phys.dtdz(rs)*(
 						compton_cooling_rate(
 							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
 						)
 						+ f_heating(rs, xHII(yHII)) * dm_injection_rate(rs)
 					)
-					- phys.dtdz(rs) * reion_fac * (
+					- phys.dtdz(rs) * (
 						+ photoheat_total_rate
 						+ reion.recomb_cooling_rate(
 							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -253,15 +346,8 @@ def get_history(
 			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
 			ne = xe * phys.nH*rs**3 
 			xHI = 1 - xHII(yHII)
-			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
 			return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
-				# Recombination processes
-				- peebles_C(xHII(yHII), rs) * (1 - reion_fac) * (
-					alpha_recomb(T_m) * xHII(yHII)*xe * phys.nH * rs**3
-					- beta_ion(phys.TCMB(rs)) * xHI 
-						* np.exp(-phys.lya_eng/T_m)
-				)
 				# DM injection. Note that C = 1 at late times. 
 				+ f_H_ion(rs, xHII(yHII)) * dm_injection_rate(rs)
 					/ (phys.rydberg * phys.nH * rs**3)
@@ -270,13 +356,13 @@ def get_history(
 					/ (phys.lya_eng * phys.nH * rs**3)
 				)
 				# Reionization rates.
-				+ reion_fac * (
+				+ (
 					# Photoionization.
 					xHI * photoion_rate_HI(rs)
 					# Collisional ionization.
 					+ xHI * ne * reion.coll_ion_rate('HI', T_m)
 					# Recombination.
-					- xHI * ne * reion.alphaA_recomb('HII', T_m)
+					- xHII(yHII) * ne * reion.alphaA_recomb('HII', T_m)
 				) 	
 			)
 
@@ -285,26 +371,26 @@ def get_history(
 			ne = xe * phys.nH*rs**3 
 			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-			return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * reion_fac * (
+			return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (
 				# Photoionization of HeI into HeII. 
 				xHeI * photoion_rate_HeI(rs)
 				# Collisional ionization of HeI to HeII.
 				+ xHeI * ne * reion.coll_ion_rate('HeI', T_m)
 				# Recombination of HeIII to HeII. 
-				- xHeIII(yHeIII) * ne * reion.alphaA_recomb('HeIII', T_m)
+				+ xHeIII(yHeIII) * ne * reion.alphaA_recomb('HeIII', T_m)
 				# Photoionization of HeII to HeIII. 
 				- xHeII(yHeII) * photoion_rate_HeII(rs)
 				# Collisional ionization of HeII to HeIII. 
 				- xHeII(yHeII) * ne * reion.coll_ion_rate('HeII', T_m)
 				# Recombination of HeII into HeI. 
-				- xHeII(yHeII) * ne * reion.alphaA_recomb('HeIII', T_m)
+				- xHeII(yHeII) * ne * reion.alphaA_recomb('HeII', T_m)
 			)
 
 		def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
 			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
 			ne = xe * phys.nH*rs**3
 
-			return 2/chi * np.cosh(yHeIII)**2 * -phys.dtdz(rs) * reion_fac *(
+			return 2/chi * np.cosh(yHeIII)**2 * -phys.dtdz(rs) * (
 				# Photoionization of HeII into HeIII. 
 				xHeII(yHeII) * photoion_rate_HeII(rs)
 				# Collisional ionization of HeII into HeIII. 
@@ -315,7 +401,7 @@ def get_history(
 
 		T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
-		print("rs: ", rs, "xHII: ", xHII(yHII), "T_m: ", T_m)
+		print("rs: ", rs, "xHII: ", xHII(yHII), "T_m: ", T_m, "xHeII: ", xHeII(yHeII), "xHeIII: ", xHeIII(yHeIII))
 		print("Rates: ", dT_dz(yHII, yHeII, yHeIII, T_m, rs), 
 			dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
 			dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
@@ -329,6 +415,7 @@ def get_history(
 			dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
 		]
 
+
 	if init_cond[1] == 1:
 		init_cond[1] = 1 - 1e-12
 	if init_cond[2] == 0:
@@ -337,17 +424,47 @@ def get_history(
 		init_cond[3] = 1e-12
 
 	init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
-	init_cond[2] = np.arctanh(
-		2/chi * (init_cond[2] - chi/2)
-	)
-	init_cond[3] = np.arctanh(
-		2/chi *(init_cond[3] - chi/2)
-	)
+	init_cond[2] = np.arctanh(2/chi * (init_cond[2] - chi/2))
+	init_cond[3] = np.arctanh(2/chi *(init_cond[3] - chi/2))
 
-	soln = odeint(tla_diff_eq, init_cond, rs_vec, mxstep = 1000)
+	rs_reion = rs_vec[rs_vec <= 16.1]
+	rs_before_reion = rs_vec[rs_vec > 16.1]
+	rs_before_reion = np.append(rs_before_reion, rs_reion[0])
 
+	if np.size(rs_before_reion) > 1 and reion_switch:
+		soln_before_reion = odeint(
+			tla_before_reion, init_cond, rs_before_reion, mxstep = 500
+		)
+
+		init_cond_reion = [
+			soln_before_reion[-1,0], 
+			soln_before_reion[-1,1], 
+			np.arctanh(2/(chi)*(1e-12 - chi/2)),
+			np.arctanh(2/(chi)*(1e-12 - chi/2))
+		]
+
+		soln_reion = odeint(
+			tla_reion, init_cond_reion, rs_reion, mxstep = 1000,
+		)
+
+		soln = np.vstack((soln_before_reion[:-1,:], soln_reion))
+
+	elif np.size(rs_before_reion) <= 1 and reion_switch: 
+		soln = odeint(
+			tla_reion, init_cond, rs_reion, mxstep = 1000,
+		)
+
+	else: 
+		soln = odeint(
+			tla_before_reion, init_cond, rs_vec, mxstep = 500
+		)
+			
 	soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
-	soln[:,2] = chi/2 + chi/2*np.tanh(soln[:,2])
-	soln[:,3] = chi/2 + chi/2*np.tanh(soln[:,3])
+	soln[:,2] = (
+		chi/2 + chi/2*np.tanh(soln[:,2])
+	)
+	soln[:,3] = (
+		chi/2 + chi/2*np.tanh(soln[:,3])
+	)
 
 	return soln
