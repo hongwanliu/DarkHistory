@@ -849,10 +849,14 @@ class Spectrum:
         # consider only positive energy
         pos_eng = sec_spec_eng > 0
 
-        new_spec = rebin_N_arr(
-            N_arr[pos_eng], sec_spec_eng[pos_eng], 
-            out_eng, spec_type = self._spec_type
-        )
+        # Check that there are non-zero entries to rebin.
+        if sec_spec_eng[pos_eng].size > 0:
+            new_spec = rebin_N_arr(
+                N_arr[pos_eng], sec_spec_eng[pos_eng], 
+                out_eng, spec_type = self._spec_type
+            )
+        else:
+            new_spec = Spectrum(out_eng, np.zeros_like(out_eng))
 
         self.eng  = out_eng 
         self._data = new_spec._data

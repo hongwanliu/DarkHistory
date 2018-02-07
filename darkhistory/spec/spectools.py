@@ -103,6 +103,8 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
 
     if not np.all(np.diff(out_eng) > 0):
         raise TypeError("new abscissa must be ordered in increasing energy.")
+    print(out_eng)
+    print(in_eng)
     if out_eng[-1] < in_eng[-1]:
         raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
     # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.length-1. Bin indices are wrt the bin centers.
