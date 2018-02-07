@@ -103,8 +103,6 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
 
     if not np.all(np.diff(out_eng) > 0):
         raise TypeError("new abscissa must be ordered in increasing energy.")
-    print(out_eng)
-    print(in_eng)
     if out_eng[-1] < in_eng[-1]:
         raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
     # Get the bin indices that the current abscissa (self.eng) corresponds to in the new abscissa (new_eng). Can be any number between 0 and self.length-1. Bin indices are wrt the bin centers.
@@ -287,9 +285,18 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     # tf *= fac
 
-    
+    switched = False
 
-    return tf.sum_specs(spec*frac)
+    if spec.spec_type != 'N':
+        spec.switch_spec_type()
+        switched = True
+
+    out_spec = tf.sum_specs(spec*frac)
+
+    if switched:
+        out_spec.switch_spec_type()   
+
+    return out_spec
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 

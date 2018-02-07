@@ -5,6 +5,7 @@ import pickle
 
 import darkhistory.physics as phys
 import darkhistory.spec.transferfunction as tf
+import darkhistory.spec.spectools as spectools
 
 from darkhistory.spec.spectrum import Spectrum
 
