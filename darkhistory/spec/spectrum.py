@@ -23,7 +23,7 @@ class Spectrum:
         The redshift (1+z) of the spectrum. Set to -1 if not specified.
     in_eng : float, optional
         The injection energy of the primary, if this is a secondary spectrum. Set to -1 if not specified.
-    mode : {'N', 'dNdE'}, optional
+    spec_type : {'N', 'dNdE'}, optional
         Whether the input is N or dN/dE in each bin. Default is 'dNdE'.
 
     Attributes
