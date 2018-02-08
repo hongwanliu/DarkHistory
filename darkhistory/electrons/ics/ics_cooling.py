@@ -219,7 +219,12 @@ def get_ics_cooling_tf(
                           - deposited_eng
                          )
         
-        if conservation_check/eng > 1e-10:
+        if (
+            conservation_check/eng > 1e-8
+            and conservation_check/continuum_engloss > 1e-8
+        ):
+            print(conservation_check/eng)
+            print(conservation_check/continuum_engloss)
             raise RuntimeError('Conservation of energy failed.')
             
         # Force conservation of energy. 
