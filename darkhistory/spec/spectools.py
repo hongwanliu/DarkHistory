@@ -285,9 +285,18 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     # tf *= fac
 
-    
+    switched = False
 
-    return tf.sum_specs(spec*frac)
+    if spec.spec_type != 'N':
+        spec.switch_spec_type()
+        switched = True
+
+    out_spec = tf.sum_specs(spec*frac)
+
+    if switched:
+        out_spec.switch_spec_type()   
+
+    return out_spec
 
 def evolve(spec, tflist, end_rs=None, save_steps=False):
     """Evolves a spectrum using a list of transfer functions. 

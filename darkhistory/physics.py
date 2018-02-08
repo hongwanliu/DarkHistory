@@ -150,13 +150,10 @@ def get_optical_depth(rs_vec, xe_vec):
     """
     from darkhistory.spec.spectools import get_log_bin_width
 
-    rs_log_bin_width = get_log_bin_width(rs_vec)
     dtdz_vec = dtdz(rs_vec)
+    integrand = xe_vec * nH*rs_vec**3 * thomson_xsec * c * dtdz_vec
 
-    return np.dot(
-        xe_vec*nH*thomson_xsec*c*dtdz_vec,
-        rs_vec**4*rs_log_bin_width
-    )
+    return np.trapz(integrand, rs_vec)
 
 
 def get_inj_rate(inj_type, inj_fac):
