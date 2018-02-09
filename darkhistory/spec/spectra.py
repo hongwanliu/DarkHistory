@@ -846,6 +846,8 @@ class Spectra:
         )[0]
 
         if ind_high.size > 0:
+            print(self.eng)
+            print(new_eng)
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
 
         # These arrays are of size in_eng x eng. 

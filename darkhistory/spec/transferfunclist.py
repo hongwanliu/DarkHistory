@@ -75,7 +75,7 @@ class TransferFuncList:
     def __setitem__(self, key, value):
         self.tflist[key] = value
 
-    def at_val(self, axis, new_val):
+    def at_val(self, axis, new_val, bounds_error=None, fill_value=np.nan):
         """Returns the transfer functions at the new abscissa.
 
         Parameters
@@ -84,6 +84,10 @@ class TransferFuncList:
             The axis along which to perform the interpolation. If the axis is 'rs', then the list will be transposed into tftype 'in_eng' and vice-versa. 
         new_val : ndarray
             The new redshift or injection energy abscissa.
+        bounds_error : bool, optional
+            See scipy.interpolate.interp1d
+        fill_value : array-like or (array-like, array-like) or "extrapolate", optional
+            See scipy.interpolate.interp1d
         """
 
         # i enables the use of tqdm. 
@@ -93,7 +97,9 @@ class TransferFuncList:
                 self.transpose()
 
             new_tflist = [
-            tf.at_in_eng(new_val) for i,tf in zip(
+            tf.at_in_eng(
+                new_val, bounds_error=bounds_error, fill_value=fill_value
+            ) for i,tf in zip(
                     np.arange(len(self.tflist)), self.tflist
                 )
             ]
@@ -104,10 +110,12 @@ class TransferFuncList:
             if self.tftype != 'in_eng':
                 self.transpose()
 
-            new_tflist = [tf.at_rs(new_val)
-                for i,tf in zip(
-                    np.arange(len(self.tflist)), self.tflist
-                )
+            new_tflist = [
+                tf.at_rs(
+                    new_val, bounds_error=bounds_error, fill_value=fill_value
+                ) for i,tf in zip(
+                        np.arange(len(self.tflist)), self.tflist
+                    )
             ]
 
             self.tflist = new_tflist
