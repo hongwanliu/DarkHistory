@@ -20,7 +20,7 @@ def make_interpolators():
     -------
     """
 
-    engs = [14, 30, 60, 100, 300, 3000]
+    engs = [10.2, 13.6, 14, 30, 60, 100, 300, 3000]
     xHII = []
     heat, lyman, ionH, ionHe, lowE_photon = [ [ [] for i in range(len(engs))]
                                              for j in range(5)]
