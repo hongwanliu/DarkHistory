@@ -281,11 +281,25 @@ class TransFuncAtRedshift(Spectra):
             raise TypeError('injection energy must be strictly increasing or decreasing for interpolation.')
 
         non_zero_grid = self.grid_vals
+        non_zero_N_und = self.N_underflow
+        non_zero_eng_und = self.eng_underflow
         # set zero values to some small value for log interp.
         non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+        non_zero_N_und[np.abs(non_zero_N_und) < 1e-100] = 1e-200
+        non_zero_eng_und[np.abs(non_zero_eng_und) < 1e-100] = 1e-200
 
         interp_func = interpolate.interp1d(
             np.log(self.in_eng), np.log(non_zero_grid), axis=0, 
+            bounds_error=bounds_error, fill_value=fill_value
+        )
+
+        interp_func_N_und = interpolate.interp1d(
+            np.log(self.in_eng), np.log(non_zero_N_und), 
+            bounds_error=bounds_error, fill_value=fill_value
+        )
+
+        interp_func_eng_und = interpolate.interp1d(
+            np.log(self.in_eng), np.log(non_zero_eng_und),
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -295,11 +309,19 @@ class TransFuncAtRedshift(Spectra):
 
             new_tf._spec_type = self.spec_type
             interp_vals = np.exp(interp_func(np.log(new_eng)))
+            interp_vals_N_und = np.exp(interp_func_N_und(np.log(new_eng)))
+            interp_vals_eng_und = np.exp(
+                interp_func_eng_und(np.log(new_eng))
+            )
             interp_vals[interp_vals < 1e-100] = 0
+            interp_vals_N_und[interp_vals_N_und < 1e-100] = 0
+            interp_vals_eng_und[interp_vals_eng_und < 1e-100] = 0
             new_tf._grid_vals = interp_vals
             new_tf._eng = self.eng
             new_tf._in_eng = new_eng
             new_tf._rs = self.rs
+            new_tf._N_underflow = interp_vals_N_und
+            new_tf._eng_underflow = interp_vals_eng_und
             new_tf.dlnz = self.dlnz
 
             return new_tf
@@ -342,11 +364,25 @@ class TransFuncAtRedshift(Spectra):
             New transfer function at the new energy abscissa. 
         """
         non_zero_grid = self.grid_vals
+        non_zero_N_und = self.N_underflow
+        non_zero_eng_und = self.eng_underflow
         # set zero values to some small value for log interp.
         non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+        non_zero_N_und[np.abs(non_zero_N_und) < 1e-100] = 1e-200
+        non_zero_eng_und[np.abs(non_zero_eng_und) < 1e-100] = 1e-200
 
         interp_func = interpolate.interp1d(
             np.log(self.eng), np.log(non_zero_grid), axis=1, 
+            bounds_error=bounds_error, fill_value=fill_value
+        )
+
+        interp_func_N_und = interpolate.interp1d(
+            np.log(self.in_eng), np.log(non_zero_N_und), 
+            bounds_error=bounds_error, fill_value=fill_value
+        )
+
+        interp_func_eng_und = interpolate.interp1d(
+            np.log(self.in_eng), np.log(non_zero_eng_und),
             bounds_error=bounds_error, fill_value=fill_value
         )
 
@@ -357,10 +393,14 @@ class TransFuncAtRedshift(Spectra):
             new_tf._spec_type = self.spec_type
             interp_vals = np.exp(interp_func(np.log(new_eng)))
             interp_vals[interp_vals < 1e-100] = 0
+            interp_vals_N_und[interp_vals_N_und < 1e-100] = 0
+            interp_vals_eng_und[interp_vals_eng_und < 1e-100] = 0
             new_tf._grid_vals = interp_vals
             new_tf._eng = new_eng
             new_tf._in_eng = self.in_eng
             new_tf._rs = self.rs
+            new_tf._N_underflow = interp_vals_N_und
+            new_tf._eng_underflow = interp_vals_eng_und
             new_tf.dlnz = self.dlnz
 
             return new_tf

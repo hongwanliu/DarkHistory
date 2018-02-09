@@ -97,8 +97,6 @@ class TransferFuncList:
                     np.arange(len(self.tflist)), self.tflist
                 )
             ]
-            print('in at_val')
-            print(self.N_underflow)
             self.tflist = new_tflist
             self.in_eng = new_val
 

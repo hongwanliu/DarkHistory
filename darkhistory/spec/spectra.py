@@ -845,7 +845,7 @@ class Spectra:
             (bin_ind >= 0) & (bin_ind <= new_eng.size - 1)
         )[0]
 
-        if ind_high.size > 0: 
+        if ind_high.size > 0:
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
 
         # These arrays are of size in_eng x eng. 
@@ -919,9 +919,6 @@ class Spectra:
 
         self._eng = new_eng[1:]
         self._grid_vals = new_data[:,1:]
-
-        print(self._N_underflow)
-        print(N_underflow)
 
         self._N_underflow += N_underflow
         self._eng_underflow += eng_underflow
