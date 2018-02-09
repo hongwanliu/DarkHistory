@@ -92,12 +92,13 @@ class TransferFuncList:
             if self.tftype != 'rs':
                 self.transpose()
 
-            new_tflist = [tf.at_in_eng(new_val)
-                for i,tf in zip(
+            new_tflist = [
+            tf.at_in_eng(new_val) for i,tf in zip(
                     np.arange(len(self.tflist)), self.tflist
                 )
             ]
-
+            print('in at_val')
+            print(self.N_underflow)
             self.tflist = new_tflist
             self.in_eng = new_val
 

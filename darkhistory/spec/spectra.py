@@ -806,9 +806,6 @@ class Spectra:
         out_eng : ndarray
             The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]`, then the new underflow will be filled. If `self.eng` has values that exceed `out_eng[-1]`, then an error is returned.
 
-        rebin_type : {'1D', '2D'}, optional
-            Whether to rebin each `Spectrum` separately (`'1D'`), or the whole `Spectra` object at once (`'2D'`). Default is `'2D'`.
-
         See Also
         --------
         spec.spectools.rebin_N_2D_arr
@@ -922,6 +919,10 @@ class Spectra:
 
         self._eng = new_eng[1:]
         self._grid_vals = new_data[:,1:]
+
+        print(self._N_underflow)
+        print(N_underflow)
+
         self._N_underflow += N_underflow
         self._eng_underflow += eng_underflow
 
