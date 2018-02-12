@@ -160,7 +160,10 @@ class TransferFuncList:
 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
 
-    def coarsen(self, dlnz_factor, delete_tfs=True):
+    def coarsen(
+        self, dlnz_factor, delete_tfs=True, coarsen_type='prop',
+        prop_transfunclist=None
+    ):
         """Coarsens the new transfer function with larger dlnz. 
 
         This is obtained by multiplying the transfer function by itself several times, and removing intermediate transfer functions. 
@@ -171,11 +174,17 @@ class TransferFuncList:
             The factor to increase dlnz by. 
         delete_tfs : bool
             If true, only retains transfer functions in tflist that have an index that is a multiple of dlnz_factor. 
+        coarsen_type : {'prop', 'dep'}
+            The type of coarsening. Use 'prop' to coarsen by taking powers of the transfer function. Use 'dep' for deposition transfer functions, where coarsening is done by taking self * sum_i prop_tf**i. 
+        prop_tflist : TransferFuncList
+            The transfer function for propagation, if the transfer function represents deposition.
 
         """
 
         if self.tftype != 'rs':
             self.transpose()
+        if coarsen_type == 'dep' and prop_transfunclist.tftype != 'rs':
+            prop_transfunclist.transpose()
 
         if delete_tfs:
             new_tflist = [
@@ -189,25 +198,57 @@ class TransferFuncList:
 
         self.tflist = []
 
-        for i,tfunc in zip(np.arange(len(new_tflist)), new_tflist):
-            
-            in_eng_arr = tfunc.in_eng
-            new_grid_val = matrix_power(
-                tfunc._grid_vals,dlnz_factor
-            )
-            new_spec_arr = [
-                Spectrum(
-                    tfunc.eng, new_grid_val[i], 
-                    rs = tfunc.rs[0], in_eng = in_eng_arr[i]
-                )
-                for i in np.arange(in_eng_arr.size)
-            ]
+        if coarsen_type == 'dep':
 
-            self.tflist.append(
-                tf.TransFuncAtRedshift(
-                    new_spec_arr, self.dlnz*dlnz_factor
+            for (i,tfunc,prop_tfunc) in zip(
+                np.arange(len(new_tflist)), 
+                new_tflist, prop_transfunclist.tflist
+            ):
+                in_eng_arr = tfunc.in_eng
+                if prop_tfunc.in_eng.size != prop_tfunc.eng.size:
+                    raise TypeError('propagation matrix is not square.')
+                prop_part = np.zeros_like(prop_tfunc._grid_vals)
+                for i in np.arange(dlnz_factor):
+                    prop_part += matrix_power(prop_tfunc._grid_vals, i)
+                new_grid_val = np.dot(tfunc._grid_vals, prop_part)
+                new_spec_arr = [
+                    Spectrum(
+                        tfunc.eng, new_grid_val[i], 
+                        rs = tfunc.rs[0], in_eng = in_eng_arr[i]
+                    )
+                    for i in np.arange(in_eng_arr.size)
+                ]
+
+                self.tflist.append(
+                    tf.TransFuncAtRedshift(
+                        new_spec_arr, self.dlnz*dlnz_factor
+                    )
+                )     
+
+        elif coarsen_type == 'prop':
+
+            for (i,tfunc) in zip(np.arange(len(new_tflist)), new_tflist):
+                
+                in_eng_arr = tfunc.in_eng
+                new_grid_val = matrix_power(
+                    tfunc._grid_vals,dlnz_factor
                 )
-            )
+                new_spec_arr = [
+                    Spectrum(
+                        tfunc.eng, new_grid_val[i], 
+                        rs = tfunc.rs[0], in_eng = in_eng_arr[i]
+                    )
+                    for i in np.arange(in_eng_arr.size)
+                ]
+
+                self.tflist.append(
+                    tf.TransFuncAtRedshift(
+                        new_spec_arr, self.dlnz*dlnz_factor
+                    )
+                )
+
+        else:
+            raise TypeError('invalid coarsen_type.')
 
         self.rs = np.array([tfunc.rs[0] for tfunc in new_tflist])
         self.dlnz *= dlnz_factor
