@@ -5,7 +5,11 @@ import numpy as np
 import scipy.interpolate as interp
 
 import matplotlib.pyplot as plt
-import physics as phys
+import os
+cwd = os.getcwd()
+abspath = os.path.abspath(__file__)
+dir_path = os.path.dirname(abspath)
+#dir_path = os.path.dirname(os.path.realpath(__file__))
 
 #this code can certainly be optimized to make lists, rather than keeping track of 5 objects at a time
 interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon = [], [], [], [], []
@@ -26,6 +30,7 @@ def make_interpolators():
                                              for j in range(5)]
     global interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
 
+    os.chdir(dir_path)
     # load ln(data) from MEDEA files, replace ln(0) with -15 to avoid -infinities
     for i, num in enumerate(engs, start=0):
         with open('results-'+str(num)+'ev-xH-xHe_e-10-yp024.dat','r') as f:
@@ -34,6 +39,7 @@ def make_interpolators():
                 xHII = [np.log(float(line.split('\t')[0])) for line in lines_list[2:]]
             heat[i], lyman[i], ionH[i], ionHe[i], lowE_photon[i] = [[np.log(max(float(line.split('\t')[k]),1.0e-15))
                                                                      for line in lines_list[2:]] for k in [1,2,3,4,5]]
+    os.chdir(cwd)
     engs = np.log(engs)
 
     heat, lyman, ionH, ionHe, lowE_photon = np.array(heat), np.array(lyman), np.array(ionH), np.array(ionHe), np.array(lowE_photon)
@@ -46,7 +52,7 @@ def make_interpolators():
     interp_lowE_photon = interp.interp2d(engs,xHII,lowE_photon.T, kind='linear')
 
 make_interpolators()
-def compute_dep_inj_ratio(e_spectrum, xHII, rs, tot_inj):
+def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj):
     """ Needs a description
 
     Parameters
@@ -55,8 +61,6 @@ def compute_dep_inj_ratio(e_spectrum, xHII, rs, tot_inj):
         spectrum of primary electrons
     xHII : float
         The ionization fraction nHII/nH.
-    rs : float
-        redshift
     tot_inj : float
         total energy injected by DM
 
