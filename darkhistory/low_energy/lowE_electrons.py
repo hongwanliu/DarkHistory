@@ -53,7 +53,7 @@ def make_interpolators():
 
 make_interpolators()
 def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj):
-    """ Needs a description
+    """ Given an electron energy spectrum, calculate how much of that energy splits into heating of the IGM(?), lyman_alpha transitions, H ionization, He ionization, and continuum photons.
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj):
 
     Returns
     -------
-    float, x5
+    list of floats
         Ratio of deposited energy to a given channel over energy deposited by DM.
         The order of the channels is heat, lyman, ionH, ionHe, lowE_photon
     """
