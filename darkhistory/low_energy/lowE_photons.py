@@ -27,7 +27,7 @@ def compute_dep_inj_ionization_ratio(photon_spectrum, n, tot_inj, method='old'):
     -------
     tuple of floats
         Ratio of deposited energy to a given channel over energy deposited by DM.
-        The order of the channels is HI excitation and HI, HeI, HeII ionization
+        The order of the channels is {continuum photons, HI excitation, HI ionization, HeI ion, HeII ion}
     """
     continuum, excite_HI, f_HI, f_HeI, f_HeII = 0,0,0,0,0
 
@@ -42,6 +42,7 @@ def compute_dep_inj_ionization_ratio(photon_spectrum, n, tot_inj, method='old'):
     elif(method == 'ion'):
         # probability of being absorbed within time step dt in channel a = \sigma(E)_a n_a c*dt
         # First convert from probability of being absorbed in channel 'a' to conditional probability given that these are deposited photons
+        # TODO: could be improved to include the missing piece
         ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(photon_spectrum.eng[ion_index:],channel)*n[i] for i,channel in enumerate(['H0','He0','He1'])]
         totList = ionHI + ionHeI + ionHeII
 
