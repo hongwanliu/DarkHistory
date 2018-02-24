@@ -289,12 +289,19 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     if spec.spec_type != 'N':
         spec.switch_spec_type()
-        switched = True
+        switched = True 
 
     out_spec = tf.sum_specs(spec*frac)
+    
+    # tf multiplies a spectrum of type 'N', outputs spectrum of type 
+    # determined by tf.spec_type. out_spec now is of type 'N', i.e. 
+    # is the same spec_type as spec.
 
-    if switched:
-        out_spec.switch_spec_type()   
+    if out_spec.spec_type != tf.spec_type:
+        out_spec.switch_spec_type()
+
+    if out_spec.spec_type != spec.spec_type and not switched:
+        out_spec.switch_spec_type()
 
     return out_spec
 
