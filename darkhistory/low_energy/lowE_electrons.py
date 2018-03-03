@@ -4,7 +4,6 @@ sys.path.append("../..")
 import numpy as np
 import scipy.interpolate as interp
 
-import matplotlib.pyplot as plt
 import os
 cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
