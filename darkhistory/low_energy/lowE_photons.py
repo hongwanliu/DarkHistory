@@ -2,10 +2,10 @@ import sys
 sys.path.append("../..")
 
 import numpy as np
-import physics as phys
-import spec.spectools as spectools
+import darkhistory.physics as phys
+import darkhistory.spec.spectools as spectools
 
-def compute_dep_inj_ionization_ratio(photon_spectrum, n, tot_inj, method='old'):
+def compute_dep_inj_ratio(photon_spectrum, n, tot_inj, method='old'):
     """ Given a spectrum of deposited photons, resolve its energy into continuum photons, HI excitation, and HI, HeI, HeII ionization in that order.  The
         spectrum must provide the energy density of photons per unit time within each bin, not just the total energy within each bin.
         Q: can photons heat the IGM?  Should this method keep track of the fact that x_e, xHII, etc. are changing?
@@ -40,9 +40,8 @@ def compute_dep_inj_ionization_ratio(photon_spectrum, n, tot_inj, method='old'):
     if(method == 'old'):
         f_HI = photon_spectrum.toteng(bound_type='eng', bound_arr=np.array([phys.rydberg,photon_spectrum.eng[-1]]))[0]/tot_inj
     elif(method == 'ion'):
-        # probability of being absorbed within time step dt in channel a = \sigma(E)_a n_a c*dt
+        # Probability of being absorbed within time step dt in channel a = \sigma(E)_a n_a c*dt
         # First convert from probability of being absorbed in channel 'a' to conditional probability given that these are deposited photons
-        # TODO: could be improved to include the missing piece
         ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(photon_spectrum.eng[ion_index:],channel)*n[i] for i,channel in enumerate(['H0','He0','He1'])]
         totList = ionHI + ionHeI + ionHeII
 
