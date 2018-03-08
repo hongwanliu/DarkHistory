@@ -231,6 +231,34 @@ def beta_ion(T_rad):
 # 	thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
 # 	return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
 
+def rate_factor(xe, rs)
+    """returns numerator of the Peebles C coefficient
+
+    Parameters
+    ----------
+    xe : float
+        the ionization fraction ne/nH.
+    rs : float
+        the redshift in 1+z.
+
+    Returns
+    -------
+    float
+        Numerator of the Peebles C coefficient.
+    """
+
+	# Net rate for 2p to 1s transition.
+	rate_2p1s = (
+		8 * np.pi * hubble(rs)
+		/(3*(nH*rs**3 * (1-xe) * (c/lya_freq)**3))
+	)
+
+	# Net rate for 2s to 1s transition.
+	rate_2s1s = width_2s1s
+
+    return (3*rate_2p1s/4 + rate_2s1s/4)
+
+
 def peebles_C(xe, rs):
 	"""Returns the Peebles C coefficient.
 
@@ -251,23 +279,13 @@ def peebles_C(xe, rs):
 		The Peebles C factor.
 	"""
 
-	# Net rate for 2p to 1s transition.
-	rate_2p1s = (
-		8 * np.pi * hubble(rs)
-		/(3*(nH*rs**3 * (1-xe) * (c/lya_freq)**3))
-	)
-
-	# Net rate for 2s to 1s transition.
-	rate_2s1s = width_2s1s
+    rate_exc = rate_factor(xe, rs)
 
 	# Net rate for ionization.
 	rate_ion = beta_ion(TCMB(rs))
 
 	# Rate is averaged over 3/4 of excited state being in 2p, 1/4 in 2s.
-	return (
-		(3*rate_2p1s/4 + rate_2s1s/4)
-		/(3*rate_2p1s/4 + rate_2s1s/4 + rate_ion)
-	)
+	return rate_exc/(rate_exc + rate_ion)
 
 
 
