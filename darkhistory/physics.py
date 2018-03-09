@@ -181,57 +181,57 @@ def get_inj_rate(inj_type, inj_fac):
     return inj_rate
 
 def alpha_recomb(T_matter):
-	"""Case-B recombination coefficient.
+    """Case-B recombination coefficient.
 
-	Parameters
-	----------
-	T_matter : float
-		The matter temperature.
+    Parameters
+    ----------
+    T_matter : float
+        The matter temperature.
 
-	Returns
-	-------
-	float
-		Case-B recombination coefficient in cm^3/s.
-	"""
+    Returns
+    -------
+    float
+        Case-B recombination coefficient in cm^3/s.
+    """
 
-	# Fudge factor recommended in 1011.3758
-	fudge_fac = 1.126
+    # Fudge factor recommended in 1011.3758
+    fudge_fac = 1.126
 
-	return (
-		fudge_fac * 1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
-		/ (1 + 0.6703 * (1.16405*T_matter)**0.5300)
-	)
+    return (
+        fudge_fac * 1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
+        / (1 + 0.6703 * (1.16405*T_matter)**0.5300)
+    )
 
 def beta_ion(T_rad):
-	"""Case-B photoionization coefficient.
+    """Case-B photoionization coefficient.
 
-	Parameters
-	----------
-	T_rad : float
-		The radiation temperature.
+    Parameters
+    ----------
+    T_rad : float
+        The radiation temperature.
 
-	Returns
-	-------
-	float
-		Case-B photoionization coefficient in s^-1.
+    Returns
+    -------
+    float
+        Case-B photoionization coefficient in s^-1.
 
-	"""
-	reduced_mass = mp*me/(mp + me)
-	de_broglie_wavelength = (
-		c * 2*np.pi*hbar
-		/ np.sqrt(2 * np.pi * reduced_mass * T_rad)
-	)
-	return (
-		(1/de_broglie_wavelength)**3/4
-		* np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad)
-	)
+    """
+    reduced_mass = mp*me/(mp + me)
+    de_broglie_wavelength = (
+        c * 2*np.pi*hbar
+        / np.sqrt(2 * np.pi * reduced_mass * T_rad)
+    )
+    return (
+        (1/de_broglie_wavelength)**3/4
+        * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad)
+    )
 
 # def betae(Tr):
-# 	# Case-B photoionization coefficient
-# 	thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
-# 	return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
+#   # Case-B photoionization coefficient
+#   thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
+#   return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
 
-def rate_factor(xe, rs)
+def rate_factor(xe, rs):
     """returns numerator of the Peebles C coefficient
 
     Parameters
@@ -246,46 +246,43 @@ def rate_factor(xe, rs)
     float
         Numerator of the Peebles C coefficient.
     """
-
-	# Net rate for 2p to 1s transition.
-	rate_2p1s = (
-		8 * np.pi * hubble(rs)
-		/(3*(nH*rs**3 * (1-xe) * (c/lya_freq)**3))
-	)
-
-	# Net rate for 2s to 1s transition.
-	rate_2s1s = width_2s1s
+    # Net rate for 2p to 1s transition.
+    rate_2p1s = (
+        8 * np.pi * hubble(rs)/
+        (3*(nH * rs**3 * (1-xe) * (c/lya_freq)**3))
+    )
+    # Net rate for 2s to 1s transition.
+    rate_2s1s = width_2s1s
 
     return (3*rate_2p1s/4 + rate_2s1s/4)
 
 
 def peebles_C(xe, rs):
-	"""Returns the Peebles C coefficient.
+    """Returns the Peebles C coefficient.
 
-	This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
+    This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
 
-	Parameters
-	----------
-	xe : float
-		The ionization fraction ne/nH.
-	Tm : float
-		The matter temperature.
-	rs : float
-		The redshift in 1+z.
+    Parameters
+    ----------
+    xe : float
+        The ionization fraction ne/nH.
+    Tm : float
+        The matter temperature.
+    rs : float
+        The redshift in 1+z.
 
-	Returns
-	-------
-	float
-		The Peebles C factor.
-	"""
-
+    Returns
+    -------
+    float
+        The Peebles C factor.
+    """
     rate_exc = rate_factor(xe, rs)
 
-	# Net rate for ionization.
-	rate_ion = beta_ion(TCMB(rs))
+    # Net rate for ionization.
+    rate_ion = beta_ion(TCMB(rs))
 
-	# Rate is averaged over 3/4 of excited state being in 2p, 1/4 in 2s.
-	return rate_exc/(rate_exc + rate_ion)
+    # Rate is averaged over 3/4 of excited state being in 2p, 1/4 in 2s.
+    return rate_exc/(rate_exc + rate_ion)
 
 
 
@@ -470,3 +467,21 @@ def CMB_eng_density(T):
     """
 
     return 4*stefboltz/c*T**4
+
+def A_2s(y):
+    """2s to 1s two-photon decay probability density.
+
+    A_2s(y) * dy = probability that a photon is emitted with a frequency in the range nu_lya * [y, y+dy)
+    with the other photon constrained by h*nu_1 + h*nu_2 = 10.2 eV.
+
+    Parameters
+    ----------
+    y : float
+        nu / nu_lya, frequency of one of the photons divided by lyman-alpha frequency.
+
+    Returns
+    -------
+    float or ndarray
+        probability density of emitting those two photons.
+    """
+    return 0
