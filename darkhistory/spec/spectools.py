@@ -11,8 +11,8 @@ from scipy import integrate
 
 def get_bin_bound(eng):
     """Returns the bin boundary of an abscissa.
-    
-    The bin boundaries are computed by taking the midpoint of the **log** of the abscissa. The first and last entries are computed by taking all of the bins to be symmetric with respect to the bin center. 
+
+    The bin boundaries are computed by taking the midpoint of the **log** of the abscissa. The first and last entries are computed by taking all of the bins to be symmetric with respect to the bin center.
 
     Parameters
     ----------
@@ -22,7 +22,7 @@ def get_bin_bound(eng):
     Returns
     -------
     ndarray
-        The bin boundaries. 
+        The bin boundaries.
     """
     if eng.size <= 1:
         raise TypeError("There needs to be more than 1 bin to get a bin width.")
@@ -52,15 +52,48 @@ def get_log_bin_width(eng):
     bin_boundary = get_bin_bound(eng)
     return np.diff(np.log(bin_boundary))
 
+def get_bounds_between(eng, E1, E2, bound_type='inc'):
+    """Returns the bin boundary of an abscissa between two energies.
+
+    If set to inc(lusive), E1 and E2 are part of the returned bounds.
+    If set to exc(lusive), the bin boundaries between E1 and E2 are returned.
+
+    Parameters
+    ----------
+    eng : ndarray
+        Abscissa from which the bin boundary is obtained.
+    E1 : float
+        Lower bound
+    E2 : float
+        Upper bound
+    bound_type : {'inc', 'exc'}, optional
+        if 'inc', E1 and E2 are part of the returned bounds. If 'exc', they are not.
+
+    Returns
+    -------
+    ndarray
+        The bin boundaries between E1 and E2.
+    """
+    bin_boundary = get_bin_bound(eng)
+    left_bound = np.searchsorted(bin_boundary,E1)
+    right_bound = np.searchsorted(bin_boundary,E2) - 1
+    bin_boundary = bin_boundary[left_bound : right_bound]
+
+    if(bound_type == 'inc'):
+        tmp = np.insert(bin_boundary,0,E1)
+        return np.append(tmp, E2)
+    else:
+        return bin_boundary
+
 def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     """Rebins an array of particle number with fixed energy.
-    
+
     Returns an array or a `Spectrum` object. The rebinning conserves both total number and total energy.
 
     Parameters
     ----------
     N_arr : ndarray
-        An array of number of particles in each bin. 
+        An array of number of particles in each bin.
     in_eng : ndarray
         An array of the energy abscissa for each bin. The total energy in each bin `i` should be `N_arr[i]*in_eng[i]`.
     out_eng : ndarray, optional
@@ -84,7 +117,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
 
     If a bin in `in_eng` is below the lowest bin in `out_eng`, then the total number and energy not assigned to the lowest bin are assigned to the underflow. Particles will only be assigned to the lowest bin if there is some overlap between the bin index with respect to `out_eng` bin centers is larger than -1.0.
 
-    If a bin in `in_eng` is above the highest bin in `out_eng`, then an `OverflowError` is thrown. 
+    If a bin in `in_eng` is above the highest bin in `out_eng`, then an `OverflowError` is thrown.
 
     See Also
     --------
@@ -113,9 +146,9 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     new_eng = np.insert(out_eng, 0, first_bin_eng)
 
     # Find the relative bin indices for in_eng wrt new_eng. The first bin in new_eng has bin index -1.
-    
+
     bin_ind = np.interp(
-        in_eng, new_eng, np.arange(new_eng.size)-1, 
+        in_eng, new_eng, np.arange(new_eng.size)-1,
         left = -2, right = new_eng.size
     )
 
@@ -124,7 +157,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     ind_high = np.where(bin_ind == new_eng.size)
     ind_reg = np.where( (bin_ind >= 0) & (bin_ind <= new_eng.size - 1) )
 
-    # if ind_high[0].size > 0: 
+    # if ind_high[0].size > 0:
     #     raise OverflowError("the new abscissa lies below the old one: this function cannot handle overflow (yet?).")
 
     # Get the total N and toteng in each bin
@@ -139,7 +172,7 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     # Bin width of the new array. Use only the log bin width, so that dN/dE = N/(E d log E)
     new_E_dlogE = new_eng * np.diff(np.log(get_bin_bound(new_eng)))
 
-    # Regular bins first, done in a completely vectorized fashion. 
+    # Regular bins first, done in a completely vectorized fashion.
 
     # reg_bin_low is the array of the lower bins to be allocated the particles in N_arr_reg, similarly reg_bin_upp. This should also take care of the fact that bin_ind is an integer.
     reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
@@ -157,10 +190,10 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     reg_dNdE_upp = ((bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
                    /new_E_dlogE[reg_bin_upp+1])
 
-    # Low bins. 
+    # Low bins.
     low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
-                  
-    N_above_underflow = np.sum((bin_ind[ind_low] - low_bin_low) 
+
+    N_above_underflow = np.sum((bin_ind[ind_low] - low_bin_low)
         * N_arr_low)
     eng_above_underflow = N_above_underflow * new_eng[1]
 
@@ -190,37 +223,37 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
 
 
 def discretize(eng, func_dNdE, *args):
-    """Discretizes a continuous function. 
+    """Discretizes a continuous function.
 
-    The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**. 
+    The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**.
 
     Parameters
     ----------
     eng : ndarray
-        Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers). 
+        Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers).
     func_dNdE : function
-        A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value. 
+        A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value.
     *args : optional
-        Additional arguments and keyword arguments to be passed to `func_dNdE`. 
-    
+        Additional arguments and keyword arguments to be passed to `func_dNdE`.
+
     Returns
     -------
     Spectrum
-        The discretized spectrum. rs is set to -1, and must be set manually. 
+        The discretized spectrum. rs is set to -1, and must be set manually.
 
     """
     def func_EdNdE(eng, *args):
         return func_dNdE(eng, *args)*eng
 
-    # Generate a list of particle number N and mean energy eng_mean, so that N*eng_mean = total energy in each bin. eng_mean != eng. 
+    # Generate a list of particle number N and mean energy eng_mean, so that N*eng_mean = total energy in each bin. eng_mean != eng.
     N = np.zeros(eng.size)
     eng_mean = np.zeros(eng.size)
-    
-    for low, upp, i in zip(eng[:-1], eng[1:], 
+
+    for low, upp, i in zip(eng[:-1], eng[1:],
         np.arange(eng.size-1)):
     # Perform an integral over the spectrum for each bin.
         N[i] = integrate.quad(func_dNdE, low, upp, args= args)[0]
-    # Get the total energy stored in each bin. 
+    # Get the total energy stored in each bin.
         if N[i] > 0:
             eng_mean[i] = integrate.quad(
                 func_EdNdE, low, upp, args=args
@@ -232,12 +265,12 @@ def discretize(eng, func_dNdE, *args):
     return rebin_N_arr(N, eng_mean, eng)
 
 def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
-    """Produces a secondary spectrum. 
+    """Produces a secondary spectrum.
 
-    Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a `Spectrum` object (dN/dE) or with an array of number of particles (N) and an energy abscissa. Similarly, output in the form of a `Spectrum` object (dN/dE) or with an array of number of particles (N) is possible (the energy abscissa is implicitly assumed to be `eng_arr` in this case). 
-    
+    Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a `Spectrum` object (dN/dE) or with an array of number of particles (N) and an energy abscissa. Similarly, output in the form of a `Spectrum` object (dN/dE) or with an array of number of particles (N) is possible (the energy abscissa is implicitly assumed to be `eng_arr` in this case).
+
     Parameters
-    ---------- 
+    ----------
     spec : Spectrum
         The primary spectrum. Required if type is 'dNdE'.
     tf : TransFuncAtRedshift
@@ -245,10 +278,10 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     new_eng : ndarray, optional
         The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.
     dlnz : float, optional
-        The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt). 
+        The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt).
     frac : float or ndarray, optional
-        The fraction of the spectrum or each bin of the spectrum which produces the secondary spectrum. 
-    
+        The fraction of the spectrum or each bin of the spectrum which produces the secondary spectrum.
+
     Returns
     -------
     Spectrum or ndarray
@@ -265,14 +298,14 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
         # need to think about this.
         fac = 1
         # if mode == 'dNdE':
-        #     if spec.rs < 0: 
+        #     if spec.rs < 0:
         #         raise TypeError('spec.rs must be initialized when dlnz is specified.')
         #     fac = dlnz/phys.hubble(spec.rs)
         # elif mode == 'N':
         #     if rs < 0:
         #         raise TypeError('rs must be initialized when dlnz is specified')
         #     fac = dlnz/phys.hubble(rs)
-    else: 
+    else:
         fac = 1
 
     if new_eng is None:
@@ -289,12 +322,12 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     if spec.spec_type != 'N':
         spec.switch_spec_type()
-        switched = True 
+        switched = True
 
     out_spec = tf.sum_specs(spec*frac)
-    
-    # tf multiplies a spectrum of type 'N', outputs spectrum of type 
-    # determined by tf.spec_type. out_spec now is of type 'N', i.e. 
+
+    # tf multiplies a spectrum of type 'N', outputs spectrum of type
+    # determined by tf.spec_type. out_spec now is of type 'N', i.e.
     # is the same spec_type as spec.
 
     if out_spec.spec_type != tf.spec_type:
@@ -306,21 +339,21 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     return out_spec
 
 def evolve(
-    in_spec, tflist, evolve_type='prop', prop_tflist=None, 
+    in_spec, tflist, evolve_type='prop', prop_tflist=None,
     end_rs=None, save_steps=False
 ):
-    """Evolves a spectrum using a list of transfer functions. 
-    
+    """Evolves a spectrum using a list of transfer functions.
+
     Parameters
     ----------
     in_spec : Spectrum
-        The initial spectrum to evolve. 
+        The initial spectrum to evolve.
     tflist : TransferFuncList
         The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.
     evolve_type : {'prop', 'dep'}
-        The type of evolution. Use 'prop' to evolve by multiplication by tflist. Use 'dep' to evolve by multiplication by prop_tflist, with tflist giving the transfer matrix for deposition. 
+        The type of evolution. Use 'prop' to evolve by multiplication by tflist. Use 'dep' to evolve by multiplication by prop_tflist, with tflist giving the transfer matrix for deposition.
     prop_tflist : TransferFuncList
-        The list of transfer functions for propagation, if evolve_type = 'dep'. 
+        The list of transfer functions for propagation, if evolve_type = 'dep'.
     end_rs : float, optional
         The final redshift to evolve to.
     save_steps : bool, optional
@@ -329,7 +362,7 @@ def evolve(
     Returns
     -------
     Spectrum or Spectra
-        The evolved final spectrum, with or without intermediate steps. 
+        The evolved final spectrum, with or without intermediate steps.
 
     """
     from darkhistory.spec.spectra import Spectra
@@ -347,7 +380,7 @@ def evolve(
 
     else:
 
-        rs_last_ind = tflist.rs.size-1 
+        rs_last_ind = tflist.rs.size-1
 
     if save_steps is True:
 
@@ -379,7 +412,7 @@ def evolve(
 
             return out_specs
 
-        else: 
+        else:
             raise TypeError('invalid evolve_type.')
 
 
