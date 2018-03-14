@@ -3,6 +3,7 @@
 """
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 # Fundamental constants
 mp          = 0.938272081e9
@@ -231,8 +232,8 @@ def beta_ion(T_rad):
 #   thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
 #   return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
 
-def rate_factor(xe, rs):
-    """returns numerator of the Peebles C coefficient
+def rate_2p1s(xe, rs):
+    """returns the rate at which Ly_a photons are emitted without being immediately absorbed
 
     Parameters
     ----------
@@ -246,16 +247,10 @@ def rate_factor(xe, rs):
     float
         Numerator of the Peebles C coefficient.
     """
-    # Net rate for 2p to 1s transition.
-    rate_2p1s = (
+    return (
         8 * np.pi * hubble(rs)/
         (3*(nH * rs**3 * (1-xe) * (c/lya_freq)**3))
     )
-    # Net rate for 2s to 1s transition.
-    rate_2s1s = width_2s1s
-
-    return (3*rate_2p1s/4 + rate_2s1s/4)
-
 
 def peebles_C(xe, rs):
     """Returns the Peebles C coefficient.
@@ -276,12 +271,14 @@ def peebles_C(xe, rs):
     float
         The Peebles C factor.
     """
-    rate_exc = rate_factor(xe, rs)
+    # Net rate for 2s to 1s transition.
+    rate_2s1s = width_2s1s
+
+    rate_exc = (3*rate_2p1s(xe, rs)/4 + rate_2s1s/4)
 
     # Net rate for ionization.
     rate_ion = beta_ion(TCMB(rs))
 
-    # Rate is averaged over 3/4 of excited state being in 2p, 1/4 in 2s.
     return rate_exc/(rate_exc + rate_ion)
 
 
@@ -391,6 +388,39 @@ def tau_sobolev(rs):
     lya_omega = lya_eng / hbar
 
     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
+
+def get_dLam2s_dnu():
+    """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
+
+    nu is the frequency of the more energetic photon.
+    To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    Lam : ndarray
+        Decay rate per nu.
+    """
+    coeff = 9 * alpha**6 * rydberg /(
+        2**10 * 2 * np.pi * hbar
+    )
+    print(coeff)
+
+    # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
+    # interpolating points come from Spitzer and Greenstein, 1951
+    y = np.arange(0, 1.05, .05)
+    psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
+                   4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
+
+    # evaluation outside of interpolation window yields 0.
+    f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
+    def dLam2s_dnu(nu):
+        return coeff * f(nu/lya_freq)
+
+    return dLam2s_dnu
+
 
 # CMB
 
