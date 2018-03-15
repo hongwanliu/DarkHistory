@@ -76,14 +76,14 @@ def get_bounds_between(eng, E1, E2=None, bound_type='inc'):
     """
     bin_boundary = get_bin_bound(eng)
     left_bound = np.searchsorted(bin_boundary,E1)
-    if E2 != None:
+    if E2 is not None:
         right_bound = np.searchsorted(bin_boundary,E2) - 1
         bin_boundary = bin_boundary[left_bound : right_bound]
     else:
         bin_boundary = bin_boundary[left_bound:]
 
     if(bound_type == 'inc'):
-        if E2 == None:
+        if E2 is None:
             return np.insert(bin_boundary,0,E1)
         else:
             tmp = np.insert(bin_boundary,0,E1)
