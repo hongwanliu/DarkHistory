@@ -16,6 +16,8 @@ interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon = [], [
 def make_interpolators():
     """Creates cubic splines that interpolate the Medea Data.  Stores them in globally defined variables so that these functions are only computed once
 
+    Assumes that the data files are in the same directory as this script.
+
     Parameters
     ----------
 
@@ -51,8 +53,9 @@ def make_interpolators():
     interp_lowE_photon = interp.interp2d(engs,xHII,lowE_photon.T, kind='linear')
 
 make_interpolators()
-def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj):
-    """ Given an electron energy spectrum, calculate how much of that energy splits into heating of the IGM(?), lyman_alpha transitions, H ionization, He ionization, and continuum photons.
+def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
+    """ Given an electron energy spectrum, calculate how much of that energy splits into
+    heating of the IGM, lyman_alpha transitions, H ionization, He ionization, and continuum photons.
 
     Parameters
     ----------
@@ -61,7 +64,7 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj):
     xHII : float
         The ionization fraction nHII/nH.
     tot_inj : float
-        total energy injected by DM
+        dE/dVdt energy injection rate of DM per volume per time
 
     Returns
     -------
@@ -82,5 +85,5 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj):
     heat, lyman, ionH, ionHe, lowE_photon = heat/tmpList, lyman/tmpList, ionH/tmpList, ionHe/tmpList, lowE_photon/tmpList
 
     #compute ratio of deposited divided by injected
-    tmpList = e_spectrum.eng*e_spectrum.N/tot_inj
+    tmpList = e_spectrum.eng * e_spectrum.N * phys.nB / time_step / tot_inj
     return sum(heat*tmpList), sum(lyman*tmpList), sum(ionH*tmpList), sum(ionHe*tmpList), sum(lowE_photon*tmpList)
