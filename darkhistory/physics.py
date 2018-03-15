@@ -29,6 +29,8 @@ stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
 rydberg      = 13.60569253
 """Ionization potential of ground state hydrogen in eV."""
+He_ion_eng      = 24.6
+"""Energy needed to singly ionize neutral He in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
@@ -303,7 +305,7 @@ def photo_ion_xsec(eng, species):
         Cross section in cm^2.
     """
 
-    eng_thres = {'H0':rydberg, 'He0':24.6, 'He1':4*rydberg}
+    eng_thres = {'H0':rydberg, 'He0':He_ion_eng, 'He1':4*rydberg}
 
     ind_above = np.where(eng > eng_thres[species])
     xsec = np.zeros(eng.size)
