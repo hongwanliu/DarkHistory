@@ -52,7 +52,7 @@ def get_log_bin_width(eng):
     bin_boundary = get_bin_bound(eng)
     return np.diff(np.log(bin_boundary))
 
-def get_bounds_between(eng, E1, E2, bound_type='inc'):
+def get_bounds_between(eng, E1, E2=None, bound_type='inc'):
     """Returns the bin boundary of an abscissa between two energies.
 
     If set to inc(lusive), E1 and E2 are part of the returned bounds.
@@ -64,8 +64,8 @@ def get_bounds_between(eng, E1, E2, bound_type='inc'):
         Abscissa from which the bin boundary is obtained.
     E1 : float
         Lower bound
-    E2 : float
-        Upper bound
+    E2 : float, optional
+        Upper bound.  If None, E2 = max(bound of eng)
     bound_type : {'inc', 'exc'}, optional
         if 'inc', E1 and E2 are part of the returned bounds. If 'exc', they are not.
 
@@ -76,14 +76,38 @@ def get_bounds_between(eng, E1, E2, bound_type='inc'):
     """
     bin_boundary = get_bin_bound(eng)
     left_bound = np.searchsorted(bin_boundary,E1)
-    right_bound = np.searchsorted(bin_boundary,E2) - 1
-    bin_boundary = bin_boundary[left_bound : right_bound]
+    if E2 != None:
+        right_bound = np.searchsorted(bin_boundary,E2) - 1
+        bin_boundary = bin_boundary[left_bound : right_bound]
+    else:
+        bin_boundary = bin_boundary[left_bound:]
 
     if(bound_type == 'inc'):
-        tmp = np.insert(bin_boundary,0,E1)
-        return np.append(tmp, E2)
+        if E2 == None:
+            return np.insert(bin_boundary,0,E1)
+        else:
+            tmp = np.insert(bin_boundary,0,E1)
+            return np.append(tmp, E2)
     else:
         return bin_boundary
+
+def get_indx(eng, E):
+    """Returns index of bin containing E.
+
+    Parameters
+    ----------
+    eng : ndarray
+        Energy abscissa
+    E : float
+        You would like to know the bin index containing this energy
+
+    Returns
+    -------
+    float
+        Index of bin that contains E
+    """
+    return np.searchsorted(get_bin_bound(eng),E)-1
+
 
 def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     """Rebins an array of particle number with fixed energy.
