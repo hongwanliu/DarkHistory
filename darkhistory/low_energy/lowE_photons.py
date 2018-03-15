@@ -5,23 +5,63 @@ import numpy as np
 import darkhistory.physics as phys
 import darkhistory.spec.spectools as spectools
 
-def compute_dep_inj_ratio(photon_spectrum, n, tot_inj, method='old'):
-    """ Given a spectrum of deposited photons, resolve its energy into continuum photons, HI excitation, and HI, HeI, HeII ionization in that order.  The
-        spectrum must provide the energy density of photons per unit time within each bin, not just the total energy within each bin.
-        Q: can photons heat the IGM?  Should this method keep track of the fact that x_e, xHII, etc. are changing?
+def kappa_DM(photon_spectrum, xe):
+    """ Compute kappa_DM of the modified tla.
 
     Parameters
     ----------
     photon_spectrum : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return dE/dVdt.
+        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return Energy per baryon.
+
+    Returns
+    -------
+    kappa_DM : float
+        The added photoionization rate due to products of DM.
+    """
+    eng = photon_spectrum.eng
+
+    # The bin number containing 10.2eV
+    lya_index = spectools.get_indx(eng, phys.lya_eng)
+
+    # The bins between 10.2eV and 13.6eV
+    exc_bounds = spectools.get_bounds_between(
+        eng, phys.lya_eng, phys.rydberg
+    )
+
+    # Convenient variables
+    rs = photon_spectrum.rs
+    Tcmb = phys.TCMB(rs)
+    Lambda = phys.width_2s1s
+
+    # Effect on 2p state due to DM products
+    kappa_2p = (
+        photon_spectrum.dNdE[lya_index] *
+        (phys.hbar * np.pi / phys.lya_eng)**2 * phys.c**3
+    )
+
+    # Effect on 2s state due to DM products
+
+    return 0
+
+def compute_dep_inj_ratio(photon_spectrum, n, tot_inj, time_step, method='old'):
+    """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
+
+    Given a spectrum of deposited photons, resolve its energy into continuum photons,
+    HI excitation, and HI, HeI, HeII ionization in that order.
+    Q: can photons heat the IGM?  Should this method keep track of the fact that x_e, xHII, etc. are changing?
+
+    Parameters
+    ----------
+    photon_spectrum : Spectrum object
+        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return energy per baryon.
     n : list of floats
         density of (HI, HeI, HeII) at redshift photon_spectrum.rs
     tot_inj : float
-        total energy injected by DM
+        total energy injected by DM, dE/dVdt |_inj
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
-        'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully
+        'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
 
     Returns
     -------
@@ -29,21 +69,34 @@ def compute_dep_inj_ratio(photon_spectrum, n, tot_inj, method='old'):
         Ratio of deposited energy to a given channel over energy deposited by DM.
         The order of the channels is {continuum photons, HI excitation, HI ionization, HeI ion, HeII ion}
     """
-    f_continuum, excite_HI, f_HI, f_HeI, f_HeII = 0,0,0,0,0
+    f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII = 0,0,0,0,0
+    eng = photon_spectrum.eng
+
+    # norm_factor converts from total deposited energy to f_c(z) = (dE/dVdt)dep / (dE/dVdt)inj
+    norm_factor = phys.nB / time_step / tot_inj
 
     # All photons below 10.2eV get deposited into the continuum
-    f_continuum = photon_spectrum.toteng(bound_type='eng', bound_arr=np.array([photon_spectrum.eng[0],phys.lya_eng]))[0]/tot_inj
+    f_continuum = photon_spectrum.toteng(
+        bound_type='eng',
+        bound_arr=np.array([eng[0],phys.lya_eng])
+    )[0] * norm_factor
 
-    # eng[ion_index] (eng[lya_index]) is the first energy greater than phys.rydberg (phys.lya_eng)
-    ion_index = np.searchsorted(photon_spectrum.eng,phys.rydberg)
-    lya_index = np.searchsorted(photon_spectrum.eng,phys.lya_eng)
+    # Treatment of photoexcitation
 
-    # needs explanation
-    ion_bin = spectools.get_bin_bound(photon_spectrum.eng)[ion_index]
+    # The bin number containing 10.2eV
+    lya_index = spectools.get_indx(eng, phys.lya_eng)
+    # The bin number containing 13.6eV
+    ryd_index = spectools.get_indx(eng, phys.rydberg)
 
     if(method != 'new'):
         # All photons between 10.2eV and 13.6eV are deposited into excitation
-        f_excite_HI = photon_spectrum.toteng(bound_type='eng', bound_arr=np.array([phys.lya_eng,phys.rydberg]))[0]/tot_inj
+        tot_excite_eng = (
+            photon_spectrum.toteng(
+                bound_type='eng',
+                bound_arr=np.array([phys.lya_eng,phys.rydberg])
+            )[0]
+        )
+        f_excite_HI = tot_excite_eng * norm_factor
     else:
         # Only photons in the 10.2eV bin participate in excitation
 
@@ -53,14 +106,8 @@ def compute_dep_inj_ratio(photon_spectrum, n, tot_inj, method='old'):
         xe = sum(n)/phys.nH
         beta = phys.beta_ion(Tcmb)
         peebC = phys.peebles_C(xe,rs)
-        factor = phys.rate_factor(xe, rs)
-
-        # interpolated photon_spectrum.dNdE evaluated at E_lya
-        dn_DM = (
-            (photon_spectrum.dNdE[lya_index] - photon_spectrum.dNdE[lya_index-1])/
-            (photon_spectrum.eng[lya_index] - photon_spectrum.eng[lya_index-1])
-            *(phys.lya_eng - photon_spectrum.eng[lya_index-1]) + photon_spectrum.dNdE[lya_index-1]
-        )
+        factor = 3*phys.rate_2p1s(xe,rs)/4 + phys.
+        kappa = kappa_DM(photon_spectrum)
 
         # When beta = 0, 1-C = 0, but their ratio is finite
         if(np.abs(beta/factor) < 1e-8):
@@ -73,23 +120,30 @@ def compute_dep_inj_ratio(photon_spectrum, n, tot_inj, method='old'):
             peebC * factor / (phys.lya_eng * tot_inj)
         )
 
-    if(method == 'old'):
-        # All photons above 13.6 ionize HI
-        f_HI = photon_spectrum.toteng(bound_type='eng', bound_arr=np.array([phys.rydberg,photon_spectrum.eng[-1]]))[0]/tot_inj
+    # Treatment of photoionization
+
+    # Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
+    ion_bounds = spectools.get_bounds_between(eng, phys.rydberg, eng[-1])
+    ion_Ns = photon_spectrum.totN(bound_type='eng', bound_arr=ion_bounds))
+
+    if method == 'old':
+        # All photons above 13.6 eV deposit their 13.6eV into HI ionization
+        tot_ion_eng = phys.rydberg * ion_Ns
+        f_HI = tot_ion_eng * norm_factor
     else:
-        # Probability of being absorbed within time step dt in channel a = \sigma(E)_a n_a c*dt
-        # First convert from probability of being absorbed in channel 'a' to conditional probability given that these are deposited photons
-        ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(photon_spectrum.eng[ion_index:],channel)*n[i] for i,channel in enumerate(['H0','He0','He1'])]
+        # Photons may also deposit their energy into HeI and HeII single ionization
+
+        # Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
+        ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(photon_spectrum.eng[ion_index:],channel) * n[i]
+                                  for i,channel in enumerate(['H0','He0','He1'])]
+
+        # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
         totList = ionHI + ionHeI + ionHeII
+        ionHI, ionHeI, ionHeII = [ llist/totList for llist in [ionHI, ionHeI, ionHeII] ]
 
-        f_HI, f_HeI, f_HeII = [sum(photon_spectrum.eng[ion_index:]*photon_spectrum.N[ion_index:]*llist/totList)/tot_inj for llist in [ionHI, ionHeI, ionHeII]]
-
-        #There's an extra piece of energy between 13.6 and the energy at ion_index. We expect 100% ionization within this region, so
-        extra_HI, extra_HeI, extra_HeII = [phys.photo_ion_xsec(np.array([phys.rydberg+ion_bin])/2,channel)*n[i] for i, channel in enumerate(['H0','He0','He1'])]
-        tot = extra_HI + extra_HeI + extra_HeII
-        df_HI, df_HeI, df_HeII = [(photon_spectrum.toteng(bound_type='eng',bound_arr=np.array([phys.rydberg,ion_bin]))*extra/tot)[0]/tot_inj for extra in [extra_HI, extra_HeI, extra_HeII]]
-        f_HI = f_HI + df_HI
-        f_HeI = f_HeI + df_HeI
-        f_HeII = f_HeII + df_HeII
+        f_HI, f_HeI, f_HeII = [
+            sum(ion_Ns * llist * norm_factor)
+            for llist in [phys.rydberg*ionHI, phys.He_ion_eng*ionHeI, 4*phys.rydberg*ionHeII]
+        ]
 
     return f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII
