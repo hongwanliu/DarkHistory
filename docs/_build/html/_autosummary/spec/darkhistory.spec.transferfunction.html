@@ -104,7 +104,6 @@
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.transferfunclist.html">transferfunclist</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.electrons.html">electrons</a></li>
 </ul>
 </li>
 </ul>
@@ -184,10 +183,10 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr[,&nbsp;spec_type,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr,&nbsp;in_eng,&nbsp;dlnz[,&nbsp;…])</td>
 <td>Transfer function at a given injection energy.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr[,&nbsp;dlnz,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr,&nbsp;in_eng,&nbsp;dlnz)</td>
 <td>Transfer function at a given redshift.</td>
 </tr>
 </tbody>
@@ -208,7 +207,7 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy">
-<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtEnergy</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>spec_type='dNdE'</em>, <em>dlnz=-1</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtEnergy</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>in_eng</em>, <em>dlnz</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
 <p>Transfer function at a given injection energy.</p>
 <p>Collection of Spectrum objects, each at different redshifts.</p>
@@ -218,7 +217,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>spec_arr</strong> (<em>list of Spectrum</em>) – List of Spectrum to be stored together.</li>
-<li><strong>spec_type</strong> (<em>{'N'</em><em>, </em><em>'dNdE'}</em><em>, </em><em>optional</em>) – Type of data stored, ‘dNdE’ is the default.</li>
+<li><strong>in_eng</strong> (<em>float</em>) – Injection energy of this transfer function.</li>
 <li><strong>dlnz</strong> (<em>float</em>) – The d ln(1+z) step for the transfer function.</li>
 <li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the Spectrum objects into.</li>
 </ul>
@@ -227,33 +226,21 @@
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.in_eng">
-<code class="descname">in_eng</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.in_eng" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – Array of injection energies corresponding to each spectrum.</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.eng">
 <code class="descname">eng</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.eng" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – Array of energy abscissa of each spectrum.</p>
+<dd><p><em>ndarray</em> – Energy abscissa for the Spectrum.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.rs">
 <code class="descname">rs</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.rs" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>ndarray</em> – Array of redshifts corresponding to each spectrum.</p>
+<dd><p><em>ndarray</em> – Redshift abscissa for the Spectrum objects.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.spec_type">
-<code class="descname">spec_type</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.spec_type" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>{‘N’, ‘dNdE’}</em> – The type of values stored.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.dlnz">
-<code class="descname">dlnz</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.dlnz" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – The d ln(1+z) step for the transfer function.</p>
+<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.grid_values">
+<code class="descname">grid_values</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.grid_values" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – 2D array with the spectra laid out in (rs, eng).</p>
 </dd></dl>
 
 <p class="rubric">Table of Methods</p>
@@ -266,104 +253,27 @@
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.append" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(spec)</td>
 <td>Appends a new Spectrum.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type])</td>
 <td>Interpolates the transfer function at a new redshift.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
-<td>Sums over each individual spectrum with some weight.</td>
+<td>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.plot" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.plot" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;abs_plot])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.rebin" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift"><code class="xref py py-obj docutils literal"><span class="pre">redshift</span></code></a>(rs_arr)</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
-<td>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type"><code class="xref py py-obj docutils literal"><span class="pre">switch_spec_type</span></code></a>()</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.totN" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.totN"><code class="xref py py-obj docutils literal"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
-<td>Returns the total number of particles in part of the spectra.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng"><code class="xref py py-obj docutils literal"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
-<td>Returns the total energy of particles in part of the spectra.</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
+<td>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</td>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.N_underflow">
-<code class="descname">N_underflow</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.N_underflow" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__add__">
 <code class="descname">__add__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__add__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds two arrays of spectra together.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em> or </em><em>ndarray</em>) – </td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise sum of the <cite>Spectrum</cite> objects in each Spectra.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add arrays of spectra together.</p>
-<div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__mul__">
-<code class="descname">__mul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__mul__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes a product with this <cite>Spectra</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em>, </em><em>float</em><em>, </em><em>list</em><em> or </em><em>ndarray</em>) – </td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rmul__</cite>, allows the use of the symbol * to multiply objects with a <cite>Spectra</cite> object.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__neg__">
-<code class="descname">__neg__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__neg__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Negates the spectra values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__radd__">
-<code class="descname">__radd__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__radd__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds two arrays of spectra together.</p>
+<dd><p>Adds two <cite>Spectra</cite> instances together.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -377,7 +287,71 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add two arrays of spectra together.</p>
+<p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add <cite>Spectra</cite> objects together.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__mul__">
+<code class="descname">__mul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__mul__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the product of two <cite>Spectra</cite> instances.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em> or </em><em>float</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise product of the <cite>Spectrum</cite> objects in each Spectra.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This special function, together with <cite>Spectra.__rmul__</cite>, allows the use of the symbol * to add <cite>Spectra</cite> objects together.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rmul__()</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__neg__">
+<code class="descname">__neg__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__neg__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Negates all of the <cite>dNdE</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance with the <cite>dNdE</cite> negated.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__radd__">
+<code class="descname">__radd__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__radd__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds two <cite>Spectra</cite> instances together.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise sum of the <cite>Spectrum</cite> objects in each Spectra.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add <cite>Spectra</cite> objects together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__add__()</span></code></p>
@@ -387,34 +361,38 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__rmul__">
 <code class="descname">__rmul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__rmul__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes a product with this <cite>Spectra</cite>.</p>
+<dd><p>Takes the product of two <cite>Spectra</cite> instances.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em>, </em><em>float</em><em>, </em><em>list</em><em> or </em><em>ndarray</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em> or </em><em>float</em>) – </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise product of the <cite>Spectrum</cite> objects in each Spectra.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__mul__</cite>, allows the use of the symbol * to multiply objects with a <cite>Spectra</cite> object.</p>
+<p>This special function, together with <cite>Spectra.__mul__</cite>, allows the use of the symbol * to add <cite>Spectra</cite> objects together.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__mul__()</span></code></p>
+</div>
 </dd></dl>
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__rsub__">
 <code class="descname">__rsub__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__rsub__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtracts one array of spectra from another.</p>
+<dd><p>Subtracts one <cite>Spectra</cite> instance from another.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em> or </em><em>ndarray</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which has the subtracted list of <cite>dNdE</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
 </tr>
@@ -431,12 +409,12 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__rtruediv__">
 <code class="descname">__rtruediv__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__rtruediv__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Divides Spectra by another object.</p>
+<dd><p>Divides Spectra by a number or another Spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em>, </em><em>int</em><em>, </em><em>list</em><em> or </em><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em> or </em><em>int</em>) – </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -445,7 +423,7 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
+<p>This special function, together with <cite>Spectra.__truediv__</cite>, allows the use of the symbol / to divide <cite>Spectra</cite> objects by a number or another Spectra.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
@@ -455,14 +433,14 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__sub__">
 <code class="descname">__sub__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__sub__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtracts one array of spectra from another.</p>
+<dd><p>Subtracts one <cite>Spectra</cite> instance from another.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em> or </em><em>ndarray</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which has the subtracted list of <cite>dNdE</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
 </tr>
@@ -479,12 +457,12 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__truediv__">
 <code class="descname">__truediv__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__truediv__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Divides Spectra by another object.</p>
+<dd><p>Divides Spectra by a number or another Spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em>, </em><em>int</em><em>, </em><em>list</em><em> or </em><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em> or </em><em>int</em>) – </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -493,7 +471,7 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
+<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use of the symbol / to divide <cite>Spectra</cite> objects by a number or another Spectra.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
@@ -504,7 +482,6 @@
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.append">
 <code class="descname">append</code><span class="sig-paren">(</span><em>spec</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.append" title="Permalink to this definition">¶</a></dt>
 <dd><p>Appends a new Spectrum.</p>
-<p>Applies Spectra.append, but first checks that the appended <cite>Spectrum</cite> has the same injection energy, and is correctly ordered.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -517,7 +494,7 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs">
-<code class="descname">at_rs</code><span class="sig-paren">(</span><em>new_rs</em>, <em>interp_type='val'</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">at_rs</code><span class="sig-paren">(</span><em>new_rs</em>, <em>interp_type='val'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolates the transfer function at a new redshift.</p>
 <p>Interpolation is logarithmic.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -536,38 +513,18 @@
 </table>
 </dd></dl>
 
-<dl class="attribute">
-<dt>
-<code class="descname">eng</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.eng_underflow">
-<code class="descname">eng_underflow</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.eng_underflow" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.grid_vals">
-<code class="descname">grid_vals</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.grid_vals" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">in_eng</code></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec">
 <code class="descname">integrate_each_spec</code><span class="sig-paren">(</span><em>weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sums over each individual spectrum with some weight.</p>
-<p>The weight is over each energy bin, and has the same length as <cite>self.eng</cite>.</p>
+<dd><p>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</p>
+<p>Equivalent to contracting <cite>weight</cite> with each <cite>dNdE</cite> in Spectra, <cite>weight</cite> should have length <cite>self.length</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>weight</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – The weight in each energy bin, with weight of 1 for every bin if not specified.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array of weighted sums, one for each spectrum in this <cite>Spectra</cite>.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array of weighted sums, one for each redshift in <cite>self.rs</cite>, with length <cite>self.rs.size</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -577,7 +534,7 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>ind=None</em>, <em>step=1</em>, <em>indtype='ind'</em>, <em>fac=1</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>ind=None</em>, <em>step=1</em>, <em>indtype='ind'</em>, <em>abs_plot=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the contained <cite>Spectrum</cite> objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -589,7 +546,6 @@
 <li><strong>step</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to take before choosing one Spectrum to plot.</li>
 <li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'rs'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or an abscissa value.</li>
 <li><strong>abs_plot</strong> (<em>bool</em><em>, </em><em>optional</em>) – Plots the absolute value if true.</li>
-<li><strong>fac</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – Factor to multiply the array by.</li>
 <li><strong>**kwargs</strong> (<em>optional</em>) – All additional keyword arguments to pass to matplotlib.plt.plot.</li>
 </ul>
 </td>
@@ -613,104 +569,30 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>out_eng</strong> (<em>ndarray</em>) – The new abscissa to bin into. If <cite>self.eng</cite> has values that are smaller than <cite>out_eng[0]</cite>, then the new underflow will be filled. If <cite>self.eng</cite> has values that exceed <cite>out_eng[-1]</cite>, then an error is returned.</li>
-<li><strong>rebin_type</strong> (<em>{'1D'</em><em>, </em><em>'2D'}</em><em>, </em><em>optional</em>) – Whether to rebin each <cite>Spectrum</cite> separately (<cite>‘1D’</cite>), or the whole <cite>Spectra</cite> object at once (<cite>‘2D’</cite>). Default is <cite>‘2D’</cite>.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>out_eng</strong> (<em>ndarray</em>) – The new abscissa to bin into. If <cite>self.eng</cite> has values that are smaller than <cite>out_eng[0]</cite>, then the new underflow will be filled. If <cite>self.eng</cite> has values that exceed <cite>out_eng[-1]</cite>, then an error is returned.</td>
 </tr>
 </tbody>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
 </div>
 </dd></dl>
 
 <dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift">
-<code class="descname">redshift</code><span class="sig-paren">(</span><em>rs_arr</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">rs</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">spec_type</code></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs">
 <code class="descname">sum_specs</code><span class="sig-paren">(</span><em>weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</p>
-<p>Applies Spectra.sum_specs, but sets <cite>in_eng</cite> of the output <cite>Spectrum</cite> correctly.</p>
+<dd><p>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</p>
+<p>Equivalent to contracting <cite>mat</cite> with <cite>[spec.dNdE[i] for spec in spec_arr]</cite> for all <cite>i</cite>. <cite>mat</cite> should have length <cite>self.rs.size</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>weight</strong> (<em>ndarray</em><em> or </em><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a><em>, </em><em>optional</em>) – The weight in each redshift bin, with weight of 1 for every bin if not specified.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array or <cite>Spectrum</cite> of weight sums, one for each energy in <cite>self.eng</cite>, with length <cite>self.length</cite>.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array or Spectrum of weight sums, one for each energy in <cite>self.eng</cite>, with length <cite>self.length</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray or <a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type">
-<code class="descname">switch_spec_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.totN">
-<code class="descname">totN</code><span class="sig-paren">(</span><em>bound_type=None</em>, <em>bound_arr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.totN" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the total number of particles in part of the spectra.</p>
-<p>The part of the <cite>Spectrum</cite> objects to find the total number of particles can be specified in two ways, and is specified by <cite>bound_type</cite>. Multiple totals can be obtained through <cite>bound_arr</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>bound_type</strong> (<em>{'bin'</em><em>, </em><em>'eng'</em><em>, </em><em>None}</em>) – The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</li>
-<li><strong>bound_arr</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Total number of particles in the spectrum.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng">
-<code class="descname">toteng</code><span class="sig-paren">(</span><em>bound_type=None</em>, <em>bound_arr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the total energy of particles in part of the spectra.</p>
-<p>The part of the <cite>Spectrum</cite> objects to find the total energy of particles can be specified in two ways, and is specified by <cite>bound_type</cite>. Multiple totals can be obtained through <cite>bound_arr</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>bound_type</strong> (<em>{'bin'</em><em>, </em><em>'eng'</em><em>, </em><em>None}</em>) – The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</li>
-<li><strong>bound_arr</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Total energy of particles in the spectrum.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
 </tr>
 </tbody>
 </table>
@@ -720,7 +602,7 @@
 
 <dl class="class">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift">
-<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtRedshift</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>dlnz=-1</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtRedshift</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>in_eng</em>, <em>dlnz</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
 <p>Transfer function at a given redshift.</p>
 <p>Collection of Spectrum objects, each at different injection energies.</p>
@@ -730,9 +612,8 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>spec_arr</strong> (<em>list of Spectrum</em>) – List of Spectrum to be stored together.</li>
-<li><strong>dlnz</strong> (<em>float</em>) – d ln(1+z) associated with this transfer function.</li>
-<li><strong>spec_type</strong> (<em>{'N'</em><em>, </em><em>'dNdE'}</em><em>, </em><em>optional</em>) – The type of spectrum saved.</li>
-<li><strong>rs</strong> (<em>float</em>) – Redshift of this transfer function.</li>
+<li><strong>in_eng</strong> (<em>ndarray</em>) – Injection energies of this transfer function.</li>
+<li><strong>dlnz</strong> (<em>float</em>) – The d ln(1+z) step for the transfer function.</li>
 <li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the Spectrum objects into.</li>
 </ul>
 </td>
@@ -740,21 +621,21 @@
 </tbody>
 </table>
 <dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.spec_arr">
-<code class="descname">spec_arr</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.spec_arr" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>list of Spectrum</em> – List of Spectrum to be stored together.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.dlnz">
-<code class="descname">dlnz</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.dlnz" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – d ln(1+z) associated with this transfer function.</p>
+<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.eng">
+<code class="descname">eng</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.eng" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – Energy abscissa for the Spectrum.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.rs">
 <code class="descname">rs</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rs" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>float</em> – Redshift of this transfer function.</p>
+<dd><p><em>float</em> – The redshift of the Spectrum objects.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.grid_values">
+<code class="descname">grid_values</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.grid_values" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – 2D array with the spectra laid out in (in_eng, eng).</p>
 </dd></dl>
 
 <p class="rubric">Table of Methods</p>
@@ -773,107 +654,27 @@
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng"><code class="xref py py-obj docutils literal"><span class="pre">at_in_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new injection energy.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_err,&nbsp;…])</td>
-<td>Interpolates the transfer function at a new redshift.</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_eng[,&nbsp;interp_type])</td>
+<td>Removes the inherited Spectra.at_rs from this class.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val"><code class="xref py py-obj docutils literal"><span class="pre">at_val</span></code></a>(new_in_eng,&nbsp;new_eng[,&nbsp;interp_type,&nbsp;…])</td>
-<td>2D interpolation at specified abscissa.</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
+<td>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
-<td>Sums over each individual spectrum with some weight.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;abs_plot])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift"><code class="xref py py-obj docutils literal"><span class="pre">redshift</span></code></a>(rs_arr)</td>
-<td></td>
-</tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
-<td>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type"><code class="xref py py-obj docutils literal"><span class="pre">switch_spec_type</span></code></a>()</td>
-<td></td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.totN" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.totN"><code class="xref py py-obj docutils literal"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
-<td>Returns the total number of particles in part of the spectra.</td>
-</tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng"><code class="xref py py-obj docutils literal"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
-<td>Returns the total energy of particles in part of the spectra.</td>
+<td>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</td>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.N_underflow">
-<code class="descname">N_underflow</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.N_underflow" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__add__">
 <code class="descname">__add__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__add__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds two arrays of spectra together.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em> or </em><em>ndarray</em>) – </td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise sum of the <cite>Spectrum</cite> objects in each Spectra.</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add arrays of spectra together.</p>
-<div class="admonition seealso">
-<p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__mul__">
-<code class="descname">__mul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__mul__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes a product with this <cite>Spectra</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em>, </em><em>float</em><em>, </em><em>list</em><em> or </em><em>ndarray</em>) – </td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rmul__</cite>, allows the use of the symbol * to multiply objects with a <cite>Spectra</cite> object.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__neg__">
-<code class="descname">__neg__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__neg__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Negates the spectra values.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"></td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__radd__">
-<code class="descname">__radd__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__radd__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds two arrays of spectra together.</p>
+<dd><p>Adds two <cite>Spectra</cite> instances together.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -887,7 +688,71 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add two arrays of spectra together.</p>
+<p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add <cite>Spectra</cite> objects together.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__mul__">
+<code class="descname">__mul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__mul__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes the product of two <cite>Spectra</cite> instances.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em> or </em><em>float</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise product of the <cite>Spectrum</cite> objects in each Spectra.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This special function, together with <cite>Spectra.__rmul__</cite>, allows the use of the symbol * to add <cite>Spectra</cite> objects together.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rmul__()</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__neg__">
+<code class="descname">__neg__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__neg__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Negates all of the <cite>dNdE</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance with the <cite>dNdE</cite> negated.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__radd__">
+<code class="descname">__radd__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__radd__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds two <cite>Spectra</cite> instances together.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise sum of the <cite>Spectrum</cite> objects in each Spectra.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add <cite>Spectra</cite> objects together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__add__()</span></code></p>
@@ -897,34 +762,38 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__rmul__">
 <code class="descname">__rmul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__rmul__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes a product with this <cite>Spectra</cite>.</p>
+<dd><p>Takes the product of two <cite>Spectra</cite> instances.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em>, </em><em>float</em><em>, </em><em>list</em><em> or </em><em>ndarray</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em>, </em><em>int</em><em> or </em><em>float</em>) – </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which is an element-wise product of the <cite>Spectrum</cite> objects in each Spectra.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
 </tr>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__mul__</cite>, allows the use of the symbol * to multiply objects with a <cite>Spectra</cite> object.</p>
+<p>This special function, together with <cite>Spectra.__mul__</cite>, allows the use of the symbol * to add <cite>Spectra</cite> objects together.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__mul__()</span></code></p>
+</div>
 </dd></dl>
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__rsub__">
 <code class="descname">__rsub__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__rsub__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtracts one array of spectra from another.</p>
+<dd><p>Subtracts one <cite>Spectra</cite> instance from another.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em> or </em><em>ndarray</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which has the subtracted list of <cite>dNdE</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
 </tr>
@@ -941,12 +810,12 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__rtruediv__">
 <code class="descname">__rtruediv__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__rtruediv__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Divides Spectra by another object.</p>
+<dd><p>Divides Spectra by a number or another Spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em>, </em><em>int</em><em>, </em><em>list</em><em> or </em><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em> or </em><em>int</em>) – </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -955,7 +824,7 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
+<p>This special function, together with <cite>Spectra.__truediv__</cite>, allows the use of the symbol / to divide <cite>Spectra</cite> objects by a number or another Spectra.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
@@ -965,14 +834,14 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__sub__">
 <code class="descname">__sub__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__sub__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtracts one array of spectra from another.</p>
+<dd><p>Subtracts one <cite>Spectra</cite> instance from another.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a><em> or </em><em>ndarray</em>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New <cite>Spectra</cite> instance which has the subtracted list of <cite>dNdE</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></td>
 </tr>
@@ -989,12 +858,12 @@
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.__truediv__">
 <code class="descname">__truediv__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.__truediv__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Divides Spectra by another object.</p>
+<dd><p>Divides Spectra by a number or another Spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em>, </em><em>int</em><em>, </em><em>list</em><em> or </em><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><em>Spectra</em></a>) – </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<em>ndarray</em><em>, </em><em>float</em><em> or </em><em>int</em>) – </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
 </tr>
@@ -1003,7 +872,7 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
+<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use of the symbol / to divide <cite>Spectra</cite> objects by a number or another Spectra.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
 <p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
@@ -1014,7 +883,6 @@
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.append">
 <code class="descname">append</code><span class="sig-paren">(</span><em>spec</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.append" title="Permalink to this definition">¶</a></dt>
 <dd><p>Appends a new Spectrum.</p>
-<p>Applies Spectra.append, but first checks that the appended spectrum has the same redshift, and is correctly ordered.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1081,9 +949,8 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs">
-<code class="descname">at_rs</code><span class="sig-paren">(</span><em>new_rs</em>, <em>interp_type='val'</em>, <em>bounds_err=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Interpolates the transfer function at a new redshift.</p>
-<p>Interpolation is logarithmic.</p>
+<code class="descname">at_rs</code><span class="sig-paren">(</span><em>new_eng</em>, <em>interp_type='val'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the inherited Spectra.at_rs from this class.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -1091,74 +958,25 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>new_rs</strong> (<em>ndarray</em>) – The redshifts or redshift bin indices at which to interpolate.</li>
 <li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual redshift.</li>
-<li><strong>bounds_err</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to return an error if outside of the bounds for the interpolation.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val">
-<code class="descname">at_val</code><span class="sig-paren">(</span><em>new_in_eng</em>, <em>new_eng</em>, <em>interp_type='val'</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val" title="Permalink to this definition">¶</a></dt>
-<dd><p>2D interpolation at specified abscissa.</p>
-<p>Interpolation is logarithmic. 2D interpolation should be preferred over 1D interpolation over each abscissa in the interest of accuracy.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>new_in_eng</strong> (<em>ndarray</em>) – The injection energy abscissa or injection energy bin indices at which to interpolate.</li>
-<li><strong>new_eng</strong> (<em>ndarray</em>) – The energy abscissa or energy abscissa bin indices at which to interpolate.</li>
-<li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual injection energies.</li>
-<li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
-<li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New transfer function at the new abscissa.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift">TransFuncAtRedshift</a></p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.eng">
-<code class="descname">eng</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.eng" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.eng_underflow">
-<code class="descname">eng_underflow</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.eng_underflow" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.grid_vals">
-<code class="descname">grid_vals</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.grid_vals" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.in_eng">
-<code class="descname">in_eng</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.in_eng" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec">
 <code class="descname">integrate_each_spec</code><span class="sig-paren">(</span><em>weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sums over each individual spectrum with some weight.</p>
-<p>The weight is over each energy bin, and has the same length as <cite>self.eng</cite>.</p>
+<dd><p>Sums each Spectrum, each <cite>eng</cite> bin weighted by <cite>weight</cite>.</p>
+<p>Equivalent to contracting <cite>weight</cite> with each <cite>dNdE</cite> in Spectra, <cite>weight</cite> should have length <cite>self.length</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>weight</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – The weight in each energy bin, with weight of 1 for every bin if not specified.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array of weighted sums, one for each spectrum in this <cite>Spectra</cite>.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array of weighted sums, one for each redshift in <cite>self.rs</cite>, with length <cite>self.rs.size</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
@@ -1168,7 +986,7 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>ind=None</em>, <em>step=1</em>, <em>indtype='ind'</em>, <em>fac=1</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="Permalink to this definition">¶</a></dt>
+<code class="descname">plot</code><span class="sig-paren">(</span><em>ax</em>, <em>ind=None</em>, <em>step=1</em>, <em>indtype='ind'</em>, <em>abs_plot=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the contained <cite>Spectrum</cite> objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -1179,7 +997,7 @@
 <li><strong>ind</strong> (<em>int</em><em>, </em><em>float</em><em>, </em><em>tuple</em><em> or </em><em>ndarray</em><em>, </em><em>optional.</em>) – Index or injected energy of Spectrum to plot, or a tuple of indices or injected energies providing a range of Spectrum to plot, or a list of indices or injected energies of Spectrum to plot.</li>
 <li><strong>step</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of steps to take before choosing one Spectrum to plot.</li>
 <li><strong>indtype</strong> (<em>{'ind'</em><em>, </em><em>'in_eng'}</em><em>, </em><em>optional</em>) – Specifies whether ind is an index or an abscissa value.</li>
-<li><strong>fac</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – Factor to multiply the array by.</li>
+<li><strong>abs_plot</strong> (<em>bool</em><em>, </em><em>optional</em>) – Plots the absolute value if true.</li>
 <li><strong>**kwargs</strong> (<em>optional</em>) – All additional keyword arguments to pass to matplotlib.plt.plot.</li>
 </ul>
 </td>
@@ -1203,104 +1021,30 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>out_eng</strong> (<em>ndarray</em>) – The new abscissa to bin into. If <cite>self.eng</cite> has values that are smaller than <cite>out_eng[0]</cite>, then the new underflow will be filled. If <cite>self.eng</cite> has values that exceed <cite>out_eng[-1]</cite>, then an error is returned.</li>
-<li><strong>rebin_type</strong> (<em>{'1D'</em><em>, </em><em>'2D'}</em><em>, </em><em>optional</em>) – Whether to rebin each <cite>Spectrum</cite> separately (<cite>‘1D’</cite>), or the whole <cite>Spectra</cite> object at once (<cite>‘2D’</cite>). Default is <cite>‘2D’</cite>.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>out_eng</strong> (<em>ndarray</em>) – The new abscissa to bin into. If <cite>self.eng</cite> has values that are smaller than <cite>out_eng[0]</cite>, then the new underflow will be filled. If <cite>self.eng</cite> has values that exceed <cite>out_eng[-1]</cite>, then an error is returned.</td>
 </tr>
 </tbody>
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
 </div>
 </dd></dl>
 
 <dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift">
-<code class="descname">redshift</code><span class="sig-paren">(</span><em>rs_arr</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">rs</code></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.spec_type">
-<code class="descname">spec_type</code><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.spec_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs">
 <code class="descname">sum_specs</code><span class="sig-paren">(</span><em>weight=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</p>
-<p>Applies Spectra.sum_specs, but sets <cite>rs</cite> of the output <cite>Spectrum</cite> correctly.</p>
+<dd><p>Sums the spectrum in each energy bin, weighted by <cite>mat</cite>.</p>
+<p>Equivalent to contracting <cite>mat</cite> with <cite>[spec.dNdE[i] for spec in spec_arr]</cite> for all <cite>i</cite>. <cite>mat</cite> should have length <cite>self.rs.size</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>weight</strong> (<em>ndarray</em><em> or </em><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a><em>, </em><em>optional</em>) – The weight in each redshift bin, with weight of 1 for every bin if not specified.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array or <cite>Spectrum</cite> of weight sums, one for each energy in <cite>self.eng</cite>, with length <cite>self.length</cite>.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An array or Spectrum of weight sums, one for each energy in <cite>self.eng</cite>, with length <cite>self.length</cite>.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray or <a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type">
-<code class="descname">switch_spec_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.totN">
-<code class="descname">totN</code><span class="sig-paren">(</span><em>bound_type=None</em>, <em>bound_arr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.totN" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the total number of particles in part of the spectra.</p>
-<p>The part of the <cite>Spectrum</cite> objects to find the total number of particles can be specified in two ways, and is specified by <cite>bound_type</cite>. Multiple totals can be obtained through <cite>bound_arr</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>bound_type</strong> (<em>{'bin'</em><em>, </em><em>'eng'</em><em>, </em><em>None}</em>) – The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</li>
-<li><strong>bound_arr</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Total number of particles in the spectrum.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng">
-<code class="descname">toteng</code><span class="sig-paren">(</span><em>bound_type=None</em>, <em>bound_arr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the total energy of particles in part of the spectra.</p>
-<p>The part of the <cite>Spectrum</cite> objects to find the total energy of particles can be specified in two ways, and is specified by <cite>bound_type</cite>. Multiple totals can be obtained through <cite>bound_arr</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>bound_type</strong> (<em>{'bin'</em><em>, </em><em>'eng'</em><em>, </em><em>None}</em>) – The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</li>
-<li><strong>bound_arr</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Total energy of particles in the spectrum.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
-</td>
 </tr>
 </tbody>
 </table>

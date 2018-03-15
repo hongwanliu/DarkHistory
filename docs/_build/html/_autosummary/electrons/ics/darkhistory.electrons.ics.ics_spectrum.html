@@ -94,8 +94,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../darkhistory.utilities.html">utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../darkhistory.spec.html">spec</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../darkhistory.electrons.html">electrons</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../darkhistory.electrons.xsecs.html">xsecs</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../darkhistory.electrons.elec_cooling.html">elec_cooling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../darkhistory.electrons.elec_cooling.html">darkhistory.electrons.elec_cooling</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="../darkhistory.electrons.ics.html">ics</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="darkhistory.electrons.ics.bose_einstein_integrals.html">bose_einstein_integrals</a></li>
 <li class="toctree-l4"><a class="reference internal" href="darkhistory.electrons.ics.nonrel_diff_terms.html">nonrel_diff_terms</a></li>
@@ -187,19 +186,19 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="darkhistory.electrons.ics.ics_spectrum.ics_spec"><code class="xref py py-obj docutils literal"><span class="pre">ics_spec</span></code></a>(eleckineng,&nbsp;photeng,&nbsp;T[,&nbsp;as_pairs,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="darkhistory.electrons.ics.ics_spectrum.ics_spec"><code class="xref py py-obj docutils literal"><span class="pre">ics_spec</span></code></a>(eleceng,&nbsp;photeng,&nbsp;T[,&nbsp;as_pairs,&nbsp;…])</td>
 <td>ICS spectrum of secondary photons.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec</span></code></a>(eleckineng,&nbsp;photeng,&nbsp;T[,&nbsp;as_pairs])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec</span></code></a>(eleceng,&nbsp;photeng,&nbsp;T[,&nbsp;as_pairs])</td>
 <td>Nonrelativistic ICS spectrum of secondary photons.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec_diff</span></code></a>(eleckineng,&nbsp;photeng,&nbsp;T[,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec_diff</span></code></a>(eleceng,&nbsp;photeng,&nbsp;T[,&nbsp;as_pairs])</td>
 <td>Nonrelativistic ICS spectrum of secondary photons by beta expansion.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec_quad</span></code></a>(eleckineng_arr,&nbsp;photeng_arr,&nbsp;T)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec_quad</span></code></a>(eleceng_arr,&nbsp;photeng_arr,&nbsp;T)</td>
 <td>Nonrelativistic ICS spectrum of secondary photons using quadrature.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec_series</span></code></a>(eleckineng,&nbsp;photeng,&nbsp;T[,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series"><code class="xref py py-obj docutils literal"><span class="pre">nonrel_spec_series</span></code></a>(eleceng,&nbsp;photeng,&nbsp;T[,&nbsp;…])</td>
 <td>Nonrelativistic ICS spectrum of secondary photons by series method.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.electrons.ics.ics_spectrum.rel_spec" title="darkhistory.electrons.ics.ics_spectrum.rel_spec"><code class="xref py py-obj docutils literal"><span class="pre">rel_spec</span></code></a>(eleceng,&nbsp;photeng,&nbsp;T[,&nbsp;…])</td>
@@ -212,7 +211,7 @@
 <blockquote>
 <div><dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.ics_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">ics_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>nonrel_tf=None</em>, <em>rel_tf=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">ics_spec</code><span class="sig-paren">(</span><em>eleceng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>nonrel_tf=None</em>, <em>rel_tf=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>ICS spectrum of secondary photons.</p>
 <p>Switches between <cite>nonrel_spec</cite> and <cite>rel_spec</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -220,16 +219,16 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>eleckineng</strong> (<em>ndarray</em>) – Incoming electron energy.</li>
+<li><strong>eleceng</strong> (<em>ndarray</em>) – Incoming electron energy.</li>
 <li><strong>photeng</strong> (<em>ndarray</em>) – Outgoing photon energy.</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
-<li><strong>as_pairs</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</li>
+<li><strong>as_pairs</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.</li>
 <li><strong>nonrel_tf</strong> (<a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a><em>, </em><em>optional</em>) – Reference nonrelativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</li>
 <li><strong>rel_tf</strong> (<a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a><em>, </em><em>optional</em>) – Reference relativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons, dt = 1 s, with <cite>self.in_eng = eleckineng</cite> and <cite>self.eng = photeng</cite>. <cite>self.rs</cite> is determined from <cite>T</cite>, and <cite>self.dlnz</cite> is normalized to 1 second.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons, dt = 1 s, with <cite>self.in_eng = eleceng</cite> and <cite>self.eng = photeng</cite>. <cite>self.rs</cite> is determined from <cite>T</cite>, and <cite>self.dlnz</cite> is normalized to 1 second.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift">TransFuncAtRedshift</a></p>
@@ -245,7 +244,7 @@
 
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.nonrel_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec</code><span class="sig-paren">(</span><em>eleceng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nonrelativistic ICS spectrum of secondary photons.</p>
 <p>Switches between <cite>nonrel_spec_diff</cite> and <cite>nonrel_spec_series</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -253,17 +252,17 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>eleckineng</strong> (<em>ndarray</em>) – Incoming electron kinetic energy.</li>
+<li><strong>eleceng</strong> (<em>ndarray</em>) – Incoming electron energy.</li>
 <li><strong>photeng</strong> (<em>ndarray</em>) – Outgoing photon energy.</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
-<li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</li>
+<li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, photeng).</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa given by (eleceng, photeng).</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift">TransFuncAtRedshift</a> or ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
 </td>
 </tr>
 </tbody>
@@ -290,37 +289,37 @@
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleceng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleceng, photeng).</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleceng, photeng).</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift">TransFuncAtRedshift</a> or ndarray</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple of ndarrays</p>
 </td>
 </tr>
 </tbody>
 </table>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">This function accepts the <em>energy</em> of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions. This enables the evaluation of the relativistic rate at unphysical values of the electron energy, a mathematical trick that we use when we obtain the ICS rates at a low temperature by interpolating over the result at a higher temperature.</p>
+<p class="last">Insert note on the suitability of the method.</p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec_diff</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec_diff</code><span class="sig-paren">(</span><em>eleceng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nonrelativistic ICS spectrum of secondary photons by beta expansion.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>eleckineng</strong> (<em>ndarray</em>) – Incoming electron kinetic energy.</li>
+<li><strong>eleceng</strong> (<em>ndarray</em>) – Incoming electron energy.</li>
 <li><strong>photeng</strong> (<em>ndarray</em>) – Outgoing photon energy.</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
-<li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</li>
+<li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleckineng, photeng).</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleceng, photeng).</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple of ndarrays</p>
@@ -336,14 +335,14 @@
 
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec_quad</code><span class="sig-paren">(</span><em>eleckineng_arr</em>, <em>photeng_arr</em>, <em>T</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec_quad</code><span class="sig-paren">(</span><em>eleceng_arr</em>, <em>photeng_arr</em>, <em>T</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_quad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nonrelativistic ICS spectrum of secondary photons using quadrature.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>eleckineng</strong> (<em>ndarray</em>) – Incoming electron kinetic energy.</li>
+<li><strong>eleceng</strong> (<em>ndarray</em>) – Incoming electron energy.</li>
 <li><strong>photeng</strong> (<em>ndarray</em>) – Outgoing photon energy.</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
 </ul>
@@ -365,17 +364,17 @@
 
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec_series</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec_series</code><span class="sig-paren">(</span><em>eleceng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec_series" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nonrelativistic ICS spectrum of secondary photons by series method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>eleckineng</strong> (<em>ndarray</em>) – Incoming electron kinetic energy.</li>
+<li><strong>eleceng</strong> (<em>ndarray</em>) – Incoming electron energy.</li>
 <li><strong>photeng</strong> (<em>ndarray</em>) – Outgoing photon energy.</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
-<li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</li>
+<li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.</li>
 </ul>
 </td>
 </tr>

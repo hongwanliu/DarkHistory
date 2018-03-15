@@ -23,7 +23,7 @@ class Spectrum:
         The redshift (1+z) of the spectrum. Set to -1 if not specified.
     in_eng : float, optional
         The injection energy of the primary, if this is a secondary spectrum. Set to -1 if not specified.
-    spec_type : {'N', 'dNdE'}, optional
+    mode : {'N', 'dNdE'}, optional
         Whether the input is N or dN/dE in each bin. Default is 'dNdE'.
 
     Attributes
@@ -849,14 +849,10 @@ class Spectrum:
         # consider only positive energy
         pos_eng = sec_spec_eng > 0
 
-        # Check that there are non-zero entries to rebin.
-        if sec_spec_eng[pos_eng].size > 0:
-            new_spec = rebin_N_arr(
-                N_arr[pos_eng], sec_spec_eng[pos_eng], 
-                out_eng, spec_type = self._spec_type
-            )
-        else:
-            new_spec = Spectrum(out_eng, np.zeros_like(out_eng))
+        new_spec = rebin_N_arr(
+            N_arr[pos_eng], sec_spec_eng[pos_eng], 
+            out_eng, spec_type = self._spec_type
+        )
 
         self.eng  = out_eng 
         self._data = new_spec._data

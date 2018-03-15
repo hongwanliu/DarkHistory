@@ -11,4 +11,11 @@ darkhistory/.DS_Store
 darkhistory/.DS_Store
 .DS_Store
 *.pyc
+*.pyc
+darkhistory/spec/__pycache__/spectools.cpython-36.pyc
+darkhistory/spec/__pycache__/spectra.cpython-36.pyc
+darkhistory/spec/__pycache__/spectrum.cpython-36.pyc
+darkhistory/spec/__pycache__/transferfunclist.cpython-36.pyc
+darkhistory/spec/__pycache__/transferfunction.cpython-36.pyc
+darkhistory/.DS_Store
 .DS_Store
