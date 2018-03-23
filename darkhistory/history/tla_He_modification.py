@@ -146,7 +146,7 @@ def get_history(
 	fz_H_exc : function
 		f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation.
 	f_heating : function
-		f(rs, x_HI, x_HeI, x_HeII) for heating.
+		f(rs, x_HI) for heating.
 	dm_injection_rate : function
 		Injection rate of DM as a function of redshift.
 	rs_vec : ndarray
@@ -214,7 +214,7 @@ def get_history(
 					compton_cooling_rate(
 						xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
 					)
-					+ f_heating(rs, xHI, xHeI, xHeII(yHeII)) * dm_injection_rate(rs)
+					+ f_heating(rs, xHI) * dm_injection_rate(rs)
 				)
 			)/ (3/2 * phys.nH*rs**3 * (1 + chi + xe))
 
@@ -314,7 +314,7 @@ def get_history(
 						compton_cooling_rate(
 							xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
 						)
-						+ f_heating(rs, xHI, xHeI, xHeII(yHeII)) * dm_injection_rate(rs)
+						+ f_heating(rs, xHI) * dm_injection_rate(rs)
 					)
 					- phys.dtdz(rs) * (
 						+ photoheat_total_rate
@@ -339,7 +339,6 @@ def get_history(
 			xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
 			ne = xe * phys.nH*rs**3
 			xHI = 1 - xHII(yHII)
-			xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
 			return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
 				# DM injection. Note that C = 1 at late times.

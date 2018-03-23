@@ -3,6 +3,7 @@ sys.path.append("../..")
 
 import numpy as np
 import scipy.interpolate as interp
+import darkhistory.physics as phys
 
 import os
 cwd = os.getcwd()
@@ -27,8 +28,9 @@ def make_interpolators():
 
     engs = [10.2, 13.6, 14, 30, 60, 100, 300, 3000]
     xHII = []
-    heat, lyman, ionH, ionHe, lowE_photon = [ [ [] for i in range(len(engs))]
-                                             for j in range(5)]
+    heat, lyman, ionH, ionHe, lowE_photon = [
+        [ [] for i in range(len(engs))] for j in range(5)
+    ]
     global interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
 
     os.chdir(dir_path)
@@ -38,19 +40,30 @@ def make_interpolators():
             lines_list = f.readlines()
             if i==0:
                 xHII = [np.log(float(line.split('\t')[0])) for line in lines_list[2:]]
-            heat[i], lyman[i], ionH[i], ionHe[i], lowE_photon[i] = [[np.log(max(float(line.split('\t')[k]),1.0e-15))
-                                                                     for line in lines_list[2:]] for k in [1,2,3,4,5]]
+            heat[i], lyman[i], ionH[i], ionHe[i], lowE_photon[i] = [
+                [
+                    np.log(max(float(line.split('\t')[k]),1.0e-15))
+                    for line in lines_list[2:]
+                ] for k in [1,2,3,4,5]
+            ]
     os.chdir(cwd)
     engs = np.log(engs)
 
-    heat, lyman, ionH, ionHe, lowE_photon = np.array(heat), np.array(lyman), np.array(ionH), np.array(ionHe), np.array(lowE_photon)
+    heat, lyman, ionH, ionHe, lowE_photon = (
+        np.array(heat), np.array(lyman), np.array(ionH), np.array(ionHe), np.array(lowE_photon)
+    )
 
     #interpolate data, use linear interpolation to maintain the condition that all 5 functions sum up to 1
-    interp_heat = interp.interp2d(engs,xHII,heat.T, kind='linear')
-    interp_lyman = interp.interp2d(engs,xHII,lyman.T, kind='linear')
-    interp_ionH = interp.interp2d(engs,xHII,ionH.T, kind='linear')
-    interp_ionHe = interp.interp2d(engs,xHII,ionHe.T, kind='linear')
-    interp_lowE_photon = interp.interp2d(engs,xHII,lowE_photon.T, kind='linear')
+    interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon = [
+        interp.interp2s(engs, xHII, llist.T, kind='linear') for llist in [
+            heat, lyman, ionH, ionHe, lowE_photon
+        ]
+    ]
+    #interp_heat = interp.interp2d(engs,xHII,heat.T, kind='linear')
+    #interp_lyman = interp.interp2d(engs,xHII,lyman.T, kind='linear')
+    #interp_ionH = interp.interp2d(engs,xHII,ionH.T, kind='linear')
+    #interp_ionHe = interp.interp2d(engs,xHII,ionHe.T, kind='linear')
+    #interp_lowE_photon = interp.interp2d(engs,xHII,lowE_photon.T, kind='linear')
 
 make_interpolators()
 def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
@@ -72,18 +85,25 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
         Ratio of deposited energy to a given channel over energy deposited by DM.
         The order of the channels is heat, lyman, ionH, ionHe, lowE_photon
     """
-    global interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
-
-    heat = np.exp(interp_heat(np.log(e_spectrum.eng),[np.log(xHII)]))
-    lyman = np.exp(interp_lyman(np.log(e_spectrum.eng),[np.log(xHII)]))
-    ionH = np.exp(interp_ionH(np.log(e_spectrum.eng),[np.log(xHII)]))
-    ionHe = np.exp(interp_ionHe(np.log(e_spectrum.eng),[np.log(xHII)]))
-    lowE_photon = np.exp(interp_lowE_photon(np.log(e_spectrum.eng),[np.log(xHII)]))
+    #global interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
+    #heat, lyman, ionH, ionHe, lowE_photon = [
+    #    np.exp(f(np.log(e_spectrum.eng),[np.log(xHII)])) for f in [
+    #        inerp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
+    #    ]
+    #]
+    #heat = np.exp(interp_heat(np.log(e_spectrum.eng),[np.log(xHII)]))
+    #lyman = np.exp(interp_lyman(np.log(e_spectrum.eng),[np.log(xHII)]))
+    #ionH = np.exp(interp_ionH(np.log(e_spectrum.eng),[np.log(xHII)]))
+    #ionHe = np.exp(interp_ionHe(np.log(e_spectrum.eng),[np.log(xHII)]))
+    #lowE_photon = np.exp(interp_lowE_photon(np.log(e_spectrum.eng),[np.log(xHII)]))
 
     #enforce that all functions sum to 1
     tmpList = (heat+lyman+ionH+ionHe+lowE_photon)
-    heat, lyman, ionH, ionHe, lowE_photon = heat/tmpList, lyman/tmpList, ionH/tmpList, ionHe/tmpList, lowE_photon/tmpList
+    heat, lyman, ionH, ionHe, lowE_photon = (
+        heat/tmpList, lyman/tmpList, ionH/tmpList, ionHe/tmpList, lowE_photon/tmpList
+    )
 
     #compute ratio of deposited divided by injected
-    tmpList = e_spectrum.eng * e_spectrum.N * phys.nB / time_step / tot_inj
+    norm_factor = 2 / (time_step * tot_inj)
+    tmpList = e_spectrum.eng * e_spectrum.N * norm_factor
     return sum(heat*tmpList), sum(lyman*tmpList), sum(ionH*tmpList), sum(ionHe*tmpList), sum(lowE_photon*tmpList)

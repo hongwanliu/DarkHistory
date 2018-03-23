@@ -108,7 +108,6 @@ def get_indx(eng, E):
     """
     return np.searchsorted(get_bin_bound(eng),E)-1
 
-
 def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     """Rebins an array of particle number with fixed energy.
 
@@ -342,17 +341,42 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     # tf *= fac
 
-    return tf.sum_specs(spec*frac)
+    switched = False
 
-def evolve(spec, tflist, end_rs=None, save_steps=False):
+    if spec.spec_type != 'N':
+        spec.switch_spec_type()
+        switched = True
+
+    out_spec = tf.sum_specs(spec*frac)
+
+    # tf multiplies a spectrum of type 'N', outputs spectrum of type
+    # determined by tf.spec_type. out_spec now is of type 'N', i.e.
+    # is the same spec_type as spec.
+
+    if out_spec.spec_type != tf.spec_type:
+        out_spec.switch_spec_type()
+
+    if out_spec.spec_type != spec.spec_type and not switched:
+        out_spec.switch_spec_type()
+
+    return out_spec
+
+def evolve(
+    in_spec, tflist, evolve_type='prop', prop_tflist=None,
+    end_rs=None, save_steps=False
+):
     """Evolves a spectrum using a list of transfer functions.
 
     Parameters
     ----------
-    spec : Spectrum
+    in_spec : Spectrum
         The initial spectrum to evolve.
-    tflist_in : TransferFuncList
+    tflist : TransferFuncList
         The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.
+    evolve_type : {'prop', 'dep'}
+        The type of evolution. Use 'prop' to evolve by multiplication by tflist. Use 'dep' to evolve by multiplication by prop_tflist, with tflist giving the transfer matrix for deposition.
+    prop_tflist : TransferFuncList
+        The list of transfer functions for propagation, if evolve_type = 'dep'.
     end_rs : float, optional
         The final redshift to evolve to.
     save_steps : bool, optional
@@ -366,7 +390,7 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
     """
     from darkhistory.spec.spectra import Spectra
 
-    if not np.all(spec.eng == tflist.in_eng):
+    if not np.all(in_spec.eng == tflist.in_eng):
         raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
 
     if tflist.tftype != 'rs':
@@ -383,20 +407,50 @@ def evolve(spec, tflist, end_rs=None, save_steps=False):
 
     if save_steps is True:
 
-        out_specs = Spectra([spec], spec_type=spec.spec_type)
-        append_spec = out_specs.append
+        if evolve_type == 'prop':
 
-        for i in np.arange(rs_last_ind):
-            next_spec = tflist[i].sum_specs(out_specs[-1])
-            next_spec.rs = tflist.rs[i+1]
-            append_spec(next_spec)
+            out_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
+            append_spec = out_specs.append
 
-        return out_specs
+            for i in np.arange(rs_last_ind):
+                next_spec = tflist[i].sum_specs(out_specs[-1])
+                next_spec.rs = tflist.rs[i+1]
+                append_spec(next_spec)
+
+            return out_specs
+
+        elif evolve_type == 'dep':
+
+            prop_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
+            out_specs = Spectra([])
+            append_prop_spec = prop_specs.append
+            append_out_spec  = out_specs.append
+
+            for i in np.arange(rs_last_ind):
+                in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
+                next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
+                next_spec.rs = tflist.rs[i+1]
+                append_out_spec(in_spec_dep)
+                append_prop_spec(next_spec)
+
+            return out_specs
+
+        else:
+            raise TypeError('invalid evolve_type.')
+
 
     else:
 
-        for i in np.arange(rs_last_ind):
-            spec = tflist[i].sum_specs(spec)
-            spec.rs = tflist.rs[i+1]
+        if evolve_type == 'prop':
 
-        return spec
+            for i in np.arange(rs_last_ind):
+                in_spec = tflist[i].sum_specs(in_spec)
+                in_spec.rs = tflist.rs[i+1]
+
+        elif evolve_type == 'dep':
+            raise TypeError('save_steps must be true for deposition.')
+
+        else:
+            raise TypeError('invalid evolve_type.')
+
+        return in_spec

@@ -103,6 +103,7 @@
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.transferfunclist.html">transferfunclist</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.electrons.html">electrons</a></li>
 </ul>
 </li>
 </ul>
@@ -182,7 +183,7 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal"><span class="pre">discretize</span></code></a>(func_dNdE,&nbsp;eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal"><span class="pre">discretize</span></code></a>(eng,&nbsp;func_dNdE,&nbsp;*args)</td>
 <td>Discretizes a continuous function.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_bin_bound" title="darkhistory.spec.spectools.get_bin_bound"><code class="xref py py-obj docutils literal"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
@@ -191,7 +192,7 @@
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_log_bin_width" title="darkhistory.spec.spectools.get_log_bin_width"><code class="xref py py-obj docutils literal"><span class="pre">get_log_bin_width</span></code></a>(eng)</td>
 <td>Return the log bin width of the abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng,&nbsp;out_eng)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng[,&nbsp;out_eng,&nbsp;spec_type])</td>
 <td>Rebins an array of particle number with fixed energy.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code></a>(spec,&nbsp;tflist[,&nbsp;end_rs,&nbsp;save_steps])</td>
@@ -204,7 +205,7 @@
 <blockquote>
 <div><dl class="function">
 <dt id="darkhistory.spec.spectools.discretize">
-<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">discretize</code><span class="sig-paren">(</span><em>func_dNdE</em>, <em>eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.discretize" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">discretize</code><span class="sig-paren">(</span><em>eng</em>, <em>func_dNdE</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.discretize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Discretizes a continuous function.</p>
 <p>The function is integrated between the bin boundaries specified by <cite>eng</cite> to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin <strong>boundaries</strong>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -212,8 +213,9 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>func_dNdE</strong> (<em>function</em>) – A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value.</li>
 <li><strong>eng</strong> (<em>ndarray</em>) – Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers).</li>
+<li><strong>func_dNdE</strong> (<em>function</em>) – A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value.</li>
+<li><strong>*args</strong> (<em>optional</em>) – Additional arguments and keyword arguments to be passed to <cite>func_dNdE</cite>.</li>
 </ul>
 </td>
 </tr>
@@ -264,17 +266,18 @@
 
 <dl class="function">
 <dt id="darkhistory.spec.spectools.rebin_N_arr">
-<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng=None</em>, <em>spec_type='dNdE'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rebins an array of particle number with fixed energy.</p>
-<p>Returns a <cite>Spectrum</cite> object. The rebinning conserves both total number and total energy.</p>
+<p>Returns an array or a <cite>Spectrum</cite> object. The rebinning conserves both total number and total energy.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>N_arr</strong> (<em>ndarray</em>) – An array of number of particles in each bin.</li>
-<li><strong>in_eng</strong> (<em>ndarray</em>) – An array of the energy abscissa for each bin. The total energy in each bin <cite>i should be `N_arr[i]*in_eng[i]</cite>.</li>
-<li><strong>out_eng</strong> (<em>ndarray</em>) – The new abscissa to bin into. If <cite>in_eng</cite> has values that are smaller than</li>
+<li><strong>in_eng</strong> (<em>ndarray</em>) – An array of the energy abscissa for each bin. The total energy in each bin <cite>i</cite> should be <cite>N_arr[i]*in_eng[i]</cite>.</li>
+<li><strong>out_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – The new abscissa to bin into. If unspecified, assumed to be in_eng.</li>
+<li><strong>spec_type</strong> (<em>{'N'</em><em>, </em><em>'dNdE'}</em><em>, </em><em>optional</em>) – The spectrum type to be output. Default is ‘dNdE’.</li>
 </ul>
 </td>
 </tr>

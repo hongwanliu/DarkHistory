@@ -19,6 +19,7 @@ def kappa_DM(photon_spectrum, xe):
         The added photoionization rate due to products of DM.
     """
     eng = photon_spectrum.eng
+    rs = photon_spectrum.rs
     R_Lya = phys.rate_2p1s(xe,rs)
     Lambda = phys.width_2s1s
 
@@ -46,7 +47,7 @@ def kappa_DM(photon_spectrum, xe):
 
     # Effect on 2s state due to DM products
 
-    return (kappa_2p*3*R_lya/4 + kappa_2s*Lambda/4)/(3*R_lya/4 + Lambda/4)
+    return (kappa_2p*3*R_Lya/4 + kappa_2s*Lambda/4)/(3*R_Lya/4 + Lambda/4)
 
 def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
@@ -77,6 +78,11 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
 
     eng = photon_spectrum.eng
     rs = photon_spectrum.rs
+
+    chi = phys.nHe/phys.nH
+    xHeIII = chi - x[1] - x[2]
+    xHII = 1 - x[0]
+    xe = xHII + x[2] + 2*xHeIII
     n = x * phys.nH * rs**3
 
     # norm_factor converts from total deposited energy to f_c(z) = (dE/dVdt)dep / (dE/dVdt)inj
@@ -88,7 +94,8 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         bound_arr=np.array([eng[0],phys.lya_eng])
     )[0] * norm_factor
 
-    # Treatment of photoexcitation
+
+    #----- Treatment of photoexcitation -----#
 
     # The bin number containing 10.2eV
     lya_index = spectools.get_indx(eng, phys.lya_eng)
@@ -110,12 +117,6 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
 
         # Convenient variables
         Tcmb = phys.TCMB(rs)
-
-        chi = phys.nHe/phys.nH
-        xHeIII = chi - x[1] - x[2]
-        xHII = 1 - x[0]
-        xe = xHII + x[2] + 2*xHeIII
-
         beta = phys.beta_ion(Tcmb)
         peebC = phys.peebles_C(xe,rs)
         peeb_numerator = 3*phys.rate_2p1s(xe,rs)/4 + phys.width_2s1s/4
@@ -126,25 +127,32 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
             const = peeb_numerator
         else:
             const = beta/(1-peebC)
+        print("kappa ",kappa, ", const ",const, ", peebC ", peebC, ", n[0] ", n[0], ", tot_inj ", tot_inj)
 
-        f_excite_HI = 4 * peebC * constant * kappa * phys.lya_eng * n[0] / tot_inj
+        f_excite_HI = 4 * peebC * const * kappa * phys.lya_eng * n[0] / tot_inj
 
-    # Treatment of photoionization
+
+    #----- Treatment of photoionization -----#
 
     # Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
-    ion_bounds = spectools.get_bounds_between(eng, phys.rydberg, eng[-1])
+    ion_bounds = spectools.get_bounds_between(eng, phys.rydberg)
     ion_Ns = photon_spectrum.totN(bound_type='eng', bound_arr=ion_bounds)
 
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
-        tot_ion_eng = phys.rydberg * ion_Ns
+        tot_ion_eng = phys.rydberg * sum(ion_Ns)
         f_HI = tot_ion_eng * norm_factor
     else:
         # Photons may also deposit their energy into HeI and HeII single ionization
 
         # Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
-        ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(photon_spectrum.eng[ryd_index:],channel) * n[i]
+        ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(eng[ryd_index:],channel) * n[i]
                                   for i,channel in enumerate(['H0','He0','He1'])]
+
+        # The first energy might be less than 13.6, meaning no photo-ionization.
+        # The photons in this box are hopefully all between 13.6 and 24.6, so they can only ionize H
+        if eng[ryd_index] < phys.rydberg:
+            ionHI[0] = 1
 
         # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
         totList = ionHI + ionHeI + ionHeII
