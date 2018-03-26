@@ -411,7 +411,7 @@ def get_dLam2s_dnu():
     coeff = 9 * alpha**6 * rydberg /(
         2**10 * 2 * np.pi * hbar
     )
-    print(coeff)
+    #print(coeff)
 
     # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
     # interpolating points come from Spitzer and Greenstein, 1951
@@ -422,7 +422,7 @@ def get_dLam2s_dnu():
     # evaluation outside of interpolation window yields 0.
     f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
     def dLam2s_dnu(nu):
-        return coeff * f(nu/lya_freq)
+        return coeff * f(nu/lya_freq) * width_2s1s/8.26548398114 / lya_freq
 
     return dLam2s_dnu
 
