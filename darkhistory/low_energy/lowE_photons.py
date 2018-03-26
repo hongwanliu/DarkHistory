@@ -5,6 +5,69 @@ import numpy as np
 import darkhistory.physics as phys
 import darkhistory.spec.spectools as spectools
 
+def get_kappa_2s(photon_spectrum):
+    """ Compute kappa_2s for use in kappa_DM function
+
+    Parameters
+    ----------
+    photon_spectrum : Spectrum object
+        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return Energy per baryon.
+
+    Returns
+    -------
+    kappa_2s : float
+        The added photoionization rate from the 1s to the 2s state due to DM photons.
+    """
+    # Convenient Variables
+    eng = photon_spectrum.eng
+    rs = photon_spectrum.rs
+    Lambda = phys.width_2s1s
+    T = phys.TCMB(rs)
+    lya_eng = phys.lya_eng
+
+    # Photon phase space density (E >> kB*T approximation)
+    def Boltz(E):
+        return np.exp(-E/(phys.kB*T))
+
+    bounds = spectools.get_bin_bound(eng)
+    mid = spectools.get_indx(bounds, lya_eng/2)
+
+    # Phase Space Density of DM
+    f_nu = photon_spectrum.dNdE * phys.c**3 / (
+        8 * np.pi * (eng/phys.hbar)**2
+    )
+
+    # Complementary (E - h\nu) phase space density of DM
+    f_nu_p = np.zeros(mid)
+
+    # Index of point complementary to eng[k]
+    comp_indx = spectools.get_indx(bounds, lya_eng - eng[0])
+
+    # Find the bin in which lya_eng - eng[k] resides. Store f_nu of that bin in f_nu_p.
+    for k in np.arange(mid):
+        while (lya_eng - eng[k]) < bounds[comp_indx]:
+            comp_indx -= 1
+        f_nu_p[k] = f_nu[comp_indx]
+
+    # Setting up the numerical integration
+
+    # Bin sizes
+    diffs = np.append(bounds[1:mid], lya_eng/2) - np.insert(bounds[1:mid], 0, 0)
+    diffs /= (2 * np.pi * phys.hbar)
+
+    dLam_dnu = phys.get_dLam2s_dnu()
+    rates = dLam_dnu(eng[:mid]/(2 * np.pi * phys.hbar))
+
+    boltz = Boltz(eng[:mid])
+    boltz_p = Boltz(lya_eng - eng[:mid])
+
+    # The Numerical Integral
+    kappa_2s = np.sum(
+        diffs * rates * (f_nu[:mid] + boltz) * (f_nu_p + boltz_p)
+    )/phys.width_2s1s - Boltz(lya_eng)
+
+    return kappa_2s
+
 def kappa_DM(photon_spectrum, xe):
     """ Compute kappa_DM of the modified tla.
 
@@ -38,14 +101,12 @@ def kappa_DM(photon_spectrum, xe):
 
     # Effect on 2p state due to DM products
     kappa_2p = (
-        photon_spectrum.dNdE[lya_index] *
-        (phys.hbar * np.pi / phys.lya_eng)**2 * phys.c**3
+        photon_spectrum.dNdE[lya_index] * phys.nB * rs**3 *
+        np.pi**2 * (phys.hbar * phys.c)**3 / phys.lya_eng**2
     )
 
     # Effect on 2s state
-    kappa_2s = 0
-
-    # Effect on 2s state due to DM products
+    kappa_2s = get_kappa_2s(photon_spectrum)
 
     return (kappa_2p*3*R_Lya/4 + kappa_2s*Lambda/4)/(3*R_Lya/4 + Lambda/4)
 
@@ -86,7 +147,7 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     n = x * phys.nH * rs**3
 
     # norm_factor converts from total deposited energy to f_c(z) = (dE/dVdt)dep / (dE/dVdt)inj
-    norm_factor = phys.nB / time_step / tot_inj
+    norm_factor = phys.nB * rs**3 / time_step / tot_inj
 
     # All photons below 10.2eV get deposited into the continuum
     f_continuum = photon_spectrum.toteng(
@@ -117,19 +178,12 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
 
         # Convenient variables
         Tcmb = phys.TCMB(rs)
-        beta = phys.beta_ion(Tcmb)
-        peebC = phys.peebles_C(xe,rs)
-        peeb_numerator = 3*phys.rate_2p1s(xe,rs)/4 + phys.width_2s1s/4
+        peeb_numerator = 3*phys.rate_2p1s(xe,rs) + phys.width_2s1s
         kappa = kappa_DM(photon_spectrum, xe)
 
-        # When beta = 0, 1-C = 0, but their ratio is finite
-        if(np.abs(beta/peeb_numerator) < 1e-8):
-            const = peeb_numerator
-        else:
-            const = beta/(1-peebC)
-        print("kappa ",kappa, ", const ",const, ", peebC ", peebC, ", n[0] ", n[0], ", tot_inj ", tot_inj)
+#        print("kappa ",kappa , ", const ",peeb_numerator , ", n[0] ", n[0], ", tot_inj ", tot_inj)
 
-        f_excite_HI = 4 * peebC * const * kappa * phys.lya_eng * n[0] / tot_inj
+        f_excite_HI = kappa * peeb_numerator * phys.lya_eng * n[0] / tot_inj
 
 
     #----- Treatment of photoionization -----#
