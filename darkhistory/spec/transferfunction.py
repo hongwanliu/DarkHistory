@@ -466,8 +466,10 @@ class TransFuncAtRedshift(Spectra):
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = np.exp(
-                interp_func(np.log(new_eng), np.log(new_in_eng))
+            new_tf._grid_vals = np.atleast_2d(
+                np.exp(
+                    interp_func(np.log(new_eng), np.log(new_in_eng))
+                )
             )
             # Re-zero small values.
             new_tf._grid_vals[np.abs(new_tf.grid_vals) < 1e-100] = 0
@@ -538,7 +540,7 @@ class TransFuncAtRedshift(Spectra):
 
         if indtype == 'ind':
 
-            if np.issubdtype(type(ind), int):
+            if np.issubdtype(type(ind), np.int64):
                 return ax.plot(
                     self.eng, self.grid_vals[ind]*fac, **kwargs
                 )
@@ -564,8 +566,8 @@ class TransFuncAtRedshift(Spectra):
         elif indtype == 'in_eng':
 
             if (
-                np.issubdtype(type(ind),int) 
-                or np.issubdtype(type(ind), float)
+                np.issubdtype(type(ind),np.int64) 
+                or np.issubdtype(type(ind), np.float64)
             ):
                 return self.at_val(
                     np.array([ind]), self.eng, interp_type='val'
