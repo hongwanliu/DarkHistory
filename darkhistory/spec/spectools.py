@@ -290,14 +290,14 @@ def discretize(eng, func_dNdE, *args):
 def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     """Produces a secondary spectrum.
 
-    Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a `Spectrum` object (dN/dE) or with an array of number of particles (N) and an energy abscissa. Similarly, output in the form of a `Spectrum` object (dN/dE) or with an array of number of particles (N) is possible (the energy abscissa is implicitly assumed to be `eng_arr` in this case).
+    Takes a primary spectrum, and multiplies it with the transfer function.
 
     Parameters
     ----------
-    spec : Spectrum
-        The primary spectrum. Required if type is 'dNdE'.
     tf : TransFuncAtRedshift
         The secondary spectrum scattering rate, given in dN/(dE dt).
+    spec : Spectrum
+        The primary spectrum.
     new_eng : ndarray, optional
         The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.
     dlnz : float, optional
@@ -307,12 +307,12 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     Returns
     -------
-    Spectrum or ndarray
-        The secondary spectrum, dN/dE or dN/(dE dt). If outmode is 'dNdE', stored as `Spectrum`, otherwise returns N or dN/dt, with the abscissa given by `eng_arr` implied.
+    Spectrum
+        The secondary spectrum, N, dN/dt, dN/dE or dN/(dE dt), with spec_type in agreement with tf.spec_type. 
 
     Note
     ----
-    For 'dNdE', spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
+    tf can be of type 'N' or 'dNdE', but multiplies spec.N to produce a spectrum of type 'N' or 'dNdE'.
 
     """
 
