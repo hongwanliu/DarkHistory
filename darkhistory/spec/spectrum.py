@@ -308,8 +308,8 @@ class Spectrum:
 
         """
         if (
-            np.issubdtype(type(other),float) 
-            or np.issubdtype(type(other),int)
+            np.issubdtype(type(other),np.float64) 
+            or np.issubdtype(type(other),np.int64)
         ):
             new_spectrum = Spectrum(
                 self.eng, self._data*other, 

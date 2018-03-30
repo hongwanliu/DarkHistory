@@ -121,13 +121,11 @@ def get_ics_cooling_tf(
         sec_phot_spec = spectools.scatter(
             ICS_tf, pri_elec_spec, new_eng = photeng
         )
-        sec_phot_spec.switch_spec_type()
 
         # Get the secondary electrons, dN_e/(dE_e dt).
         sec_elec_spec = spectools.scatter(
             sec_elec_tf, pri_elec_spec, new_eng = eleceng
         )
-        sec_elec_spec.switch_spec_type()
 
         # Continuum energy loss rate, dU_CMB/dt. 
         continuum_engloss = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
@@ -182,7 +180,7 @@ def get_ics_cooling_tf(
         resolved_phot_spec = spectools.scatter(
             sec_phot_tf, scattered_elec_spec, new_eng = photeng
         )
-
+        
         # Scatter into low energy electrons. For this first high energy case, 
         # it's also trivial, since the transfer matrix is the identity. 
         resolved_lowengelec_spec = spectools.scatter(

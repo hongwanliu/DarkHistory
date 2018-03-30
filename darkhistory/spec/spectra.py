@@ -114,7 +114,7 @@ class Spectra:
         return iter(self.grid_vals)
 
     def __getitem__(self, key):
-        if np.issubdtype(type(key), int):
+        if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
                 self.eng, self._grid_vals[key], 
                 in_eng=self._in_eng[key], rs=self._rs[key], 
