@@ -343,7 +343,7 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     switched = False
 
-    if spec.spec_type != 'N':
+    if spec.spec_type != tf.spec_type:
         spec.switch_spec_type()
         switched = True
 
@@ -353,10 +353,7 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     # tf multiplies a spectrum of type 'N', outputs spectrum of type
     # determined by tf.spec_type.
 
-    if (
-        (switched and out_spec.spec_type == 'N') 
-        or (not switched and out_spec.spec_type == 'dNdE')
-    ):
+    if switched:
         out_spec.switch_spec_type()
 
     return out_spec
@@ -392,7 +389,7 @@ def evolve(
 
     switched = False
 
-    if in_spec.spec_type != 'N':
+    if in_spec.spec_type != tflist[0].spec_type:
         in_spec.switch_spec_type()
         switched = True
 
@@ -421,8 +418,6 @@ def evolve(
             for i in np.arange(rs_last_ind):
                 next_spec = tflist[i].sum_specs(out_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
-                if next_spec.spec_type != 'N':
-                    next_spec.switch_spec_type()
                 append_spec(next_spec)
 
             if switched:
@@ -441,10 +436,6 @@ def evolve(
                 in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
                 next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
-                if in_spec_dep.spec_type != 'N':
-                    in_spec_dep.switch_spec_type()
-                if next_spec.spec_type != 'N':
-                    next_spec.switch_spec_type()
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
 
@@ -463,8 +454,6 @@ def evolve(
 
             for i in np.arange(rs_last_ind):
                 in_spec = tflist[i].sum_specs(in_spec)
-                if in_spec.spec_type != 'N':
-                    in_spec.switch_spec_type()
                 in_spec.rs = tflist.rs[i+1]
 
         elif evolve_type == 'dep':
