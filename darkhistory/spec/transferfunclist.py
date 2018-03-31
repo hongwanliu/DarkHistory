@@ -196,9 +196,8 @@ class TransferFuncList:
 
         if coarsen_type == 'dep':
 
-            for (i,tfunc,prop_tfunc) in zip(
-                np.arange(len(new_tflist)), 
-                new_tflist, prop_transfunclist.tflist
+            for i,(tfunc,prop_tfunc) in enumerate(
+                zip(new_tflist, prop_transfunclist.tflist)
             ):
                 in_eng_arr = tfunc.in_eng
                 if prop_tfunc.in_eng.size != prop_tfunc.eng.size:
@@ -223,7 +222,7 @@ class TransferFuncList:
 
         elif coarsen_type == 'prop':
 
-            for (i,tfunc) in zip(np.arange(len(new_tflist)), new_tflist):
+            for (i,tfunc) in enumerate(new_tflist):
                 
                 in_eng_arr = tfunc.in_eng
                 new_grid_val = matrix_power(
