@@ -392,6 +392,7 @@ def evolve(
     if in_spec.spec_type != tflist[0].spec_type:
         in_spec.switch_spec_type()
         switched = True
+        print('switched!')
 
     if not np.all(in_spec.eng == tflist.in_eng):
         raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
