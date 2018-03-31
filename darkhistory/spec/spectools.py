@@ -390,6 +390,12 @@ def evolve(
     """
     from darkhistory.spec.spectra import Spectra
 
+    switched = False
+
+    if in_spec.spec_type != 'N':
+        in_spec.switch_spec_type()
+        switched = True
+
     if not np.all(in_spec.eng == tflist.in_eng):
         raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
 
@@ -399,7 +405,7 @@ def evolve(
     if end_rs is not None:
         # Calculates where to stop the transfer function multiplication.
         rs_ind = np.arange(tflist.rs.size)
-        rs_last_ind = rs_ind[np.where(tflist.rs > end_rs)][-1]
+        rs_last_ind = rs_ind[np.where(tflist.rs >= end_rs)][-1]
 
     else:
 
@@ -415,7 +421,12 @@ def evolve(
             for i in np.arange(rs_last_ind):
                 next_spec = tflist[i].sum_specs(out_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
+                if next_spec.spec_type != 'N':
+                    next_spec.switch_spec_type()
                 append_spec(next_spec)
+
+            if switched:
+                out_specs.switch_spec_type()
 
             return out_specs
 
@@ -430,8 +441,15 @@ def evolve(
                 in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
                 next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
+                if in_spec_dep.spec_type != 'N':
+                    in_spec_dep.switch_spec_type()
+                if next_spec.spec_type != 'N':
+                    next_spec.switch_spec_type()
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
+
+            if switched:
+                out_specs.switch_spec_type()
 
             return out_specs
 
@@ -445,6 +463,8 @@ def evolve(
 
             for i in np.arange(rs_last_ind):
                 in_spec = tflist[i].sum_specs(in_spec)
+                if in_spec.spec_type != 'N':
+                    in_spec.switch_spec_type()
                 in_spec.rs = tflist.rs[i+1]
 
         elif evolve_type == 'dep':
@@ -452,5 +472,8 @@ def evolve(
 
         else:
             raise TypeError('invalid evolve_type.')
+
+        if switched:
+            in_spec.switch_spec_type()
 
         return in_spec
