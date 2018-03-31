@@ -1039,7 +1039,7 @@ class Spectra:
 
         if indtype == 'ind':
 
-            if np.issubdtype(type(ind), int):
+            if np.issubdtype(type(ind), np.int64):
                 return ax.plot(
                     self.eng, self.grid_vals[ind]*fac, **kwargs
                 )
@@ -1065,8 +1065,8 @@ class Spectra:
         elif indtype == 'rs':
 
             if (
-                np.issubdtype(type(ind), int)
-                or np.issubdtype(type(ind), float)
+                np.issubdtype(type(ind), np.int64)
+                or np.issubdtype(type(ind), np.float64)
             ):
                 return self.at_rs(np.array([ind])).plot(
                     ax, ind=0, fac=fac, **kwargs
