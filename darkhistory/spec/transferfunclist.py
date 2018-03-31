@@ -135,9 +135,7 @@ class TransferFuncList:
             new_tflist = [tf.TransFuncAtRedshift(
                     [tfunc[i] for tfunc in self.tflist], 
                     self.dlnz
-                ) for i,rs in zip(
-                    np.arange(self.rs.size), self.rs
-                )
+                ) for i,rs in enumerate(self.rs)
             ]
 
             self.tflist = new_tflist
@@ -148,9 +146,7 @@ class TransferFuncList:
             new_tflist = [tf.TransFuncAtEnergy(
                     [tfunc[i] for tfunc in self.tflist], 
                     self.dlnz
-                ) for i,in_eng in zip(
-                    np.arange(self.in_eng.size), self.in_eng
-                )
+                ) for i,in_eng in enumerate(self.in_eng)
             ]
 
             self.tflist = new_tflist
