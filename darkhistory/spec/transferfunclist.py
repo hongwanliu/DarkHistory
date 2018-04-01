@@ -205,7 +205,7 @@ class TransferFuncList:
                 prop_part = np.zeros_like(prop_tfunc._grid_vals)
                 for i in np.arange(dlnz_factor):
                     prop_part += matrix_power(prop_tfunc._grid_vals, i)
-                new_grid_val = np.dot(tfunc._grid_vals, prop_part)
+                new_grid_val = np.dot(np.transpose(tfunc._grid_vals), prop_part)
                 new_spec_arr = [
                     Spectrum(
                         tfunc.eng, new_grid_val[i], 
