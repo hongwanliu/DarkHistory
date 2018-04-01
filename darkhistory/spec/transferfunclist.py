@@ -125,11 +125,11 @@ class TransferFuncList:
             self.tflist = new_tflist
             self.rs = new_val
 
-            if transposed:
-                self.transpose()
-
         else: 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
+
+        if transposed:
+            self.transpose()
 
     def transpose(self):
         """ Transposes the list of transfer functions. 
