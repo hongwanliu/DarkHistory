@@ -489,10 +489,10 @@ class Spectra:
         log_bin_width = get_log_bin_width(self.eng)
         if self.spec_type == 'N':
             self._grid_vals = self.grid_vals/(self.eng * log_bin_width)
-            self._spec_type == 'dNdE'
+            self._spec_type = 'dNdE'
         elif self.spec_type == 'dNdE':
             self._grid_vals = self.grid_vals*self.eng*log_bin_width
-            self._spec_type == 'N'
+            self._spec_type = 'N'
 
     def redshift(self, rs_arr):
         

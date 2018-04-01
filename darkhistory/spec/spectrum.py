@@ -376,8 +376,8 @@ class Spectrum:
         spectrum.Spectrum.__mul__
 
         """
-        if (np.issubdtype(type(other),float) 
-            or np.issubdtype(type(other),int)
+        if (np.issubdtype(type(other),np.float64) 
+            or np.issubdtype(type(other),np.int64)
         ):
             new_spectrum = Spectrum(
                 self.eng, self._data*other, 
