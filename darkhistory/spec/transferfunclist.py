@@ -92,9 +92,12 @@ class TransferFuncList:
 
         # i enables the use of tqdm. 
 
+        transposed = False
+
         if axis == 'in_eng':
             if self.tftype != 'rs':
                 self.transpose()
+                transposed = True
 
             new_tflist = [
             tf.at_in_eng(
@@ -109,6 +112,7 @@ class TransferFuncList:
         elif axis == 'rs':
             if self.tftype != 'in_eng':
                 self.transpose()
+                transposed = True
 
             new_tflist = [
                 tf.at_rs(
@@ -120,6 +124,9 @@ class TransferFuncList:
 
             self.tflist = new_tflist
             self.rs = new_val
+
+            if transposed:
+                self.transpose()
 
         else: 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
