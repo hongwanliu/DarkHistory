@@ -219,7 +219,8 @@ class TransferFuncList:
                 )
                 new_spec_arr = [
                     Spectrum(
-                        tfunc.eng, new_grid_val[i], 
+                        tfunc.eng, new_grid_val[i],
+                        spec_type = tfunc.spec_type, 
                         rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                     )
                     for i in np.arange(in_eng_arr.size)
@@ -242,6 +243,7 @@ class TransferFuncList:
                 new_spec_arr = [
                     Spectrum(
                         tfunc.eng, new_grid_val[i], 
+                        spec_type = tfunc.spec_type,
                         rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                     )
                     for i in np.arange(in_eng_arr.size)
