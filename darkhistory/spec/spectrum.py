@@ -611,7 +611,8 @@ class Spectrum:
 
             if bound_type == 'bin':
 
-                if not all(np.diff(bound_arr) > 0):
+                if not all(np.diff(bound_arr) >= 0):
+                    
                     raise TypeError("bound_arr must have increasing entries.")
 
                 eng_in_bin = np.zeros(bound_arr.size-1)
@@ -822,6 +823,111 @@ class Spectrum:
         self.length = self.eng.size 
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow
+
+    def rebin_smooth(self, out_eng, a=0.5, b=0.5):
+        """ Re-bins the `Spectrum` object according to a new abscissa.
+
+        Rebinning conserves total number and total energy. This method also ensures smoothness of the rebinning.
+        
+        Parameters
+        ----------
+        out_eng : ndarray
+            The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]`, then the new underflow will be filled. If `self.eng` has values that exceed `out_eng[-1]`, then an error is returned.
+
+        a : float
+            The weight for ensuring local conservation of number.
+
+        b : float
+            The weight for ensuring local conservation of energy.
+
+        Raises
+        ------
+        OverflowError
+            The maximum energy in `out_eng` cannot be smaller than any bin in `self.eng`. 
+
+        
+        Note
+        ----
+        Before passing the spectrum to the actual rebin function, we use spec.Spectrum.totN to find the total number of particles `N` lying in the new binning given by `out_eng`, and spec.Spectrum.toteng to find the total energy in these bins `E_tot`. Then we minimize a Lagrangian that penalizes deviations from local conservation of number and energy, while conserving total number and energy.  
+
+        See Also
+        --------
+        spec.Spectrum.rebin
+
+        """
+
+        eng_bin_bound = get_bin_bound(out_eng)
+        
+        N_tot_arr   = self.totN(bound_type='eng', bound_arr=eng_bin_bound)
+        eng_tot_arr = self.toteng(bound_type='eng', bound_arr=eng_bin_bound)
+
+        N_tot = np.sum(N_tot_arr)
+        eng_tot = np.sum(eng_tot_arr)
+
+        out_eng_nonzero = out_eng[N_tot_arr > 1e-100]
+        N_tot_nonzero = N_tot_arr[N_tot_arr > 1e-100]
+        eng_tot_nonzero = eng_tot_arr[N_tot_arr > 1e-100]
+
+        Lambda = 1/(
+            2*a/N_tot_nonzero**2 
+            + 2*b*out_eng_nonzero**2/eng_tot_nonzero**2
+        )
+        R = (
+            2*a/N_tot_nonzero
+            + 2*b*out_eng_nonzero/eng_tot_nonzero
+        )
+
+        sum_R_eng_Lambda = np.dot(R*out_eng_nonzero,  Lambda)
+        sum_eng_Lambda   = np.dot(out_eng_nonzero,    Lambda)
+        sum_eng2_Lambda  = np.dot(out_eng_nonzero**2, Lambda)
+        sum_R_Lambda = np.dot(R, Lambda)
+        sum_Lambda = np.sum(Lambda)
+
+        lambda_2_numer = (
+            eng_tot - sum_R_eng_Lambda
+            + sum_eng_Lambda/sum_Lambda * (sum_R_Lambda - N_tot)
+        )
+
+        lambda_2_denom = (
+            sum_eng_Lambda**2/sum_Lambda
+            - sum_eng2_Lambda
+        )
+
+        lambda_2 = lambda_2_numer/lambda_2_denom
+
+        lambda_1_numer = (
+            sum_R_Lambda - 
+            lambda_2*sum_eng_Lambda
+            - N_tot
+        )
+
+        lambda_1_denom = sum_Lambda
+
+        lambda_1 = lambda_1_numer/lambda_1_denom
+
+        fin_N_arr = np.zeros_like(N_tot_arr)
+
+        fin_N_arr[N_tot_arr > 1e-100] = (
+            R*Lambda - lambda_1*Lambda - lambda_2*out_eng_nonzero*Lambda
+        )
+
+        if np.all(fin_N_arr >= 0):
+
+            self.eng = out_eng
+            self._data = fin_N_arr
+            switch = False
+            if self.spec_type != 'N':
+                switch = True
+            self._spec_type = 'N'
+            if switch:
+                self.switch_spec_type()
+            self.length = out_eng.size
+            self.underflow = {'N': 0., 'eng': 0.}
+
+        else:
+            warnings.warn('Smooth rebinning unsuccessful. Switching to regular rebin.')
+
+            self.rebin(out_eng)
 
     def engloss_rebin(self, in_eng, out_eng):
         """ Converts an energy loss spectrum to a secondary spectrum.
