@@ -80,9 +80,9 @@ class TransferFuncList:
 
         Parameters
         ----------
-        axis : {'rs', 'in_eng'}
+        axis : {'rs', 'in_eng', '2D_in_eng'}
             The axis along which to perform the interpolation. If the axis is 'rs', then the list will be transposed into tftype 'in_eng' and vice-versa. 
-        new_val : ndarray
+        new_val : ndarray or tuple of ndarrays (in_eng, eng)
             The new redshift or injection energy abscissa.
         bounds_error : bool, optional
             See scipy.interpolate.interp1d
@@ -124,6 +124,23 @@ class TransferFuncList:
 
             self.tflist = new_tflist
             self.rs = new_val
+
+        elif axis == '2D_in_eng':
+
+            print(self.tftype)
+
+            if self.tftype != 'rs':
+                self.transpose()
+                transposed = True 
+            
+            new_tflist = [
+                tf.at_val(
+                    new_val[0], new_val[1], 
+                    bounds_error=bounds_error, fill_value=fill_value
+                ) for i,tf in zip(
+                        np.arange(len(self.tflist)), self.tflist
+                    )
+            ]
 
         else: 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')

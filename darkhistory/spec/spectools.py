@@ -416,9 +416,12 @@ def evolve(
             out_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
             append_spec = out_specs.append
 
+
+
             for i in np.arange(rs_last_ind):
                 next_spec = tflist[i].sum_specs(out_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
+                print(out_specs[-1].spec_type)
                 append_spec(next_spec)
 
             if switched:
