@@ -127,8 +127,6 @@ class TransferFuncList:
 
         elif axis == '2D_in_eng':
 
-            print(self.tftype)
-
             if self.tftype != 'rs':
                 self.transpose()
                 transposed = True 
@@ -141,6 +139,10 @@ class TransferFuncList:
                         np.arange(len(self.tflist)), self.tflist
                     )
             ]
+
+            self.tflist = new_tflist
+            self.in_eng = new_val[0]
+            self.eng    = new_val[1]
 
         else: 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
