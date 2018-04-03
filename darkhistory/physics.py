@@ -237,8 +237,8 @@ def beta_ion(T_rad):
 #   thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
 #   return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
 
-def rate_2p1s(xe, rs):
-    """returns the rate at which Ly_a photons are emitted without being immediately absorbed
+def rate_2p1s_times_x1s(xe, rs):
+    """returns the rate at which Ly_a photons are emitted without being immediately absorbed times (1-xe)
 
     Parameters
     ----------
@@ -250,12 +250,14 @@ def rate_2p1s(xe, rs):
     Returns
     -------
     float
-        Numerator of the Peebles C coefficient.
+        R_Ly\alpha * (1-xe)
     """
-    return (
+    num = (
         8 * np.pi * hubble(rs)/
-        (3*(nH * rs**3 * (1-xe) * (c/lya_freq)**3))
+        (3*(nH * rs**3 * (c/lya_freq)**3))
     )
+    #print(xe, num)
+    return num
 
 def peebles_C(xe, rs):
     """Returns the Peebles C coefficient.
@@ -279,7 +281,7 @@ def peebles_C(xe, rs):
     # Net rate for 2s to 1s transition.
     rate_2s1s = width_2s1s
 
-    rate_exc = (3*rate_2p1s(xe, rs)/4 + rate_2s1s/4)
+    rate_exc = (3*rate_2p1s_times_x1s(xe, rs)/4 + (1-xe) * rate_2s1s/4)
 
     # Net rate for ionization.
     rate_ion = beta_ion(TCMB(rs))

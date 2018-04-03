@@ -4,6 +4,7 @@ sys.path.append("../..")
 import numpy as np
 import darkhistory.physics as phys
 import darkhistory.spec.spectools as spectools
+import time
 
 def get_kappa_2s(photon_spectrum):
     """ Compute kappa_2s for use in kappa_DM function
@@ -83,7 +84,7 @@ def kappa_DM(photon_spectrum, xe):
     """
     eng = photon_spectrum.eng
     rs = photon_spectrum.rs
-    R_Lya = phys.rate_2p1s(xe,rs)
+    x_1s_times_R_Lya = phys.rate_2p1s_times_x1s(xe,rs)
     Lambda = phys.width_2s1s
 
     # The bin number containing 10.2eV
@@ -108,7 +109,9 @@ def kappa_DM(photon_spectrum, xe):
     # Effect on 2s state
     kappa_2s = get_kappa_2s(photon_spectrum)
 
-    return (kappa_2p*3*R_Lya/4 + kappa_2s*Lambda/4)/(3*R_Lya/4 + Lambda/4)
+    return (
+        kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*Lambda/4
+    )/(3*x1s_times_R_Lya/4 + Lambda/4)
 
 def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
@@ -135,6 +138,8 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         Ratio of deposited energy to a given channel over energy deposited by DM.
         The order of the channels is {continuum photons, HI excitation, HI ionization, HeI ion, HeII ion}
     """
+    #t0 = time.time()
+    #print('Begin lowE_photon timing: ',time.time()-t0)
     f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII = 0,0,0,0,0
 
     eng = photon_spectrum.eng
@@ -155,7 +160,6 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         bound_arr=np.array([eng[0],phys.lya_eng])
     )[0] * norm_factor
 
-
     #----- Treatment of photoexcitation -----#
 
     # The bin number containing 10.2eV
@@ -163,6 +167,7 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     # The bin number containing 13.6eV
     ryd_index = spectools.get_indx(eng, phys.rydberg)
 
+    #print('Begin photoexcitation: ', time.time()-t0)
     if(method != 'new'):
         # All photons between 10.2eV and 13.6eV are deposited into excitation
         tot_excite_eng = (
@@ -192,6 +197,7 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     ion_bounds = spectools.get_bounds_between(eng, phys.rydberg)
     ion_Ns = photon_spectrum.totN(bound_type='eng', bound_arr=ion_bounds)
 
+    #print('Begin photoionization: ', time.time()-t0)
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
         tot_ion_eng = phys.rydberg * sum(ion_Ns)
@@ -217,4 +223,5 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
             for llist in [phys.rydberg*ionHI, phys.He_ion_eng*ionHeI, 4*phys.rydberg*ionHeII]
         ]
 
+    #print('Finish: ', time.time()-t0)
     return f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII
