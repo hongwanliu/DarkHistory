@@ -824,7 +824,7 @@ class Spectrum:
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow
 
-    def rebin_smooth(self, out_eng, a=0.5, b=0.5):
+    def rebin_smooth(self, out_eng):
         """ Re-bins the `Spectrum` object according to a new abscissa.
 
         Rebinning conserves total number and total energy. This method also ensures smoothness of the rebinning.
@@ -833,12 +833,6 @@ class Spectrum:
         ----------
         out_eng : ndarray
             The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]`, then the new underflow will be filled. If `self.eng` has values that exceed `out_eng[-1]`, then an error is returned.
-
-        a : float
-            The weight for ensuring local conservation of number.
-
-        b : float
-            The weight for ensuring local conservation of energy.
 
         Raises
         ------
@@ -856,131 +850,36 @@ class Spectrum:
 
         """
 
-
-
         eng_bin_bound = get_bin_bound(out_eng)
         
         N_tot_arr   = self.totN(bound_type='eng', bound_arr=eng_bin_bound)
         eng_tot_arr = self.toteng(bound_type='eng', bound_arr=eng_bin_bound)
 
-        # print('initially...')
-        # print(N_tot_arr)
-
-        N_tot = np.sum(N_tot_arr)
-        eng_tot = np.sum(eng_tot_arr)
-
-        # out_eng_nonzero = out_eng
-        # N_tot_nonzero = N_tot_arr
-        # eng_tot_nonzero = eng_tot_arr
-
-        # Lambda = 1/(
-        #     2*a/N_tot**2 
-        #     + 2*b*out_eng_nonzero**2/eng_tot**2
-        # )
-
-        # R = (
-        #     2*a*N_tot_nonzero/N_tot**2
-        #     + 2*b*out_eng_nonzero*eng_tot_nonzero/eng_tot**2
-        # )
-
-        # sum_R_eng_Lambda = np.dot(R*out_eng_nonzero,  Lambda)
-        # sum_eng_Lambda   = np.dot(out_eng_nonzero,    Lambda)
-        # sum_eng2_Lambda  = np.dot(out_eng_nonzero**2, Lambda)
-        # sum_R_Lambda = np.dot(R, Lambda)
-        # sum_Lambda = np.sum(Lambda)
-
-        # lambda_2_numer = eng_tot*(
-        #     eng_tot - sum_R_eng_Lambda
-        #     + sum_eng_Lambda/sum_Lambda * (sum_R_Lambda - N_tot)
-        # )
-
-        # lambda_2_denom = (
-        #     sum_eng_Lambda**2/sum_Lambda
-        #     - sum_eng2_Lambda
-        # )
-
-        # lambda_2 = lambda_2_numer/lambda_2_denom
-
-        # lambda_1_numer = N_tot*(
-        #     sum_R_Lambda - 
-        #     lambda_2/eng_tot*sum_eng_Lambda
-        #     - N_tot
-        # )
-
-        # lambda_1_denom = sum_Lambda
-
-        # lambda_1 = lambda_1_numer/lambda_1_denom
-
-        # prelim_N_arr = Lambda*(
-        #     R - lambda_1/N_tot - lambda_2*out_eng_nonzero/eng_tot
-        # )
-
-        # prelim_N_arr[prelim_N_arr < 0] *= 0
-
-        # print('finally....')
-        # print(fin_N_arr)
-
-        # if np.all(fin_N_arr >= 0):
-
-        #     self.eng = out_eng
-        #     self._data = fin_N_arr
-        #     switch = False
-        #     if self.spec_type != 'N':
-        #         switch = True
-        #     self._spec_type = 'N'
-        #     if switch:
-        #         self.switch_spec_type()
-        #     self.length = out_eng.size
-        #     self.underflow = {'N': 0., 'eng': 0.}
-
-        # else:
-        #     warnings.warn('Smooth rebinning unsuccessful. Switching to regular rebin.')
-
-        #     self.rebin(out_eng)
-
-        from scipy import optimize
-
-        def lagrangian(N_arr):
-            diff_N = N_arr - N_tot_arr
-            diff_eng = N_arr * out_eng - eng_tot_arr
-            return (
-                (a/N_tot**2)*np.dot(diff_N, diff_N)
-                + (b/eng_tot**2)*np.dot(diff_eng, diff_eng)
-            )
-
-        def jacobian(N_arr):
-            diff_N = N_arr - N_tot_arr
-            diff_eng = N_arr * out_eng - eng_tot_arr
-            return (
-                2*(a/N_tot**2)*diff_N
-                + 2*(b/eng_tot**2)*diff_eng*out_eng
-            )
-
-        cons = (
-            {'type': 'eq', 'fun': lambda x: np.sum(x) - N_tot},
-            {'type': 'eq', 'fun': lambda x: np.dot(x, out_eng) - eng_tot}
+        out_eng_absc = np.divide(
+            eng_tot_arr, N_tot_arr, 
+            out=np.zeros_like(N_tot_arr), 
+            where=N_tot_arr != 0
         )
 
-        bnds = tuple((0, None) for N in N_tot_arr)
+        out_eng_absc[out_eng_absc == 0] = out_eng[out_eng_absc == 0]
 
-        fin_N_arr = optimize.minimize(
-            lagrangian, N_tot_arr,
-            method='SLSQP',
-            # jac=jacobian,
-            constraints=cons, bounds=bnds,
-            tol=1
-        )
-
-        self.eng = out_eng
-        self._data = fin_N_arr.x
+        self.eng = out_eng_absc
+        self.length = out_eng_absc.size
+        self.underflow = {'N': 0., 'eng': 0.}
+        
         switch = False
-        if self.spec_type != 'N':
+        if self.spec_type == 'dNdE':
             switch = True
+        
+        self._data = N_tot_arr
         self._spec_type = 'N'
         if switch:
             self.switch_spec_type()
-        self.length = out_eng.size
-        self.underflow = {'N': 0., 'eng': 0.}
+
+        self.rebin(out_eng)
+         
+        
+
 
     def engloss_rebin(self, in_eng, out_eng):
         """ Converts an energy loss spectrum to a secondary spectrum.
