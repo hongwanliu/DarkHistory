@@ -23,12 +23,12 @@ def get_kappa_2s(photon_spectrum):
     eng = photon_spectrum.eng
     rs = photon_spectrum.rs
     Lambda = phys.width_2s1s
-    T = phys.TCMB(rs)
+    Tcmb = phys.TCMB(rs)
     lya_eng = phys.lya_eng
 
     # Photon phase space density (E >> kB*T approximation)
     def Boltz(E):
-        return np.exp(-E/(phys.kB*T))
+        return np.exp(-E/Tcmb)
 
     bounds = spectools.get_bin_bound(eng)
     mid = spectools.get_indx(bounds, lya_eng/2)
@@ -84,7 +84,7 @@ def kappa_DM(photon_spectrum, xe):
     """
     eng = photon_spectrum.eng
     rs = photon_spectrum.rs
-    x_1s_times_R_Lya = phys.rate_2p1s_times_x1s(xe,rs)
+    x1s_times_R_Lya = phys.rate_2p1s_times_x1s(xe,rs)
     Lambda = phys.width_2s1s
 
     # The bin number containing 10.2eV
@@ -97,7 +97,6 @@ def kappa_DM(photon_spectrum, xe):
 
     # Convenient variables
     rs = photon_spectrum.rs
-    Tcmb = phys.TCMB(rs)
     Lambda = phys.width_2s1s
 
     # Effect on 2p state due to DM products
@@ -110,8 +109,8 @@ def kappa_DM(photon_spectrum, xe):
     kappa_2s = get_kappa_2s(photon_spectrum)
 
     return (
-        kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*Lambda/4
-    )/(3*x1s_times_R_Lya/4 + Lambda/4)
+        kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*(1-xe)*Lambda/4
+    )/(3*x1s_times_R_Lya/4 + (1-xe)*Lambda/4)
 
 def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
@@ -182,13 +181,15 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         # 1s->2s transition handled more carefully.
 
         # Convenient variables
-        Tcmb = phys.TCMB(rs)
-        peeb_numerator = 3*phys.rate_2p1s(xe,rs) + phys.width_2s1s
+        peeb_numerator = 3*phys.rate_2p1s_times_x1s(xe,rs) + phys.width_2s1s
         kappa = kappa_DM(photon_spectrum, xe)
 
 #        print("kappa ",kappa , ", const ",peeb_numerator , ", n[0] ", n[0], ", tot_inj ", tot_inj)
 
-        f_excite_HI = kappa * peeb_numerator * phys.lya_eng * n[0] / tot_inj
+        f_excite_HI = (
+            kappa * (3*phys.rate_2p1s_times_x1s(xe,rs)*phys.nH + phys.width_2s1s*n[0]) *
+            phys.lya_eng / tot_inj
+        )
 
 
     #----- Treatment of photoionization -----#
@@ -215,7 +216,7 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
             ionHI[0] = 1
 
         # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
-        totList = ionHI + ionHeI + ionHeII
+        totList = ionHI + ionHeI + ionHeII + 1e-12
         ionHI, ionHeI, ionHeII = [ llist/totList for llist in [ionHI, ionHeI, ionHeII] ]
 
         f_HI, f_HeI, f_HeII = [
