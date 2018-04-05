@@ -812,7 +812,7 @@ class Spectrum:
         elif self._spec_type == 'N':
             new_data[1] += N_above_underflow
             np.add.at(new_data, reg_bin_low+1, reg_N_low)
-            np.add.at(new_data, reg_bin_upp+1, reg_n_upp)
+            np.add.at(new_data, reg_bin_upp+1, reg_N_upp)
             # new_data[reg_bin_low+1] += reg_N_low
             # new_data[reg_bin_upp+1] += reg_N_upp 
         
