@@ -80,9 +80,9 @@ class TransferFuncList:
 
         Parameters
         ----------
-        axis : {'rs', 'in_eng'}
+        axis : {'rs', 'in_eng', '2D_in_eng'}
             The axis along which to perform the interpolation. If the axis is 'rs', then the list will be transposed into tftype 'in_eng' and vice-versa. 
-        new_val : ndarray
+        new_val : ndarray or tuple of ndarrays (in_eng, eng)
             The new redshift or injection energy abscissa.
         bounds_error : bool, optional
             See scipy.interpolate.interp1d
@@ -92,9 +92,12 @@ class TransferFuncList:
 
         # i enables the use of tqdm. 
 
+        transposed = False
+
         if axis == 'in_eng':
             if self.tftype != 'rs':
                 self.transpose()
+                transposed = True
 
             new_tflist = [
             tf.at_in_eng(
@@ -109,6 +112,7 @@ class TransferFuncList:
         elif axis == 'rs':
             if self.tftype != 'in_eng':
                 self.transpose()
+                transposed = True
 
             new_tflist = [
                 tf.at_rs(
@@ -121,8 +125,30 @@ class TransferFuncList:
             self.tflist = new_tflist
             self.rs = new_val
 
+        elif axis == '2D_in_eng':
+
+            if self.tftype != 'rs':
+                self.transpose()
+                transposed = True 
+            
+            new_tflist = [
+                tf.at_val(
+                    new_val[0], new_val[1], 
+                    bounds_error=bounds_error, fill_value=fill_value
+                ) for i,tf in zip(
+                        np.arange(len(self.tflist)), self.tflist
+                    )
+            ]
+
+            self.tflist = new_tflist
+            self.in_eng = new_val[0]
+            self.eng    = new_val[1]
+
         else: 
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
+
+        if transposed:
+            self.transpose()
 
     def transpose(self):
         """ Transposes the list of transfer functions. 
@@ -135,9 +161,7 @@ class TransferFuncList:
             new_tflist = [tf.TransFuncAtRedshift(
                     [tfunc[i] for tfunc in self.tflist], 
                     self.dlnz
-                ) for i,rs in zip(
-                    np.arange(self.rs.size), self.rs
-                )
+                ) for i,rs in enumerate(self.rs)
             ]
 
             self.tflist = new_tflist
@@ -148,9 +172,7 @@ class TransferFuncList:
             new_tflist = [tf.TransFuncAtEnergy(
                     [tfunc[i] for tfunc in self.tflist], 
                     self.dlnz
-                ) for i,in_eng in zip(
-                    np.arange(self.in_eng.size), self.in_eng
-                )
+                ) for i,in_eng in enumerate(self.in_eng)
             ]
 
             self.tflist = new_tflist
@@ -200,9 +222,8 @@ class TransferFuncList:
 
         if coarsen_type == 'dep':
 
-            for (i,tfunc,prop_tfunc) in zip(
-                np.arange(len(new_tflist)), 
-                new_tflist, prop_transfunclist.tflist
+            for i,(tfunc,prop_tfunc) in enumerate(
+                zip(new_tflist, prop_transfunclist.tflist)
             ):
                 in_eng_arr = tfunc.in_eng
                 if prop_tfunc.in_eng.size != prop_tfunc.eng.size:
@@ -210,10 +231,15 @@ class TransferFuncList:
                 prop_part = np.zeros_like(prop_tfunc._grid_vals)
                 for i in np.arange(dlnz_factor):
                     prop_part += matrix_power(prop_tfunc._grid_vals, i)
-                new_grid_val = np.dot(tfunc._grid_vals, prop_part)
+                # We need to take eng x in_eng times the propagating part.
+                # Need to return new_grid_val to in_eng x eng in the end.
+                new_grid_val = np.transpose(
+                    np.dot(np.transpose(tfunc._grid_vals), prop_part)
+                )
                 new_spec_arr = [
                     Spectrum(
-                        tfunc.eng, new_grid_val[i], 
+                        tfunc.eng, new_grid_val[i],
+                        spec_type = tfunc.spec_type, 
                         rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                     )
                     for i in np.arange(in_eng_arr.size)
@@ -227,7 +253,7 @@ class TransferFuncList:
 
         elif coarsen_type == 'prop':
 
-            for (i,tfunc) in zip(np.arange(len(new_tflist)), new_tflist):
+            for (i,tfunc) in enumerate(new_tflist):
                 
                 in_eng_arr = tfunc.in_eng
                 new_grid_val = matrix_power(
@@ -236,6 +262,7 @@ class TransferFuncList:
                 new_spec_arr = [
                     Spectrum(
                         tfunc.eng, new_grid_val[i], 
+                        spec_type = tfunc.spec_type,
                         rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                     )
                     for i in np.arange(in_eng_arr.size)

@@ -114,7 +114,7 @@ class Spectra:
         return iter(self.grid_vals)
 
     def __getitem__(self, key):
-        if np.issubdtype(type(key), int):
+        if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
                 self.eng, self._grid_vals[key], 
                 in_eng=self._in_eng[key], rs=self._rs[key], 
@@ -489,10 +489,10 @@ class Spectra:
         log_bin_width = get_log_bin_width(self.eng)
         if self.spec_type == 'N':
             self._grid_vals = self.grid_vals/(self.eng * log_bin_width)
-            self._spec_type == 'dNdE'
+            self._spec_type = 'dNdE'
         elif self.spec_type == 'dNdE':
             self._grid_vals = self.grid_vals*self.eng*log_bin_width
-            self._spec_type == 'N'
+            self._spec_type = 'N'
 
     def redshift(self, rs_arr):
         
@@ -1039,7 +1039,7 @@ class Spectra:
 
         if indtype == 'ind':
 
-            if np.issubdtype(type(ind), int):
+            if np.issubdtype(type(ind), np.int64):
                 return ax.plot(
                     self.eng, self.grid_vals[ind]*fac, **kwargs
                 )
@@ -1065,8 +1065,8 @@ class Spectra:
         elif indtype == 'rs':
 
             if (
-                np.issubdtype(type(ind), int)
-                or np.issubdtype(type(ind), float)
+                np.issubdtype(type(ind), np.int64)
+                or np.issubdtype(type(ind), np.float64)
             ):
                 return self.at_rs(np.array([ind])).plot(
                     ax, ind=0, fac=fac, **kwargs
