@@ -445,8 +445,6 @@ def evolve(
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
 
-                print(out_specs.rs)
-
             if switched:
                 out_specs.switch_spec_type()
 
