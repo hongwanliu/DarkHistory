@@ -233,9 +233,10 @@ class TransferFuncList:
                     prop_part += matrix_power(prop_tfunc._grid_vals, i)
                 # We need to take eng x in_eng times the propagating part.
                 # Need to return new_grid_val to in_eng x eng in the end.
-                new_grid_val = np.transpose(
-                    np.dot(np.transpose(tfunc._grid_vals), prop_part)
-                )
+                # new_grid_val = np.transpose(
+                #     np.dot(np.transpose(tfunc._grid_vals), prop_part)
+                # )
+                new_grid_val = np.matmul(prop_part, tfunc._grid_vals)
                 new_spec_arr = [
                     Spectrum(
                         tfunc.eng, new_grid_val[i],

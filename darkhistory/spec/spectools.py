@@ -442,6 +442,13 @@ def evolve(
                 in_spec_dep.rs = tflist.rs[i] 
                 next_spec.rs   = tflist.rs[i+1]
 
+                print(tflist.tftype)
+                print(tflist[i].spec_type)
+                print(prop_specs.spec_type)
+                print(prop_specs[-1].spec_type)
+
+                print(in_spec_dep.N)
+
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
 
