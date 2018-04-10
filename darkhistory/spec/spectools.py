@@ -421,7 +421,6 @@ def evolve(
             for i in np.arange(rs_last_ind):
                 next_spec = tflist[i].sum_specs(out_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
-                print(out_specs[-1].spec_type)
                 append_spec(next_spec)
 
             if switched:
@@ -432,14 +431,17 @@ def evolve(
         elif evolve_type == 'dep':
 
             prop_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
-            out_specs = Spectra([])
+            out_specs = Spectra([], spec_type=in_spec.spec_type)
             append_prop_spec = prop_specs.append
             append_out_spec  = out_specs.append
 
             for i in np.arange(rs_last_ind):
                 in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
                 next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
-                next_spec.rs = tflist.rs[i+1]
+
+                in_spec_dep.rs = tflist.rs[i] 
+                next_spec.rs   = tflist.rs[i+1]
+
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
 
