@@ -181,10 +181,7 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         # 1s->2s transition handled more carefully.
 
         # Convenient variables
-        peeb_numerator = 3*phys.rate_2p1s_times_x1s(xe,rs) + phys.width_2s1s
         kappa = kappa_DM(photon_spectrum, xe)
-
-#        print("kappa ",kappa , ", const ",peeb_numerator , ", n[0] ", n[0], ", tot_inj ", tot_inj)
 
         f_excite_HI = (
             kappa * (3*phys.rate_2p1s_times_x1s(xe,rs)*phys.nH + phys.width_2s1s*n[0]) *
@@ -225,4 +222,4 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         ]
 
     #print('Finish: ', time.time()-t0)
-    return f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII
+    return np.array([f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII])

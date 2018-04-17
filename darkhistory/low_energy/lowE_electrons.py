@@ -80,6 +80,16 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
         Ratio of deposited energy to a given channel over energy deposited by DM.
         The order of the channels is heat, lyman, ionH, ionHe, lowE_photon
     """
+    global interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
+    rs = e_spectrum.rs
+
+    #Fractions of energy being split off into each channel
+    heat, lyman, ionH, ionHe, lowE_photon = [
+        np.exp(f(np.log(e_spectrum.eng),[np.log(xHII)])) for f in [
+            interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_lowE_photon
+        ]
+    ]
+
     #enforce that all functions sum to 1
     tmpList = (heat+lyman+ionH+ionHe+lowE_photon)
     heat, lyman, ionH, ionHe, lowE_photon = (
@@ -87,6 +97,6 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
     )
 
     #compute ratio of deposited divided by injected
-    norm_factor = 2 / (time_step * tot_inj)
+    norm_factor = phys.nB * rs**3 / (time_step * tot_inj)
     tmpList = e_spectrum.eng * e_spectrum.N * norm_factor
-    return sum(heat*tmpList), sum(lyman*tmpList), sum(ionH*tmpList), sum(ionHe*tmpList), sum(lowE_photon*tmpList)
+    return np.array([sum(heat*tmpList), sum(lyman*tmpList), sum(ionH*tmpList), sum(ionHe*tmpList), sum(lowE_photon*tmpList)])
