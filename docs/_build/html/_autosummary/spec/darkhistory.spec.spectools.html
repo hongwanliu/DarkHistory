@@ -183,19 +183,19 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal"><span class="pre">discretize</span></code></a>(eng,&nbsp;func_dNdE,&nbsp;*args)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">discretize</span></code></a>(eng,&nbsp;func_dNdE,&nbsp;*args)</td>
 <td>Discretizes a continuous function.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_bin_bound" title="darkhistory.spec.spectools.get_bin_bound"><code class="xref py py-obj docutils literal"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_bin_bound" title="darkhistory.spec.spectools.get_bin_bound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
 <td>Returns the bin boundary of an abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_log_bin_width" title="darkhistory.spec.spectools.get_log_bin_width"><code class="xref py py-obj docutils literal"><span class="pre">get_log_bin_width</span></code></a>(eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_log_bin_width" title="darkhistory.spec.spectools.get_log_bin_width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_log_bin_width</span></code></a>(eng)</td>
 <td>Return the log bin width of the abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng[,&nbsp;out_eng,&nbsp;spec_type])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng[,&nbsp;out_eng,&nbsp;spec_type])</td>
 <td>Rebins an array of particle number with fixed energy.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code></a>(spec,&nbsp;tflist[,&nbsp;end_rs,&nbsp;save_steps])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evolve</span></code></a>(in_spec,&nbsp;tflist[,&nbsp;evolve_type,&nbsp;…])</td>
 <td>Evolves a spectrum using a list of transfer functions.</td>
 </tr>
 </tbody>
@@ -287,7 +287,7 @@
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">OverflowError</span></code> – The maximum energy in <cite>out_eng</cite> cannot be smaller than any bin in <cite>self.eng</cite>.</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OverflowError</span></code> – The maximum energy in <cite>out_eng</cite> cannot be smaller than any bin in <cite>self.eng</cite>.</p>
 </td>
 </tr>
 </tbody>
@@ -300,21 +300,23 @@
 </div>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-func docutils literal"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
+<p class="last"><code class="xref py py-func docutils literal notranslate"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
 </div>
 </dd></dl>
 
 <dl class="function">
 <dt id="darkhistory.spec.spectools.evolve">
-<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>spec</em>, <em>tflist</em>, <em>end_rs=None</em>, <em>save_steps=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.evolve" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>in_spec</em>, <em>tflist</em>, <em>evolve_type='prop'</em>, <em>prop_tflist=None</em>, <em>end_rs=None</em>, <em>save_steps=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.evolve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evolves a spectrum using a list of transfer functions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>spec</strong> (<a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – The initial spectrum to evolve.</li>
-<li><strong>tflist_in</strong> (<a class="reference internal" href="darkhistory.spec.transferfunclist.html#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><em>TransferFuncList</em></a>) – The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.</li>
+<li><strong>in_spec</strong> (<a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – The initial spectrum to evolve.</li>
+<li><strong>tflist</strong> (<a class="reference internal" href="darkhistory.spec.transferfunclist.html#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><em>TransferFuncList</em></a>) – The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.</li>
+<li><strong>evolve_type</strong> (<em>{'prop'</em><em>, </em><em>'dep'}</em>) – The type of evolution. Use ‘prop’ to evolve by multiplication by tflist. Use ‘dep’ to evolve by multiplication by prop_tflist, with tflist giving the transfer matrix for deposition.</li>
+<li><strong>prop_tflist</strong> (<a class="reference internal" href="darkhistory.spec.transferfunclist.html#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><em>TransferFuncList</em></a>) – The list of transfer functions for propagation, if evolve_type = ‘dep’.</li>
 <li><strong>end_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – The final redshift to evolve to.</li>
 <li><strong>save_steps</strong> (<em>bool</em><em>, </em><em>optional</em>) – Saves every intermediate spectrum if true.</li>
 </ul>

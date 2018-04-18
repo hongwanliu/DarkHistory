@@ -184,10 +184,10 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr[,&nbsp;spec_type,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr[,&nbsp;spec_type,&nbsp;…])</td>
 <td>Transfer function at a given injection energy.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr[,&nbsp;dlnz,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr[,&nbsp;dlnz,&nbsp;…])</td>
 <td>Transfer function at a given redshift.</td>
 </tr>
 </tbody>
@@ -199,7 +199,7 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.process_raw_tf" title="darkhistory.spec.transferfunction.process_raw_tf"><code class="xref py py-obj docutils literal"><span class="pre">process_raw_tf</span></code></a>(file)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.process_raw_tf" title="darkhistory.spec.transferfunction.process_raw_tf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">process_raw_tf</span></code></a>(file)</td>
 <td>Processes raw data to return transfer functions.</td>
 </tr>
 </tbody>
@@ -209,7 +209,7 @@
 <dl class="class">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtEnergy</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>spec_type='dNdE'</em>, <em>dlnz=-1</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal notranslate"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
 <p>Transfer function at a given injection energy.</p>
 <p>Collection of Spectrum objects, each at different redshifts.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -263,34 +263,34 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.append" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(spec)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.append" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code></a>(spec)</td>
 <td>Appends a new Spectrum.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.at_rs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new redshift.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.integrate_each_spec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
 <td>Sums over each individual spectrum with some weight.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.plot" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.plot" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.rebin" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.rebin" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.rebin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift"><code class="xref py py-obj docutils literal"><span class="pre">redshift</span></code></a>(rs_arr)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.redshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">redshift</span></code></a>(rs_arr)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.sum_specs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum_specs</span></code></a>([weight])</td>
 <td>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type"><code class="xref py py-obj docutils literal"><span class="pre">switch_spec_type</span></code></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.switch_spec_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch_spec_type</span></code></a>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.totN" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.totN"><code class="xref py py-obj docutils literal"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.totN" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.totN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
 <td>Returns the total number of particles in part of the spectra.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng"><code class="xref py py-obj docutils literal"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.toteng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
 <td>Returns the total energy of particles in part of the spectra.</td>
 </tr>
 </tbody>
@@ -320,7 +320,7 @@
 <p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add arrays of spectra together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -380,7 +380,7 @@
 <p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add two arrays of spectra together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__add__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectra.Spectra.__add__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -424,7 +424,7 @@
 <p>This special function, together with <cite>Spectra.__rsub__</cite>, allows the use of the symbol - to subtract or subtract from <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__sub__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__sub__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -448,7 +448,7 @@
 <p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -472,7 +472,7 @@
 <p>This special function, together with <cite>Spectra.__rsub__</cite>, allows the use of the symbol - to subtract or subtract from <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rsub__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__rsub__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -496,7 +496,7 @@
 <p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -623,7 +623,7 @@
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
 </div>
 </dd></dl>
 
@@ -721,7 +721,7 @@
 <dl class="class">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtRedshift</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>dlnz=-1</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal notranslate"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
 <p>Transfer function at a given redshift.</p>
 <p>Collection of Spectrum objects, each at different injection energies.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -764,43 +764,43 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.append" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(spec)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.append" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code></a>(spec)</td>
 <td>Appends a new Spectrum.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng"><code class="xref py py-obj docutils literal"><span class="pre">at_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_eng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new energy abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng"><code class="xref py py-obj docutils literal"><span class="pre">at_in_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_in_eng</span></code></a>(new_eng[,&nbsp;interp_type,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new injection energy.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_err,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_rs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_err,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new redshift.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val"><code class="xref py py-obj docutils literal"><span class="pre">at_val</span></code></a>(new_in_eng,&nbsp;new_eng[,&nbsp;interp_type,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_val</span></code></a>(new_in_eng,&nbsp;new_eng[,&nbsp;interp_type,&nbsp;…])</td>
 <td>2D interpolation at specified abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.integrate_each_spec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
 <td>Sums over each individual spectrum with some weight.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.plot" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.rebin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift"><code class="xref py py-obj docutils literal"><span class="pre">redshift</span></code></a>(rs_arr)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.redshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">redshift</span></code></a>(rs_arr)</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.sum_specs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum_specs</span></code></a>([weight])</td>
 <td>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type"><code class="xref py py-obj docutils literal"><span class="pre">switch_spec_type</span></code></a>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.switch_spec_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch_spec_type</span></code></a>()</td>
 <td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.totN" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.totN"><code class="xref py py-obj docutils literal"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.totN" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.totN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
 <td>Returns the total number of particles in part of the spectra.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng"><code class="xref py py-obj docutils literal"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng" title="darkhistory.spec.transferfunction.TransFuncAtRedshift.toteng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
 <td>Returns the total energy of particles in part of the spectra.</td>
 </tr>
 </tbody>
@@ -830,7 +830,7 @@
 <p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add arrays of spectra together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -890,7 +890,7 @@
 <p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add two arrays of spectra together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__add__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectra.Spectra.__add__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -934,7 +934,7 @@
 <p>This special function, together with <cite>Spectra.__rsub__</cite>, allows the use of the symbol - to subtract or subtract from <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__sub__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__sub__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -958,7 +958,7 @@
 <p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -982,7 +982,7 @@
 <p>This special function, together with <cite>Spectra.__rsub__</cite>, allows the use of the symbol - to subtract or subtract from <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rsub__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__rsub__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -1006,7 +1006,7 @@
 <p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -1213,7 +1213,7 @@
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
 </div>
 </dd></dl>
 
