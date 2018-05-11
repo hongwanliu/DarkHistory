@@ -252,7 +252,7 @@ class TransFuncAtRedshift(Spectra):
 
     
 
-    def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
+    def at_in_eng(self, new_eng, interp_type='val', log_interp=False, bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy. 
 
         Interpolation is logarithmic. 
@@ -263,6 +263,8 @@ class TransFuncAtRedshift(Spectra):
             The injection energies or injection energy bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies.
+        log_interp : bool, optional
+            Whether to perform an interpolation over log of the grid values. Default is False.
         bounds_error : bool, optional
             See scipy.interpolate.interp1d.
         fill_value : array-like or (array-like, array-like) or "extrapolate", optional
@@ -288,31 +290,49 @@ class TransFuncAtRedshift(Spectra):
         non_zero_N_und[np.abs(non_zero_N_und) < 1e-100] = 1e-200
         non_zero_eng_und[np.abs(non_zero_eng_und) < 1e-100] = 1e-200
 
-        interp_func = interpolate.interp1d(
-            np.log(self.in_eng), np.log(non_zero_grid), axis=0, 
-            bounds_error=bounds_error, fill_value=fill_value
-        )
-
-        interp_func_N_und = interpolate.interp1d(
-            np.log(self.in_eng), np.log(non_zero_N_und), 
-            bounds_error=bounds_error, fill_value=fill_value
-        )
-
-        interp_func_eng_und = interpolate.interp1d(
-            np.log(self.in_eng), np.log(non_zero_eng_und),
-            bounds_error=bounds_error, fill_value=fill_value
-        )
-
         if interp_type == 'val':
+
+            if log_interp:
+                interp_grid  = np.log(non_zero_grid)
+                N_und_grid   = np.log(non_zero_N_und)
+                eng_und_grid = np.log(non_zero_eng_und)
+            else:
+                interp_grid  = non_zero_grid
+                N_und_grid   = non_zero_N_und
+                eng_und_grid = non_zero_eng_und 
+
+            interp_func = interpolate.interp1d(
+                np.log(self.in_eng), interp_grid, axis=0, 
+                bounds_error=bounds_error, fill_value=fill_value
+            )
+
+            interp_func_N_und = interpolate.interp1d(
+                np.log(self.in_eng), N_und_grid, 
+                bounds_error=bounds_error, fill_value=fill_value
+            )
+
+            interp_func_eng_und = interpolate.interp1d(
+                np.log(self.in_eng), eng_und_grid,
+                bounds_error=bounds_error, fill_value=fill_value
+            )
 
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            interp_vals = np.exp(interp_func(np.log(new_eng)))
-            interp_vals_N_und = np.exp(interp_func_N_und(np.log(new_eng)))
-            interp_vals_eng_und = np.exp(
-                interp_func_eng_und(np.log(new_eng))
-            )
+
+            if log_interp:
+
+                interp_vals = np.exp(interp_func(np.log(new_eng)))
+                interp_vals_N_und = np.exp(interp_func_N_und(np.log(new_eng)))
+                interp_vals_eng_und = np.exp(
+                    interp_func_eng_und(np.log(new_eng))
+                )
+
+            else:
+                interp_vals = interp_func(np.log(new_eng))
+                interp_vals_N_und = interp_func_N_und(np.log(new_eng))
+                interp_vals_eng_und = interp_func_eng_und(np.log(new_eng))
+
             interp_vals[interp_vals < 1e-100] = 0
             interp_vals_N_und[interp_vals_N_und < 1e-100] = 0
             interp_vals_eng_und[interp_vals_eng_und < 1e-100] = 0
@@ -336,6 +356,7 @@ class TransFuncAtRedshift(Spectra):
 
             return self.at_in_eng(
                 np.exp(log_new_eng), interp_type='val',
+                log_interp = log_interp,
                 bounds_error=bounds_error, fill_value=fill_value
             )
 
@@ -499,8 +520,8 @@ class TransFuncAtRedshift(Spectra):
             new_tf._spec_type = self.spec_type
 
             if log_interp:
-                new_tf._grid_vals = np.exp(
-                    interp_func(np.log(new_eng), np.log(new_in_eng))
+                new_tf._grid_vals = np.atleast_2d(
+                    np.exp(interp_func(np.log(new_eng), np.log(new_in_eng)))
                 )
                 interp_vals_N_und = np.exp(
                     interp_func_N_und(np.log(new_in_eng))
@@ -509,7 +530,9 @@ class TransFuncAtRedshift(Spectra):
                     interp_func_eng_und(np.log(new_in_eng))
                 )
             else:
-                new_tf._grid_vals   = interp_func(np.log(new_eng), np.log(new_in_eng))
+                new_tf._grid_vals   = np.atleast_2d(
+                    interp_func(np.log(new_eng), np.log(new_in_eng))
+                )
                 interp_vals_N_und   = interp_func_N_und(np.log(new_in_eng))
                 interp_vals_eng_und = interp_func_eng_und(np.log(new_in_eng))
 
@@ -530,7 +553,8 @@ class TransFuncAtRedshift(Spectra):
 
             if issubclass(new_eng.dtype.type, np.integer):
                 return self.at_in_eng(
-                    new_in_eng, interp_type='bin'
+                    new_in_eng, interp_type='bin', 
+                    log_interp=log_interp
                 ).at_eng(
                     new_eng, interp_type='bin'
                 )
@@ -550,6 +574,7 @@ class TransFuncAtRedshift(Spectra):
             return self.at_val(
                 np.exp(log_new_in_eng), np.exp(log_new_eng), 
                 interp_type = 'val', 
+                log_interp = log_interp,
                 bounds_error = bounds_error, 
                 fill_value = fill_value
             )
