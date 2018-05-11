@@ -425,7 +425,7 @@ class TransFuncAtRedshift(Spectra):
             )
 
     def at_val(
-        self, new_in_eng, new_eng, interp_type='val', 
+        self, new_in_eng, new_eng, interp_type='val', log_interp=False,
         bounds_error=None, fill_value= np.nan
     ):
         """2D interpolation at specified abscissa. 
@@ -440,6 +440,8 @@ class TransFuncAtRedshift(Spectra):
             The energy abscissa or energy abscissa bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+        log_interp : bool, optional
+            Whether to perform an interpolation over log of the grid values. Default is False.
         bounds_error : bool, optional
             See scipy.interpolate.interp1d.
         fill_value : array-like or (array-like, array-like) or "extrapolate", optional
@@ -465,38 +467,51 @@ class TransFuncAtRedshift(Spectra):
 
         if interp_type == 'val':
 
+            if log_interp:
+                interp_grid  = np.log(non_zero_grid)
+                N_und_grid   = np.log(non_zero_N_und)
+                eng_und_grid = np.log(non_zero_eng_und)
+            else:
+                interp_grid  = non_zero_grid
+                N_und_grid   = non_zero_N_und
+                eng_und_grid = non_zero_eng_und 
+
             interp_func = interpolate.interp2d(
                 np.log(self.eng),
                 np.log(self.in_eng),  
-                np.log(non_zero_grid), 
+                interp_grid, 
                 bounds_error=bounds_error, 
                 fill_value=np.log(fill_value)
             )
 
             interp_func_N_und = interpolate.interp1d(
-                np.log(self.in_eng), np.log(non_zero_N_und), 
+                np.log(self.in_eng), N_und_grid, 
                 bounds_error=False, fill_value=0
             )
 
             interp_func_eng_und = interpolate.interp1d(
-                np.log(self.in_eng), np.log(non_zero_eng_und),
+                np.log(self.in_eng), eng_und_grid,
                 bounds_error=False, fill_value=0
             )
 
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = np.atleast_2d(
-                np.exp(
+
+            if log_interp:
+                new_tf._grid_vals = np.exp(
                     interp_func(np.log(new_eng), np.log(new_in_eng))
                 )
-            )
-            interp_vals_N_und = np.exp(
-                interp_func_N_und(np.log(new_in_eng))
-            )
-            interp_vals_eng_und = np.exp(
-                interp_func_eng_und(np.log(new_in_eng))
-            )
+                interp_vals_N_und = np.exp(
+                    interp_func_N_und(np.log(new_in_eng))
+                )
+                interp_vals_eng_und = np.exp(
+                    interp_func_eng_und(np.log(new_in_eng))
+                )
+            else:
+                new_tf._grid_vals   = interp_func(np.log(new_eng), np.log(new_in_eng))
+                interp_vals_N_und   = interp_func_N_und(np.log(new_in_eng))
+                interp_vals_eng_und = interp_func_eng_und(np.log(new_in_eng))
 
             # Re-zero small values.
             new_tf._grid_vals[new_tf.grid_vals < 1e-100] = 0
