@@ -761,10 +761,14 @@ class Spectra:
             weight = np.ones_like(self.eng)
 
         if isinstance(weight, np.ndarray):
-            return np.dot(self.grid_vals, weight)
-
+            if weight.ndim == 1:
+                return np.dot(self.grid_vals, weight)
+            elif weight.ndim == 2:
+                return np.sum(self.grid_vals*weight, axis=1)
+            else:
+                raise TypeError('weight does not have the correct dimensions.')
         else:
-            raise TypeError('mat must be an ndarray.')
+            raise TypeError('weight must be an ndarray of the correct dimensions.')
 
     def sum_specs(self, weight=None):
         """Sums all of spectra with some weight. 
