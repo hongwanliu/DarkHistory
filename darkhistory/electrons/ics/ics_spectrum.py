@@ -188,7 +188,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False):
         )
     )
 
-def nonrel_spec_quad(eleckineng_arr, photeng_arr, T):
+def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
     """ Nonrelativistic ICS spectrum of secondary photons using quadrature.
 
     Parameters
@@ -199,6 +199,8 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T):
         Outgoing photon energy. 
     T : float
         CMB temperature. 
+    spec : {'old', 'new'}
+        Choice of secondary photon spectrum to use.
 
     Returns
     -------
@@ -210,7 +212,7 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T):
     Insert note on the suitability of the method. 
     """
 
-    gamma_arr = eleceng_arr/phys.me + 1
+    gamma_arr = eleckineng_arr/phys.me + 1
 
     # Most accurate way of finding beta when beta is small, I think.
     beta_arr = np.sqrt(
@@ -226,11 +228,18 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T):
         beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
 
-
-        prefac = ( 
-            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-            * (8*np.pi/(phys.ele_compton*phys.me)**3)
-        )
+        if spec == 'old':
+            prefac = ( 
+                phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+                * (8*np.pi/(phys.ele_compton*phys.me)**3)
+            )
+        elif spec == 'new':
+            prefac = (
+                phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
+                * (8*np.pi/(phys.ele_compton*phys.me)**3)
+            )
+        else:
+            raise TypeError('invalid spec specified.')
 
         if eps/T < 100:
             prefac *= 1/(np.exp(eps/T) - 1)
@@ -239,27 +248,64 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T):
 
         if eps < photeng:
 
-            fac = (
-                (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))*eps
-                + 2/beta*np.sqrt((1-beta)/(1+beta))*photeng
-                - (1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*(
-                    photeng**2/eps
+            if spec == 'old':
+
+                fac = (
+                    (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))*eps
+                    + 2/beta*np.sqrt((1-beta)/(1+beta))*photeng
+                    - (1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*(
+                        photeng**2/eps
+                    )
+                    + 2/(gamma*beta**2)*photeng*np.log(
+                        (1-beta)/(1+beta)*photeng/eps
+                    )
                 )
-                + 2/(gamma*beta**2)*photeng*np.log(
-                    (1-beta)/(1+beta)*photeng/eps
+
+            else:
+
+                fac = (
+                    - (2/gamma**2)*(3-beta**2)*(eps+photeng)*np.log(
+                        (1+beta)*eps/((1-beta)*photeng)
+                    )
+                    + (1/gamma**4)*(eps**2/photeng)
+                    - (1/gamma**4)*(photeng**2/eps)
+                    +(1+beta)*(
+                        beta*(beta**2+3) + (1/gamma**2)*(9-4*beta**2) 
+                    )*eps
+                    + (1-beta)*(
+                        beta*(beta**2+3) - (1/gamma**2)*(9-4*beta**2)
+                    )*photeng
                 )
-            )
+
 
         else:
 
-            fac = (
-                - (1+beta**2)/beta**2*np.sqrt((1-beta)/(1+beta))*eps
-                + 2/beta*np.sqrt((1+beta)/(1-beta))*photeng 
-                + (1+beta)/(gamma*beta**2)*photeng**2/eps 
-                - 2/(gamma*beta**2)*photeng*np.log(
-                    (1+beta)/(1-beta)*photeng/eps 
+            if spec == 'old':
+
+                fac = (
+                    - (1+beta**2)/beta**2*np.sqrt((1-beta)/(1+beta))*eps
+                    + 2/beta*np.sqrt((1+beta)/(1-beta))*photeng 
+                    + (1+beta)/(gamma*beta**2)*photeng**2/eps 
+                    - 2/(gamma*beta**2)*photeng*np.log(
+                        (1+beta)/(1-beta)*photeng/eps 
+                    )
                 )
-            )
+
+            else:
+
+                fac = (
+                    (2/gamma**2)*(3-beta**2)*(eps+photeng)*np.log(
+                        (1-beta)*eps/((1+beta)*photeng)
+                    )
+                    - (1/gamma**4)*(eps**2/photeng)
+                    + (1/gamma**4)*(photeng**2/eps)
+                    -(1-beta)*(
+                        -beta*(beta**2+3) + (1/gamma**2)*(9-4*beta**2) 
+                    )*eps
+                    -(1+beta)*(
+                        -beta*(beta**2+3) - (1/gamma**2)*(9-4*beta**2)
+                    )*photeng
+                )
 
         return prefac*fac
 
