@@ -683,3 +683,190 @@ def H_and_G(beta, photeng, T, as_pairs=False):
         print('***** End Diagnostics for H_and_G *****')
 
     return term, err
+
+# New spectrum series expansions
+
+def P_1_over_x(beta, photeng, T, as_pairs=False):
+    """ Computes the P_{1/x} expansion for small beta and photeng/T. 
+
+    This term is used in the beta expansion method for computing the nonrelativistic ICS spectrum. 
+
+    Parameters
+    ----------
+    beta : ndarray
+        Velocity of the electron. 
+    photeng : ndarray
+        Secondary photon energy. 
+    T : float
+        CMB temperature
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+    Returns
+    -------
+    tuple of ndarray
+        The result of the expansion and the error. Note that the error is a significant overestimate, given by the beta**6 term, when the error should be O(beta**8). 
+
+    """
+    x1 = photeng/T
+
+    large = (x1 > 0.01)
+    small = ~large
+
+    P_beta_2 = np.zeros(x1.size)
+    P_beta_4 = np.zeros(x1.size)
+    P_beta_6 = np.zeros(x1.size)
+
+    if np.any(large):
+
+        y = x1[large]
+
+        P_beta_2[large] = -4*y**3*np.exp(y)/(np.exp(y) - 1)**2
+
+        P_beta_4[large] = -4/3*y**3*np.exp(y)/(np.exp(y) - 1)**4*(
+            y**2 + 3*y - 3
+            + np.exp(y)*(4*y**2 + 6)
+            + np.exp(2*y)*(y**2 - 3*y - 3)
+        )
+
+        P_beta_6[large] = 8/45*y**5*np.exp(y)/(np.exp(y) - 1)**6*(
+            y**2 + 10*y + 20
+            + 2*np.exp(y)*(13*y**2 + 50*y + 20)
+            + 6*np.exp(2*y)*(11*y**2 - 20)
+            + 2*np.exp(3*y)*(13*y**2 - 50*y + 20)
+            + np.exp(4*y)*(y**2 - 10*y + 20)
+        )
+
+    if np.any(small):
+
+        y = x1[small]
+
+        P_beta_2[small] = (
+            -4*y + 1/3*y**3 - 1/60*y**5 + 1/1512*y**7
+            - 1/43200*y**9 + 1/1330560*y**11
+        )
+
+        P_beta_4[small] = (
+            4*y - 1/3*y**3 - 1/36*y**5 + 1/216*y**7
+            - 1/2880*y**9 + 1/51840*y**11
+        )
+
+        P_beta_6[small] = (
+            -4/135*y**5 + 2/135*y**7 - 1/450*y**9 + 1/4860*y**11
+        )
+
+    if as_pairs:
+        ans = P_beta_2*beta**2 + P_beta_4*beta**4 + P_beta_6*beta**6
+        err = P_beta_6*beta**6
+        
+    else:
+        ans = (
+            np.outer(beta**2, P_beta_2)
+            + np.outer(beta**4, P_beta_4)
+            + np.outer(beta**6, P_beta_6)
+        )
+        err = np.outer(beta**6, P_beta_6)
+
+    return ans,err
+
+def P_1_a(beta, photeng, T, as_pairs=False):
+    """ Computes the P_{1} first term expansion for small beta and photeng/T. 
+
+    This term is used in the beta expansion method for computing the nonrelativistic ICS spectrum. 
+
+    Parameters
+    ----------
+    beta : ndarray
+        Velocity of the electron. 
+    photeng : ndarray
+        Secondary photon energy. 
+    T : float
+        CMB temperature
+    as_pairs : bool, optional
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+    Returns
+    -------
+    tuple of ndarray
+        The result of the expansion and the error. Note that the error is a significant overestimate, given by the beta**6 term, when the error should be O(beta**8). 
+
+    """
+    x1 = photeng/T
+
+    large = (x1 > 0.01)
+    small = ~large
+
+    P_beta_2 = np.zeros(x1.size)
+    P_beta_4 = np.zeros(x1.size)
+    P_beta_6 = np.zeros(x1.size)
+
+    if np.any(large):
+
+        y = x1[large]
+
+        P_beta_2[large] = -12*y**2/(np.exp(y) - 1)**2*(
+            7 + np.exp(y)*(3*y - 7)
+        )
+
+        P_beta_4[large] = -4*y**2/(np.exp(y) - 1)**4*(
+            -1
+            + np.exp(y)*(3*y**3 + 26*y**2 + 41*y + 3)
+            + np.exp(2*y)*(12*y**3 - 82*y - 3)
+            + np.exp(3*y)*(3*y**3 - 26*y**2 + 41*y + 1)
+        )
+
+        P_beta_6[large] = -8/15*y**2/(np.exp(y) - 1)**6*(
+            60
+            + np.exp(y)*(
+                3*y**5 + 57*y**4 + 320*y**3 + 600*y**2 + 330*y - 300
+            )
+            + 2*np.exp(2*y)*(
+                39*y**5 + 285*y**4 + 320*y**3 - 600*y**2 - 660*y + 300
+            )
+            + 6*np.exp(3*y)*(33*y**5 - 320*y**3 + 330*y - 100)
+            + 2*np.exp(4*y)*(
+                39*y**5 - 285*y**4 + 320*y**3 + 600*y**2 - 660*y + 150
+            )
+            + np.exp(5*y)*(
+                3*y**5 - 57*y**4 + 320*y**3 - 600*y**2 + 330*y - 60
+            )
+        )
+
+    if np.any(small):
+
+        y = x1[small]
+
+        P_beta_2[small] = (
+            48*y - 42*y**2 + 10*y**3 - 4/15*y**5 + 11/1260*y**7
+            - 1/3600*y**9 + 17/1995840*y**11
+        )
+
+        P_beta_4[small] = (
+            -32*y + 2*y**2 + 40/3*y**3 - 74/45*y**5 + 113/945*y**7
+            -251/37800*y**9 + 67/213840*y**11
+        )
+
+        P_beta_6[small] = (
+            48/5*y - 16*y**2 + 52/3*y**3 - 73/15*y**5 + 191/270*y**7
+            - 1669/25200*y**9 + 6443/1360800*y**11    
+        )
+
+    if as_pairs:
+        ans = P_beta_2*beta**2 + P_beta_4*beta**4 + P_beta_6*beta**6
+        err = P_beta_6*beta**6
+        
+    else:
+        ans = (
+            np.outer(beta**2, P_beta_2)
+            + np.outer(beta**4, P_beta_4)
+            + np.outer(beta**6, P_beta_6)
+        )
+        err = np.outer(beta**6, P_beta_6)
+
+    return ans,err
+
+
+
+
+
+

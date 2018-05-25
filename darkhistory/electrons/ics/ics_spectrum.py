@@ -256,7 +256,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
             2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_upp)
         )
 
-    testing = True
+    testing = False
     if testing:
         print('***** Diagnostics *****')
         print('lowlim: ', lowlim)
