@@ -78,14 +78,25 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
     print('Computing series 4/8...')
     F_log_low = F_log(lowlim, eta)[0]
 
-    F1_upp = F1(eta, upplim)
     print('Computing series 5/8...')
-    F0_upp = F0(eta, upplim)
+    F1_upp = F1(eta, upplim)
     print('Computing series 6/8...')
-    F_inv_upp = F_inv(eta, upplim)[0]
+    F0_upp = F0(eta, upplim)
     print('Computing series 7/8...')
-    F_log_upp = F_log(eta, upplim)[0]
+    F_inv_upp = F_inv(eta, upplim)[0]
     print('Computing series 8/8...')
+    F_log_upp = F_log(eta, upplim)[0]
+
+    if spec=='new':
+        F2_low = F2(lowlim, eta)[0]
+        print('Computing new series 1/4...')
+        F2_upp = F2(eta, upplim)[0]
+        print('Computing new series 2/4...')
+        F_x_log_low = F_x_log(lowlim, eta)[0]
+        print('Computing new series 3/4...')
+        F_x_log_upp = F_x_log(eta, upplim)[0]
+        print('Computing new series 4/4...')
+
 
     # CMB photon energy less than outgoing photon energy.
 
@@ -94,6 +105,8 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
     # In the other dimension, we must take transpose(eleckineng*transpose(x)).
 
     if spec == 'old':
+
+        # CMB photon energy lower than outgoing photon energy
 
         term_low_1 = F1_low * T**2
 
@@ -149,17 +162,107 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
 
     elif spec == 'new':
 
-        term_low_1 = np.transpose(
-            (1-beta)*(beta*(beta**2 + 3) - (1/gamma**2)*(9 - 4*beta**2))
-            - (2/gamma**2)*(3-beta**2)*np.log((1+beta)/(1-beta)/(photeng/T))
-        )*np.transpose(photeng/T*F1_low)
+        # CMB photon energy lower than outgoing photon energy
 
-    testing = False
+        term_low_1 = np.transpose(
+            -(1/gamma**4)*np.transpose(
+                photeng**2/T**2*F_inv_low
+            )
+        )
+
+        term_low_2 = np.transpose(
+            (
+                (1-beta)*(
+                    beta*(beta**2 + 3) - (1/gamma**2)*(9 - 4*beta**2)
+                )
+                - 2/gamma**2*(3-beta**2)
+                *(np.log1p(beta)-np.log1p(-beta))
+            )*np.transpose(photeng/T*F0_low)
+        ) - np.transpose(
+            2/gamma**2*(3 - beta**2)*np.transpose(
+                photeng/T*(-np.log(photeng/T))*F0_low
+            )
+        )
+
+        term_low_3 = np.transpose(
+            -2/gamma**2*(3 - beta**2)*np.transpose(
+                photeng/T*F_log_low
+            )
+        )
+
+        term_low_4 = np.transpose(
+            -(2/gamma**2)*(3 - beta**2)
+            *(np.log1p(beta)-np.log1p(-beta))*np.transpose(F1_low)
+            +(2/gamma**2)*(3 - beta**2)*np.transpose(
+                np.log(photeng/T)*F1_low
+            )
+            +(1+beta)*(
+                beta*(beta**2 + 3) + (1/gamma**2)*(9 - 4*beta**2)
+            )*np.transpose(F1_low) 
+        )
+
+        term_low_5 = np.transpose(
+            1/gamma**4*np.transpose(F2_low/(photeng/T))
+        )
+
+        term_low_6 = np.transpose(
+            -2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_low)
+        )
+
+        # CMB photon energy higher than outgoing photon energy
+
+        term_high_1 = np.transpose(
+            (1/gamma**4)*np.transpose(
+                photeng**2/T**2*F_inv_upp
+            )
+        )
+
+        term_high_2 = np.transpose(
+            (
+                (1+beta)*(
+                    beta*(beta**2 + 3) + (1/gamma**2)*(9 - 4*beta**2)
+                )
+                + (2/gamma**2)*(3-beta**2)
+                    *(np.log1p(-beta)-np.log1p(beta))
+            )*np.transpose(photeng/T*F0_upp)
+        ) + np.transpose(
+            2/gamma**2*(3 - beta**2)*np.transpose(
+                photeng/T*(-np.log(photeng/T))*F0_upp
+            )
+        )
+
+        term_high_3 = np.transpose(
+            2/gamma**2*(3 - beta**2)*np.transpose(
+                photeng/T*F_log_upp
+            )
+        )
+
+        term_high_4 = np.transpose(
+            (2/gamma**2)*(3 - beta**2)
+            *(np.log1p(-beta)-np.log1p(beta))*np.transpose(F1_upp)
+            +(2/gamma**2)*(3 - beta**2)*np.transpose(
+                -np.log(photeng/T)*F1_upp
+            )
+            +(1-beta)*(
+                beta*(beta**2 + 3) - (1/gamma**2)*(9 - 4*beta**2)
+            )*np.transpose(F1_upp) 
+        )
+
+        term_high_5 = -np.transpose(
+            1/gamma**4*np.transpose(F2_upp/(photeng/T))
+        )
+
+        term_high_6 = np.transpose(
+            2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_upp)
+        )
+
+    testing = True
     if testing:
         print('***** Diagnostics *****')
         print('lowlim: ', lowlim)
         print('upplim: ', upplim)
         print('photeng/T: ', eta)
+        print('beta: ', beta)
 
         print('***** epsilon < epsilon_1 *****')
         print('term_low_1: ', term_low_1)
@@ -167,6 +270,8 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print('term_low_3: ', term_low_3)
         print('term_low_4: ', term_low_4)
         print('term_low_5: ', term_low_5)
+        if spec == 'new':
+            print('term_low_6: ', term_low_6)
 
         print('***** epsilon > epsilon_1 *****')
         print('term_high_1: ', term_high_1)
@@ -174,6 +279,8 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print('term_high_3: ', term_high_3)
         print('term_high_4: ', term_high_4)
         print('term_high_5: ', term_high_5)
+        if spec == 'new':
+            print('term_high_6: ', term_high_6)
 
         print('***** Term Sums *****')
         print('term_low_1 + term_high_1: ', term_low_1 + term_high_1)
@@ -181,10 +288,51 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print('term_low_3 + term_high_3: ', term_low_3 + term_high_3)
         print('term_low_4 + term_high_4: ', term_low_4 + term_high_4)
         print('term_low_5 + term_high_5: ', term_low_5 + term_high_5)
+        if spec == 'new':
+            print(
+                'term_low_6 + term_high_6: ', 
+                term_low_6 + term_high_6
+            )
+
+        print('***** Prefactor *****')
+        print(prefac)
         
-        print('***** Total Sum (Excluding Prefactor) *****')
-        print(
-            (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))*np.transpose(
+        print('***** Total Sum *****')
+        if spec == 'old':
+            print(
+                np.transpose(
+                    prefac*np.transpose(
+                        (term_low_1 + term_high_1)
+                        + (term_low_2 + term_high_2)
+                        + (term_low_3 + term_high_3)
+                        + (term_low_4 + term_high_4)
+                        + (term_low_5 + term_high_5)
+                    )
+                )
+            )
+        elif spec == 'new':
+            print(
+                np.transpose(
+                    prefac*np.transpose(
+                        (term_low_1 + term_high_1)
+                        + (term_low_2 + term_high_2)
+                        + (term_low_3 + term_high_3)
+                        + (term_low_4 + term_high_4)
+                        + (term_low_5 + term_high_5)
+                        + (term_low_6 + term_high_6)
+                    )
+                )
+            )
+        print('***** End Diagnostics *****')
+
+    # Addition ordered to minimize catastrophic cancellation, but if this is important, you shouldn't be using this method.
+
+    print('Computation by analytic series complete!')
+
+    if spec == 'old':
+
+        return np.transpose(
+            prefac*np.transpose(
                 (term_low_1 + term_high_1)
                 + (term_low_2 + term_high_2)
                 + (term_low_3 + term_high_3)
@@ -192,21 +340,18 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
                 + (term_low_5 + term_high_5)
             )
         )
-        print('***** End Diagnostics *****')
 
-    # Addition ordered to minimize catastrophic cancellation, but if this is important, you shouldn't be using this method.
-
-    print('Computation by analytic series complete!')
-
-    return np.transpose(
-        prefac*np.transpose(
-            (term_low_1 + term_high_1)
-            + (term_low_2 + term_high_2)
-            + (term_low_3 + term_high_3)
-            + (term_low_4 + term_high_4)
-            + (term_low_5 + term_high_5)
+    elif spec == 'new':
+        return np.transpose(
+            prefac*np.transpose(
+                (term_low_1 + term_high_1)
+                + (term_low_2 + term_high_2)
+                + (term_low_3 + term_high_3)
+                + (term_low_4 + term_high_4)
+                + (term_low_5 + term_high_5)
+                + (term_low_6 + term_high_6)
+            )
         )
-    )
 
 def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
     """ Nonrelativistic ICS spectrum of secondary photons using quadrature.

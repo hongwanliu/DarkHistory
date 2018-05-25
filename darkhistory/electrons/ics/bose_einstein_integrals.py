@@ -36,7 +36,7 @@ def F2(a,b,tol=1e-10):
 
     def low_summand(x, k):
         if k == 1:
-            return x**2/2
+            return x**2/2 - x**3/6
         else:
             return(
                 bern(k)*x**(k+2)/(sp.factorial(k)*(k+2))
@@ -50,7 +50,7 @@ def F2(a,b,tol=1e-10):
         # gammaincc(n,x) = 1/gamma(n) * int_x^\infty t^{n-1}exp(-t) dt
         expr[~inf] = 2*sp.gammaincc(
             3, k*np.array(x[~inf], dtype='float64')
-        )
+        )/k**3
 
         return expr 
 
@@ -79,8 +79,8 @@ def F2(a,b,tol=1e-10):
     if np.any(both_low):
 
         # Initialize first term of each sum for either limit, and set integral to that value.
-        low_sum_a = lowsummand(a[both_low], 1)
-        low_sum_b = lowsummand(b[both_low], 1)
+        low_sum_a = low_summand(a[both_low], 1)
+        low_sum_b = low_summand(b[both_low], 1)
         integral[both_low] = low_sum_b - low_sum_a
 
         # Index of summand.
@@ -99,7 +99,7 @@ def F2(a,b,tol=1e-10):
                 np.divide(
                     next_term[both_low],
                     integral[both_low],
-                    out = np.zeros_like(next_term[both_low])
+                    out = np.zeros_like(next_term[both_low]),
                     where = integral[both_low] != 0
                 )
             )
