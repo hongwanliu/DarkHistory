@@ -13,7 +13,9 @@ from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 from tqdm import tqdm_notebook as tqdm
 
-def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
+def nonrel_spec_series(
+    eleckineng, photeng, T, as_pairs=False, spec_type='new'
+):
     """ Nonrelativistic ICS spectrum of secondary photons by series method.
 
     Parameters
@@ -26,7 +28,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         CMB temperature. 
     as_pairs : bool
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
-    spec : {'old', 'new'}
+    spec_type : {'old', 'new'}
         Choice of secondary photon spectrum to use.
 
     Returns
@@ -54,13 +56,13 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
     
     eta = photeng/T
 
-    if spec == 'old':
+    if spec_type == 'old':
         prefac = np.float128( 
             phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
             * (8*np.pi/(phys.ele_compton*phys.me)**3) 
             * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
         )
-    elif spec == 'new':
+    elif spec_type == 'new':
         prefac = np.float128(
             phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
             * (8*np.pi*T**2/(phys.ele_compton*phys.me)**3)
@@ -87,7 +89,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
     print('Computing series 8/8...')
     F_log_upp = F_log(eta, upplim)[0]
 
-    if spec=='new':
+    if spec_type == 'new':
         F2_low = F2(lowlim, eta)[0]
         print('Computing new series 1/4...')
         F2_upp = F2(eta, upplim)[0]
@@ -104,7 +106,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
     # We can take photeng*F1_vec_low for element-wise products. 
     # In the other dimension, we must take transpose(eleckineng*transpose(x)).
 
-    if spec == 'old':
+    if spec_type == 'old':
 
         # CMB photon energy lower than outgoing photon energy
 
@@ -160,7 +162,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
             )
         )
 
-    elif spec == 'new':
+    elif spec_type == 'new':
 
         # CMB photon energy lower than outgoing photon energy
 
@@ -270,7 +272,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print('term_low_3: ', term_low_3)
         print('term_low_4: ', term_low_4)
         print('term_low_5: ', term_low_5)
-        if spec == 'new':
+        if spec_type == 'new':
             print('term_low_6: ', term_low_6)
 
         print('***** epsilon > epsilon_1 *****')
@@ -279,7 +281,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print('term_high_3: ', term_high_3)
         print('term_high_4: ', term_high_4)
         print('term_high_5: ', term_high_5)
-        if spec == 'new':
+        if spec_type == 'new':
             print('term_high_6: ', term_high_6)
 
         print('***** Term Sums *****')
@@ -288,7 +290,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print('term_low_3 + term_high_3: ', term_low_3 + term_high_3)
         print('term_low_4 + term_high_4: ', term_low_4 + term_high_4)
         print('term_low_5 + term_high_5: ', term_low_5 + term_high_5)
-        if spec == 'new':
+        if spec_type == 'new':
             print(
                 'term_low_6 + term_high_6: ', 
                 term_low_6 + term_high_6
@@ -298,7 +300,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
         print(prefac)
         
         print('***** Total Sum *****')
-        if spec == 'old':
+        if spec_type == 'old':
             print(
                 np.transpose(
                     prefac*np.transpose(
@@ -310,7 +312,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
                     )
                 )
             )
-        elif spec == 'new':
+        elif spec_type == 'new':
             print(
                 np.transpose(
                     prefac*np.transpose(
@@ -329,7 +331,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
 
     print('Computation by analytic series complete!')
 
-    if spec == 'old':
+    if spec_type == 'old':
 
         return np.transpose(
             prefac*np.transpose(
@@ -341,7 +343,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
             )
         )
 
-    elif spec == 'new':
+    elif spec_type == 'new':
         return np.transpose(
             prefac*np.transpose(
                 (term_low_1 + term_high_1)
@@ -353,7 +355,7 @@ def nonrel_spec_series(eleckineng, photeng, T, as_pairs=False, spec='new'):
             )
         )
 
-def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
+def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
     """ Nonrelativistic ICS spectrum of secondary photons using quadrature.
 
     Parameters
@@ -364,7 +366,7 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
         Outgoing photon energy. 
     T : float
         CMB temperature. 
-    spec : {'old', 'new'}
+    spec_type : {'old', 'new'}
         Choice of secondary photon spectrum to use.
 
     Returns
@@ -393,12 +395,12 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
         beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
 
-        if spec == 'old':
+        if spec_type == 'old':
             prefac = ( 
                 phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
                 * (8*np.pi/(phys.ele_compton*phys.me)**3)
             )
-        elif spec == 'new':
+        elif spec_type == 'new':
             prefac = (
                 phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
                 * (8*np.pi/(phys.ele_compton*phys.me)**3)
@@ -413,7 +415,7 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
 
         if eps < photeng:
 
-            if spec == 'old':
+            if spec_type == 'old':
 
                 fac = (
                     (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))*eps
@@ -445,7 +447,7 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
 
         else:
 
-            if spec == 'old':
+            if spec_type == 'old':
 
                 fac = (
                     - (1+beta**2)/beta**2*np.sqrt((1-beta)/(1+beta))*eps
@@ -509,7 +511,7 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec='new'):
 
     return integral
 
-def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False):
+def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     """ Nonrelativistic ICS spectrum of secondary photons by beta expansion.
 
     Parameters
@@ -521,7 +523,9 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False):
     T : float
         CMB temperature.
     as_pairs : bool
-        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
+        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.
+    spec_type : {'old', 'new'}
+        Choice of secondary photon spectrum to use. 
 
     Returns
     -------
@@ -543,33 +547,73 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False):
     if testing: 
         print('beta: ', beta)
 
-    prefac = ( 
-        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-        * (8*np.pi/(phys.ele_compton*phys.me)**3)
-    )
-
-    print('Computing Q and K terms...')
-    Q_and_K_term = Q_and_K(beta, photeng, T, as_pairs=as_pairs)
-    print('Computing H and G terms...')
-    H_and_G_term = H_and_G(beta, photeng, T, as_pairs=as_pairs)
-
-    term = np.transpose(
-        prefac*np.transpose(
-            Q_and_K_term[0] + H_and_G_term[0]
+    if spec_type == 'old':
+        prefac = ( 
+            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+            * (8*np.pi/(phys.ele_compton*phys.me)**3)
         )
-    )
-
-    err = np.transpose(
-        prefac*np.transpose(
-            Q_and_K_term[1] + H_and_G_term[1]
+    elif spec_type == 'new':
+        prefac = (
+            phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
+            * (8*np.pi/(phys.ele_compton*phys.me)**3)
         )
-    )
+    else:
+        raise TypeError('invalid spec specified.')
+
+    if spec_type == 'old':
+
+        print('Computing Q and K terms...')
+        Q_and_K_term = Q_and_K(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing H and G terms...')
+        H_and_G_term = H_and_G(beta, photeng, T, as_pairs=as_pairs)
+
+    elif spec_type == 'new':
+
+        print('Computing P_(1/x) terms...')
+        one_over_x_term = P_1_over_x(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing P_1 (a) terms...')
+        one_a_term = P_1_a(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing P_1 (b) and P_(log x) terms...')
+        one_b_log_x_term = P_1_b_log_x(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing P_x (b) terms...')
+        x_b_term = P_x_b(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing P_x (a) and P_(x log x) terms...')
+        x_a_x_log_x_term = P_x_a_x_log_x(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing P_x^2 terms...')
+        x2_term = P_x2(beta, photeng, T, as_pairs=as_pairs)
+
+    if spec_type == 'old':
+        term = np.transpose(
+            prefac*np.transpose(
+                Q_and_K_term[0] + H_and_G_term[0]
+            )
+        )
+
+        err = np.transpose(
+            prefac*np.transpose(
+                Q_and_K_term[1] + H_and_G_term[1]
+            )
+        )
+    elif spec_type == 'new':
+        term = np.transpose(
+            prefac*np.transpose(
+                one_over_x_term[0] + one_a_term[0] + one_b_log_x_term[0]
+                + x_b_term[0] + x_a_x_log_x_term[0] + x2_term[0]
+            )
+        )
+
+        err = np.transpose(
+            prefac*np.transpose(
+                one_over_x_term[1] + one_a_term[1] + one_b_log_x_term[1]
+                + x_b_term[1] + x_a_x_log_x_term[1] + x2_term[1]
+            )
+        )
 
     print('Computation by expansion in beta complete!')
 
     return term, err
 
-def nonrel_spec(eleckineng, photeng, T, as_pairs=False):
+def nonrel_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     """ Nonrelativistic ICS spectrum of secondary photons.
 
     Switches between `nonrel_spec_diff` and `nonrel_spec_series`. 
@@ -584,6 +628,8 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False):
         CMB temperature. 
     as_pairs : bool
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.
+    spec_type : {'old', 'new'}
+        Choice of secondary photon spectrum to use.
 
     Returns
     -------
@@ -638,7 +684,7 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False):
     spec[where_diff], err_with_diff = nonrel_spec_diff(
         eleckineng_mask[where_diff], 
         photeng_mask[where_diff], 
-        T, as_pairs=True
+        T, as_pairs=True, spec_type=spec_type
     )
 
     print('Computing errors for beta expansion method...')
@@ -668,7 +714,7 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False):
     spec[where_series] = nonrel_spec_series(
         eleckineng_mask[where_series],
         photeng_mask[where_series],
-        T, as_pairs=True
+        T, as_pairs=True, spec_type=spec_type
     )
 
     if testing:
