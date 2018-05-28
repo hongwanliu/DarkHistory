@@ -553,9 +553,14 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
             * (8*np.pi/(phys.ele_compton*phys.me)**3)
         )
     elif spec_type == 'new':
+        # The terms dependent on beta have been absorbed into
+        # the expansion.
         prefac = (
-            phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
-            * (8*np.pi/(phys.ele_compton*phys.me)**3)
+            phys.c*(3/8)*phys.thomson_xsec/4
+            * (
+                8*np.pi*T**2
+                /(phys.ele_compton*phys.me)**3
+            )
         )
     else:
         raise TypeError('invalid spec specified.')
@@ -569,18 +574,8 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
 
     elif spec_type == 'new':
 
-        print('Computing P_(1/x) terms...')
-        one_over_x_term = P_1_over_x(beta, photeng, T, as_pairs=as_pairs)
-        print('Computing P_1 (a) terms...')
-        one_a_term = P_1_a(beta, photeng, T, as_pairs=as_pairs)
-        print('Computing P_1 (b) and P_(log x) terms...')
-        one_b_log_x_term = P_1_b_log_x(beta, photeng, T, as_pairs=as_pairs)
-        print('Computing P_x (b) terms...')
-        x_b_term = P_x_b(beta, photeng, T, as_pairs=as_pairs)
-        print('Computing P_x (a) and P_(x log x) terms...')
-        x_a_x_log_x_term = P_x_a_x_log_x(beta, photeng, T, as_pairs=as_pairs)
-        print('Computing P_x^2 terms...')
-        x2_term = P_x2(beta, photeng, T, as_pairs=as_pairs)
+        print('Computing term...')
+        diff_term = diff_expansion(beta, photeng, T, as_pairs=as_pairs)
 
     if spec_type == 'old':
         term = np.transpose(
@@ -594,20 +589,13 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
                 Q_and_K_term[1] + H_and_G_term[1]
             )
         )
-    elif spec_type == 'new':
-        term = np.transpose(
-            prefac*np.transpose(
-                one_over_x_term[0] + one_a_term[0] + one_b_log_x_term[0]
-                + x_b_term[0] + x_a_x_log_x_term[0] + x2_term[0]
-            )
-        )
 
-        err = np.transpose(
-            prefac*np.transpose(
-                one_over_x_term[1] + one_a_term[1] + one_b_log_x_term[1]
-                + x_b_term[1] + x_a_x_log_x_term[1] + x2_term[1]
-            )
-        )
+    elif spec_type == 'new':
+        # print('Prefactor: ', prefac)
+        # print('Sum without prefac: ', diff_term[0])
+        term = np.transpose(prefac*np.transpose(diff_term[0]))
+
+        err = np.transpose(prefac*np.transpose(diff_term[1]))
 
     print('Computation by expansion in beta complete!')
 
