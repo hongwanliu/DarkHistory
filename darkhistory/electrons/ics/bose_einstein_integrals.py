@@ -637,6 +637,148 @@ def F_inv(a,b,tol=1e-10):
 
     return integral, err
 
+def F_inv_a(lowlim, a, tol=1e-10):
+    """Integral of 1/((x+a)(exp(x) - 1)) from lowlim to infinity. 
+
+    Parameters
+    ----------
+    a : ndarray
+        Parameter in (x+a).
+    lowlim : ndarray
+        Lower limit of integration. 
+    tol : float
+        The relative tolerance to be reached.
+
+    Returns
+    -------
+    ndarray
+        The resulting integral. 
+    """
+
+    bound = np.ones_like(lowlim, dtype='float128')*2. 
+
+    # Two different series to approximate this: below and above bound. 
+
+    def low_summand(x, a, k):
+        
+        x_flt64 = np.array(x, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
+
+        if k == 1:
+            expr = np.log(x)/a - np.log(x+a)/a - 0.5*x*(
+                1/a - x/(2*a**2)
+                *np.real(sp.hyp2f1(1, 2, 3, -x_flt64/a_flt64 + 0j))
+            )
+            return expr
+        else:
+            return bern(k)*x**k/(sp.factorial(k)*k)*(
+                1/a - k*x/((k+1)*a**2)*np.real(
+                    sp.hyp2f1(1, k+1, k+2, -x_flt64/a_flt64 + 0j)
+                )
+            )
+
+    def high_summand(x, a, k):
+
+        x_flt64 = np.array(x, dtype='float64')
+        a_flt64 = np.array(a, dtype='float64')
+        inf = (x == np.inf)
+
+        expr = np.zeros_like(x)
+        expr[inf] = 0
+        expr[~inf] = np.exp(-k*x[~inf])*exp_expn(
+            1, k*(x[~inf] + a[~inf])
+        )
+
+        return expr
+
+    if a.ndim == 1 and lowlim.ndim == 2:
+        if lowlim.shape[1] != a.size:
+            raise TypeError('The second dimension of lowlim must have the same length as a.')
+        # Extend a to a 2D array.
+        a = np.outer(np.ones(lowlim.shape[0]), a)
+    elif a.ndim == 2 and lowlim.ndim == 1:
+        if a.shape[1] != lowlim.size:
+            raise TypeError('The second dimension of a must have the same length as lowlim.')
+        lowlim = np.outer(np.ones(a.shape[0]), lowlim)
+
+    # if both are 1D, then the rest of the code still works.
+
+    integral = np.zeros(lowlim.shape, dtype='float128')
+    err = np.zeros_like(integral)
+    next_term = np.zeros_like(integral)
+
+    a_is_zero = (a == 0)
+    low       = (lowlim < 2) & ~a_is_zero
+    high      = ~low & ~a_is_zero
+
+    if np.any(a_is_zero):
+        integral[a_is_zero] = F_inv(
+            lowlim[a_is_zero], 
+            np.ones_like(lowlim[a_is_zero])*np.inf, 
+            tol = tol
+        ) 
+
+    if np.any(low):
+
+        integral[low] = (
+            low_summand(bound[low], a[low], 1)
+            - low_summand(lowlim[low], a[low], 1)
+            + high_summand(bound[low], a[low], 1)
+        )
+        k_low  = 2
+        k_high = 2
+        err_max = 10*tol
+
+        while err_max > tol:
+
+            next_term[low] = (
+                low_summand(bound[low], a[low], k_low) 
+                - low_summand(lowlim[low], a[low], k_low)
+                + high_summand(bound[low], a[low], k_high)
+            )
+            err[low] = np.abs(
+                np.divide(
+                    next_term[low],
+                    integral[low],
+                    out = np.zeros_like(next_term[low]),
+                    where = integral[low] != 0
+                )
+            )
+
+            integral[low] += next_term[low]
+
+            k_low += 2
+            k_high += 1
+            err_max = np.max(err[low])
+            low &= (err > tol)
+
+    if np.any(high):
+
+        integral[high] = high_summand(lowlim[high], a[high], 1)
+
+        k_high = 2
+        err_max = 10*tol
+
+        while err_max > tol:
+            next_term[high] = high_summand(lowlim[high], a[high], k_high)
+            err[high] = np.abs(
+                np.divide(
+                    next_term[high],
+                    integral[high],
+                    out = np.zeros_like(next_term[high]),
+                    where = integral[high] != 0
+                )
+            )
+
+            integral[high] += next_term[high]
+
+            k_high += 1
+            err_max = np.max(err[high])
+            high &= (err > tol)
+
+    return integral, err
+
+
 def F_inv_3(a,b,tol=1e-10):
     """Definite integral of (1/x**3)/(exp(x) - 1). 
 
