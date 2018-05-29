@@ -9,6 +9,7 @@ from darkhistory.utilities import bernoulli as bern
 from darkhistory.utilities import log_series_diff
 from darkhistory.utilities import spence_series_diff
 from darkhistory.utilities import exp_expn
+from darkhistory.utilities import hyp2f1_func_real
 
 from scipy.integrate import quad
 
@@ -669,15 +670,22 @@ def F_inv_a(lowlim, a, tol=1e-10):
         if k == 1:
             expr = np.log(x)/a - np.log(x+a)/a - 0.5*x*(
                 1/a - x/(2*a**2)
-                *np.real(sp.hyp2f1(1, 2, 3, -x_flt64/a_flt64 + 0j))
+                *hyp2f1_func_real(1, -x/a)
             )
+            # expr = np.log(x)/a - np.log(x+a)/a - 0.5*x*(
+            #     1/a - x/(2*a**2)
+            #     *np.real(sp.hyp2f1(1, 2, 3, -x_flt64/a_flt64 + 0j))
+            # )
             return expr
         else:
             return bern(k)*x**k/(sp.factorial(k)*k)*(
-                1/a - k*x/((k+1)*a**2)*np.real(
-                    sp.hyp2f1(1, k+1, k+2, -x_flt64/a_flt64 + 0j)
-                )
+                1/a - k*x/((k+1)*a**2)*hyp2f1_func_real(k, -x/a)
             )
+            # return bern(k)*x**k/(sp.factorial(k)*k)*(
+            #     1/a - k*x/((k+1)*a**2)*np.real(
+            #         sp.hyp2f1(1, k+1, k+2, -x_flt64/a_flt64 + 0j)
+            #     )
+            # )
 
     def high_summand(x, a, k):
 
@@ -1794,13 +1802,19 @@ def F_log_a(lowlim, a, tol=1e-10):
         else:
             return (
                 bern(k)*x**k/(sp.factorial(k)*k)*(
-                    np.log(x + a) - x/(a*(k+1))*np.real(
-                        sp.hyp2f1(
-                            1, k+1, k+2, -x_flt64/a_flt64 + 0j
-                        )
-                    )
+                    np.log(x + a) 
+                    - x/(a*(k+1))*hyp2f1_func_real(k, -x/a)
                 )
             )
+            # return (
+            #     bern(k)*x**k/(sp.factorial(k)*k)*(
+            #         np.log(x + a) - x/(a*(k+1))*np.real(
+            #             sp.hyp2f1(
+            #                 1, k+1, k+2, -x_flt64/a_flt64 + 0j
+            #             )
+            #         )
+            #     )
+            # )
 
     def high_summand(x, a, k):
 
@@ -1934,26 +1948,40 @@ def F_x_log_a(lowlim, a, tol=1e-10):
             return (
                 x*(
                     np.log(a+x) - 1 
-                    + np.real(sp.hyp2f1(
-                        1, 1, 2, -x/a + 0j)
-                    )
+                    + hyp2f1_func_real(0, -x/a)
                 )
                 -x**2/8*(
                     2*np.log(a+x) - 1
-                    + np.real(sp.hyp2f1(
-                        1, 2, 3, -x/a + 0j)
-                    )
+                    + hyp2f1_func_real(1, -x/a)
                 )
+                # x*(
+                #     np.log(a+x) - 1 
+                #     + np.real(sp.hyp2f1(
+                #         1, 1, 2, -x/a + 0j)
+                #     )
+                # )
+                # -x**2/8*(
+                #     2*np.log(a+x) - 1
+                #     + np.real(sp.hyp2f1(
+                #         1, 2, 3, -x/a + 0j)
+                #     )
+                # )
             )
         else:
             return (
                 bern(k)*x**(k+1)/(sp.factorial(k)*(k+1)**2)*(
                     (k+1)*np.log(x+a) - 1
-                    + np.real(sp.hyp2f1(
-                        1, k+1, k+2, -x/a + 0j
-                    ))
+                    + hyp2f1_func_real(k, -x/a)
                 )
             )
+            # return (
+            #     bern(k)*x**(k+1)/(sp.factorial(k)*(k+1)**2)*(
+            #         (k+1)*np.log(x+a) - 1
+            #         + np.real(sp.hyp2f1(
+            #             1, k+1, k+2, -x/a + 0j
+            #         ))
+            #     )
+            # )
 
     def high_summand(x, a, k):
 

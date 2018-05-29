@@ -399,7 +399,7 @@ def engloss_spec_series(
 
         return np.transpose(prefac*np.transpose(sum_terms))
 
-def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
+def engloss_spec_diff(eleckineng, delta, T, as_pairs=False, spec_type='new'):
     """Nonrelativistic ICS energy loss spectrum by beta expansion. 
 
     Parameters
@@ -411,7 +411,9 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
     T : float
         CMB temperature. 
     as_pairs : bool
-        If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size. 
+        If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size.
+    spec_type : {'old', 'new'}
+        The ICS secondary photon spectrum to integrate over. 
 
     Returns
     -------
@@ -429,22 +431,42 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
     gamma = eleckineng/phys.me + 1
     beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
-    prefac = ( 
-        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-        * (8*np.pi/(phys.ele_compton*phys.me)**3)
-        * (T**2/beta**2)
-    )
+    if spec_type == 'old':
+        prefac = ( 
+            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+            * (8*np.pi/(phys.ele_compton*phys.me)**3)
+            * (T**2/beta**2)
+        )
+    elif spec_type == 'new':
+        prefac = (
+            phys.c*(3/8)*phys.thomson_xsec/4
+            *(8*np.pi/(phys.ele_compton*phys.me)**3)
+            *T**2
+        )
+    else:
+        raise TypeError('invalid spec_type specified.')
 
-    print('(1/5) Computing F1_up - F1_down term...')
-    F1_up_down_term = F1_up_down(beta, delta, T, as_pairs=as_pairs)
-    print('(2/5) Computing F0_up - F0_down term...')
-    F0_up_down_diff_term = F0_up_down_diff(beta, delta, T, as_pairs=as_pairs)
-    print('(3/5) Computing F0_up + F0_down term...')
-    F0_up_down_sum_term = F0_up_down_sum(beta, delta, T, as_pairs=as_pairs)
-    print('(4/5) Computing F_inv_up - F_inv_down term...')
-    F_inv_up_down_term = F_inv_up_down(beta, delta, T, as_pairs=as_pairs)
-    print('(5/5) Computing F_rem term...')
-    F_rem_term = F_rem(beta, delta, T, as_pairs=as_pairs)
+    if spec_type == 'old':
+
+        print('(1/5) Computing F1_up - F1_down term...')
+        F1_up_down_term = F1_up_down(beta, delta, T, as_pairs=as_pairs)
+        print('(2/5) Computing F0_up - F0_down term...')
+        F0_up_down_diff_term = F0_up_down_diff(
+            beta, delta, T, as_pairs=as_pairs
+        )
+        print('(3/5) Computing F0_up + F0_down term...')
+        F0_up_down_sum_term = F0_up_down_sum(
+            beta, delta, T, as_pairs=as_pairs
+        )
+        print('(4/5) Computing F_inv_up - F_inv_down term...')
+        F_inv_up_down_term = F_inv_up_down(
+            beta, delta, T, as_pairs=as_pairs
+        )
+        print('(5/5) Computing F_rem term...')
+        F_rem_term = F_rem(beta, delta, T, as_pairs=as_pairs)
+
+    elif spec_type == 'new':
+        diff_term = engloss_diff_expansion(beta, delta, T, as_pairs=as_pairs)
 
     testing = False
     if testing:
@@ -472,13 +494,19 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
         )
         print('***** End Diagnostics *****')
 
-    term = np.transpose(
-        prefac*np.transpose(
-            F1_up_down_term + F0_up_down_diff_term 
-            + F0_up_down_sum_term
-            + F_inv_up_down_term + F_rem_term
+    if spec_type == 'old':
+
+        term = np.transpose(
+            prefac*np.transpose(
+                F1_up_down_term + F0_up_down_diff_term 
+                + F0_up_down_sum_term
+                + F_inv_up_down_term + F_rem_term
+            )
         )
-    )
+
+    else: 
+
+        term = np.transpose(prefac*np.transpose(diff_term))
 
     print('Computation by expansion in beta complete!')
 
@@ -486,7 +514,8 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
 
 def engloss_spec(
     eleckineng, delta, T, 
-    as_pairs=False, nonrel=False, nonrel_tf=None, rel_tf=None
+    as_pairs=False, nonrel=False, nonrel_tf=None, rel_tf=None,
+    spec_type='new'
 ):
     """ Energy loss ICS spectrum. 
 
@@ -508,7 +537,8 @@ def engloss_spec(
         Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
         Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
-
+    spec_type : {'old', 'new'}
+        The ICS secondary photon spectrum to integrate over. 
 
     Returns
     -------
@@ -548,7 +578,11 @@ def engloss_spec(
             (eleckineng.size, delta.size), dtype='float128'
         )
 
-    beta_small = beta_mask < 0.05
+    # beta_small = beta_mask < 0.05
+    if spec_type == 'old':
+        beta_small = beta_mask < 0.05
+    if spec_type == 'new':
+        beta_small = beta_mask < 0.1
     rel = gamma_mask > rel_bound
 
     y = T/phys.TCMB(1000)
@@ -600,13 +634,13 @@ def engloss_spec(
         spec[beta_small] = engloss_spec_diff(
             eleckineng_mask[beta_small],
             delta_mask[beta_small],
-            T, as_pairs=True
+            T, as_pairs=True, spec_type=spec_type
         )
 
         spec[~beta_small & ~rel] = engloss_spec_series(
             eleckineng_mask[~beta_small & ~rel],
             delta_mask[~beta_small & ~rel],
-            T, as_pairs=True
+            T, as_pairs=True, spec_type=spec_type
         )
         print('Nonrelativistic energy loss spectrum computed!')
 
