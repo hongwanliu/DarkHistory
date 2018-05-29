@@ -10,6 +10,8 @@ from darkhistory.utilities import log_series_diff
 from darkhistory.utilities import spence_series_diff
 from darkhistory.utilities import exp_expn
 
+from scipy.integrate import quad
+
 def F2(a,b,tol=1e-10):
     """Definite integral of x^2/[(exp(x) - 1)]
 
@@ -778,6 +780,204 @@ def F_inv_a(lowlim, a, tol=1e-10):
 
     return integral, err
 
+def F_inv_n(a,b,n,tol=1e-10):
+    """Definite integral of (1/x**n)/(exp(x) - 1)
+
+    Parameters
+    ----------
+    a : ndarray
+        Lower limit of integration. 
+    b : ndarray
+        Upper limit of integration. 
+    tol : float
+        The relative tolerance to be reached. 
+
+    Returns
+    -------
+    float
+        The resulting integral. 
+    """
+
+    bound = np.float128(2.) 
+
+    # Two different series to approximate this: below and above bound.
+
+    def low_summand(x, k):
+        if k == 1:
+            init_sum = 0
+            for j in np.arange(n):
+                init_sum += bern(j)/sp.factorial(j)*x**(j-n)/(j-n)
+            init_sum += bern(n)/sp.factorial(n)*np.log(x)
+            return init_sum
+        else:
+            # B_n for n odd, n > 1 is zero.
+            if np.mod(k+n-1, 2) == 0:
+                return(
+                    bern(k+n-1)/sp.factorial(k+n-1)*x**(k-1)/(k-1)
+                )
+            else:
+                return(
+                    bern(k+n)/sp.factorial(k+n)*x**k/k
+                )
+
+    def high_summand(x, k):
+        
+        inf = (x == np.inf)
+        expr = np.zeros_like(x)
+        expr[~inf] = (
+            sp.expn(n, k*np.array(x[~inf], dtype='float64'))/x[~inf]**(n-1)
+        )
+
+        return expr
+
+    if a.ndim == 1 and b.ndim == 2:
+        if b.shape[1] != a.size:
+            raise TypeError('The second dimension of b must have the same length as a.')
+        # Extend a to a 2D array. 
+        a = np.outer(np.ones(b.shape[0],dtype='float128'), a)
+    elif a.ndim == 2 and b.ndim == 1:
+        if a.shape[1] != b.size:
+            raise TypeError('The second dimension of a must have the same length as b.')
+        b = np.outer(np.ones(a.shape[0],dtype='float128'), b)
+
+    # if both are 1D, then the rest of the code still works. 
+
+    integral = np.zeros_like(a, dtype='float128')
+    err = np.zeros_like(integral)
+    next_term = np.zeros_like(integral)
+
+    both_low  = (a < bound) & (b <  bound)
+    low_high  = (a < bound) & (b >= bound)
+    both_high = (a > bound) & (b >  bound)
+
+    # Both low
+
+    if np.any(both_low):
+
+        low_sum_a = low_summand(a[both_low], 1)
+        low_sum_b = low_summand(b[both_low], 1)
+        integral[both_low] = low_sum_b - low_sum_a
+
+        k_low = 2
+        err_max = 10*tol
+    
+        while err_max > tol:
+            
+            next_term[both_low] = (
+                low_summand(b[both_low], k_low)
+                - low_summand(a[both_low], k_low)
+            )
+
+            err[both_low] = np.abs(
+                np.divide(
+                    next_term[both_low],
+                    integral[both_low],
+                    out = np.zeros_like(next_term[both_low]),
+                    where = integral[both_low] != 0
+                )
+            )
+
+            integral[both_low] += next_term[both_low]
+
+            k_low += 2
+            err_max = np.max(err[both_low])
+            both_low &= (err > tol)
+
+    # a low b high
+
+    if np.any(low_high):
+
+        # Evaluate the definite integral from a to 2, and then 2 to b.
+
+        low_sum_a = low_summand(a[low_high], 1)
+        high_sum_b = high_summand(b[low_high], 1)
+        low_sum_bound = low_summand(bound, 1)
+
+        # Exact integral from 2 to infinity.
+        int_bound_inf = quad(
+            lambda x: 1/(x**n*(np.exp(x) - 1)),
+            bound, np.inf, epsabs = 1e-16, epsrel=1e-16
+        )[0]
+
+        int_a_bound = low_sum_bound - low_sum_a
+        int_bound_b = int_bound_inf - high_sum_b
+
+        integral[low_high] = int_a_bound + int_bound_b
+
+        k_low = 2
+        k_high = 2
+        err_max = 10*tol
+
+        next_term_a_bound = np.zeros_like(integral)
+        next_term_bound_b = np.zeros_like(integral)
+
+        while err_max > tol:
+
+            next_term_a_bound[low_high] = (
+                low_summand(bound, k_low)
+                - low_summand(a[low_high], k_low)
+            )
+            # Only need to compute the next term for the b to inf integral.
+            next_term_bound_b[low_high] = (
+                -high_summand(b[low_high], k_high)
+            )
+
+
+            next_term[low_high] = (
+                next_term_a_bound[low_high]
+                + next_term_bound_b[low_high]
+            )
+
+            err[low_high] = np.abs(
+                np.divide(
+                    next_term[low_high], 
+                    integral[low_high], 
+                    out = np.zeros_like(next_term[low_high]),
+                    where = integral[low_high] != 0
+                )
+            )
+
+            integral[low_high] += next_term[low_high]
+
+            k_low += 2
+            k_high += 1
+            err_max = np.max(err[low_high])
+            low_high &= (err > tol)
+
+    # Both high
+
+    if np.any(both_high):
+
+        high_sum_a = high_summand(a[both_high], 1)
+        high_sum_b = high_summand(b[both_high], 1)
+        integral[both_high] = high_sum_a - high_sum_b
+
+        k_high = 2
+        err_max = 10*tol
+
+        while err_max > tol:
+
+            next_term[both_high] = (
+                high_summand(a[both_high], k_high)
+                - high_summand(b[both_high], k_high)
+            )
+
+            err[both_high] = np.abs(
+                np.divide(
+                    next_term[both_high],
+                    integral[both_high], 
+                    out = np.zeros_like(next_term[both_high]),
+                    where = integral[both_high] != 0
+                )
+            )
+
+            integral[both_high] += next_term[both_high]
+
+            k_high += 1
+            err_max = np.max(err[both_high])
+            both_high &= (err > tol)
+
+    return integral, err
 
 def F_inv_3(a,b,tol=1e-10):
     """Definite integral of (1/x**3)/(exp(x) - 1). 
