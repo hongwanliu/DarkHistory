@@ -214,6 +214,56 @@ def exp_expn(n, x):
 
     return expr
 
+def hyp2f1_func_real(n, x):
+    """ Returns the real part of 2F1(1, n+1, n+2, x). 
+
+    Avoids the need for complex numbers in scipy.special.hyp2f1, which is very slow. 
+    
+    Parameters
+    ----------
+    n : integer
+        The order of 2F1(1, n+1, n+2, x) to evaluate. 
+    x : ndarray
+        The main argument of the function. 
+
+    Returns
+    -------
+    ndarray
+        The result of 2F1(1, n+1, n+2, x). 
+
+    """
+
+    x_gt_1 = x > 1.
+    x_lt_1_large_abs = (x <= 1.) & (np.abs(x) > 0.5)
+    x_small_abs = np.abs(x) <= 0.5
+    expr = np.zeros_like(x)
+
+    if np.any(x_gt_1):
+        x_1 = x[x_gt_1]
+        for j in 1.+np.arange(n):
+            expr[x_gt_1] -= (n+1)/j*(1/x_1)**(n+1-j)
+        expr[x_gt_1] -= (
+            (n+1)*(1/x_1)**(n+1)
+            *(np.log(x_1) + np.log1p(-1/x_1))
+            # just log(x-1) but works for x ~ 2. 
+        )
+
+    if np.any(x_lt_1_large_abs):
+        x_2 = x[x_lt_1_large_abs]
+        for j in 1.+np.arange(n):
+            expr[x_lt_1_large_abs] -= (n+1)/j*(1/x_2)**(n+1-j)
+        expr[x_lt_1_large_abs] -= (
+            (n+1)*(1/x_2)**(n+1)*np.log1p(-x_2)
+        )
+
+    if np.any(x_small_abs):
+        # Power series expansion needed in this region.
+        x_3 = x[x_small_abs]
+        for j in 1.+np.arange(20):
+            expr[x_small_abs] += (n+1)/(n+j)*x_3**(j-1)
+
+    return expr
+
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.
     
