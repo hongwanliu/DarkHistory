@@ -2,9 +2,10 @@
 
 import numpy as np 
 
-from darkhistory.spectrum import Spectrum
-from darkhistory.spectools import discretize
-from darkhistory.spectools import rebin_N_arr
+from darkhistory import physics as phys 
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.spectools import discretize
+from darkhistory.spec.spectools import rebin_N_arr
 
 def ortho_photon_spec(eng):
     """ Returns the photon spectrum from orthopositronium annihilation. 
@@ -24,21 +25,30 @@ def ortho_photon_spec(eng):
 
     fac = np.pi**2 - 9
 
-    # dN/dE, unnormalized.
-    # 3/fac normalizes dN/dE so that integral is 3, and 
-    # integral of E dN/dE is 2*phys.me.
+    # dN/d(E/phys.me), unnormalized.
+    # 3/fac normalizes dN/d(E/phys.me) so that integral is 3, and 
+    # integral of E dN/d(E/phys.me) is 2*phys.me.
     def norm_spec(eng):
         norm_eng = eng/phys.me
         fac = np.pi**2 - 9
         if eng < phys.me:
-            return 3/fac*(
-                2*(2.-norm_eng)/norm_eng 
-                + 2*(1. - norm_eng)*norm_eng/(2. - norm_eng)**2
-                + 4*np.log(1. - norm_eng)*(
-                    (1. - norm_eng)/norm_eng**2 
-                    - (1. - norm_eng)**2/(2. - norm_eng)**3
+            if norm_eng > 0.001:
+                return 3/fac/phys.me*(
+                    2*(2.-norm_eng)/norm_eng 
+                    + 2*(1. - norm_eng)*norm_eng/(2. - norm_eng)**2
+                    + 4*np.log1p(-norm_eng)*(
+                        (1. - norm_eng)/norm_eng**2 
+                        - (1. - norm_eng)**2/(2. - norm_eng)**3
+                    )
                 )
-            )
+            elif norm_eng <= 0.001:
+                return 3/fac/phys.me*(
+                    5/3*norm_eng + 1/3*norm_eng**2 - 2/15*norm_eng**3
+                    - 1/5*norm_eng**4 - 29/210*norm_eng**5 
+                    - 13/210*norm_eng**6 - 2/315*norm_eng**7
+                    + 8/315*norm_eng**8 + 137/3465*norm_eng**9
+                    + 149/3465*norm_eng**10
+                )
         else:
             return 0
 
