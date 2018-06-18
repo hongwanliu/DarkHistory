@@ -71,33 +71,33 @@ def nonrel_spec_series(
     else:
         raise TypeError('invalid spec specified.')
 
-    print('Computing series 1/8...')
+    print('*** Computing series 1/12...')
     F1_low = F1(lowlim, eta)
-    print('Computing series 2/8...')
+    print('*** Computing series 2/12...')
     F0_low = F0(lowlim, eta)
-    print('Computing series 3/8...')
+    print('*** Computing series 3/12...')
     F_inv_low = F_inv(lowlim, eta)[0]
-    print('Computing series 4/8...')
+    print('*** Computing series 4/12...')
     F_log_low = F_log(lowlim, eta)[0]
 
-    print('Computing series 5/8...')
+    print('*** Computing series 5/12...')
     F1_upp = F1(eta, upplim)
-    print('Computing series 6/8...')
+    print('*** Computing series 6/12...')
     F0_upp = F0(eta, upplim)
-    print('Computing series 7/8...')
+    print('*** Computing series 7/12...')
     F_inv_upp = F_inv(eta, upplim)[0]
-    print('Computing series 8/8...')
+    print('*** Computing series 8/12...')
     F_log_upp = F_log(eta, upplim)[0]
 
     if spec_type == 'new':
         F2_low = F2(lowlim, eta)[0]
-        print('Computing new series 1/4...')
+        print('*** Computing series 9/12...')
         F2_upp = F2(eta, upplim)[0]
-        print('Computing new series 2/4...')
+        print('*** Computing series 10/12...')
         F_x_log_low = F_x_log(lowlim, eta)[0]
-        print('Computing new series 3/4...')
+        print('*** Computing series 11/12...')
         F_x_log_upp = F_x_log(eta, upplim)[0]
-        print('Computing new series 4/4...')
+        print('*** Computing series 12/12...')
 
 
     # CMB photon energy less than outgoing photon energy.
@@ -329,7 +329,7 @@ def nonrel_spec_series(
 
     # Addition ordered to minimize catastrophic cancellation, but if this is important, you shouldn't be using this method.
 
-    print('Computation by analytic series complete!')
+    print('----> Computation by analytic series complete!')
 
     if spec_type == 'old':
 
@@ -574,7 +574,6 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
 
     elif spec_type == 'new':
 
-        print('Computing term...')
         diff_term = diff_expansion(beta, photeng, T, as_pairs=as_pairs)
 
     if spec_type == 'old':
@@ -597,7 +596,7 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
 
         err = np.transpose(prefac*np.transpose(diff_term[1]))
 
-    print('Computation by expansion in beta complete!')
+    print('----> Computation by expansion in beta complete!')
 
     return term, err
 
@@ -674,8 +673,6 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         photeng_mask[where_diff], 
         T, as_pairs=True, spec_type=spec_type
     )
-
-    print('Computing errors for beta expansion method...')
 
     epsrel[where_diff] = np.abs(
         np.divide(
