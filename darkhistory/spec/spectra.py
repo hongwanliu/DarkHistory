@@ -41,7 +41,30 @@ class Spectra:
 
     __array_priority__ = 1
 
-    def __init__(self, spec_arr, spec_type='dNdE', rebin_eng=None):
+    def __init__(
+        self, spec_arr, eng=None, in_eng=None, rs=None, 
+        spec_type='dNdE', rebin_eng=None
+    ):
+
+        if isinstance(spec_arr, np.ndarray):
+            if eng is None:
+                raise TypeError('Must specify eng to initialize Spectra using an ndarray.')
+            if in_eng is None and rs is None:
+                raise TypeError('Must specify either eng or rs to initialize Spectra using an ndarray.')
+
+            self._grid_vals = np.atleast_2d(spec_arr)
+            self._spec_type = spec_type
+            self._eng = eng
+            if in_eng is None:
+                self._rs = rs
+                self._in_eng = -1.*np.ones_like(rs)
+                self._N_underflow = np.zeros_like(rs)
+                self._eng_underflow = np.zeros_like(rs)
+            elif rs is None:
+                self._in_eng = in_eng
+                self._rs = -1.*np.ones_like(in_eng)
+                self._N_underflow = np.zeros_like(in_eng)
+                self._eng_underflow = np.zeros_like(in_eng)
 
         if spec_arr != []:
 
@@ -49,6 +72,9 @@ class Spectra:
                 raise TypeError(
                     "all Spectrum must have spec_type 'N' or 'dNdE'."
                 )
+
+            if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+                raise TypeError("all abscissae must be the same.")
 
             self._grid_vals = np.atleast_2d(
                 np.stack([spec._data for spec in spec_arr])
@@ -64,13 +90,8 @@ class Spectra:
                 [spec.underflow['eng'] for spec in spec_arr]
             )
 
-            if rebin_eng is not None:
-                self.rebin(rebin_eng)
-
-            if not utils.arrays_equal([spec.eng for spec in spec_arr]):
-                raise TypeError("all abscissae must be the same.")
-
-            
+        if rebin_eng is not None:
+            self.rebin(rebin_eng)
 
         else:
 

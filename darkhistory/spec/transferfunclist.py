@@ -199,6 +199,7 @@ class TransferFuncList:
             ]
 
             self._tflist = new_tflist
+            self._grid_vals = np.transpose(self.grid_vals, (1,0,2))
             self._tftype = 'rs'
 
         elif self.tftype == 'rs':
@@ -210,6 +211,7 @@ class TransferFuncList:
             ]
 
             self._tflist = new_tflist
+            self._grid_vals = np.transpose(self.grid_vals, (1,0,2))
             self._tftype = 'in_eng'
 
         else:
@@ -314,6 +316,53 @@ class TransferFuncList:
 
         self._rs = np.array([tfunc.rs[0] for tfunc in new_tflist])
         self._dlnz *= dlnz_factor
+
+class TransferFuncInterp:
+
+    """Interpolation function over list of TransferFuncList objects.
+
+    Parameters
+    ----------
+    tflist_arr : list of TransferFuncList
+        List of TransferFuncList objects to interpolate over.
+    xe_arr : ndarray
+        List of xe values corresponding to tflist_arr. 
+
+    Attributes
+    ----------
+    rs : ndarray
+        Redshift abscissa of the transfer functions. 
+    in_eng : ndarray
+        Injection energy abscissa of the transfer functions.
+    dlnz : float
+        The d ln(1+z) step for the transfer functions.
+    
+    """
+
+    from scipy.interpolate import interp2d
+
+    def __init__(self, xe_arr, tflist_arr):
+
+        if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
+            raise TypeError('all TransferFuncList must have the same tftype.')
+
+        tftype = tflist_arr[0].tftype
+        grid_vals = np.array(
+            np.stack(
+                [tf.grid_vals for tf in highengphot_tflist_arr_raw[0]]
+            ), 
+            ndmin = 4
+        )
+        if tftype == 'eng':
+            # grid_vals should have indices corresponding to
+            # (xe, rs, in_eng, eng). 
+            grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
+
+        # grid_vals is (xe, rs, in_eng, eng). 
+
+
+
+
 
 
 

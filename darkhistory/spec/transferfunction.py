@@ -49,35 +49,35 @@ class TransFuncAtEnergy(Spectra):
             spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
         )
 
-        if spec_arr != []:
-            self._grid_vals = np.atleast_2d(
-                    np.stack([spec._data for spec in spec_arr])
-                )
-            self._spec_type = spec_arr[0].spec_type
-            self._eng = spec_arr[0].eng
-            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
-            if len(set(self._in_eng)) > 1:
-                raise TypeError('injection energies must be the same.')
+        # if spec_arr != []:
+        #     self._grid_vals = np.atleast_2d(
+        #             np.stack([spec._data for spec in spec_arr])
+        #         )
+        #     self._spec_type = spec_arr[0].spec_type
+        #     self._eng = spec_arr[0].eng
+        #     self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+        #     if len(set(self._in_eng)) > 1:
+        #         raise TypeError('injection energies must be the same.')
             
-            if np.any(self.rs <= 0):
-                raise TypeError("injection energy of all spectra must be set.")
-            self._rs = np.array([spec.rs for spec in spec_arr])
-            self._N_underflow = np.array(
-                [spec.underflow['N'] for spec in spec_arr]
-            )
-            self._eng_underflow = np.array(
-                [spec.underflow['eng'] for spec in spec_arr]
-            )
+        #     if np.any(self.rs <= 0):
+        #         raise TypeError("injection energy of all spectra must be set.")
+        #     self._rs = np.array([spec.rs for spec in spec_arr])
+        #     self._N_underflow = np.array(
+        #         [spec.underflow['N'] for spec in spec_arr]
+        #     )
+        #     self._eng_underflow = np.array(
+        #         [spec.underflow['eng'] for spec in spec_arr]
+        #     )
 
-        else:
+        # else:
 
-            self._grid_vals = np.atleast_2d([])
-            self._spec_type = spec_type
-            self._eng = np.array([])
-            self._in_eng = np.array([])
-            self._rs = np.array([])
-            self._N_underflow = np.array([])
-            self._eng_underflow = np.array([])
+        #     self._grid_vals = np.atleast_2d([])
+        #     self._spec_type = spec_type
+        #     self._eng = np.array([])
+        #     self._in_eng = np.array([])
+        #     self._rs = np.array([])
+        #     self._N_underflow = np.array([])
+        #     self._eng_underflow = np.array([])
 
     def __iter__(self):
         return iter(self.grid_vals)
@@ -221,34 +221,34 @@ class TransFuncAtRedshift(Spectra):
         )
         self.dlnz = dlnz
 
-        if spec_arr != []:
-            self._grid_vals = np.atleast_2d(
-                    np.stack([spec._data for spec in spec_arr])
-                )
-            self._spec_type = spec_arr[0].spec_type
-            self._eng = spec_arr[0].eng
-            if np.any(self.in_eng <= 0):
-                raise TypeError("injection energy of all spectra must be set.")
-            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
-            self._rs = np.array([spec.rs for spec in spec_arr])
-            if len(set(self._rs)) > 1:
-                raise TypeError('all spectra must have the same redshift.')
-            self._N_underflow = np.array(
-                [spec.underflow['N'] for spec in spec_arr]
-            )
-            self._eng_underflow = np.array(
-                [spec.underflow['eng'] for spec in spec_arr]
-            )
+        # if spec_arr != []:
+        #     self._grid_vals = np.atleast_2d(
+        #             np.stack([spec._data for spec in spec_arr])
+        #         )
+        #     self._spec_type = spec_arr[0].spec_type
+        #     self._eng = spec_arr[0].eng
+        #     if np.any(self.in_eng <= 0):
+        #         raise TypeError("injection energy of all spectra must be set.")
+        #     self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+        #     self._rs = np.array([spec.rs for spec in spec_arr])
+        #     if len(set(self._rs)) > 1:
+        #         raise TypeError('all spectra must have the same redshift.')
+        #     self._N_underflow = np.array(
+        #         [spec.underflow['N'] for spec in spec_arr]
+        #     )
+        #     self._eng_underflow = np.array(
+        #         [spec.underflow['eng'] for spec in spec_arr]
+        #     )
 
-        else:
+        # else:
 
-            self._grid_vals = np.atleast_2d([])
-            self._spec_type = spec_type
-            self._eng = np.array([])
-            self._in_eng = np.array([])
-            self._rs = np.array([])
-            self._N_underflow = np.array([])
-            self._eng_underflow = np.array([])
+        #     self._grid_vals = np.atleast_2d([])
+        #     self._spec_type = spec_type
+        #     self._eng = np.array([])
+        #     self._in_eng = np.array([])
+        #     self._rs = np.array([])
+        #     self._N_underflow = np.array([])
+        #     self._eng_underflow = np.array([])
 
     
 
