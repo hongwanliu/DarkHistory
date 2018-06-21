@@ -41,12 +41,13 @@ class TransFuncAtEnergy(Spectra):
 
     """
     def __init__(
-        self, spec_arr, spec_type='dNdE', dlnz=-1, rebin_eng=None
+        self, spec_arr, eng=None, in_eng=None, rs=None,spec_type='dNdE', dlnz=-1, rebin_eng=None
     ):
 
         self.dlnz = dlnz
         super().__init__(
-            spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
+            spec_arr, eng=eng, in_eng=in_eng, rs=rs,
+            spec_type=spec_type, rebin_eng=rebin_eng
         )
 
         # if spec_arr != []:
@@ -213,11 +214,12 @@ class TransFuncAtRedshift(Spectra):
     """
 
     def __init__(
-        self, spec_arr, dlnz=-1, spec_type='dNdE', rebin_eng=None
+        self, spec_arr, eng=None, in_eng=None, rs=None, 
+        dlnz=-1, spec_type='dNdE', rebin_eng=None
     ):
 
         super().__init__(
-            spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
+            spec_arr, eng=eng, in_eng=in_eng, rs=rs,spec_type=spec_type, rebin_eng=rebin_eng
         )
         self.dlnz = dlnz
 

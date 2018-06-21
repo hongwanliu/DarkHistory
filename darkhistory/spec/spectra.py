@@ -66,7 +66,10 @@ class Spectra:
                 self._N_underflow = np.zeros_like(in_eng)
                 self._eng_underflow = np.zeros_like(in_eng)
 
-        if spec_arr != []:
+            if rebin_eng is not None:
+                self.rebin(rebin_eng)
+
+        elif spec_arr != []:
 
             if len(set([spec.spec_type for spec in spec_arr])) != 1:
                 raise TypeError(
@@ -90,8 +93,8 @@ class Spectra:
                 [spec.underflow['eng'] for spec in spec_arr]
             )
 
-        if rebin_eng is not None:
-            self.rebin(rebin_eng)
+            if rebin_eng is not None:
+                self.rebin(rebin_eng)
 
         else:
 

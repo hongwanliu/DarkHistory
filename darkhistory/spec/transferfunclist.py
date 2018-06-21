@@ -334,8 +334,12 @@ class TransferFuncInterp:
         Redshift abscissa of the transfer functions. 
     in_eng : ndarray
         Injection energy abscissa of the transfer functions.
+    eng : ndarray
+        Energy abscissa of the spectrum. 
     dlnz : float
         The d ln(1+z) step for the transfer functions.
+    interp_func : function
+        A 2D interpolation function over xe and rs. 
     
     """
 
@@ -359,6 +363,24 @@ class TransferFuncInterp:
             grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
 
         # grid_vals is (xe, rs, in_eng, eng). 
+
+        self.rs     = tflist_arr[0].rs
+        self.in_eng = tflist_arr[0].in_eng
+        self.eng    = tflist_arr[0].eng
+        self.dlnz   = tflist_arr[0].dlnz
+
+        # The ordering should be correct... 
+        self.interp_func = interp2d(rs, xe, grid_vals)
+
+    def get_tf(self, rs, xe):
+
+        interp_vals = self.interp_func(rs, xe)
+        return tf.TransFuncAtRedshift(
+            interp_vals, eng=self.eng, 
+            in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
+        )
+
+
 
 
 
