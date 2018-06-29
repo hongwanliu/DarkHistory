@@ -2,6 +2,7 @@
 
 import numpy as np
 from numpy.linalg import matrix_power
+from scipy.interpolate import interp1d
 
 from darkhistory.utilities import arrays_equal
 from darkhistory.spec.spectrum import Spectrum
@@ -343,8 +344,6 @@ class TransferFuncInterp:
     
     """
 
-    from scipy.interpolate import interp2d
-
     def __init__(self, xe_arr, tflist_arr):
 
         if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
@@ -353,7 +352,7 @@ class TransferFuncInterp:
         tftype = tflist_arr[0].tftype
         grid_vals = np.array(
             np.stack(
-                [tf.grid_vals for tf in highengphot_tflist_arr_raw[0]]
+                [tflist.grid_vals for tflist in tflist_arr]
             ), 
             ndmin = 4
         )
@@ -370,13 +369,16 @@ class TransferFuncInterp:
         self.dlnz   = tflist_arr[0].dlnz
 
         # The ordering should be correct... 
-        self.interp_func = interp2d(rs, xe, grid_vals)
+        print(xe_arr)
+        self.interp_func_xe = interp1d(xe_arr, grid_vals, axis=0)
 
     def get_tf(self, rs, xe):
 
-        interp_vals = self.interp_func(rs, xe)
+        interp_vals_xe = self.interp_func_xe(xe)
+        interp_vals_rs = interp1d(self.rs, interp_vals_xe, axis=0)
+
         return tf.TransFuncAtRedshift(
-            interp_vals, eng=self.eng, 
+            interp_vals_rs(rs), eng=self.eng, 
             in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
         )
 

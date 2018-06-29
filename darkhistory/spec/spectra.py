@@ -50,17 +50,23 @@ class Spectra:
             if eng is None:
                 raise TypeError('Must specify eng to initialize Spectra using an ndarray.')
             if in_eng is None and rs is None:
-                raise TypeError('Must specify either eng or rs to initialize Spectra using an ndarray.')
+                raise TypeError('Must specify either in_eng or rs to initialize Spectra using an ndarray.')
 
             self._grid_vals = np.atleast_2d(spec_arr)
             self._spec_type = spec_type
+            if eng.size != spec_arr.shape[-1]:
+                raise TypeError('eng array not the same shape as last axis of spec_arr.')
             self._eng = eng
             if in_eng is None:
+                if rs.size != spec_arr.shape[0]:
+                    raise TypeError('rs array not the same shape as first axis of spec_arr.')
                 self._rs = rs
                 self._in_eng = -1.*np.ones_like(rs)
                 self._N_underflow = np.zeros_like(rs)
                 self._eng_underflow = np.zeros_like(rs)
             elif rs is None:
+                if in_eng.size != spec_arr.shape[0]:
+                    raise TypeError('in_eng array not the same shape as first axis of spec_arr.')
                 self._in_eng = in_eng
                 self._rs = -1.*np.ones_like(in_eng)
                 self._N_underflow = np.zeros_like(in_eng)
