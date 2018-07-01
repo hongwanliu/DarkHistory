@@ -20,6 +20,9 @@ alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in C."""
+G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
+"""Newton's constant in cm^5 s^-4 eV^-1"""
+
 
 # Atomic and optical physics
 

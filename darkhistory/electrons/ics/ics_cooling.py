@@ -71,6 +71,9 @@ def get_ics_cooling_tf(
     eleceng_low = eleceng[eleceng <= loweng]
     eleceng_low_ind  = np.arange(eleceng.size)[eleceng <= loweng]
 
+    if eleceng_low.size == 0:
+        raise TypeError('Energy abscissa must contain a low energy bin below 250 eV.')
+
     # Empty containers for quantities.
     # Final full photon spectrum.
     sec_phot_tf = tf.TransFuncAtRedshift([], dlnz=-1, spec_type='N')

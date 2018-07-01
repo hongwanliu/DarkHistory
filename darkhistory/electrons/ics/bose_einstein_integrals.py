@@ -2028,11 +2028,13 @@ def F_x_log_a(lowlim, a, tol=1e-10):
             tol = tol
         )
 
-    if np.any(low):
-        bound_flt64 = np.array(bound, dtype='float64')
-        a_flt64 = np.array(a, dtype='float64')
-        lowlim_flt64 = np.array(lowlim, dtype='float64')
+    bound_flt64 = np.array(bound, dtype='float64')
+    a_flt64 = np.array(a, dtype='float64')
+    lowlim_flt64 = np.array(lowlim, dtype='float64')
 
+
+    if np.any(low):
+        
         integral[low] = (
             low_summand(bound_flt64[low], a_flt64[low], 1)
             - low_summand(lowlim_flt64[low], a_flt64[low], 1)
