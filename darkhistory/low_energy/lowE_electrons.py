@@ -70,7 +70,7 @@ def make_interpolators():
     ]
 
 make_interpolators()
-def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
+def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     """ Given an electron energy spectrum, calculate how much of that energy splits into
     heating of the IGM, lyman_alpha transitions, H ionization, He ionization, and continuum photons.
 
@@ -80,8 +80,8 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
         spectrum of primary electrons
     xHII : float
         The ionization fraction nHII/nH.
-    tot_inj : float
-        dE/dVdt energy injection rate of DM per volume per time
+    dE_dVdt_inj : float
+        dE/dVdt, i.e. energy injection rate of DM per volume per time
 
     Returns
     -------
@@ -106,6 +106,6 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
     )
 
     #compute ratio of deposited divided by injected
-    norm_factor = phys.nB * rs**3 / (time_step * tot_inj)
+    norm_factor = phys.nB * rs**3 / (time_step * dE_dVdt_inj)
     tmpList = e_spectrum.eng * e_spectrum.N * norm_factor
     return np.array([sum(cont*tmpList), sum(lyman*tmpList), sum(ionH*tmpList), sum(ionHe*tmpList), sum(heat*tmpList)])
