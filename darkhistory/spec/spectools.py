@@ -386,7 +386,7 @@ def evolve(
 
     Note
     ----
-    if `evolve_type = 'dep'`, the Spectrum object in the ouput Spectra with redshift rs corresponds to energy deposited between [rs - dlnz, rs]
+    if `evolve_type = 'dep'`, the Spectrum object in the ouput Spectra with redshift rs corresponds to energy deposited between [rs - dz, rs]
     """
     from darkhistory.spec.spectra import Spectra
 
@@ -442,8 +442,8 @@ def evolve(
                 in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
                 next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
 
-                in_spec_dep.rs = tflist.rs[i+1]
-                next_spec.rs   = tflist.rs[i+1]
+                in_spec_dep.rs = tflist.rs[i]
+                next_spec.rs   = tflist.rs[i]
 
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
