@@ -475,3 +475,28 @@ def evolve(
             in_spec.switch_spec_type()
 
         return in_spec
+
+
+def get_normalized_spec(spec, dE_dVdt, rs):
+    """
+    Normalizes the spectrum to per baryon per dlnz, given dE/(dV dt). 
+
+    Parameters
+    ----------
+    spec : Spectrum
+        Input spectrum to be normalized. 
+    dE_dVdt : float
+        The injection dE/(dV dt) in eV cm^-3 s^-1. 
+    rs : float
+        The redshift (1+z). 
+
+    Returns
+    -------
+    Spectrum
+        The normalized spectrum (per baryon per dlnz). 
+
+    """
+
+    dE_dNBdlnz = dE_dVdt/(phys.nB*rs**3)/phys.hubble(rs)
+
+    return spec/spec.toteng()*dEdNBdlnz
