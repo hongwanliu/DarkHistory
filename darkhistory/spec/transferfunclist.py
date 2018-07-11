@@ -392,7 +392,7 @@ class TransferFuncInterp:
         #     in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
         # )
 
-        out_grid_vals = self.interp_func([xe, rs])
+        out_grid_vals = np.squeeze(self.interp_func([xe, rs]))
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
             rs=self.rs, dlnz=self.dlnz

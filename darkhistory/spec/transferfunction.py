@@ -192,8 +192,13 @@ class TransFuncAtRedshift(Spectra):
 
     Parameters
     ----------
-    spec_arr : list of Spectrum
+    spec_arr : list of Spectrum or ndarray
         List of Spectrum to be stored together. 
+    eng : ndarray
+        The energy abscissa of each Spectrum. 
+    in_eng : ndarray
+        The injection energy abscissa. 
+    rs : ndarray
     dlnz : float
         d ln(1+z) associated with this transfer function. 
     spec_type : {'N', 'dNdE'}, optional

@@ -16,10 +16,16 @@ class Spectra:
 
     Parameters
     ----------
-    spec_arr : list of Spectrum
-        List of `Spectrum` to be stored together. 
+    spec_arr : list of Spectrum or ndarray
+        List of `Spectrum` or array to be stored together. 
     spec_type : {'N', 'dNdE'}, optional
         The type of entries. Default is 'dNdE'.
+    in_eng : ndarray
+        Array of injection energies corresponding to each spectrum. 
+    eng : ndarray
+        Array of energy abscissa of each spectrum. 
+    rs : ndarray
+        Array of redshifts corresponding to each spectrum. 
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the spectra into. 
 
