@@ -26,6 +26,8 @@ class TransferFuncList:
         Redshift abscissa of the transfer functions. 
     in_eng : ndarray
         Injection energy abscissa of the transfer functions.
+    spec_type : {'N', 'dNdE'}
+        The type of spectra stored in the transfer functions.
     dlnz : float
         The d ln(1+z) step for the transfer functions.
     """
@@ -33,6 +35,7 @@ class TransferFuncList:
     def __init__(self, tflist):
 
         self._tflist = tflist
+        self.spec_type = tflist[0].spec_type
 
         if (not np.all([isinstance(tfunc, tf.TransFuncAtRedshift) 
                 for tfunc in tflist]) and
@@ -339,6 +342,8 @@ class TransferFuncInterp:
         Energy abscissa of the spectrum. 
     dlnz : float
         The d ln(1+z) step for the transfer functions.
+    spec_type : {'N', 'dNdE'}
+        The type of spectra stored in the transfer functions.
     interp_func : function
         A 2D interpolation function over xe and rs. 
     
@@ -368,6 +373,7 @@ class TransferFuncInterp:
         self.in_eng = tflist_arr[0].in_eng
         self.eng    = tflist_arr[0].eng
         self.dlnz   = tflist_arr[0].dlnz
+        self.spec_type = tflist_arr[0].spec_type
         self._grid_vals = grid_vals
 
         if self.rs[0] - self.rs[1] > 0:
@@ -393,9 +399,14 @@ class TransferFuncInterp:
         # )
 
         out_grid_vals = np.squeeze(self.interp_func([xe, rs]))
+        print('Inside get_tf.......')
+        print(out_grid_vals.shape)
+        print(self.in_eng.shape)
+        print('********************')
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
-            rs=self.rs, dlnz=self.dlnz
+            rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
+            spec_type = self.spec_type
         )
 
 

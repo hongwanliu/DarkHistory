@@ -3,7 +3,9 @@ sys.path.append("../..")
 
 import numpy as np
 
+from darkhistory import physics as phys
 from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
@@ -41,7 +43,9 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
     The CMB component hasn't been subtracted from the continuum photons yet
     Think about the exceptions that should be thrown (spec_elec.rs should equal spec_phot.rs)
     """
-    ion_indx = spectools.get_indx(eng,phys.rydberg) #Check this
+    ion_indx = spectools.get_indx(
+        eng, phys.rydberg
+    ) #Check this, also check spec_phot.eng?
 
     ionized_elec = Spectrum(
         spec_phot.eng[ion_indx:], spec_phot.N[ion_indx:], rs=spec_phot.rs, spec_type='N'
