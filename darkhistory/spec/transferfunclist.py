@@ -399,10 +399,7 @@ class TransferFuncInterp:
         # )
 
         out_grid_vals = np.squeeze(self.interp_func([xe, rs]))
-        print('Inside get_tf.......')
-        print(out_grid_vals.shape)
-        print(self.in_eng.shape)
-        print('********************')
+        
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
             rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,

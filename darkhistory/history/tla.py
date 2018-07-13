@@ -51,9 +51,9 @@ def get_history(
     ----------
     init_cond : array
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII].
-    fz_H_ion_in : function or float
+    f_H_ion_in : function or float
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
-    fz_H_exc_in : function
+    f_H_exc_in : function
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation. Treated as constant if float.
     f_heating_in : function
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
@@ -78,29 +78,29 @@ def get_history(
     # Defines the f(z) functions, which return a constant, 
     # if the input fz's are floats. 
 
-    def fz_H_ion(rs, xHI, xHeI, xHeII):
-        if isinstance(fz_H_ion_in, float):
-            return fz_H_ion_in
-        elif callable(fz_H_ion_in):
-            return fz_H_ion_in(rs, xHI, xHeI, xHeII)
+    def f_H_ion(rs, xHI, xHeI, xHeII):
+        if isinstance(f_H_ion_in, float):
+            return f_H_ion_in
+        elif callable(f_H_ion_in):
+            return f_H_ion_in(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('fz_H_ion_in must be float or an appropriate function.')
+            raise TypeError('f_H_ion_in must be float or an appropriate function.')
 
-    def fz_H_exc(rs, xHI, xHeI, xHeII):
-        if isinstance(fz_H_exc_in, float):
-            return fz_H_ion_in
-        elif callable(fz_H_ion_in):
-            return fz_H_ion_in(rs, xHI, xHeI, xHeII)
+    def f_H_exc(rs, xHI, xHeI, xHeII):
+        if isinstance(f_H_exc_in, float):
+            return f_H_exc_in
+        elif callable(f_H_exc_in):
+            return f_H_exc_in(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('fz_H_ion_in must be float or an appropriate function.')
+            raise TypeError('f_H_exc_in must be float or an appropriate function.')
 
-    def fz_H_ion(rs, xHI, xHeI, xHeII):
-        if isinstance(fz_H_ion_in, float):
-            return fz_H_ion_in
-        elif callable(fz_H_ion_in):
-            return fz_H_ion_in(rs, xHI, xHeI, xHeII)
+    def f_heating(rs, xHI, xHeI, xHeII):
+        if isinstance(f_heating_in, float):
+            return f_heating_in
+        elif callable(f_heating_in):
+            return f_heating_in(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('fz_H_ion_in must be float or an appropriate function.')
+            raise TypeError('f_heating_in must be float or an appropriate function.')
 
     chi = phys.nHe/phys.nH
 
@@ -352,37 +352,43 @@ def get_history(
     init_cond[3] = np.arctanh(2/chi *(init_cond[3] - chi/2))
 
     rs_before_reion = rs_vec[rs_vec > 16.1]
+    rs_reion = rs_vec[rs_vec <= 16.1]
+
     if reion_switch:
-        rs_reion = rs_vec[rs_vec <= 16.1]
-        rs_before_reion = np.append(rs_before_reion, rs_reion[0])
 
-    if np.size(rs_before_reion) > 1 and reion_switch:
-        soln_before_reion = odeint(
-            tla_before_reion, init_cond, rs_before_reion, mxstep = 500
-        )
+        if rs_reion.size == 0:
+            soln = odeint(
+                tla_before_reion, init_cond, rs_before_reion, mxstep = 1000
+            )
 
-        init_cond_reion = [
-            soln_before_reion[-1,0],
-            soln_before_reion[-1,1],
-            np.arctanh(2/(chi)*(1e-12 - chi/2)),
-            np.arctanh(2/(chi)*(1e-12 - chi/2))
-        ]
+        elif rs_before_reion.size <= 1:
+            if rs_before_reion.size == 1:
+                # Covers the case where there is only 1 
+                # redshift before reionization.
+                rs_reion = np.insert(rs_reion, 0, rs_before_reion[0])
+            soln = odeint(
+                tla_reion, init_cond, rs_reion, mxstep = 1000
+            )
 
-        soln_reion = odeint(
-            tla_reion, init_cond_reion, rs_reion, mxstep = 1000,
-        )
+        else:
+            rs_reion = np.insert(rs_reion, 0, rs_before_reion[0])
+            
+            soln_before_reion = odeint(
+                tla_before_reion, init_cond, rs_before_reion, mxstep = 500
+            )
 
-        soln = np.vstack((soln_before_reion[:-1,:], soln_reion))
+            init_cond_reion = [
+                soln_before_reion[-1,0],
+                soln_before_reion[-1,1],
+                np.arctanh(2/(chi)*(1e-12 - chi/2)),
+                np.arctanh(2/(chi)*(1e-12 - chi/2))
+            ]
 
-    elif np.size(rs_before_reion) <= 1 and reion_switch:
-        soln = odeint(
-            tla_reion, init_cond, rs_reion, mxstep = 1000,
-        )
+            soln_reion = odeint(
+                tla_reion, init_cond_reion, rs_reion, mxstep = 1000,
+            )
 
-    else:
-        soln = odeint(
-            tla_before_reion, init_cond, rs_vec, mxstep = 1000
-        )
+            soln = np.vstack((soln_before_reion[:-1,:], soln_reion))
 
     soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
     soln[:,2] = (
