@@ -390,6 +390,12 @@ def get_history(
 
             soln = np.vstack((soln_before_reion[:-1,:], soln_reion))
 
+    else:
+
+        soln = odeint(
+                tla_before_reion, init_cond, rs_vec, mxstep = 1000
+            )
+
     soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
     soln[:,2] = (
         chi/2 + chi/2*np.tanh(soln[:,2])

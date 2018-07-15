@@ -398,6 +398,12 @@ class TransferFuncInterp:
         #     in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
         # )
 
+        # xe must lie between these values.
+        if xe > self.xe[-1]:
+            xe = self.xe[-1]
+        if xe < self.xe[0]:
+            xe = self.xe[0]
+
         out_grid_vals = np.squeeze(self.interp_func([xe, rs]))
         
         return tf.TransFuncAtRedshift(
