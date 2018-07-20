@@ -43,12 +43,16 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
     The CMB component hasn't been subtracted from the continuum photons yet
     Think about the exceptions that should be thrown (spec_elec.rs should equal spec_phot.rs)
     """
+
     ion_indx = spectools.get_indx(
         spec_phot.eng, phys.rydberg
     ) #Check this, also check spec_phot.eng?
 
+    # np.array syntax below needed so that a fresh copy of eng and N are passed to the
+    # constructor, instead of simply a reference. 
+
     ionized_elec = Spectrum(
-        spec_phot.eng[ion_indx:], spec_phot.N[ion_indx:], rs=spec_phot.rs, spec_type='N'
+        np.array(spec_phot.eng[ion_indx:]), np.array(spec_phot.N[ion_indx:]), rs=spec_phot.rs, spec_type='N'
     ) #Change this so that it uses totN(bin_bounds)
 
     new_eng = ionized_elec.eng - phys.rydberg
@@ -59,14 +63,18 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
     # rebin so that ionized_elec may be added to spec_elec
     indx = ionized_elec.eng.size
     ionized_elec.rebin(spec_elec.eng[:indx+1])
-    spec_elec.N[:indx+1] += ionized_elec.N
+
+    # Changed this so that spec_elec is not modified. 
+    # spec_elec.N[:indx+1] += ionized_elec.N
+    tmp_spec_elec = Spectrum(np.array(spec_elec.eng), np.array(spec_elec.N), rs=spec_elec.rs, spec_type='N')
+    tmp_spec_elec.N[:indx+1] += ionized_elec.N
 
     f_phot = lowE_photons.compute_fs(
         spec_phot, x, dE_dVdt, time_step, method
     )
 
     f_elec = lowE_electrons.compute_fs(
-        spec_elec, 1-x[0], dE_dVdt, time_step
+        tmp_spec_elec, 1-x[0], dE_dVdt, time_step
     )
 
     return f_phot + f_elec
