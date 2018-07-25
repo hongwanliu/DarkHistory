@@ -230,7 +230,7 @@ def ionize_s_cs_H(E_in, E_sec):
     '''
     Calculates the integrated, singly-differential ionization cross section (xsec) 
     for electrons impacting H at a particular 
-    kinetic energy of the incident over a log-space vecotr of secondary energies. 
+    kinetic energy of the incident over a log-space vector of secondary energies. 
     
     Parameters
     ----------

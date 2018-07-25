@@ -70,7 +70,6 @@ def make_interpolators():
     ]
 
 make_interpolators()
-print('am i called multiple times?')
 def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     """ Given an electron energy spectrum, calculate how much of that energy splits into
     heating of the IGM, lyman_alpha transitions, H ionization, He ionization, and continuum photons.
@@ -112,6 +111,11 @@ def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     # print('check tmpList: ', tmpList[100:110])
     heat, lyman, ionH, ionHe, cont = (
         heat/tmpList, lyman/tmpList, ionH/tmpList, ionHe/tmpList, cont/tmpList
+    )
+
+    print('Normalized electron heat, lyman, ionH, ionHe, cont: ', 
+        np.sum(heat)/heat.size, np.sum(lyman)/lyman.size, np.sum(ionH)/ionH.size, 
+        np.sum(ionHe)/ionHe.size, np.sum(cont)/cont.size
     )
 
     # print('check 2 heat: ', heat[100:110])
