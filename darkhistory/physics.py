@@ -3,9 +3,10 @@
 """
 
 import numpy as np
+from scipy.interpolate import interp1d
 
 # Fundamental constants
-mp          = 0.938272081e9                     
+mp          = 0.938272081e9
 """Proton mass in eV."""
 me          = 510998.9461
 """Electron mass in eV."""
@@ -28,6 +29,8 @@ stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
 rydberg      = 13.60569253
 """Ionization potential of ground state hydrogen in eV."""
+He_ion_eng      = 24.6
+"""Energy needed to singly ionize neutral He in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
@@ -50,7 +53,7 @@ H0   = 100*h*3.241e-20
 
 # Omegas
 
-omega_m      = 0.3156 
+omega_m      = 0.3156
 """ Omega of all matter today."""
 omega_rad    = 8e-5
 """ Omega of radiation today."""
@@ -71,7 +74,7 @@ rho_baryon   = rho_crit*omega_baryon
 """ Baryon density in eV/cm^3."""
 nB          = rho_baryon/mp
 """ Baryon number density in cm^-3."""
-YHe         = 0.250                       
+YHe         = 0.250
 """Helium abundance by mass."""
 nH          = (1-YHe)*nB
 """ Atomic hydrogen number density in cm^-3."""
@@ -82,23 +85,23 @@ nA          = nH + nHe
 
 # Cosmology functions
 
-def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda): 
+def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
     """ Hubble parameter in s^-1.
 
-    Assumes a flat universe. 
-    
+    Assumes a flat universe.
+
     Parameters
     ----------
     rs : float
-        The redshift of interest. 
+        The redshift of interest.
     H0 : float
-        The Hubble parameter today, default value `H0`. 
+        The Hubble parameter today, default value `H0`.
     omega_m : float, optional
-        Omega matter today, default value `omega_m`. 
+        Omega matter today, default value `omega_m`.
     omega_rad : float, optional
-        Omega radiation today, default value `omega_rad`. 
+        Omega radiation today, default value `omega_rad`.
     omega_lambda : float, optional
-        Omega dark energy today, default value `omega_lambda`. 
+        Omega dark energy today, default value `omega_lambda`.
 
     Returns
     -------
@@ -109,22 +112,22 @@ def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_l
     return H0*np.sqrt(omega_rad*rs**4 + omega_m*rs**3 + omega_lambda)
 
 def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ dt/dz in s. 
+    """ dt/dz in s.
 
-    Assumes a flat universe. 
+    Assumes a flat universe.
 
     Parameters
     ----------
     rs : float
-        The redshift of interest. 
+        The redshift of interest.
     H0 : float
-        The Hubble parameter today, default value `H0`. 
+        The Hubble parameter today, default value `H0`.
     omega_m : float, optional
-        Omega matter today, default value `omega_m`. 
+        Omega matter today, default value `omega_m`.
     omega_rad : float, optional
-        Omega radiation today, default value `omega_rad`. 
+        Omega radiation today, default value `omega_rad`.
     omega_lambda : float, optional
-        Omega dark energy today, default value `omega_lambda`. 
+        Omega dark energy today, default value `omega_lambda`.
 
     Returns
     -------
@@ -135,18 +138,18 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
 
 def get_optical_depth(rs_vec, xe_vec):
     """Computes the optical depth given an ionization history.
-    
+
     Parameters
     ----------
     rs_vec : ndarray
-        Redshift (1+z). 
+        Redshift (1+z).
     xe_vec : ndarray
-        Free electron fraction xe = ne/nH. 
+        Free electron fraction xe = ne/nH.
 
     Returns
     -------
     float
-        The optical depth. 
+        The optical depth.
     """
     from darkhistory.spec.spectools import get_log_bin_width
 
@@ -165,57 +168,156 @@ def get_inj_rate(inj_type, inj_fac):
     Parameters
     ----------
     inj_type : {'sWave', 'decay'}
-        The type of injection. 
+        The type of injection.
     inj_fac : float
-        The prefactor for the injection rate, consisting of everything other than the redshift dependence. 
+        The prefactor for the injection rate, consisting of everything other than the redshift dependence.
 
     Returns
     -------
     function
-        The function takes redshift as an input, and outputs the injection rate. 
+        The function takes redshift as an input, and outputs the injection rate.
     """
 
     def inj_rate(rs):
         if inj_type == 'sWave':
             return inj_fac*(rs**6)
-        elif inj_type == 'decay': 
+        elif inj_type == 'decay':
             return inj_fac*(rs**3)
 
     return inj_rate
 
+def alpha_recomb(T_matter):
+    """Case-B recombination coefficient.
+
+    Parameters
+    ----------
+    T_matter : float
+        The matter temperature.
+
+    Returns
+    -------
+    float
+        Case-B recombination coefficient in cm^3/s.
+    """
+
+    # Fudge factor recommended in 1011.3758
+    fudge_fac = 1.126
+
+    return (
+        fudge_fac * 1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
+        / (1 + 0.6703 * (1.16405*T_matter)**0.5300)
+    )
+
+def beta_ion(T_rad):
+    """Case-B photoionization coefficient.
+
+    Parameters
+    ----------
+    T_rad : float
+        The radiation temperature.
+
+    Returns
+    -------
+    float
+        Case-B photoionization coefficient in s^-1.
+
+    """
+    reduced_mass = mp*me/(mp + me)
+    de_broglie_wavelength = (
+        c * 2*np.pi*hbar
+        / np.sqrt(2 * np.pi * reduced_mass * T_rad)
+    )
+    return (
+        (1/de_broglie_wavelength)**3/4
+        * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad)
+    )
+
+# def betae(Tr):
+#   # Case-B photoionization coefficient
+#   thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
+#   return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
+
+def rate_2p1s(xe, rs):
+    """returns the rate at which Ly_a photons are emitted without being immediately absorbed
+
+    Parameters
+    ----------
+    xe : float
+        the ionization fraction ne/nH.
+    rs : float
+        the redshift in 1+z.
+
+    Returns
+    -------
+    float
+        Numerator of the Peebles C coefficient.
+    """
+    return (
+        8 * np.pi * hubble(rs)/
+        (3*(nH * rs**3 * (1-xe) * (c/lya_freq)**3))
+    )
+
+def peebles_C(xe, rs):
+    """Returns the Peebles C coefficient.
+
+    This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
+
+    Parameters
+    ----------
+    xe : float
+        The ionization fraction ne/nH.
+    Tm : float
+        The matter temperature.
+    rs : float
+        The redshift in 1+z.
+
+    Returns
+    -------
+    float
+        The Peebles C factor.
+    """
+    # Net rate for 2s to 1s transition.
+    rate_2s1s = width_2s1s
+
+    rate_exc = (3*rate_2p1s(xe, rs)/4 + rate_2s1s/4)
+
+    # Net rate for ionization.
+    rate_ion = beta_ion(TCMB(rs))
+
+    return rate_exc/(rate_exc + rate_ion)
 
 
 
 # Atomic Cross-Sections
 
 def photo_ion_xsec(eng, species):
-    """Photoionization cross section in cm^2. 
+    """Photoionization cross section in cm^2.
 
-    Cross sections for hydrogen, neutral helium and singly-ionized helium are available. 
+    Cross sections for hydrogen, neutral helium and singly-ionized helium are available.
 
     Parameters
     ----------
     eng : ndarray
-        Energy to evaluate the cross section at. 
+        Energy to evaluate the cross section at.
     species : {'H0', 'He0', 'He1'}
         Species of interest.
 
     Returns
     -------
     xsec : ndarray
-        Cross section in cm^2. 
+        Cross section in cm^2.
     """
 
-    eng_thres = {'H0':rydberg, 'He0':24.6, 'He1':4*rydberg}
+    eng_thres = {'H0':rydberg, 'He0':He_ion_eng, 'He1':4*rydberg}
 
     ind_above = np.where(eng > eng_thres[species])
     xsec = np.zeros(eng.size)
 
-    if species == 'H0' or species =='He1': 
+    if species == 'H0' or species =='He1':
         eta = np.zeros(eng.size)
         eta[ind_above] = 1./np.sqrt(eng[ind_above]/eng_thres[species] - 1.)
         xsec[ind_above] = (2.**9*np.pi**2*ele_rad**2/(3.*alpha**3)
-            * (eng_thres[species]/eng[ind_above])**4 
+            * (eng_thres[species]/eng[ind_above])**4
             * np.exp(-4*eta[ind_above]*np.arctan(1./eta[ind_above]))
             / (1.-np.exp(-2*np.pi*eta[ind_above]))
             )
@@ -233,7 +335,7 @@ def photo_ion_xsec(eng, species):
 
         x[ind_above]    = (eng[ind_above]/E0) - y0
         y[ind_above]    = np.sqrt(x[ind_above]**2 + y1**2)
-        xsec[ind_above] = (sigma0*((x[ind_above] - 1)**2 + yw**2) 
+        xsec[ind_above] = (sigma0*((x[ind_above] - 1)**2 + yw**2)
             *y[ind_above]**(0.5*P - 5.5)
             *(1 + np.sqrt(y[ind_above]/ya))**(-P)
             )
@@ -242,47 +344,47 @@ def photo_ion_xsec(eng, species):
 
 def photo_ion_rate(rs, eng, xH, xe, atom=None):
     """Photoionization rate in cm^3 s^-1.
- 
+
     Parameters
     ----------
     rs : float
         Redshift (1+z).
     eng : ndarray
-        Energies to evaluate the cross section. 
+        Energies to evaluate the cross section.
     xH : float
-        Ionization fraction nH+/nH. 
+        Ionization fraction nH+/nH.
     xe : float
         Ionization fraction ne/nH = nH+/nH + nHe+/nH.
     atom : {None,'H0','He0','He1'}, optional
         Determines which photoionization rate is returned. The default value is ``None``, which returns the total rate.
-     
+
     Returns
     -------
     ionrate : float
         The ionization rate of the particular species or the total ionization rate.
- 
+
     """
     atoms = ['H0', 'He0', 'He1']
- 
+
     xHe = xe - xH
-    atom_densities = {'H0':nH*(1-xH)*rs**3, 'He0':(nHe - xHe*nH)*rs**3, 
+    atom_densities = {'H0':nH*(1-xH)*rs**3, 'He0':(nHe - xHe*nH)*rs**3,
         'He1':xHe*nH*rs**3}
- 
-    ion_rate = {atom: photo_ion_xsec(eng,atom) * atom_densities[atom] * c 
+
+    ion_rate = {atom: photo_ion_xsec(eng,atom) * atom_densities[atom] * c
         for atom in atoms}
- 
+
     if atom is not None:
         return ion_rate[atom]
     else:
         return sum([ion_rate[atom] for atom in atoms])
 
 def tau_sobolev(rs):
-    """Sobolev optical depth. 
-    
+    """Sobolev optical depth.
+
     Parameters
     ----------
     rs : float
-        Redshift (1+z). 
+        Redshift (1+z).
     Returns
     -------
     float
@@ -291,6 +393,39 @@ def tau_sobolev(rs):
     lya_omega = lya_eng / hbar
 
     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
+
+def get_dLam2s_dnu():
+    """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
+
+    nu is the frequency of the more energetic photon.
+    To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    Lam : ndarray
+        Decay rate per nu.
+    """
+    coeff = 9 * alpha**6 * rydberg /(
+        2**10 * 2 * np.pi * hbar
+    )
+    print(coeff)
+
+    # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
+    # interpolating points come from Spitzer and Greenstein, 1951
+    y = np.arange(0, 1.05, .05)
+    psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
+                   4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
+
+    # evaluation outside of interpolation window yields 0.
+    f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
+    def dLam2s_dnu(nu):
+        return coeff * f(nu/lya_freq)
+
+    return dLam2s_dnu
+
 
 # CMB
 
@@ -310,7 +445,7 @@ def TCMB(rs):
     return 2.7255 * 8.61733e-5 * rs
 
 def CMB_spec(eng, temp):
-    """CMB spectrum in number of photons/cm^3/eV. 
+    """CMB spectrum in number of photons/cm^3/eV.
 
     Returns zero if the energy exceeds 500 times the temperature.
 
@@ -319,12 +454,12 @@ def CMB_spec(eng, temp):
     temp : float
         Temperature of the CMB in eV.
     eng : float or ndarray
-        Energy of the photon in eV. 
-    
+        Energy of the photon in eV.
+
     Returns
     -------
     phot_spec_density : ndarray
-        Returns the number of photons/cm^3/eV. 
+        Returns the number of photons/cm^3/eV.
 
     """
     prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
@@ -348,12 +483,12 @@ def CMB_spec(eng, temp):
                 eng/temp + (1/2)*(eng/temp)**2 + (1/6)*(eng/temp)**3
             )
         else:
-            expr = prefactor*np.exp(-eng/temp)/(1 - np.exp(-eng/temp))    
+            expr = prefactor*np.exp(-eng/temp)/(1 - np.exp(-eng/temp))
 
     return expr
 
 def CMB_eng_density(T):
-    """CMB energy density in eV/cm^3. 
+    """CMB energy density in eV/cm^3.
 
     Parameters
     ----------
@@ -367,3 +502,21 @@ def CMB_eng_density(T):
     """
 
     return 4*stefboltz/c*T**4
+
+def A_2s(y):
+    """2s to 1s two-photon decay probability density.
+
+    A_2s(y) * dy = probability that a photon is emitted with a frequency in the range nu_lya * [y, y+dy)
+    with the other photon constrained by h*nu_1 + h*nu_2 = 10.2 eV.
+
+    Parameters
+    ----------
+    y : float
+        nu / nu_lya, frequency of one of the photons divided by lyman-alpha frequency.
+
+    Returns
+    -------
+    float or ndarray
+        probability density of emitting those two photons.
+    """
+    return 0
