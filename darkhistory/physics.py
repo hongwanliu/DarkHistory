@@ -165,29 +165,56 @@ def get_optical_depth(rs_vec, xe_vec):
     )
 
 
-def get_inj_rate(inj_type, inj_fac):
-    """Dark matter injection rate function.
+# def get_inj_rate(inj_type, inj_fac):
+#     """Dark matter injection rate function.
+
+#     Parameters
+#     ----------
+#     inj_type : {'sWave', 'decay'}
+#         The type of injection.
+#     inj_fac : float
+#         The prefactor for the injection rate, consisting of everything other than the redshift dependence.
+
+#     Returns
+#     -------
+#     function
+#         The function takes redshift as an input, and outputs the injection rate.
+#     """
+
+#     def inj_rate(rs):
+#         if inj_type == 'sWave':
+#             return inj_fac*(rs**6)
+#         elif inj_type == 'decay':
+#             return inj_fac*(rs**3)
+
+#     return inj_rate
+
+def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
+    """ Dark matter annihilation/decay energy injection rate.
 
     Parameters
     ----------
-    inj_type : {'sWave', 'decay'}
-        The type of injection.
-    inj_fac : float
-        The prefactor for the injection rate, consisting of everything other than the redshift dependence.
+    inj_type : {'swave', 'decay'}
+        Type of injection. 
+    rs : float
+        The redshift of injection.
+    mDM : float, optional
+        DM mass in eV. 
+    sigmav : float, optional
+        Annihilation cross section in cm^3 s^-1. 
+    tau : float, optional
+        Decay lifetime in s.
 
     Returns
     -------
-    function
-        The function takes redshift as an input, and outputs the injection rate.
+    float
+        The dE/dV_dt injection rate in eV cm^-3 s^-1.
+
     """
-
-    def inj_rate(rs):
-        if inj_type == 'sWave':
-            return inj_fac*(rs**6)
-        elif inj_type == 'decay':
-            return inj_fac*(rs**3)
-
-    return inj_rate
+    if inj_type == 'swave':
+        return rho_DM**2*rs**6*sigmav/mDM
+    elif inj_type == 'decay':
+        return rho_DM*rs**3/tau
 
 def alpha_recomb(T_matter):
     """Case-B recombination coefficient.

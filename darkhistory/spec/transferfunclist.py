@@ -2,7 +2,7 @@
 
 import numpy as np
 from numpy.linalg import matrix_power
-from scipy.interpolate import interp1d
+from scipy.interpolate import RegularGridInterpolator
 
 from darkhistory.utilities import arrays_equal
 from darkhistory.spec.spectrum import Spectrum
@@ -26,6 +26,8 @@ class TransferFuncList:
         Redshift abscissa of the transfer functions. 
     in_eng : ndarray
         Injection energy abscissa of the transfer functions.
+    spec_type : {'N', 'dNdE'}
+        The type of spectra stored in the transfer functions.
     dlnz : float
         The d ln(1+z) step for the transfer functions.
     """
@@ -33,6 +35,7 @@ class TransferFuncList:
     def __init__(self, tflist):
 
         self._tflist = tflist
+        self.spec_type = tflist[0].spec_type
 
         if (not np.all([isinstance(tfunc, tf.TransFuncAtRedshift) 
                 for tfunc in tflist]) and
@@ -339,6 +342,8 @@ class TransferFuncInterp:
         Energy abscissa of the spectrum. 
     dlnz : float
         The d ln(1+z) step for the transfer functions.
+    spec_type : {'N', 'dNdE'}
+        The type of spectra stored in the transfer functions.
     interp_func : function
         A 2D interpolation function over xe and rs. 
     
@@ -364,24 +369,48 @@ class TransferFuncInterp:
         # grid_vals is (xe, rs, in_eng, eng). 
 
         self.rs     = tflist_arr[0].rs
+        self.xe     = xe_arr
         self.in_eng = tflist_arr[0].in_eng
         self.eng    = tflist_arr[0].eng
         self.dlnz   = tflist_arr[0].dlnz
+        self.spec_type = tflist_arr[0].spec_type
+        self._grid_vals = grid_vals
+
+        if self.rs[0] - self.rs[1] > 0:
+            # data points have been stored in decreasing rs.
+            self.rs = np.flipud(self.rs)
+            self._grid_vals = np.flip(self._grid_vals, 1)
+
+        # Now, data is stored in *increasing* rs.
 
         # The ordering should be correct... 
-        print(xe_arr)
-        self.interp_func_xe = interp1d(xe_arr, grid_vals, axis=0)
+        # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
+
+        self.interp_func = RegularGridInterpolator((self.xe, self.rs), grid_vals)
 
     def get_tf(self, rs, xe):
 
-        interp_vals_xe = self.interp_func_xe(xe)
-        interp_vals_rs = interp1d(self.rs, interp_vals_xe, axis=0)
+        # interp_vals_xe = self.interp_func_xe(xe)
+        # interp_vals_rs = interp1d(self.rs, interp_vals_xe, axis=0)
 
+        # return tf.TransFuncAtRedshift(
+        #     interp_vals_rs(rs), eng=self.eng, 
+        #     in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
+        # )
+
+        # xe must lie between these values.
+        if xe > self.xe[-1]:
+            xe = self.xe[-1]
+        if xe < self.xe[0]:
+            xe = self.xe[0]
+
+        out_grid_vals = np.squeeze(self.interp_func([xe, rs]))
+        
         return tf.TransFuncAtRedshift(
-            interp_vals_rs(rs), eng=self.eng, 
-            in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
+            out_grid_vals, eng=self.eng, in_eng=self.in_eng,
+            rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
+            spec_type = self.spec_type
         )
-
 
 
 

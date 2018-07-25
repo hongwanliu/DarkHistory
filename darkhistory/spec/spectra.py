@@ -16,10 +16,16 @@ class Spectra:
 
     Parameters
     ----------
-    spec_arr : list of Spectrum
-        List of `Spectrum` to be stored together. 
+    spec_arr : list of Spectrum or ndarray
+        List of `Spectrum` or array to be stored together. 
     spec_type : {'N', 'dNdE'}, optional
         The type of entries. Default is 'dNdE'.
+    in_eng : ndarray
+        Array of injection energies corresponding to each spectrum. 
+    eng : ndarray
+        Array of energy abscissa of each spectrum. 
+    rs : ndarray
+        Array of redshifts corresponding to each spectrum. 
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the spectra into. 
 
@@ -57,20 +63,27 @@ class Spectra:
             if eng.size != spec_arr.shape[-1]:
                 raise TypeError('eng array not the same shape as last axis of spec_arr.')
             self._eng = eng
+            
+            
+
             if in_eng is None:
-                if rs.size != spec_arr.shape[0]:
-                    raise TypeError('rs array not the same shape as first axis of spec_arr.')
-                self._rs = rs
-                self._in_eng = -1.*np.ones_like(rs)
-                self._N_underflow = np.zeros_like(rs)
-                self._eng_underflow = np.zeros_like(rs)
-            elif rs is None:
+                self._in_eng = -1.*np.ones_like(
+                    self._grid_vals.shape[0]
+                )
+            else:
                 if in_eng.size != spec_arr.shape[0]:
                     raise TypeError('in_eng array not the same shape as first axis of spec_arr.')
                 self._in_eng = in_eng
-                self._rs = -1.*np.ones_like(in_eng)
-                self._N_underflow = np.zeros_like(in_eng)
-                self._eng_underflow = np.zeros_like(in_eng)
+            if rs is None:
+                self._rs = -1.*np.ones_like(
+                    self._grid_vals.shape[0]
+                )
+            else:
+                if rs.size != spec_arr.shape[0]:
+                    raise TypeError('rs array not the same shape as first axis of spec_arr.')
+                self._rs = rs
+            self._N_underflow = np.zeros_like(rs)
+            self._eng_underflow = np.zeros_like(rs)
 
             if rebin_eng is not None:
                 self.rebin(rebin_eng)

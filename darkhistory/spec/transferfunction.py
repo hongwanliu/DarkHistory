@@ -162,7 +162,9 @@ class TransFuncAtEnergy(Spectra):
 
         """
         out_spec = super().sum_specs(weight)
-        out_spec.in_eng = self.in_eng
+        # Remember that self.in_eng is an array, all 
+        # having the same value.
+        out_spec.in_eng = self.in_eng[0]
 
         return out_spec
 
@@ -192,8 +194,13 @@ class TransFuncAtRedshift(Spectra):
 
     Parameters
     ----------
-    spec_arr : list of Spectrum
+    spec_arr : list of Spectrum or ndarray
         List of Spectrum to be stored together. 
+    eng : ndarray
+        The energy abscissa of each Spectrum. 
+    in_eng : ndarray
+        The injection energy abscissa. 
+    rs : ndarray
     dlnz : float
         d ln(1+z) associated with this transfer function. 
     spec_type : {'N', 'dNdE'}, optional
@@ -678,7 +685,9 @@ class TransFuncAtRedshift(Spectra):
 
         """
         out_spec = super().sum_specs(weight)
-        out_spec.rs = self.rs
+        # Remember that self.rs is an array, all with the 
+        # same value of rs.
+        out_spec.rs = self.rs[0]
         if self.spec_type == 'dNdE':
             out_spec._spec_type = 'dNdE'
         return out_spec

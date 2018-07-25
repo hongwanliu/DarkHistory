@@ -70,7 +70,8 @@ def make_interpolators():
     ]
 
 make_interpolators()
-def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
+print('am i called multiple times?')
+def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     """ Given an electron energy spectrum, calculate how much of that energy splits into
     heating of the IGM, lyman_alpha transitions, H ionization, He ionization, and continuum photons.
 
@@ -80,8 +81,8 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
         spectrum of primary electrons
     xHII : float
         The ionization fraction nHII/nH.
-    tot_inj : float
-        dE/dVdt energy injection rate of DM per volume per time
+    dE_dVdt_inj : float
+        dE/dVdt, i.e. energy injection rate of DM per volume per time
 
     Returns
     -------
@@ -99,13 +100,37 @@ def compute_dep_inj_ratio(e_spectrum, xHII, tot_inj, time_step):
         ]
     ]
 
+    # print('************ inside lowE_electrons.compute_fs ***********')
+
+    # print('check heat: ', heat[100:110])
+    # print('check lyman: ', lyman[100:110])
+    # print('check ionH: ', ionH[100:110])
+
+    
     #enforce that all functions sum to 1
     tmpList = (heat+lyman+ionH+ionHe+cont)
+    # print('check tmpList: ', tmpList[100:110])
     heat, lyman, ionH, ionHe, cont = (
         heat/tmpList, lyman/tmpList, ionH/tmpList, ionHe/tmpList, cont/tmpList
     )
 
+    # print('check 2 heat: ', heat[100:110])
+    # print('check 2 lyman: ', lyman[100:110])
+    # print('check 2 ionH: ', ionH[100:110])
+
+
     #compute ratio of deposited divided by injected
-    norm_factor = phys.nB * rs**3 / (time_step * tot_inj)
+    norm_factor = phys.nB * rs**3 / (time_step * dE_dVdt_inj)
     tmpList = e_spectrum.eng * e_spectrum.N * norm_factor
-    return np.array([sum(cont*tmpList), sum(lyman*tmpList), sum(ionH*tmpList), sum(ionHe*tmpList), sum(heat*tmpList)])
+    # print('check 2 tmpList: ', tmpList[100:110])
+    # print('check e_spectrum.toteng(): ', e_spectrum.toteng())
+    f_elec =  np.array([
+        np.dot(cont, tmpList), 
+        np.dot(lyman, tmpList), 
+        np.dot(ionH, tmpList), 
+        np.dot(ionHe, tmpList), 
+        np.dot(heat,tmpList)
+    ])
+    # print('f_elec: ', f_elec)
+
+    return f_elec

@@ -112,7 +112,7 @@ def kappa_DM(photon_spectrum, xe):
         kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*(1-xe)*Lambda/4
     )/(3*x1s_times_R_Lya/4 + (1-xe)*Lambda/4)
 
-def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
+def compute_fs(photon_spectrum, x, dE_dVdt_inj, time_step, method='old'):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited photons, resolve its energy into continuum photons,
@@ -121,11 +121,11 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     Parameters
     ----------
     photon_spectrum : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return energy per baryon.
-    n : list of floats
+        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return energy per baryon per time.
+    x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
-    tot_inj : float
-        total energy injected by DM, dE/dVdt |_inj
+    dE_dVdt_inj : float
+        energy injection rate DM, dE/dVdt |_inj
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
@@ -151,13 +151,14 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     n = x * phys.nH * rs**3
 
     # norm_factor converts from total deposited energy to f_c(z) = (dE/dVdt)dep / (dE/dVdt)inj
-    norm_factor = phys.nB * rs**3 / time_step / tot_inj
+    norm_factor = phys.nB * rs**3 / time_step / dE_dVdt_inj
 
     # All photons below 10.2eV get deposited into the continuum
     f_continuum = photon_spectrum.toteng(
         bound_type='eng',
         bound_arr=np.array([eng[0],phys.lya_eng])
     )[0] * norm_factor
+
 
     #----- Treatment of photoexcitation -----#
 
@@ -198,8 +199,9 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
     #print('Begin photoionization: ', time.time()-t0)
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
-        tot_ion_eng = phys.rydberg * sum(ion_Ns)
+        tot_ion_eng = phys.rydberg * np.sum(ion_Ns)
         f_HI = tot_ion_eng * norm_factor
+
     else:
         # Photons may also deposit their energy into HeI and HeII single ionization
 
@@ -217,7 +219,7 @@ def compute_dep_inj_ratio(photon_spectrum, x, tot_inj, time_step, method='old'):
         ionHI, ionHeI, ionHeII = [ llist/totList for llist in [ionHI, ionHeI, ionHeII] ]
 
         f_HI, f_HeI, f_HeII = [
-            sum(ion_Ns * llist * norm_factor)
+            np.sum(ion_Ns * llist * norm_factor)
             for llist in [phys.rydberg*ionHI, phys.He_ion_eng*ionHeI, 4*phys.rydberg*ionHeII]
         ]
 
