@@ -20,6 +20,9 @@ alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in C."""
+G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
+"""Newton's constant in cm^5 s^-4 eV^-1"""
+
 
 # Atomic and optical physics
 
@@ -162,29 +165,56 @@ def get_optical_depth(rs_vec, xe_vec):
     )
 
 
-def get_inj_rate(inj_type, inj_fac):
-    """Dark matter injection rate function.
+# def get_inj_rate(inj_type, inj_fac):
+#     """Dark matter injection rate function.
+
+#     Parameters
+#     ----------
+#     inj_type : {'sWave', 'decay'}
+#         The type of injection.
+#     inj_fac : float
+#         The prefactor for the injection rate, consisting of everything other than the redshift dependence.
+
+#     Returns
+#     -------
+#     function
+#         The function takes redshift as an input, and outputs the injection rate.
+#     """
+
+#     def inj_rate(rs):
+#         if inj_type == 'sWave':
+#             return inj_fac*(rs**6)
+#         elif inj_type == 'decay':
+#             return inj_fac*(rs**3)
+
+#     return inj_rate
+
+def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
+    """ Dark matter annihilation/decay energy injection rate.
 
     Parameters
     ----------
-    inj_type : {'sWave', 'decay'}
-        The type of injection.
-    inj_fac : float
-        The prefactor for the injection rate, consisting of everything other than the redshift dependence.
+    inj_type : {'swave', 'decay'}
+        Type of injection. 
+    rs : float
+        The redshift of injection.
+    mDM : float, optional
+        DM mass in eV. 
+    sigmav : float, optional
+        Annihilation cross section in cm^3 s^-1. 
+    tau : float, optional
+        Decay lifetime in s.
 
     Returns
     -------
-    function
-        The function takes redshift as an input, and outputs the injection rate.
+    float
+        The dE/dV_dt injection rate in eV cm^-3 s^-1.
+
     """
-
-    def inj_rate(rs):
-        if inj_type == 'sWave':
-            return inj_fac*(rs**6)
-        elif inj_type == 'decay':
-            return inj_fac*(rs**3)
-
-    return inj_rate
+    if inj_type == 'swave':
+        return rho_DM**2*rs**6*sigmav/mDM
+    elif inj_type == 'decay':
+        return rho_DM*rs**3/tau
 
 def alpha_recomb(T_matter):
     """Case-B recombination coefficient.
@@ -237,8 +267,8 @@ def beta_ion(T_rad):
 #   thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
 #   return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
 
-def rate_2p1s(xe, rs):
-    """returns the rate at which Ly_a photons are emitted without being immediately absorbed
+def rate_2p1s_times_x1s(xe, rs):
+    """returns the rate at which Ly_a photons are emitted without being immediately absorbed times (1-xe)
 
     Parameters
     ----------
@@ -250,12 +280,14 @@ def rate_2p1s(xe, rs):
     Returns
     -------
     float
-        Numerator of the Peebles C coefficient.
+        R_Ly\alpha * (1-xe)
     """
-    return (
+    num = (
         8 * np.pi * hubble(rs)/
-        (3*(nH * rs**3 * (1-xe) * (c/lya_freq)**3))
+        (3*(nH * rs**3 * (c/lya_freq)**3))
     )
+    #print(xe, num)
+    return num
 
 def peebles_C(xe, rs):
     """Returns the Peebles C coefficient.
@@ -279,7 +311,7 @@ def peebles_C(xe, rs):
     # Net rate for 2s to 1s transition.
     rate_2s1s = width_2s1s
 
-    rate_exc = (3*rate_2p1s(xe, rs)/4 + rate_2s1s/4)
+    rate_exc = (3*rate_2p1s_times_x1s(xe, rs)/4 + (1-xe) * rate_2s1s/4)
 
     # Net rate for ionization.
     rate_ion = beta_ion(TCMB(rs))
@@ -411,7 +443,7 @@ def get_dLam2s_dnu():
     coeff = 9 * alpha**6 * rydberg /(
         2**10 * 2 * np.pi * hbar
     )
-    print(coeff)
+    #print(coeff)
 
     # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
     # interpolating points come from Spitzer and Greenstein, 1951
@@ -422,7 +454,7 @@ def get_dLam2s_dnu():
     # evaluation outside of interpolation window yields 0.
     f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
     def dLam2s_dnu(nu):
-        return coeff * f(nu/lya_freq)
+        return coeff * f(nu/lya_freq) * width_2s1s/8.26548398114 / lya_freq
 
     return dLam2s_dnu
 

@@ -12,7 +12,9 @@ from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 from tqdm import tqdm_notebook as tqdm
 
-def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
+def engloss_spec_series(
+    eleckineng, delta, T, as_pairs=False, spec_type='new'
+):
     """Nonrelativistic ICS energy loss spectrum using the series method. 
 
     Parameters
@@ -25,6 +27,8 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
         CMB temperature. 
     as_pairs : bool
         If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size. 
+    spec_type : {'old', 'new'}
+        The ICS secondary photon spectrum to integrate over. 
 
     Returns
     -------
@@ -51,10 +55,16 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
         lowlim_down = np.outer((1+beta)/(2*beta), delta/T)
         lowlim_up = np.outer((1-beta)/(2*beta), delta/T)
 
-    prefac = np.float128( 
-        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-        * (8*np.pi/(phys.ele_compton*phys.me)**3)
-    )
+    if spec_type == 'old':
+        prefac = np.float128( 
+            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+            * (8*np.pi/(phys.ele_compton*phys.me)**3)
+        )
+    elif spec_type == 'new':
+        prefac = np.float128(
+            phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
+            * (8*np.pi*T**2/(phys.ele_compton*phys.me)**3)
+        )
 
     inf_array = np.inf*np.ones_like(lowlim_down)
 
@@ -92,64 +102,155 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
     print('Computing series 7/7...')
     F_log_a_down = F_log_a(lowlim_down, -delta/T)[0]
 
-    term_1_up = np.transpose(
-        (
-            (2/beta)*np.sqrt((1+beta)/(1-beta))
-            + (2/beta)*np.sqrt((1-beta)/(1+beta))
-            + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
-        )*np.transpose(T**2*F1_up)
-    )
+    if spec_type == 'new':
+        print('Computing additional spectra for new spec_type...')
 
-    term_0_up = np.transpose(
-        (
-            (2/beta)*np.sqrt((1-beta)/(1+beta))
-            - 2*(1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))
-            + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
-        )*np.transpose(T*delta*F0_up)
-    )
+        print('Computing series 1/2...')
+        F_inv_a_up = F_inv_a(lowlim_up, delta/T)[0]
+        print('Computing series 2/2...')
+        F_inv_a_down = F_inv_a(lowlim_down, -delta/T)[0]
 
-    term_inv_up = np.transpose(
-        -(1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*
-        np.transpose(delta**2*F_inv_up)
-    )
+    if spec_type == 'old':
 
-    term_log_up = np.transpose(
-        2/(gamma*beta**2)*np.transpose(
-            -T**2*F_x_log_up - delta*T*F_log_up
-            + T**2*F_x_log_a_up + delta*T*F_log_a_up
+        term_1_up = np.transpose(
+            (
+                (2/beta)*np.sqrt((1+beta)/(1-beta))
+                + (2/beta)*np.sqrt((1-beta)/(1+beta))
+                + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
+            )*np.transpose(T**2*F1_up)
         )
-    )
 
-    term_1_down = np.transpose(
-        (
-            (2/beta)*np.sqrt((1-beta)/(1+beta))
-            + (2/beta)*np.sqrt((1+beta)/(1-beta))
-            - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
-        )*np.transpose(T**2*F1_down)
-    )
-
-    term_0_down = -np.transpose(
-        (
-            (2/beta)*np.sqrt((1+beta)/(1-beta))
-            + 2*(1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))
-            - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
-        )*np.transpose(T*delta*F0_down)
-    )
-
-    term_inv_down = np.transpose(
-        (1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))*
-        np.transpose(delta**2*F_inv_down)
-    )
-
-    term_log_down = np.transpose(
-        2/(gamma*beta**2)*np.transpose(
-            T**2*F_x_log_down - delta*T*F_log_down
-            - T**2*F_x_log_a_down + delta*T*F_log_a_down
+        term_0_up = np.transpose(
+            (
+                (2/beta)*np.sqrt((1-beta)/(1+beta))
+                - 2*(1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))
+                + 2/(gamma*beta**2)*np.log((1-beta)/(1+beta))
+            )*np.transpose(T*delta*F0_up)
         )
-    )
+
+        term_inv_up = np.transpose(
+            -(1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*
+            np.transpose(delta**2*F_inv_up)
+        )
+
+        term_log_up = np.transpose(
+            2/(gamma*beta**2)*np.transpose(
+                -T**2*F_x_log_up - delta*T*F_log_up
+                + T**2*F_x_log_a_up + delta*T*F_log_a_up
+            )
+        )
+
+        term_1_down = np.transpose(
+            (
+                (2/beta)*np.sqrt((1-beta)/(1+beta))
+                + (2/beta)*np.sqrt((1+beta)/(1-beta))
+                - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
+            )*np.transpose(T**2*F1_down)
+        )
+
+        term_0_down = -np.transpose(
+            (
+                (2/beta)*np.sqrt((1+beta)/(1-beta))
+                + 2*(1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))
+                - 2/(gamma*beta**2)*np.log((1+beta)/(1-beta))
+            )*np.transpose(T*delta*F0_down)
+        )
+
+        term_inv_down = np.transpose(
+            (1+beta)**2/beta**2*np.sqrt((1-beta)/(1+beta))*
+            np.transpose(delta**2*F_inv_down)
+        )
+
+        term_log_down = np.transpose(
+            2/(gamma*beta**2)*np.transpose(
+                T**2*F_x_log_down - delta*T*F_log_down
+                - T**2*F_x_log_a_down + delta*T*F_log_a_down
+            )
+        )
+
+    elif spec_type == 'new':
+        
+        ### Upscattered terms, i.e. delta > 0 ###
+        term_inv_a_up = np.transpose(
+            1/gamma**4*np.transpose((delta/T)**2*F_inv_a_up)
+        )
+        term_inv_up = np.transpose(
+            -1/gamma**4*np.transpose((delta/T)**2*F_inv_up)
+        )
+        
+        term_1_up = np.transpose(
+            (
+                -2/gamma**2*(3-beta**2)*(np.log1p(beta) - np.log1p(-beta))
+                -3/gamma**4 + (1-beta)*(
+                    beta*(beta**2 + 3) - 1/gamma**2*(9 - 4*beta**2)
+                )
+            )*np.transpose(delta/T*F0_up)
+        )
+
+        term_log_up = np.transpose(
+            -2/gamma**2*(3 - beta**2)*np.transpose(delta/T*F_log_up)
+        )
+        term_log_a_up = np.transpose(
+            2/gamma**2*(3 - beta**2)*np.transpose(delta/T*F_log_a_up)
+        )
+
+        term_x_up = np.transpose(
+            (
+                -4/gamma**2*(3-beta**2)*(np.log1p(beta) - np.log1p(-beta))
+                + 2*beta*(beta**2 + 3 + 1/gamma**2*(9 - 4*beta**2))
+            )*np.transpose(F1_up)
+        )
+
+        term_x_log_up = np.transpose(
+            -4/gamma**2*(3-beta**2)*np.transpose(F_x_log_up)
+        )
+        term_x_log_a_up = np.transpose(
+            4/gamma**2*(3-beta**2)*np.transpose(F_x_log_a_up)
+        )
+        ### Downscattered terms, i.e. delta < 0 ###
+        # We take the input delta > 0. 
+        term_inv_a_down = np.transpose(
+            -1/gamma**4*np.transpose((-delta/T)**2*F_inv_a_down)
+        )
+        term_inv_down = np.transpose(
+            1/gamma**4*np.transpose((-delta/T)**2*F_inv_down)
+        )
+        
+        term_1_down = np.transpose(
+            (
+                2/gamma**2*(3-beta**2)*(np.log1p(-beta) - np.log1p(beta))
+                +3/gamma**4 + (1+beta)*(
+                    beta*(beta**2 + 3) + 1/gamma**2*(9 - 4*beta**2)
+                )
+            )*np.transpose(-delta/T*F0_down)
+        )
+
+        term_log_down = np.transpose(
+            2/gamma**2*(3 - beta**2)*np.transpose(-delta/T*F_log_down)
+        )
+        term_log_a_down = np.transpose(
+            -2/gamma**2*(3 - beta**2)*np.transpose(-delta/T*F_log_a_down)
+        )
+
+        term_x_down = np.transpose(
+            (
+                4/gamma**2*(3-beta**2)*(np.log1p(-beta) - np.log1p(beta))
+                + 2*beta*(beta**2 + 3 + 1/gamma**2*(9 - 4*beta**2))
+            )*np.transpose(F1_down)
+        )
+
+        term_x_log_down = np.transpose(
+            4/gamma**2*(3-beta**2)*np.transpose(F_x_log_down)
+        )
+        term_x_log_a_down = np.transpose(
+            -4/gamma**2*(3-beta**2)*np.transpose(F_x_log_a_down)
+        )
+
+    else:
+        raise TypeError('invalid spec_type specified.')
 
     testing = False
-    if testing:
+    if testing and spec_type == 'old':
         print('***** Diagnostics *****')
         print('lowlim_up: ', lowlim_up)
         print('lowlim_down: ', lowlim_down)
@@ -175,12 +276,14 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
             + term_inv_up - term_inv_down
             + term_log_up - term_log_down
         )
+
+        print('***** Total Sum (Excluding Prefactor) *****')
         print('Sum: ', term_1_up - term_1_down
             + term_0_up - term_0_down
             + term_inv_up - term_inv_down
             + term_log_up - term_log_down)
 
-        print('***** Total Sum (Excluding Prefactor) *****')
+        print('***** Final Result *****')
         print('Upscattering loss spectrum: ')
         print(
             np.transpose(prefac*np.transpose(
@@ -194,17 +297,109 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
                 + term_log_down
             )
         ))
+        print('Final Result: ')
+        print(np.transpose(prefac*np.transpose(
+            term_1_up - term_1_down
+            + term_0_up - term_0_down
+            + term_inv_up - term_inv_down
+            + term_log_up - term_log_down
+        )))
+
         print('***** End Diagnostics *****')
 
-    return np.transpose(
-        prefac*np.transpose(
-            term_1_up + term_0_up + term_inv_up + term_log_up
-            - term_1_down - term_0_down - term_inv_down
-            - term_log_down
-        )
-    )
+    elif testing and spec_type == 'new':
+        print('***** Diagnostics *****')
+        print('lowlim_up: ', lowlim_up)
+        print('lowlim_down: ', lowlim_down)
+        print('beta: ', beta)
+        print('delta/T: ', delta/T)
 
-def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
+        print('***** Individual terms *****')
+        print('term_inv_a_up: ', term_inv_a_up)
+        print('term_inv_up: ', term_inv_up)
+        print('term_1_up: ', term_1_up)
+        print('term_log_up: ', term_log_up)
+        print('term_log_a_up: ', term_log_a_up)
+        print('term_x_up: ', term_x_up)
+        print('term_x_log_up: ', term_x_log_up)
+        print('term_x_log_a_up: ', term_x_log_a_up)
+        print('term_inv_a_down: ', term_inv_a_down)
+        print('term_inv_down: ', term_inv_down)
+        print('term_1_down: ', term_1_down)
+        print('term_log_down: ', term_log_down)
+        print('term_log_a_down: ', term_log_a_down)
+        print('term_x_down: ', term_x_down)
+        print('term_x_log_down: ', term_x_log_down)
+        print('term_x_log_a_down: ', term_x_log_a_down)
+
+        print('***** Upscatter and Downscatter Differences *****')
+        print('term_inv_a: ', term_inv_a_up - term_inv_a_down)
+        print('term_inv: ', term_inv_up - term_inv_down)
+        print('term_1: ', term_1_up - term_1_down)
+        print('term_log: ', term_log_up - term_log_down)
+        print('term_log_a: ', term_log_a_up - term_log_a_down)
+        print('term_x: ', term_x_up - term_x_down)
+        print('term_x_log: ', term_x_log_up - term_x_log_down)
+        print('term_x_log_a: ', term_x_log_a_up - term_x_log_a_down)
+
+        sum_terms = (
+            term_inv_a_up - term_inv_a_down 
+            + term_inv_up - term_inv_down
+            + term_1_up - term_1_down 
+            + term_log_up - term_log_down 
+            + term_log_a_up - term_log_a_down 
+            + term_x_up - term_x_down 
+            + term_x_log_up - term_x_log_down 
+            + term_x_log_a_up - term_x_log_a_down
+        )
+
+        print('***** Sum without prefac *****')
+        print(sum_terms)
+        print('***** Final result *****')
+        print('Upscattering loss spectrum: ')
+        print(
+            np.transpose(prefac*np.transpose(
+                term_inv_a_up + term_inv_up + term_1_up + term_log_up
+                + term_log_a_up + term_x_up + term_x_log_up + term_x_log_a_up
+            )
+        ))
+        print('Downscattering loss spectrum: ')
+        print(
+            np.transpose(prefac*np.transpose(
+                term_inv_a_down + term_inv_down + term_1_down + term_log_down
+                + term_log_a_down + term_x_down 
+                + term_x_log_down + term_x_log_a_down
+            )
+        ))
+        print('Final Sum: ')
+        print(np.transpose(prefac*np.transpose(sum_terms)))
+
+    if spec_type == 'old':
+
+        return np.transpose(
+            prefac*np.transpose(
+                term_1_up + term_0_up + term_inv_up + term_log_up
+                - term_1_down - term_0_down - term_inv_down
+                - term_log_down
+            )
+        )
+
+    elif spec_type == 'new':
+
+        sum_terms = (
+            term_inv_a_up - term_inv_a_down 
+            + term_inv_up - term_inv_down
+            + term_1_up - term_1_down 
+            + term_log_up - term_log_down 
+            + term_log_a_up - term_log_a_down 
+            + term_x_up - term_x_down 
+            + term_x_log_up - term_x_log_down 
+            + term_x_log_a_up - term_x_log_a_down
+        )
+
+        return np.transpose(prefac*np.transpose(sum_terms))
+
+def engloss_spec_diff(eleckineng, delta, T, as_pairs=False, spec_type='new'):
     """Nonrelativistic ICS energy loss spectrum by beta expansion. 
 
     Parameters
@@ -216,7 +411,9 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
     T : float
         CMB temperature. 
     as_pairs : bool
-        If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size. 
+        If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size.
+    spec_type : {'old', 'new'}
+        The ICS secondary photon spectrum to integrate over. 
 
     Returns
     -------
@@ -234,22 +431,42 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
     gamma = eleckineng/phys.me + 1
     beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
-    prefac = ( 
-        phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-        * (8*np.pi/(phys.ele_compton*phys.me)**3)
-        * (T**2/beta**2)
-    )
+    if spec_type == 'old':
+        prefac = ( 
+            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
+            * (8*np.pi/(phys.ele_compton*phys.me)**3)
+            * (T**2/beta**2)
+        )
+    elif spec_type == 'new':
+        prefac = (
+            phys.c*(3/8)*phys.thomson_xsec/4
+            *(8*np.pi/(phys.ele_compton*phys.me)**3)
+            *T**2
+        )
+    else:
+        raise TypeError('invalid spec_type specified.')
 
-    print('(1/5) Computing F1_up - F1_down term...')
-    F1_up_down_term = F1_up_down(beta, delta, T, as_pairs=as_pairs)
-    print('(2/5) Computing F0_up - F0_down term...')
-    F0_up_down_diff_term = F0_up_down_diff(beta, delta, T, as_pairs=as_pairs)
-    print('(3/5) Computing F0_up + F0_down term...')
-    F0_up_down_sum_term = F0_up_down_sum(beta, delta, T, as_pairs=as_pairs)
-    print('(4/5) Computing F_inv_up - F_inv_down term...')
-    F_inv_up_down_term = F_inv_up_down(beta, delta, T, as_pairs=as_pairs)
-    print('(5/5) Computing F_rem term...')
-    F_rem_term = F_rem(beta, delta, T, as_pairs=as_pairs)
+    if spec_type == 'old':
+
+        print('(1/5) Computing F1_up - F1_down term...')
+        F1_up_down_term = F1_up_down(beta, delta, T, as_pairs=as_pairs)
+        print('(2/5) Computing F0_up - F0_down term...')
+        F0_up_down_diff_term = F0_up_down_diff(
+            beta, delta, T, as_pairs=as_pairs
+        )
+        print('(3/5) Computing F0_up + F0_down term...')
+        F0_up_down_sum_term = F0_up_down_sum(
+            beta, delta, T, as_pairs=as_pairs
+        )
+        print('(4/5) Computing F_inv_up - F_inv_down term...')
+        F_inv_up_down_term = F_inv_up_down(
+            beta, delta, T, as_pairs=as_pairs
+        )
+        print('(5/5) Computing F_rem term...')
+        F_rem_term = F_rem(beta, delta, T, as_pairs=as_pairs)
+
+    elif spec_type == 'new':
+        diff_term = engloss_diff_expansion(beta, delta, T, as_pairs=as_pairs)
 
     testing = False
     if testing:
@@ -277,13 +494,19 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
         )
         print('***** End Diagnostics *****')
 
-    term = np.transpose(
-        prefac*np.transpose(
-            F1_up_down_term + F0_up_down_diff_term 
-            + F0_up_down_sum_term
-            + F_inv_up_down_term + F_rem_term
+    if spec_type == 'old':
+
+        term = np.transpose(
+            prefac*np.transpose(
+                F1_up_down_term + F0_up_down_diff_term 
+                + F0_up_down_sum_term
+                + F_inv_up_down_term + F_rem_term
+            )
         )
-    )
+
+    else: 
+
+        term = np.transpose(prefac*np.transpose(diff_term))
 
     print('Computation by expansion in beta complete!')
 
@@ -291,7 +514,8 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
 
 def engloss_spec(
     eleckineng, delta, T, 
-    as_pairs=False, nonrel=False, nonrel_tf=None, rel_tf=None
+    as_pairs=False, nonrel=False, nonrel_tf=None, rel_tf=None,
+    spec_type='new'
 ):
     """ Energy loss ICS spectrum. 
 
@@ -313,7 +537,8 @@ def engloss_spec(
         Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
         Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
-
+    spec_type : {'old', 'new'}
+        The ICS secondary photon spectrum to integrate over. 
 
     Returns
     -------
@@ -353,7 +578,11 @@ def engloss_spec(
             (eleckineng.size, delta.size), dtype='float128'
         )
 
-    beta_small = beta_mask < 0.05
+    # beta_small = beta_mask < 0.05
+    if spec_type == 'old':
+        beta_small = beta_mask < 0.05
+    if spec_type == 'new':
+        beta_small = beta_mask < 0.1
     rel = gamma_mask > rel_bound
 
     y = T/phys.TCMB(1000)
@@ -405,13 +634,13 @@ def engloss_spec(
         spec[beta_small] = engloss_spec_diff(
             eleckineng_mask[beta_small],
             delta_mask[beta_small],
-            T, as_pairs=True
+            T, as_pairs=True, spec_type=spec_type
         )
 
         spec[~beta_small & ~rel] = engloss_spec_series(
             eleckineng_mask[~beta_small & ~rel],
             delta_mask[~beta_small & ~rel],
-            T, as_pairs=True
+            T, as_pairs=True, spec_type=spec_type
         )
         print('Nonrelativistic energy loss spectrum computed!')
 

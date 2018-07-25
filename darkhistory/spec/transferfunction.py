@@ -41,43 +41,44 @@ class TransFuncAtEnergy(Spectra):
 
     """
     def __init__(
-        self, spec_arr, spec_type='dNdE', dlnz=-1, rebin_eng=None
+        self, spec_arr, eng=None, in_eng=None, rs=None,spec_type='dNdE', dlnz=-1, rebin_eng=None
     ):
 
         self.dlnz = dlnz
         super().__init__(
-            spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
+            spec_arr, eng=eng, in_eng=in_eng, rs=rs,
+            spec_type=spec_type, rebin_eng=rebin_eng
         )
 
-        if spec_arr != []:
-            self._grid_vals = np.atleast_2d(
-                    np.stack([spec._data for spec in spec_arr])
-                )
-            self._spec_type = spec_arr[0].spec_type
-            self._eng = spec_arr[0].eng
-            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
-            if len(set(self._in_eng)) > 1:
-                raise TypeError('injection energies must be the same.')
+        # if spec_arr != []:
+        #     self._grid_vals = np.atleast_2d(
+        #             np.stack([spec._data for spec in spec_arr])
+        #         )
+        #     self._spec_type = spec_arr[0].spec_type
+        #     self._eng = spec_arr[0].eng
+        #     self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+        #     if len(set(self._in_eng)) > 1:
+        #         raise TypeError('injection energies must be the same.')
             
-            if np.any(self.rs <= 0):
-                raise TypeError("injection energy of all spectra must be set.")
-            self._rs = np.array([spec.rs for spec in spec_arr])
-            self._N_underflow = np.array(
-                [spec.underflow['N'] for spec in spec_arr]
-            )
-            self._eng_underflow = np.array(
-                [spec.underflow['eng'] for spec in spec_arr]
-            )
+        #     if np.any(self.rs <= 0):
+        #         raise TypeError("injection energy of all spectra must be set.")
+        #     self._rs = np.array([spec.rs for spec in spec_arr])
+        #     self._N_underflow = np.array(
+        #         [spec.underflow['N'] for spec in spec_arr]
+        #     )
+        #     self._eng_underflow = np.array(
+        #         [spec.underflow['eng'] for spec in spec_arr]
+        #     )
 
-        else:
+        # else:
 
-            self._grid_vals = np.atleast_2d([])
-            self._spec_type = spec_type
-            self._eng = np.array([])
-            self._in_eng = np.array([])
-            self._rs = np.array([])
-            self._N_underflow = np.array([])
-            self._eng_underflow = np.array([])
+        #     self._grid_vals = np.atleast_2d([])
+        #     self._spec_type = spec_type
+        #     self._eng = np.array([])
+        #     self._in_eng = np.array([])
+        #     self._rs = np.array([])
+        #     self._N_underflow = np.array([])
+        #     self._eng_underflow = np.array([])
 
     def __iter__(self):
         return iter(self.grid_vals)
@@ -161,7 +162,9 @@ class TransFuncAtEnergy(Spectra):
 
         """
         out_spec = super().sum_specs(weight)
-        out_spec.in_eng = self.in_eng
+        # Remember that self.in_eng is an array, all 
+        # having the same value.
+        out_spec.in_eng = self.in_eng[0]
 
         return out_spec
 
@@ -191,8 +194,13 @@ class TransFuncAtRedshift(Spectra):
 
     Parameters
     ----------
-    spec_arr : list of Spectrum
+    spec_arr : list of Spectrum or ndarray
         List of Spectrum to be stored together. 
+    eng : ndarray
+        The energy abscissa of each Spectrum. 
+    in_eng : ndarray
+        The injection energy abscissa. 
+    rs : ndarray
     dlnz : float
         d ln(1+z) associated with this transfer function. 
     spec_type : {'N', 'dNdE'}, optional
@@ -213,46 +221,47 @@ class TransFuncAtRedshift(Spectra):
     """
 
     def __init__(
-        self, spec_arr, dlnz=-1, spec_type='dNdE', rebin_eng=None
+        self, spec_arr, eng=None, in_eng=None, rs=None, 
+        dlnz=-1, spec_type='dNdE', rebin_eng=None
     ):
 
         super().__init__(
-            spec_arr, spec_type=spec_type, rebin_eng=rebin_eng
+            spec_arr, eng=eng, in_eng=in_eng, rs=rs,spec_type=spec_type, rebin_eng=rebin_eng
         )
         self.dlnz = dlnz
 
-        if spec_arr != []:
-            self._grid_vals = np.atleast_2d(
-                    np.stack([spec._data for spec in spec_arr])
-                )
-            self._spec_type = spec_arr[0].spec_type
-            self._eng = spec_arr[0].eng
-            if np.any(self.in_eng <= 0):
-                raise TypeError("injection energy of all spectra must be set.")
-            self._in_eng = np.array([spec.in_eng for spec in spec_arr])
-            self._rs = np.array([spec.rs for spec in spec_arr])
-            if len(set(self._rs)) > 1:
-                raise TypeError('all spectra must have the same redshift.')
-            self._N_underflow = np.array(
-                [spec.underflow['N'] for spec in spec_arr]
-            )
-            self._eng_underflow = np.array(
-                [spec.underflow['eng'] for spec in spec_arr]
-            )
+        # if spec_arr != []:
+        #     self._grid_vals = np.atleast_2d(
+        #             np.stack([spec._data for spec in spec_arr])
+        #         )
+        #     self._spec_type = spec_arr[0].spec_type
+        #     self._eng = spec_arr[0].eng
+        #     if np.any(self.in_eng <= 0):
+        #         raise TypeError("injection energy of all spectra must be set.")
+        #     self._in_eng = np.array([spec.in_eng for spec in spec_arr])
+        #     self._rs = np.array([spec.rs for spec in spec_arr])
+        #     if len(set(self._rs)) > 1:
+        #         raise TypeError('all spectra must have the same redshift.')
+        #     self._N_underflow = np.array(
+        #         [spec.underflow['N'] for spec in spec_arr]
+        #     )
+        #     self._eng_underflow = np.array(
+        #         [spec.underflow['eng'] for spec in spec_arr]
+        #     )
 
-        else:
+        # else:
 
-            self._grid_vals = np.atleast_2d([])
-            self._spec_type = spec_type
-            self._eng = np.array([])
-            self._in_eng = np.array([])
-            self._rs = np.array([])
-            self._N_underflow = np.array([])
-            self._eng_underflow = np.array([])
+        #     self._grid_vals = np.atleast_2d([])
+        #     self._spec_type = spec_type
+        #     self._eng = np.array([])
+        #     self._in_eng = np.array([])
+        #     self._rs = np.array([])
+        #     self._N_underflow = np.array([])
+        #     self._eng_underflow = np.array([])
 
     
 
-    def at_in_eng(self, new_eng, interp_type='val', bounds_error=None, fill_value=np.nan):
+    def at_in_eng(self, new_eng, interp_type='val', log_interp=False, bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy. 
 
         Interpolation is logarithmic. 
@@ -263,6 +272,8 @@ class TransFuncAtRedshift(Spectra):
             The injection energies or injection energy bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies.
+        log_interp : bool, optional
+            Whether to perform an interpolation over log of the grid values. Default is False.
         bounds_error : bool, optional
             See scipy.interpolate.interp1d.
         fill_value : array-like or (array-like, array-like) or "extrapolate", optional
@@ -288,31 +299,49 @@ class TransFuncAtRedshift(Spectra):
         non_zero_N_und[np.abs(non_zero_N_und) < 1e-100] = 1e-200
         non_zero_eng_und[np.abs(non_zero_eng_und) < 1e-100] = 1e-200
 
-        interp_func = interpolate.interp1d(
-            np.log(self.in_eng), np.log(non_zero_grid), axis=0, 
-            bounds_error=bounds_error, fill_value=fill_value
-        )
-
-        interp_func_N_und = interpolate.interp1d(
-            np.log(self.in_eng), np.log(non_zero_N_und), 
-            bounds_error=bounds_error, fill_value=fill_value
-        )
-
-        interp_func_eng_und = interpolate.interp1d(
-            np.log(self.in_eng), np.log(non_zero_eng_und),
-            bounds_error=bounds_error, fill_value=fill_value
-        )
-
         if interp_type == 'val':
+
+            if log_interp:
+                interp_grid  = np.log(non_zero_grid)
+                N_und_grid   = np.log(non_zero_N_und)
+                eng_und_grid = np.log(non_zero_eng_und)
+            else:
+                interp_grid  = non_zero_grid
+                N_und_grid   = non_zero_N_und
+                eng_und_grid = non_zero_eng_und 
+
+            interp_func = interpolate.interp1d(
+                np.log(self.in_eng), interp_grid, axis=0, 
+                bounds_error=bounds_error, fill_value=fill_value
+            )
+
+            interp_func_N_und = interpolate.interp1d(
+                np.log(self.in_eng), N_und_grid, 
+                bounds_error=bounds_error, fill_value=fill_value
+            )
+
+            interp_func_eng_und = interpolate.interp1d(
+                np.log(self.in_eng), eng_und_grid,
+                bounds_error=bounds_error, fill_value=fill_value
+            )
 
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            interp_vals = np.exp(interp_func(np.log(new_eng)))
-            interp_vals_N_und = np.exp(interp_func_N_und(np.log(new_eng)))
-            interp_vals_eng_und = np.exp(
-                interp_func_eng_und(np.log(new_eng))
-            )
+
+            if log_interp:
+
+                interp_vals = np.exp(interp_func(np.log(new_eng)))
+                interp_vals_N_und = np.exp(interp_func_N_und(np.log(new_eng)))
+                interp_vals_eng_und = np.exp(
+                    interp_func_eng_und(np.log(new_eng))
+                )
+
+            else:
+                interp_vals = interp_func(np.log(new_eng))
+                interp_vals_N_und = interp_func_N_und(np.log(new_eng))
+                interp_vals_eng_und = interp_func_eng_und(np.log(new_eng))
+
             interp_vals[interp_vals < 1e-100] = 0
             interp_vals_N_und[interp_vals_N_und < 1e-100] = 0
             interp_vals_eng_und[interp_vals_eng_und < 1e-100] = 0
@@ -336,6 +365,7 @@ class TransFuncAtRedshift(Spectra):
 
             return self.at_in_eng(
                 np.exp(log_new_eng), interp_type='val',
+                log_interp = log_interp,
                 bounds_error=bounds_error, fill_value=fill_value
             )
 
@@ -392,6 +422,12 @@ class TransFuncAtRedshift(Spectra):
 
             new_tf._spec_type = self.spec_type
             interp_vals = np.exp(interp_func(np.log(new_eng)))
+            interp_vals_N_und = np.exp(
+                interp_func_N_und(np.log(new_eng))
+            )
+            interp_vals_eng_und = np.exp(
+                interp_func_eng_und(np.log(new_eng))
+            )
             interp_vals[interp_vals < 1e-100] = 0
             interp_vals_N_und[interp_vals_N_und < 1e-100] = 0
             interp_vals_eng_und[interp_vals_eng_und < 1e-100] = 0
@@ -419,7 +455,7 @@ class TransFuncAtRedshift(Spectra):
             )
 
     def at_val(
-        self, new_in_eng, new_eng, interp_type='val', 
+        self, new_in_eng, new_eng, interp_type='val', log_interp=False,
         bounds_error=None, fill_value= np.nan
     ):
         """2D interpolation at specified abscissa. 
@@ -434,6 +470,8 @@ class TransFuncAtRedshift(Spectra):
             The energy abscissa or energy abscissa bin indices at which to interpolate. 
         interp_type : {'val', 'bin'}
             The type of interpolation. 'bin' uses bin index, while 'val' uses the actual injection energies. 
+        log_interp : bool, optional
+            Whether to perform an interpolation over log of the grid values. Default is False.
         bounds_error : bool, optional
             See scipy.interpolate.interp1d.
         fill_value : array-like or (array-like, array-like) or "extrapolate", optional
@@ -450,30 +488,73 @@ class TransFuncAtRedshift(Spectra):
         # interp_func takes (eng, in_eng) as argument. 
 
         non_zero_grid = self.grid_vals
+        non_zero_N_und = self.N_underflow
+        non_zero_eng_und = self.eng_underflow
         # set zero values to some small value for log interp.
         non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+        non_zero_N_und[np.abs(non_zero_N_und) < 1e-100] = 1e-200
+        non_zero_eng_und[np.abs(non_zero_eng_und) < 1e-100] = 1e-200
 
         if interp_type == 'val':
+
+            if log_interp:
+                interp_grid  = np.log(non_zero_grid)
+                N_und_grid   = np.log(non_zero_N_und)
+                eng_und_grid = np.log(non_zero_eng_und)
+            else:
+                interp_grid  = non_zero_grid
+                N_und_grid   = non_zero_N_und
+                eng_und_grid = non_zero_eng_und 
 
             interp_func = interpolate.interp2d(
                 np.log(self.eng),
                 np.log(self.in_eng),  
-                np.log(non_zero_grid), 
+                interp_grid, 
                 bounds_error=bounds_error, 
                 fill_value=np.log(fill_value)
+            )
+
+            interp_func_N_und = interpolate.interp1d(
+                np.log(self.in_eng), N_und_grid, 
+                bounds_error=False, fill_value=0
+            )
+
+            interp_func_eng_und = interpolate.interp1d(
+                np.log(self.in_eng), eng_und_grid,
+                bounds_error=False, fill_value=0
             )
 
             new_tf = TransFuncAtRedshift([])
 
             new_tf._spec_type = self.spec_type
-            new_tf._grid_vals = np.exp(
-                interp_func(np.log(new_eng), np.log(new_in_eng))
-            )
+
+            if log_interp:
+                new_tf._grid_vals = np.atleast_2d(
+                    np.exp(interp_func(np.log(new_eng), np.log(new_in_eng)))
+                )
+                interp_vals_N_und = np.exp(
+                    interp_func_N_und(np.log(new_in_eng))
+                )
+                interp_vals_eng_und = np.exp(
+                    interp_func_eng_und(np.log(new_in_eng))
+                )
+            else:
+                new_tf._grid_vals   = np.atleast_2d(
+                    interp_func(np.log(new_eng), np.log(new_in_eng))
+                )
+                interp_vals_N_und   = interp_func_N_und(np.log(new_in_eng))
+                interp_vals_eng_und = interp_func_eng_und(np.log(new_in_eng))
+
             # Re-zero small values.
-            new_tf._grid_vals[np.abs(new_tf.grid_vals) < 1e-100] = 0
+            new_tf._grid_vals[new_tf.grid_vals < 1e-100] = 0
+            interp_vals_N_und[interp_vals_N_und < 1e-100] = 0
+            interp_vals_eng_und[interp_vals_eng_und < 1e-100] = 0
+            
             new_tf._eng = new_eng
             new_tf._in_eng = new_in_eng
             new_tf._rs = self.rs
+            new_tf._N_underflow = interp_vals_N_und
+            new_tf._eng_underflow = interp_vals_eng_und
 
             return new_tf
 
@@ -481,7 +562,8 @@ class TransFuncAtRedshift(Spectra):
 
             if issubclass(new_eng.dtype.type, np.integer):
                 return self.at_in_eng(
-                    new_in_eng, interp_type='bin'
+                    new_in_eng, interp_type='bin', 
+                    log_interp=log_interp
                 ).at_eng(
                     new_eng, interp_type='bin'
                 )
@@ -501,6 +583,7 @@ class TransFuncAtRedshift(Spectra):
             return self.at_val(
                 np.exp(log_new_in_eng), np.exp(log_new_eng), 
                 interp_type = 'val', 
+                log_interp = log_interp,
                 bounds_error = bounds_error, 
                 fill_value = fill_value
             )
@@ -538,7 +621,7 @@ class TransFuncAtRedshift(Spectra):
 
         if indtype == 'ind':
 
-            if np.issubdtype(type(ind), int):
+            if np.issubdtype(type(ind), np.int64):
                 return ax.plot(
                     self.eng, self.grid_vals[ind]*fac, **kwargs
                 )
@@ -564,8 +647,8 @@ class TransFuncAtRedshift(Spectra):
         elif indtype == 'in_eng':
 
             if (
-                np.issubdtype(type(ind),int) 
-                or np.issubdtype(type(ind), float)
+                np.issubdtype(type(ind),np.int64) 
+                or np.issubdtype(type(ind), np.float64)
             ):
                 return self.at_val(
                     np.array([ind]), self.eng, interp_type='val'
@@ -602,7 +685,9 @@ class TransFuncAtRedshift(Spectra):
 
         """
         out_spec = super().sum_specs(weight)
-        out_spec.rs = self.rs
+        # Remember that self.rs is an array, all with the 
+        # same value of rs.
+        out_spec.rs = self.rs[0]
         if self.spec_type == 'dNdE':
             out_spec._spec_type = 'dNdE'
         return out_spec

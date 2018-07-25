@@ -308,8 +308,8 @@ class Spectrum:
 
         """
         if (
-            np.issubdtype(type(other),float) 
-            or np.issubdtype(type(other),int)
+            np.issubdtype(type(other),np.float64) 
+            or np.issubdtype(type(other),np.int64)
         ):
             new_spectrum = Spectrum(
                 self.eng, self._data*other, 
@@ -376,8 +376,8 @@ class Spectrum:
         spectrum.Spectrum.__mul__
 
         """
-        if (np.issubdtype(type(other),float) 
-            or np.issubdtype(type(other),int)
+        if (np.issubdtype(type(other),np.float64) 
+            or np.issubdtype(type(other),np.int64)
         ):
             new_spectrum = Spectrum(
                 self.eng, self._data*other, 
@@ -611,7 +611,8 @@ class Spectrum:
 
             if bound_type == 'bin':
 
-                if not all(np.diff(bound_arr) > 0):
+                if not all(np.diff(bound_arr) >= 0):
+                    
                     raise TypeError("bound_arr must have increasing entries.")
 
                 eng_in_bin = np.zeros(bound_arr.size-1)
@@ -812,7 +813,7 @@ class Spectrum:
         elif self._spec_type == 'N':
             new_data[1] += N_above_underflow
             np.add.at(new_data, reg_bin_low+1, reg_N_low)
-            np.add.at(new_data, reg_bin_upp+1, reg_n_upp)
+            np.add.at(new_data, reg_bin_upp+1, reg_N_upp)
             # new_data[reg_bin_low+1] += reg_N_low
             # new_data[reg_bin_upp+1] += reg_N_upp 
         
@@ -822,6 +823,63 @@ class Spectrum:
         self.length = self.eng.size 
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow
+
+    def rebin_smooth(self, out_eng):
+        """ Re-bins the `Spectrum` object according to a new abscissa.
+
+        Rebinning conserves total number and total energy. This method also ensures smoothness of the rebinning.
+        
+        Parameters
+        ----------
+        out_eng : ndarray
+            The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]`, then the new underflow will be filled. If `self.eng` has values that exceed `out_eng[-1]`, then an error is returned.
+
+        Raises
+        ------
+        OverflowError
+            The maximum energy in `out_eng` cannot be smaller than any bin in `self.eng`. 
+
+        
+        Note
+        ----
+        Before passing the spectrum to the actual rebin function, we use spec.Spectrum.totN to find the total number of particles `N` lying in the new binning given by `out_eng`, and spec.Spectrum.toteng to find the total energy in these bins `E_tot`. Then we minimize a Lagrangian that penalizes deviations from local conservation of number and energy, while conserving total number and energy.  
+
+        See Also
+        --------
+        spec.Spectrum.rebin
+
+        """
+
+        eng_bin_bound = get_bin_bound(out_eng)
+        
+        N_tot_arr   = self.totN(bound_type='eng', bound_arr=eng_bin_bound)
+        eng_tot_arr = self.toteng(bound_type='eng', bound_arr=eng_bin_bound)
+
+        out_eng_absc = np.divide(
+            eng_tot_arr, N_tot_arr, 
+            out=np.zeros_like(N_tot_arr), 
+            where=N_tot_arr != 0
+        )
+
+        out_eng_absc[out_eng_absc == 0] = out_eng[out_eng_absc == 0]
+
+        self.eng = out_eng_absc
+        self.length = out_eng_absc.size
+        self.underflow = {'N': 0., 'eng': 0.}
+        
+        switch = False
+        if self.spec_type == 'dNdE':
+            switch = True
+        
+        self._data = N_tot_arr
+        self._spec_type = 'N'
+        if switch:
+            self.switch_spec_type()
+
+        self.rebin(out_eng)
+         
+        
+
 
     def engloss_rebin(self, in_eng, out_eng):
         """ Converts an energy loss spectrum to a secondary spectrum.

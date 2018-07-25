@@ -181,7 +181,7 @@
 <dl class="class">
 <dt id="darkhistory.spec.transferfunclist.TransferFuncList">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunclist.</code><code class="descname">TransferFuncList</code><span class="sig-paren">(</span><em>tflist</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncList" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>List of transfer functions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -228,28 +228,30 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.at_val" title="darkhistory.spec.transferfunclist.TransferFuncList.at_val"><code class="xref py py-obj docutils literal"><span class="pre">at_val</span></code></a>(axis,&nbsp;new_val)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.at_val" title="darkhistory.spec.transferfunclist.TransferFuncList.at_val"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_val</span></code></a>(axis,&nbsp;new_val[,&nbsp;bounds_error,&nbsp;fill_value])</td>
 <td>Returns the transfer functions at the new abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.coarsen" title="darkhistory.spec.transferfunclist.TransferFuncList.coarsen"><code class="xref py py-obj docutils literal"><span class="pre">coarsen</span></code></a>(dlnz_factor[,&nbsp;delete_tfs])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.coarsen" title="darkhistory.spec.transferfunclist.TransferFuncList.coarsen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coarsen</span></code></a>(dlnz_factor[,&nbsp;delete_tfs,&nbsp;…])</td>
 <td>Coarsens the new transfer function with larger dlnz.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.transpose" title="darkhistory.spec.transferfunclist.TransferFuncList.transpose"><code class="xref py py-obj docutils literal"><span class="pre">transpose</span></code></a>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.transpose" title="darkhistory.spec.transferfunclist.TransferFuncList.transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose</span></code></a>()</td>
 <td>Transposes the list of transfer functions.</td>
 </tr>
 </tbody>
 </table>
 <dl class="method">
 <dt id="darkhistory.spec.transferfunclist.TransferFuncList.at_val">
-<code class="descname">at_val</code><span class="sig-paren">(</span><em>axis</em>, <em>new_val</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncList.at_val" title="Permalink to this definition">¶</a></dt>
+<code class="descname">at_val</code><span class="sig-paren">(</span><em>axis</em>, <em>new_val</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncList.at_val" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the transfer functions at the new abscissa.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>axis</strong> (<em>{'rs'</em><em>, </em><em>'in_eng'}</em>) – The axis along which to perform the interpolation. If the axis is ‘rs’, then the list will be transposed into tftype ‘in_eng’ and vice-versa.</li>
-<li><strong>new_val</strong> (<em>ndarray</em>) – The new redshift or injection energy abscissa.</li>
+<li><strong>axis</strong> (<em>{'rs'</em><em>, </em><em>'in_eng'</em><em>, </em><em>'2D_in_eng'}</em>) – The axis along which to perform the interpolation. If the axis is ‘rs’, then the list will be transposed into tftype ‘in_eng’ and vice-versa.</li>
+<li><strong>new_val</strong> (<em>ndarray</em><em> or </em><em>tuple of ndarrays</em><em> (</em><em>in_eng</em><em>, </em><em>eng</em><em>)</em>) – The new redshift or injection energy abscissa.</li>
+<li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d</li>
+<li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d</li>
 </ul>
 </td>
 </tr>
@@ -259,7 +261,7 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunclist.TransferFuncList.coarsen">
-<code class="descname">coarsen</code><span class="sig-paren">(</span><em>dlnz_factor</em>, <em>delete_tfs=True</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncList.coarsen" title="Permalink to this definition">¶</a></dt>
+<code class="descname">coarsen</code><span class="sig-paren">(</span><em>dlnz_factor</em>, <em>delete_tfs=True</em>, <em>coarsen_type='prop'</em>, <em>prop_transfunclist=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncList.coarsen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Coarsens the new transfer function with larger dlnz.</p>
 <p>This is obtained by multiplying the transfer function by itself several times, and removing intermediate transfer functions.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -269,6 +271,8 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>dlnz_factor</strong> (<em>int</em>) – The factor to increase dlnz by.</li>
 <li><strong>delete_tfs</strong> (<em>bool</em>) – If true, only retains transfer functions in tflist that have an index that is a multiple of dlnz_factor.</li>
+<li><strong>coarsen_type</strong> (<em>{'prop'</em><em>, </em><em>'dep'}</em>) – The type of coarsening. Use ‘prop’ to coarsen by taking powers of the transfer function. Use ‘dep’ for deposition transfer functions, where coarsening is done by taking self * sum_i prop_tf**i.</li>
+<li><strong>prop_tflist</strong> (<a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><em>TransferFuncList</em></a>) – The transfer function for propagation, if the transfer function represents deposition.</li>
 </ul>
 </td>
 </tr>

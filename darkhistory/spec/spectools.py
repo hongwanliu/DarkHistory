@@ -290,14 +290,14 @@ def discretize(eng, func_dNdE, *args):
 def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     """Produces a secondary spectrum.
 
-    Takes a primary spectrum, and multiplies it with the transfer function. There are two modes: using either a `Spectrum` object (dN/dE) or with an array of number of particles (N) and an energy abscissa. Similarly, output in the form of a `Spectrum` object (dN/dE) or with an array of number of particles (N) is possible (the energy abscissa is implicitly assumed to be `eng_arr` in this case).
+    Takes a primary spectrum, and multiplies it with the transfer function.
 
     Parameters
     ----------
-    spec : Spectrum
-        The primary spectrum. Required if type is 'dNdE'.
     tf : TransFuncAtRedshift
         The secondary spectrum scattering rate, given in dN/(dE dt).
+    spec : Spectrum
+        The primary spectrum.
     new_eng : ndarray, optional
         The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.
     dlnz : float, optional
@@ -307,12 +307,12 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     Returns
     -------
-    Spectrum or ndarray
-        The secondary spectrum, dN/dE or dN/(dE dt). If outmode is 'dNdE', stored as `Spectrum`, otherwise returns N or dN/dt, with the abscissa given by `eng_arr` implied.
+    Spectrum
+        The secondary spectrum, N, dN/dt, dN/dE or dN/(dE dt), with spec_type in agreement with tf.spec_type. 
 
     Note
     ----
-    For 'dNdE', spec.eng is the primary particle energy abscissa. tf.get_in_eng() returns the primary particle energy abscissa for the transfer function, while tf.get_eng() returns the secondary particle energy abscissa for the transfer function. tf is interpolated automatically so that it agrees with the input primary abscissa spec.eng, and the output secondary abscissa new_eng.
+    tf can be of type 'N' or 'dNdE', but multiplies spec.N to produce a spectrum of type 'N' or 'dNdE'.
 
     """
 
@@ -343,20 +343,17 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
 
     switched = False
 
-    if spec.spec_type != 'N':
+    if spec.spec_type != tf.spec_type:
         spec.switch_spec_type()
         switched = True
 
     out_spec = tf.sum_specs(spec*frac)
 
+
     # tf multiplies a spectrum of type 'N', outputs spectrum of type
-    # determined by tf.spec_type. out_spec now is of type 'N', i.e.
-    # is the same spec_type as spec.
+    # determined by tf.spec_type.
 
-    if out_spec.spec_type != tf.spec_type:
-        out_spec.switch_spec_type()
-
-    if out_spec.spec_type != spec.spec_type and not switched:
+    if switched:
         out_spec.switch_spec_type()
 
     return out_spec
@@ -387,8 +384,18 @@ def evolve(
     Spectrum or Spectra
         The evolved final spectrum, with or without intermediate steps.
 
+    Note
+    ----
+    if `evolve_type = 'dep'`, the Spectrum object in the ouput Spectra with redshift rs corresponds to energy deposited between [rs - dz, rs]
     """
     from darkhistory.spec.spectra import Spectra
+
+    switched = False
+
+    if in_spec.spec_type != tflist[0].spec_type:
+        in_spec.switch_spec_type()
+        switched = True
+        print('switched!')
 
     if not np.all(in_spec.eng == tflist.in_eng):
         raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
@@ -399,7 +406,7 @@ def evolve(
     if end_rs is not None:
         # Calculates where to stop the transfer function multiplication.
         rs_ind = np.arange(tflist.rs.size)
-        rs_last_ind = rs_ind[np.where(tflist.rs > end_rs)][-1]
+        rs_last_ind = rs_ind[np.where(tflist.rs >= end_rs)][-1]
 
     else:
 
@@ -412,26 +419,37 @@ def evolve(
             out_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
             append_spec = out_specs.append
 
+
+
             for i in np.arange(rs_last_ind):
                 next_spec = tflist[i].sum_specs(out_specs[-1])
                 next_spec.rs = tflist.rs[i+1]
                 append_spec(next_spec)
+
+            if switched:
+                out_specs.switch_spec_type()
 
             return out_specs
 
         elif evolve_type == 'dep':
 
             prop_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
-            out_specs = Spectra([])
+            out_specs = Spectra([], spec_type=in_spec.spec_type)
             append_prop_spec = prop_specs.append
             append_out_spec  = out_specs.append
 
             for i in np.arange(rs_last_ind):
                 in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
                 next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
-                next_spec.rs = tflist.rs[i+1]
+
+                in_spec_dep.rs = tflist.rs[i]
+                next_spec.rs   = tflist.rs[i]
+
                 append_out_spec(in_spec_dep)
                 append_prop_spec(next_spec)
+
+            if switched:
+                out_specs.switch_spec_type()
 
             return out_specs
 
@@ -453,4 +471,32 @@ def evolve(
         else:
             raise TypeError('invalid evolve_type.')
 
+        if switched:
+            in_spec.switch_spec_type()
+
         return in_spec
+
+
+def get_normalized_spec(spec, dE_dVdt, rs):
+    """
+    Normalizes the spectrum to per baryon per dlnz, given dE/(dV dt). 
+
+    Parameters
+    ----------
+    spec : Spectrum
+        Input spectrum to be normalized. 
+    dE_dVdt : float
+        The injection dE/(dV dt) in eV cm^-3 s^-1. 
+    rs : float
+        The redshift (1+z). 
+
+    Returns
+    -------
+    Spectrum
+        The normalized spectrum (per baryon per dlnz). 
+
+    """
+
+    dE_dNBdlnz = dE_dVdt/(phys.nB*rs**3)/phys.hubble(rs)
+
+    return spec/spec.toteng()*dEdNBdlnz
