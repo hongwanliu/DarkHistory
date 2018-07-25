@@ -159,6 +159,7 @@ def compute_fs(photon_spectrum, x, dE_dVdt_inj, time_step, method='old'):
         bound_arr=np.array([eng[0],phys.lya_eng])
     )[0] * norm_factor
 
+
     #----- Treatment of photoexcitation -----#
 
     # The bin number containing 10.2eV
@@ -198,8 +199,9 @@ def compute_fs(photon_spectrum, x, dE_dVdt_inj, time_step, method='old'):
     #print('Begin photoionization: ', time.time()-t0)
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
-        tot_ion_eng = phys.rydberg * sum(ion_Ns)
+        tot_ion_eng = phys.rydberg * np.sum(ion_Ns)
         f_HI = tot_ion_eng * norm_factor
+
     else:
         # Photons may also deposit their energy into HeI and HeII single ionization
 
@@ -217,7 +219,7 @@ def compute_fs(photon_spectrum, x, dE_dVdt_inj, time_step, method='old'):
         ionHI, ionHeI, ionHeII = [ llist/totList for llist in [ionHI, ionHeI, ionHeII] ]
 
         f_HI, f_HeI, f_HeII = [
-            sum(ion_Ns * llist * norm_factor)
+            np.sum(ion_Ns * llist * norm_factor)
             for llist in [phys.rydberg*ionHI, phys.He_ion_eng*ionHeI, 4*phys.rydberg*ionHeII]
         ]
 

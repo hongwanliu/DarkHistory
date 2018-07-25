@@ -162,7 +162,9 @@ class TransFuncAtEnergy(Spectra):
 
         """
         out_spec = super().sum_specs(weight)
-        out_spec.in_eng = self.in_eng
+        # Remember that self.in_eng is an array, all 
+        # having the same value.
+        out_spec.in_eng = self.in_eng[0]
 
         return out_spec
 
@@ -683,7 +685,9 @@ class TransFuncAtRedshift(Spectra):
 
         """
         out_spec = super().sum_specs(weight)
-        out_spec.rs = self.rs
+        # Remember that self.rs is an array, all with the 
+        # same value of rs.
+        out_spec.rs = self.rs[0]
         if self.spec_type == 'dNdE':
             out_spec._spec_type = 'dNdE'
         return out_spec
