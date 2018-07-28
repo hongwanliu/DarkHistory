@@ -37,7 +37,6 @@
         <link rel="search" title="Search" href="../search.html"/>
     <link rel="top" title="DarkHistory  documentation" href="../index.html"/>
         <link rel="up" title="darkhistory" href="../modules.html"/>
-        <link rel="next" title="utilities" href="darkhistory.utilities.html"/>
         <link rel="prev" title="darkhistory" href="../modules.html"/> 
 
   
@@ -95,7 +94,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="darkhistory.utilities.html">utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
 <li class="toctree-l2"><a class="reference internal" href="darkhistory.electrons.html">electrons</a></li>
 </ul>
@@ -304,8 +302,8 @@
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.TCMB" title="darkhistory.physics.TCMB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TCMB</span></code></a>(rs)</td>
 <td>CMB temperature in eV.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.physics.get_inj_rate" title="darkhistory.physics.get_inj_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_inj_rate</span></code></a>(inj_type,&nbsp;inj_fac)</td>
-<td>Dark matter injection rate function.</td>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_inj_rate</span></code></td>
+<td></td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="#darkhistory.physics.photo_ion_rate" title="darkhistory.physics.photo_ion_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photo_ion_rate</span></code></a>(rs,&nbsp;eng,&nbsp;xH,&nbsp;xe[,&nbsp;atom])</td>
 <td>Photoionization rate in cm^3 s^-1.</td>
@@ -562,30 +560,6 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="darkhistory.physics.get_inj_rate">
-<code class="descclassname">darkhistory.physics.</code><code class="descname">get_inj_rate</code><span class="sig-paren">(</span><em>inj_type</em>, <em>inj_fac</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.get_inj_rate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Dark matter injection rate function.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>inj_type</strong> (<em>{'sWave'</em><em>, </em><em>'decay'}</em>) – The type of injection.</li>
-<li><strong>inj_fac</strong> (<em>float</em>) – The prefactor for the injection rate, consisting of everything other than the redshift dependence.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The function takes redshift as an input, and outputs the injection rate.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">function</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="darkhistory.physics.photo_ion_rate">
 <code class="descclassname">darkhistory.physics.</code><code class="descname">photo_ion_rate</code><span class="sig-paren">(</span><em>rs</em>, <em>eng</em>, <em>xH</em>, <em>xe</em>, <em>atom=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.photo_ion_rate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Photoionization rate in cm^3 s^-1.</p>
@@ -693,8 +667,6 @@
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="darkhistory.utilities.html" class="btn btn-neutral float-right" title="utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="../modules.html" class="btn btn-neutral" title="darkhistory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

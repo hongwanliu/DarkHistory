@@ -90,7 +90,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../../modules.html">darkhistory</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../darkhistory.physics.html">physics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../darkhistory.utilities.html">utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../darkhistory.spec.html">spec</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../darkhistory.electrons.html">electrons</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="../darkhistory.electrons.xsecs.html">xsecs</a></li>
@@ -202,7 +201,7 @@
 <blockquote>
 <div><dl class="function">
 <dt id="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>nonrel=False</em>, <em>nonrel_tf=None</em>, <em>rel_tf=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>nonrel=False</em>, <em>nonrel_tf=None</em>, <em>rel_tf=None</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Energy loss ICS spectrum.</p>
 <p>Switches between <cite>engloss_spec_series</cite> and <cite>engloss_spec_diff</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -217,6 +216,7 @@
 <li><strong>nonrel</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, only returns the nonrelativistic energy loss spectrum, and never switches to the relativistic case.</li>
 <li><strong>nonrel_tf</strong> (<a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a><em>, </em><em>optional</em>) – Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</li>
 <li><strong>rel_tf</strong> (<a class="reference internal" href="../../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a><em>, </em><em>optional</em>) – Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</li>
+<li><strong>spec_type</strong> (<em>{'old'</em><em>, </em><em>'new'}</em>) – The ICS secondary photon spectrum to integrate over.</li>
 </ul>
 </td>
 </tr>
@@ -232,7 +232,7 @@
 
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_diff">
-<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec_diff</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_diff" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec_diff</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_diff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nonrelativistic ICS energy loss spectrum by beta expansion.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -243,6 +243,7 @@
 <li><strong>delta</strong> (<em>ndarray</em>) – Energy gained by photon after upscattering (only positive values).</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
 <li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size.</li>
+<li><strong>spec_type</strong> (<em>{'old'</em><em>, </em><em>'new'}</em>) – The ICS secondary photon spectrum to integrate over.</li>
 </ul>
 </td>
 </tr>
@@ -262,7 +263,7 @@
 
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series">
-<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec_series</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec_series</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series" title="Permalink to this definition">¶</a></dt>
 <dd><p>Nonrelativistic ICS energy loss spectrum using the series method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -273,6 +274,7 @@
 <li><strong>delta</strong> (<em>ndarray</em>) – Energy gained by photon after upscattering (only positive values).</li>
 <li><strong>T</strong> (<em>float</em>) – CMB temperature.</li>
 <li><strong>as_pairs</strong> (<em>bool</em>) – If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size.</li>
+<li><strong>spec_type</strong> (<em>{'old'</em><em>, </em><em>'new'}</em>) – The ICS secondary photon spectrum to integrate over.</li>
 </ul>
 </td>
 </tr>
