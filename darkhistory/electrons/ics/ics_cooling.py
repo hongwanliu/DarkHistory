@@ -140,9 +140,9 @@ def get_ics_cooling_tf(
         # The total energy of secondary electrons produced per unit time. 
         sec_elec_toteng = sec_elec_spec.toteng()
         # The total energy of secondary photons produced per unit time. 
-        sec_phot_totN = sec_phot_spec.toteng()
+        sec_phot_toteng = sec_phot_spec.toteng()
         # Deposited energy per unit time, dD/dt. 
-        deposited_eng = pri_elec_toteng - sec_elec_toteng - (sec_phot_totN - continuum_engloss)
+        deposited_eng = pri_elec_toteng - sec_elec_toteng - (sec_phot_toteng - continuum_engloss)
 
         # In the original code, the energy of the electron has gamma > 20, 
         # then the continuum energy loss is assigned to deposited_eng instead. 
