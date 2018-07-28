@@ -91,7 +91,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.utilities.html">utilities</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.spec.html">spec</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectools.html">spectools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">spectrum</a></li>
@@ -180,7 +179,7 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="darkhistory.spec.spectra.Spectra">
-<em class="property">class </em><code class="descclassname">darkhistory.spec.spectra.</code><code class="descname">Spectra</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">darkhistory.spec.spectra.</code><code class="descname">Spectra</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>eng=None</em>, <em>in_eng=None</em>, <em>rs=None</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Structure for a collection of <cite>Spectrum</cite> objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -188,8 +187,11 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>spec_arr</strong> (<em>list of Spectrum</em>) – List of <cite>Spectrum</cite> to be stored together.</li>
+<li><strong>spec_arr</strong> (<em>list of Spectrum</em><em> or </em><em>ndarray</em>) – List of <cite>Spectrum</cite> or array to be stored together.</li>
 <li><strong>spec_type</strong> (<em>{'N'</em><em>, </em><em>'dNdE'}</em><em>, </em><em>optional</em>) – The type of entries. Default is ‘dNdE’.</li>
+<li><strong>in_eng</strong> (<em>ndarray</em>) – Array of injection energies corresponding to each spectrum.</li>
+<li><strong>eng</strong> (<em>ndarray</em>) – Array of energy abscissa of each spectrum.</li>
+<li><strong>rs</strong> (<em>ndarray</em>) – Array of redshifts corresponding to each spectrum.</li>
 <li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the spectra into.</li>
 </ul>
 </td>

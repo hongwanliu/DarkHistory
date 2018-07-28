@@ -91,7 +91,6 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.utilities.html">utilities</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.spec.html">spec</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectools.html">spectools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">spectrum</a></li>
@@ -184,10 +183,10 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr[,&nbsp;spec_type,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;…])</td>
 <td>Transfer function at a given injection energy.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr[,&nbsp;dlnz,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;…])</td>
 <td>Transfer function at a given redshift.</td>
 </tr>
 </tbody>
@@ -208,7 +207,7 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy">
-<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtEnergy</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>spec_type='dNdE'</em>, <em>dlnz=-1</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtEnergy</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>eng=None</em>, <em>in_eng=None</em>, <em>rs=None</em>, <em>spec_type='dNdE'</em>, <em>dlnz=-1</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal notranslate"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
 <p>Transfer function at a given injection energy.</p>
 <p>Collection of Spectrum objects, each at different redshifts.</p>
@@ -720,7 +719,7 @@
 
 <dl class="class">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift">
-<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtRedshift</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>dlnz=-1</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtRedshift</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>eng=None</em>, <em>in_eng=None</em>, <em>rs=None</em>, <em>dlnz=-1</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra"><code class="xref py py-class docutils literal notranslate"><span class="pre">darkhistory.spec.spectra.Spectra</span></code></a></p>
 <p>Transfer function at a given redshift.</p>
 <p>Collection of Spectrum objects, each at different injection energies.</p>
@@ -729,10 +728,13 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>spec_arr</strong> (<em>list of Spectrum</em>) – List of Spectrum to be stored together.</li>
+<li><strong>spec_arr</strong> (<em>list of Spectrum</em><em> or </em><em>ndarray</em>) – List of Spectrum to be stored together.</li>
+<li><strong>eng</strong> (<em>ndarray</em>) – The energy abscissa of each Spectrum.</li>
+<li><strong>in_eng</strong> (<em>ndarray</em>) – The injection energy abscissa.</li>
+<li><strong>rs</strong> (<em>float</em>) – </li>
 <li><strong>dlnz</strong> (<em>float</em>) – d ln(1+z) associated with this transfer function.</li>
 <li><strong>spec_type</strong> (<em>{'N'</em><em>, </em><em>'dNdE'}</em><em>, </em><em>optional</em>) – The type of spectrum saved.</li>
-<li><strong>rs</strong> (<em>float</em>) – Redshift of this transfer function.</li>
+<li><strong>rs</strong> – Redshift of this transfer function.</li>
 <li><strong>rebin_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – New abscissa to rebin all of the Spectrum objects into.</li>
 </ul>
 </td>
@@ -1054,7 +1056,7 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng">
-<code class="descname">at_in_eng</code><span class="sig-paren">(</span><em>new_eng</em>, <em>interp_type='val'</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="Permalink to this definition">¶</a></dt>
+<code class="descname">at_in_eng</code><span class="sig-paren">(</span><em>new_eng</em>, <em>interp_type='val'</em>, <em>log_interp=False</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_in_eng" title="Permalink to this definition">¶</a></dt>
 <dd><p>Interpolates the transfer function at a new injection energy.</p>
 <p>Interpolation is logarithmic.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1064,6 +1066,7 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>new_eng</strong> (<em>ndarray</em>) – The injection energies or injection energy bin indices at which to interpolate.</li>
 <li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual injection energies.</li>
+<li><strong>log_interp</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to perform an interpolation over log of the grid values. Default is False.</li>
 <li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
 <li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
 </ul>
@@ -1101,7 +1104,7 @@
 
 <dl class="method">
 <dt id="darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val">
-<code class="descname">at_val</code><span class="sig-paren">(</span><em>new_in_eng</em>, <em>new_eng</em>, <em>interp_type='val'</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val" title="Permalink to this definition">¶</a></dt>
+<code class="descname">at_val</code><span class="sig-paren">(</span><em>new_in_eng</em>, <em>new_eng</em>, <em>interp_type='val'</em>, <em>log_interp=False</em>, <em>bounds_error=None</em>, <em>fill_value=nan</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtRedshift.at_val" title="Permalink to this definition">¶</a></dt>
 <dd><p>2D interpolation at specified abscissa.</p>
 <p>Interpolation is logarithmic. 2D interpolation should be preferred over 1D interpolation over each abscissa in the interest of accuracy.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -1112,6 +1115,7 @@
 <li><strong>new_in_eng</strong> (<em>ndarray</em>) – The injection energy abscissa or injection energy bin indices at which to interpolate.</li>
 <li><strong>new_eng</strong> (<em>ndarray</em>) – The energy abscissa or energy abscissa bin indices at which to interpolate.</li>
 <li><strong>interp_type</strong> (<em>{'val'</em><em>, </em><em>'bin'}</em>) – The type of interpolation. ‘bin’ uses bin index, while ‘val’ uses the actual injection energies.</li>
+<li><strong>log_interp</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to perform an interpolation over log of the grid values. Default is False.</li>
 <li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
 <li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d.</li>
 </ul>
