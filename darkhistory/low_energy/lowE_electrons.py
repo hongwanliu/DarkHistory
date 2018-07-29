@@ -105,7 +105,6 @@ def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     # print('check lyman: ', lyman[100:110])
     # print('check ionH: ', ionH[100:110])
 
-    
     #enforce that all functions sum to 1
     tmpList = (heat+lyman+ionH+ionHe+cont)
     # print('check tmpList: ', tmpList[100:110])
@@ -126,6 +125,7 @@ def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     #compute ratio of deposited divided by injected
     norm_factor = phys.nB * rs**3 / (time_step * dE_dVdt_inj)
     tmpList = e_spectrum.eng * e_spectrum.N * norm_factor
+    print('Goods: ', np.sum(tmpList))
     # print('check 2 tmpList: ', tmpList[100:110])
     # print('check e_spectrum.toteng(): ', e_spectrum.toteng())
     f_elec =  np.array([
