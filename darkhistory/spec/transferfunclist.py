@@ -386,7 +386,7 @@ class TransferFuncInterp:
         # The ordering should be correct... 
         # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
 
-        self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), grid_vals)
+        self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), self._grid_vals)
 
     def get_tf(self, rs, xe):
 
