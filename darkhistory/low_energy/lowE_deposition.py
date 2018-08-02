@@ -12,21 +12,21 @@ from darkhistory.low_energy import lowE_photons
 def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
-    Given a spectrum of deposited photons, resolve its energy into continuum photons,
+    Given a spectrum of deposited electrons and photons, resolve their energy into continuum photons,
     HI excitation, and HI, HeI, HeII ionization in that order.
 
     Parameters
      ----------
     spec_phot : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return energy _per baryon_ per time.
+        spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_ per time.
     spec_elec : Spectrum object
-        spectrum of electrons. Assumed to be in dNdE mode. spec.toteng() should return energy _per baryon_ per time.
+        spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_ per time.
     x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
     dE_dVdt : float
         DM energy injection rate, dE/dVdt injected.
     time_step : float
-        The time-step associated with the deposited spectra.
+        The time-step associated with the deposited spectra, in seconds.
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
