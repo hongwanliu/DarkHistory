@@ -26,7 +26,7 @@ def get_ics_cooling_tf(
     engloss_tf_filename : string
         Raw primary electron ICS energy loss transfer function. 
     eleceng : ndarray
-        The electron energy abscissa. 
+        The electron kinetic energy abscissa. 
     photeng : ndarray
         The photon energy abscissa. 
     rs : float
@@ -51,18 +51,48 @@ def get_ics_cooling_tf(
         eleceng, photeng, T, nonrel_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
     )
 
+    # Downcasting speeds up np.dot
+    ICS_tf._grid_vals = ICS_tf.grid_vals.astype('float64')
+
     # Energy loss transfer function for primary electron single scattering.
     engloss_tf = engloss_spec(
         eleceng, photeng, T, nonrel_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
 
+    # Downcasting speeds up np.dot
+    engloss_tf._grid_vals = engloss_tf.grid_vals.astype('float64')
+
     # Secondary electron transfer function from primary electron. 
-    sec_elec_tf = tf.TransFuncAtRedshift([])
+    
+    # OLD: appending to an empty transfer function
+
+    # sec_elec_tf = tf.TransFuncAtRedshift([])
+    # append_sec_elec_tf = sec_elec_tf.append
+
+    # for i, in_eng in enumerate(engloss_tf.in_eng):
+    #     spec = engloss_tf[i]
+    #     spec.engloss_rebin(in_eng, engloss_tf.in_eng)
+    #     append_sec_elec_tf(spec)
+
+    # print('here!')
+    # print(sec_elec_tf.rs)
+
+    # NEW: Avoiding append for speed-up
+
+    sec_elec_tf_list = []
 
     for i, in_eng in enumerate(engloss_tf.in_eng):
         spec = engloss_tf[i]
         spec.engloss_rebin(in_eng, engloss_tf.in_eng)
-        sec_elec_tf.append(spec)
+        sec_elec_tf_list.append(spec.dNdE)
+
+    sec_elec_tf = tf.TransFuncAtRedshift(
+        np.array(sec_elec_tf_list), eng=engloss_tf.in_eng,
+        in_eng=engloss_tf.in_eng, rs=engloss_tf.rs,
+        spec_type='dNdE'
+    )
+
+
 
     # Low and high energy boundaries
     loweng = 250
@@ -86,6 +116,17 @@ def get_ics_cooling_tf(
 
     # Low energy electrons. 
     delta_spec = np.zeros_like(eleceng)
+
+    # OLD: append to transfer functions.
+    # append_sec_phot_tf = sec_phot_tf.append
+    # append_sec_lowengelec_tf = sec_lowengelec_tf.append
+
+    # NEW: append to lists. 
+    sec_phot_tf_list = []
+    sec_lowengelec_tf_list = []
+    sec_list_rs = []
+    sec_list_in_eng = []
+
     for i, eng in zip(eleceng_low_ind, eleceng_low):
         # Construct the delta function spectrum. 
         delta_spec *= 0
@@ -102,9 +143,15 @@ def get_ics_cooling_tf(
         )
         sec_elec_spec.in_eng = eng
         sec_elec_spec.rs = rs
-        # Append the spectra to the transfer functions. 
-        sec_phot_tf.append(sec_phot_spec)
-        sec_lowengelec_tf.append(sec_elec_spec)
+        # OLD: Append the spectra to the transfer functions. 
+        # append_sec_phot_tf(sec_phot_spec)
+        # append_sec_lowengelec_tf(sec_elec_spec)
+
+        # NEW: Append to lists.
+        sec_phot_tf_list.append(sec_phot_spec.N)
+        sec_lowengelec_tf_list.append(sec_elec_spec.N)
+        sec_list_rs.append(rs)
+        sec_list_in_eng.append(eng)
 
 
     # High energy electrons. 
@@ -180,12 +227,29 @@ def get_ics_cooling_tf(
 
         # Scatter into photons. For this first high energy case, this
         # trivially gives no photons, but for higher energies, this is non-trivial.
+
+        # NEW: Define sec_phot_tf first as a TransFuncAtRedshift.
+        sec_phot_tf = tf.TransFuncAtRedshift(
+            np.array(sec_phot_tf_list), in_eng = np.array(sec_list_in_eng),
+            rs = np.array(sec_list_rs), eng=photeng,
+            dlnz=-1, spec_type='N'
+        )
+
         resolved_phot_spec = spectools.scatter(
             sec_phot_tf, scattered_elec_spec, new_eng = photeng
         )
         
         # Scatter into low energy electrons. For this first high energy case, 
         # it's also trivial, since the transfer matrix is the identity. 
+
+        # NEW: Define sec_lowengelec_tf first as a TransFuncAtRedshift.
+        sec_lowengelec_tf = tf.TransFuncAtRedshift(
+            np.array(sec_lowengelec_tf_list), 
+            in_eng = np.array(sec_list_in_eng),
+            rs = np.array(sec_list_rs), eng=eleceng,
+            dlnz=-1, spec_type='N'
+        )
+
         resolved_lowengelec_spec = spectools.scatter(
             sec_lowengelec_tf, scattered_elec_spec, new_eng = eleceng
         )
@@ -204,9 +268,16 @@ def get_ics_cooling_tf(
         sec_phot_spec.rs = rs
         sec_elec_spec.rs = rs
 
-        # Append to the transfer function
-        sec_phot_tf.append(sec_phot_spec)
-        sec_lowengelec_tf.append(sec_elec_spec)
+        # OLD: Append to the transfer function
+
+        # append_sec_phot_tf(sec_phot_spec)
+        # append_sec_lowengelec_tf(sec_elec_spec)
+
+        # NEW: Append to the lists
+        sec_phot_tf_list.append(sec_phot_spec.N)
+        sec_lowengelec_tf_list.append(sec_elec_spec.N)
+        sec_list_rs.append(rs)
+        sec_list_in_eng.append(eng)
 
         # Set the correct values in the cont_loss_vec and deposited_vec
         cont_loss_vec[i] = continuum_engloss
@@ -230,6 +301,20 @@ def get_ics_cooling_tf(
             
         # Force conservation of energy. 
         deposited_vec[i] += conservation_check
+
+    # NEW: Recast lists as TransFuncAtRedshift.
+
+    sec_phot_tf = tf.TransFuncAtRedshift(
+        np.array(sec_phot_tf_list), in_eng = np.array(sec_list_in_eng),
+        rs = np.array(sec_list_rs), eng=photeng,
+        dlnz=-1, spec_type='N'
+    )
+
+    sec_lowengelec_tf = tf.TransFuncAtRedshift(
+        np.array(sec_lowengelec_tf_list), in_eng = np.array(sec_list_in_eng),
+        rs = np.array(sec_list_rs), eng=eleceng,
+        dlnz=-1, spec_type='N'
+    )
 
     return (sec_phot_tf, sec_lowengelec_tf)
 
