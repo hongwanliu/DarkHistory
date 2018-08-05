@@ -5,6 +5,8 @@
 import numpy as np
 import pickle
 
+from scipy.interpolate import interp1d
+
 import darkhistory.physics as phys
 import darkhistory.utilities as utils
 import darkhistory.spec.spectools as spectools
@@ -13,16 +15,21 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
 import darkhistory.history.tla as tla
 
+from darkhistory.low_energy.lowE_deposition import compute_fs
+
 def load_trans_funcs():
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
-    print('Load them shits!\n')
+    print('Loading transfer functions...')
     user = 'gridgway'
     highengphot_tflist_arr = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
+    print('Loaded high energy photons...')
     lowengphot_tflist_arr  = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
+    print('Low energy photons...')
     lowengelec_tflist_arr  = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
+    print('Low energy electrons...')
     CMB_engloss_arr = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/CMB_engloss_60eV_complete_coarse.raw", "rb"))
-    print("done loading")
+    print('CMB losses.\n')
 
     photeng = highengphot_tflist_arr[0].eng
     eleceng = lowengelec_tflist_arr[0].eng
@@ -36,6 +43,7 @@ def load_trans_funcs():
     eleceng_low  = eleceng[eleceng <= 3000]
 
 
+    print('Padding tflists with zeros...')
     for highengphot_tflist in highengphot_tflist_arr:
         for tf in highengphot_tflist:
             # Pad with zeros so that it becomes photeng x photeng. 
@@ -51,7 +59,7 @@ def load_trans_funcs():
         highengphot_tflist._grid_vals = np.atleast_3d(
             np.stack([tf.grid_vals for tf in highengphot_tflist._tflist])
         )
-    print("ONE")
+    print("high energy photons...")
 
     # lowengphot_tflist.in_eng set to photeng_high
     for lowengphot_tflist in lowengphot_tflist_arr:
@@ -71,7 +79,7 @@ def load_trans_funcs():
         lowengphot_tflist._grid_vals = np.atleast_3d(
             np.stack([tf.grid_vals for tf in lowengphot_tflist._tflist])
         )
-    print("TWO")
+    print("low energy photons...")
 
     # lowengelec_tflist.in_eng set to photeng_high 
     for lowengelec_tflist in lowengelec_tflist_arr:
@@ -89,20 +97,30 @@ def load_trans_funcs():
         lowengelec_tflist._grid_vals = np.atleast_3d(
             np.stack([tf.grid_vals for tf in lowengelec_tflist._tflist])
         )
+    print("low energy electrons.\n")
 
     #!!! engloss must be included
-    #for engloss in CMB_engloss_arr:
-    #    engloss = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
+    for engloss in CMB_engloss_arr:
+        engloss = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
 
-    print("DONE\n")
-    return highengphot_tflist_arr, lowengphot_tflist_arr, lowengelec_tflist_arr
+    # free electron fractions for which transfer functions are evaluated
+    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+
+    print("Generating TransferFuncInterp objects for each tflist...")
+    #interpolate at each of the electron fractions defined above
+    highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
+    lowengphot_tf_interp = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
+    lowengelec_tf_interp = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
+    print("Done.\n")
+
+    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp
 
 
-[main_highengphot_tf_interp, main_lowengphot_tflist_interp, main_lowengelec_tflist_interp] = [None, None, None]
 def evolve(
     in_spec_elec, in_spec_phot,
     rate_func_N, rate_func_eng, end_rs,
-    xe_init=None, T_m_init=None,
+    highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
+    xe_init=None, Tm_init=None,
     coarsen_factor=1, std_soln=False
 ):
     """
@@ -120,7 +138,7 @@ def evolve(
         Function describing the rate of annihilation/decay, dE/(dV dt)
     xe_init : float
         xe at the initial redshift.
-    T_m_init : float
+    Tm_init : float
         Matter temperature at the initial redshift.
     end_rs : float
         Final redshift to evolve to.
@@ -130,19 +148,6 @@ def evolve(
         If true, uses the standard TLA solution for f(z).
     """
     print("start to evolve")
-    # free electron fractions for which transfer functions are evaluated
-    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
-
-    # Make sure not to download tflists more than once
-    global main_highengphot_tf_interp, main_lowengphot_tf_interp, main_lowengelec_tf_interp
-    if main_highengphot_tf_interp is None:
-        print("Loading Transfer Functions for the first time.\n")
-        main_highengphot_tflist_arr, main_lowengphot_tflist_arr, main_lowengelec_tflist_arr = load_trans_funcs()
-
-        #interpolate at each of the electron fractions defined above
-        main_highengphot_tf_interp = tflist.TransferFuncInterp(xes, main_highengphot_tflist_arr)
-        main_lowengphot_tf_interp = tflist.TransferFuncInterp(xes, main_lowengphot_tflist_arr)
-        main_lowengelec_tf_interp = tflist.TransferFuncInterp(xes, main_lowengelec_tflist_arr)
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None
@@ -153,7 +158,7 @@ def evolve(
         raise TypeError('Input spectra must have the same rs.')
 
     # redshift/timestep related quantities. 
-    dlnz = main_highengphot_tf_interp.dlnz
+    dlnz = highengphot_tf_interp.dlnz
     prev_rs = None
     rs = in_spec_phot.rs
     dt = dlnz/phys.hubble(rs)
@@ -176,13 +181,13 @@ def evolve(
 
     # Initialize the xe and T array that will store the solutions.
     xe_arr  = np.array([xe_init])
-    T_m_arr = np.array([T_m_init])
+    Tm_arr = np.array([Tm_init])
 
     # Load the standard TLA solution if necessary.
     if std_soln:
         soln = pickle.load(open("../darkhistory/history/std_soln.p", "rb"))
         xe_std  = interp1d(soln[0,:], soln[2,:])
-        T_m_std = interp1d(soln[0,:], soln[1,:])
+        Tm_std = interp1d(soln[0,:], soln[1,:])
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
@@ -208,7 +213,7 @@ def evolve(
                 )
 
             print("fs: ", f_raw)
-            init_cond = np.array([T_m_arr[-1], xe_arr[-1], 0, 0])
+            init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
             new_vals = tla.get_history(
                 init_cond, f_raw[2], f_raw[1], f_raw[4],
@@ -216,17 +221,17 @@ def evolve(
                 reion_switch = False
             )
 
-            T_m_arr = np.append(T_m_arr, new_vals[-1,0])
+            Tm_arr = np.append(Tm_arr, new_vals[-1,0])
             xe_arr  = np.append(xe_arr,  new_vals[-1,1])
 
         if std_soln:
-            highengphot_tf = main_highengphot_tf_interp.get_tf(rs, xe_std(rs))
-            lowengphot_tf  = main_lowengphot_tf_interp.get_tf(rs, xe_std(rs))
-            lowengelec_tf  = main_lowengelec_tf_interp.get_tf(rs, xe_std(rs))
+            highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_std(rs))
+            lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_std(rs))
+            lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_std(rs))
         else:
-            highengphot_tf = main_highengphot_tf_interp.get_tf(rs, xe_arr[-1])
-            lowengphot_tf  = main_lowengphot_tf_interp.get_tf(rs, xe_arr[-1])
-            lowengelec_tf  = main_lowengelec_tf_interp.get_tf(rs, xe_arr[-1])
+            highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_arr[-1])
+            lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_arr[-1])
+            lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_arr[-1])
 
         #!!! Coarsening goes here
 
@@ -256,6 +261,6 @@ def evolve(
         append_lowengelec_spec(next_lowengelec_spec)
 
     return (
-        xe_arr, T_m_arr,
+        xe_arr, Tm_arr,
         out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs
     )
