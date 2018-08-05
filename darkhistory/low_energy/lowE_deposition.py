@@ -77,8 +77,14 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
         tmp_spec_elec, 1-x[0], dE_dVdt, time_step
     )
 
-    print('Split by photon and electron deposition!')
     print('f_phot: ', f_phot)
     print('f_elec: ', f_elec)
+    f_final = [
+        f_phot[0]+f_elec[0],
+        f_phot[1]+f_elec[1],
+        f_phot[2]+f_elec[2],
+        f_phot[3]+f_phot[4]+f_elec[3],
+        f_elec[4],
+    ]
 
-    return f_phot + f_elec
+    return f_final
