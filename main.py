@@ -194,7 +194,6 @@ def evolve(
     append_lowengphot_spec  = out_lowengphot_specs.append
     append_lowengelec_spec  = out_lowengelec_specs.append
 
-    print("START LOOP\n")
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
         # If prev_rs exists, calculate xe and T_m. 
@@ -212,7 +211,7 @@ def evolve(
                     np.array([1-xe_arr[-1], 0, 0]), rate_func_eng(rs), dt
                 )
 
-            print("fs: ", f_raw)
+            print("rs, fs: ", rs, " ", f_raw)
             init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
             new_vals = tla.get_history(
