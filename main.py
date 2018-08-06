@@ -147,7 +147,6 @@ def evolve(
     std_soln : bool
         If true, uses the standard TLA solution for f(z).
     """
-    print("start to evolve")
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None
@@ -214,7 +213,7 @@ def evolve(
                 )
 
             f_arr = np.append(f_arr, f_raw)
-            print("rs, fs: ", rs, " ", f_raw)
+            #print("rs, fs: ", rs, " ", f_raw)
             init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
             new_vals = tla.get_history(
