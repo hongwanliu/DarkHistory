@@ -183,6 +183,8 @@ def evolve(
     xe_arr  = np.array([xe_init])
     Tm_arr = np.array([Tm_init])
 
+    f_arr = np.array([])
+
     # Load the standard TLA solution if necessary.
     if std_soln:
         soln = pickle.load(open("../darkhistory/history/std_soln.p", "rb"))
@@ -211,6 +213,7 @@ def evolve(
                     np.array([1-xe_arr[-1], 0, 0]), rate_func_eng(rs), dt
                 )
 
+            f_arr = np.append(f_arr, f_raw)
             print("rs, fs: ", rs, " ", f_raw)
             init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
@@ -259,7 +262,8 @@ def evolve(
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
 
+    f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
     return (
         xe_arr, Tm_arr,
-        out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs
+        out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs, f_arr
     )
