@@ -108,10 +108,10 @@ def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
         heat/tmpList, lyman/tmpList, ionH/tmpList, ionHe/tmpList, cont/tmpList
     )
 
-    print('Normalized electron heat, lyman, ionH, ionHe, cont: ',
-        np.sum(heat)/heat.size, np.sum(lyman)/lyman.size, np.sum(ionH)/ionH.size,
-        np.sum(ionHe)/ionHe.size, np.sum(cont)/cont.size
-    )
+    #print('Normalized electron heat, lyman, ionH, ionHe, cont: ',
+    #    np.sum(heat)/heat.size, np.sum(lyman)/lyman.size, np.sum(ionH)/ionH.size,
+    #    np.sum(ionHe)/ionHe.size, np.sum(cont)/cont.size
+    #)
 
     #compute ratio of deposited divided by injected
     norm_factor = phys.nB * rs**3 / (time_step * dE_dVdt_inj)
