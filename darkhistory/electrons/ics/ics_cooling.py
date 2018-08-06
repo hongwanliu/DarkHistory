@@ -183,17 +183,35 @@ def get_ics_cooling_tf(
         
         # Remove self-scattering.
         
-        selfscatter_engfrac = (
-            sec_elec_spec.N[i]*eleceng[i]/(sec_elec_spec.totN()*eng)
-        )
-        scattered_engfrac = 1 - selfscatter_engfrac
+        ############################################
+        # OLD: rescale by energy in the last bin.  #
+        ############################################
+
+        # selfscatter_engfrac = (
+        #     sec_elec_spec.N[i]*eleceng[i]/(sec_elec_spec.totN()*eng)
+        # )
+        # scattered_engfrac = 1 - selfscatter_engfrac
+
+        ############################################
+        # NEW: rescale by N in the last bin.       #
+        ############################################
+
+        selfscatter_Nfrac = sec_elec_spec.N[i]/sec_elec_spec.totN()
+        scattered_Nfrac = 1 - selfscatter_Nfrac
+
+
 
         sec_elec_spec.N[i] = 0
 
-        sec_phot_spec /= scattered_engfrac
-        sec_elec_spec /= scattered_engfrac
-        continuum_engloss /= scattered_engfrac
-        deposited_eng /= scattered_engfrac
+        # sec_phot_spec /= scattered_engfrac
+        # sec_elec_spec /= scattered_engfrac
+        # continuum_engloss /= scattered_engfrac
+        # deposited_eng /= scattered_engfrac
+
+        sec_phot_spec /= scattered_Nfrac
+        sec_elec_spec /= scattered_Nfrac
+        continuum_engloss /= scattered_Nfrac
+        deposited_eng /= scattered_Nfrac
 
         # Get the full secondary photon spectrum. Type 'N'
         resolved_phot_spec = sec_phot_tf.sum_specs(sec_elec_spec.N)
