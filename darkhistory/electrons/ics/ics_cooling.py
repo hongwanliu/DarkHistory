@@ -120,15 +120,36 @@ def get_ics_cooling_tf(
 
     # Start building sec_phot_tf and sec_lowengelec_tf. 
     # Low energy regime first. 
-    for i, eng in zip(eleceng_low_ind, eleceng_low):
-        # Zero out delta function test spectrum, set it correctly
-        # for the loop ahead. 
-        delta_spec *= 0
-        delta_spec[i] = 1
-        # Add the trivial secondary electron spectrum to the 
-        # transfer function. 
-        sec_lowengelec_tf._grid_vals[i] += delta_spec
 
+    ####################################
+    # OLD: for loop to add identity.   #
+    # Not very clever.                 #
+    ####################################
+
+
+    # for i, eng in zip(eleceng_low_ind, eleceng_low):
+    #     # Zero out delta function test spectrum, set it correctly
+    #     # for the loop ahead. 
+    #     delta_spec *= 0
+    #     delta_spec[i] = 1
+    #     # Add the trivial secondary electron spectrum to the 
+    #     # transfer function. 
+    #     sec_lowengelec_tf._grid_vals[i] += delta_spec
+
+    ####################################
+    # NEW: Just set the relevant       #
+    # part to be the identity matrix   #
+    ####################################
+
+    sec_lowengelec_tf._grid_vals[:eleceng_low.size, :eleceng_low.size] = (
+        np.identity(eleceng_low.size)
+    )
+
+    # Continuum energy loss rate, dU_CMB/dt. 
+    CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
+
+
+    # High energy electron loop to get fully resolved spectrum.
     for i, eng in zip(eleceng_high_ind, eleceng_high):
         # Zero out delta function test spectrum, set it correctly
         # for the loop ahead. 
@@ -138,6 +159,10 @@ def get_ics_cooling_tf(
         # Put the delta function in a Spectrum.
         pri_elec_spec = Spectrum(eleceng, delta_spec, rs=rs, spec_type='N')
         
+        ####################################
+        # OLD: use sum_specs. Unnecessary. #
+        ####################################
+
         # Get the scattered photons, dN/(dE dt). 
         # Using delta_spec returns type 'dNdE', which is right.
         sec_phot_spec = ICS_tf.sum_specs(delta_spec)
@@ -151,11 +176,23 @@ def get_ics_cooling_tf(
         if sec_elec_spec.spec_type == 'dNdE':
             sec_elec_spec.switch_spec_type()
 
-        # Continuum energy loss rate, dU_CMB/dt. 
-        continuum_engloss = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
+        ####################################
+        # OLD: Pull out the relevant index #
+        # directly.                        #
+        ####################################
+
+        # sec_phot_spec = ICS_tf[i]
+        # if sec_phot_spec.spec_type == 'dNdE':
+        #     sec_phot_spec.switch_spec_type()
+
+        # sec_elec_spec = sec_elec_tf[i]
+        # if sec_elec_spec.spec_type == 'dNdE':
+        #     sec_elec_spec.switch_spec_type()
+
+
 
         # The total number of primaries scattered is equal to the total number of secondaries scattered. 
-        pri_elec_totN = sec_elec_spec.totN()
+        pri_elec_totN = sec_phot_spec.totN()
         # The total energy of primary electrons which is scattered per unit time. 
         pri_elec_toteng = pri_elec_totN*eng
         # The total energy of secondary electrons produced per unit time. 
@@ -163,15 +200,22 @@ def get_ics_cooling_tf(
         # The total energy of secondary photons produced per unit time. 
         sec_phot_toteng = sec_phot_spec.toteng()
         # Deposited energy per unit time, dD/dt. 
-        deposited_eng = pri_elec_toteng - sec_elec_toteng - (sec_phot_toteng - continuum_engloss)
+        deposited_eng = pri_elec_toteng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
+
+        print("---------pri_elec_totN: ", pri_elec_totN)
+        print("---------sec_phot_spec.totN(): ", sec_phot_spec.totN())
+        print("---------CMB upscatter energy rate: ", CMB_upscatter_eng_rate/phys.TCMB(1000))
+        print("---------Deposited Energy: ", deposited_eng)
 
         # In the original code, the energy of the electron has gamma > 20, 
         # then the continuum energy loss is assigned to deposited_eng instead. 
         # I'm not sure if this is necessary, but let's be consistent with the 
         # original code for now. 
 
+        continuum_engloss = CMB_upscatter_eng_rate
+
         if eng + phys.me > 20*phys.me:
-            deposited_eng += continuum_engloss
+            deposited_eng += CMB_upscatter_eng_rate
             continuum_engloss = 0
 
         # Normalize to one primary electron.
@@ -180,38 +224,22 @@ def get_ics_cooling_tf(
         sec_elec_spec /= pri_elec_totN
         continuum_engloss /= pri_elec_totN
         deposited_eng /= pri_elec_totN
+
+        print('---- continuum engloss: ', continuum_engloss)
         
         # Remove self-scattering.
-        
-        ############################################
-        # OLD: rescale by energy in the last bin.  #
-        ############################################
 
-        # selfscatter_engfrac = (
-        #     sec_elec_spec.N[i]*eleceng[i]/(sec_elec_spec.totN()*eng)
-        # )
-        # scattered_engfrac = 1 - selfscatter_engfrac
-
-        ############################################
-        # NEW: rescale by N in the last bin.       #
-        ############################################
-
-        selfscatter_Nfrac = sec_elec_spec.N[i]/sec_elec_spec.totN()
-        scattered_Nfrac = 1 - selfscatter_Nfrac
-
-
+        selfscatter_engfrac = (
+            sec_elec_spec.N[i]*eleceng[i]/(sec_elec_spec.totN()*eng)
+        )
+        scattered_engfrac = 1 - selfscatter_engfrac
 
         sec_elec_spec.N[i] = 0
 
-        # sec_phot_spec /= scattered_engfrac
-        # sec_elec_spec /= scattered_engfrac
-        # continuum_engloss /= scattered_engfrac
-        # deposited_eng /= scattered_engfrac
-
-        sec_phot_spec /= scattered_Nfrac
-        sec_elec_spec /= scattered_Nfrac
-        continuum_engloss /= scattered_Nfrac
-        deposited_eng /= scattered_Nfrac
+        sec_phot_spec /= scattered_engfrac
+        sec_elec_spec /= scattered_engfrac
+        continuum_engloss /= scattered_engfrac
+        deposited_eng /= scattered_engfrac
 
         # Get the full secondary photon spectrum. Type 'N'
         resolved_phot_spec = sec_phot_tf.sum_specs(sec_elec_spec.N)
