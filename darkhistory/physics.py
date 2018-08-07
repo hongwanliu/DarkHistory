@@ -4,6 +4,7 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.special import zeta
 
 # Fundamental constants
 mp          = 0.938272081e9
@@ -519,13 +520,31 @@ def CMB_spec(eng, temp):
 
     return expr
 
+def CMB_N_density(T):
+    """ CMB number density in cm^-3.
+
+    Parameters
+    ----------
+    T : float or ndarray
+        CMB temperature.
+
+    Returns
+    -------
+    float or ndarray
+        The number density of the CMB.
+
+    """
+    zeta_4 = np.pi**4/90
+
+    return 4*stefboltz/c*T**3*(zeta(3)/(3*zeta_4))
+
 def CMB_eng_density(T):
     """CMB energy density in eV/cm^3.
 
     Parameters
     ----------
     T : float or ndarray
-        CMB temperature
+        CMB temperature.
 
     Returns
     -------

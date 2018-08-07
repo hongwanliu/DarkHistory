@@ -163,35 +163,37 @@ def get_ics_cooling_tf(
         # OLD: use sum_specs. Unnecessary. #
         ####################################
 
-        # Get the scattered photons, dN/(dE dt). 
-        # Using delta_spec returns type 'dNdE', which is right.
-        sec_phot_spec = ICS_tf.sum_specs(delta_spec)
-        # Switch to type 'N'.
-        if sec_phot_spec.spec_type == 'dNdE':
-            sec_phot_spec.switch_spec_type()
-        # Get the scattered electrons, dNe/(dE dt).
-        # Using delta_spec returns type 'dNdE', which is right.
-        sec_elec_spec = sec_elec_tf.sum_specs(delta_spec)
-        # Switch to type 'N'.
-        if sec_elec_spec.spec_type == 'dNdE':
-            sec_elec_spec.switch_spec_type()
+        # # Get the scattered photons, dN/(dE dt). 
+        # # Using delta_spec returns type 'dNdE', which is right.
+        # sec_phot_spec = ICS_tf.sum_specs(delta_spec)
+        # # Switch to type 'N'.
+        # if sec_phot_spec.spec_type == 'dNdE':
+        #     sec_phot_spec.switch_spec_type()
+        # # Get the scattered electrons, dNe/(dE dt).
+        # # Using delta_spec returns type 'dNdE', which is right.
+        # sec_elec_spec = sec_elec_tf.sum_specs(delta_spec)
+        # # Switch to type 'N'.
+        # if sec_elec_spec.spec_type == 'dNdE':
+        #     sec_elec_spec.switch_spec_type()
 
         ####################################
         # OLD: Pull out the relevant index #
         # directly.                        #
         ####################################
 
-        # sec_phot_spec = ICS_tf[i]
-        # if sec_phot_spec.spec_type == 'dNdE':
-        #     sec_phot_spec.switch_spec_type()
+        sec_phot_spec = ICS_tf[i]
+        if sec_phot_spec.spec_type == 'dNdE':
+            sec_phot_spec.switch_spec_type()
 
-        # sec_elec_spec = sec_elec_tf[i]
-        # if sec_elec_spec.spec_type == 'dNdE':
-        #     sec_elec_spec.switch_spec_type()
+        sec_elec_spec = sec_elec_tf[i]
+        if sec_elec_spec.spec_type == 'dNdE':
+            sec_elec_spec.switch_spec_type()
 
 
 
-        # The total number of primaries scattered is equal to the total number of secondaries scattered. 
+        # The total number of primaries scattered is equal to the total number of scattered *photons*.
+        # The scattered electrons is obtained from the *net* energy loss, and
+        # so is not indicative of number of scatters.
         pri_elec_totN = sec_phot_spec.totN()
         # The total energy of primary electrons which is scattered per unit time. 
         pri_elec_toteng = pri_elec_totN*eng
@@ -202,10 +204,32 @@ def get_ics_cooling_tf(
         # Deposited energy per unit time, dD/dt. 
         deposited_eng = pri_elec_toteng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
 
-        print("---------pri_elec_totN: ", pri_elec_totN)
-        print("---------sec_phot_spec.totN(): ", sec_phot_spec.totN())
-        print("---------CMB upscatter energy rate: ", CMB_upscatter_eng_rate/phys.TCMB(1000))
-        print("---------Deposited Energy: ", deposited_eng)
+        print('-------- Injection Energy: ', eng)
+        print(
+            '-------- No. of Scatters (Analytic): ', 
+            phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
+        )
+        print(
+            '-------- No. of Scatters (Computed): ',
+            pri_elec_totN
+        )
+        gamma_elec = (eng + phys.me)/phys.me
+        beta_elec  = np.sqrt(1 - 1/gamma_elec**2)
+        print(
+            '-------- Energy lost (Analytic): ',
+            (4/3)*phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
+                gamma_elec**2 * beta_elec**2
+            )
+        )
+        print(
+            '-------- Energy lost (Computed from photons): ',
+            engloss_tf[i].toteng()
+        )
+        print(
+            '-------- Energy lost (Computed from electrons): ',
+            pri_elec_toteng - sec_elec_toteng
+        )
+        print('-------- Deposited Energy: ', deposited_eng)
 
         # In the original code, the energy of the electron has gamma > 20, 
         # then the continuum energy loss is assigned to deposited_eng instead. 

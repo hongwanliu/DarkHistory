@@ -899,10 +899,8 @@ class Spectrum:
 
         # sec_spec_eng is the injected energy - delta, 
         sec_spec_eng = np.flipud(in_eng - self.eng)
-        if self._spec_type == 'dNdE':
-            N_arr = np.flipud(self.totN('bin'))
-        elif self._spec_type == 'N':
-            N_arr = self.N 
+    
+        N_arr = np.flipud(self.N)
 
         # consider only positive energy
         pos_eng = sec_spec_eng > 0
