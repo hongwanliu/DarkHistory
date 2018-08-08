@@ -585,7 +585,7 @@ def engloss_spec(
         beta_small = beta_mask < 0.1
     rel = gamma_mask > rel_bound
 
-    y = T/phys.TCMB(1000)
+    y = T/phys.TCMB(400)
 
     if not nonrel:
         if rel_tf != None:
@@ -599,11 +599,22 @@ def engloss_spec(
             #     bounds_error = False,
             #     fill_value = (np.nan, 0)
             # )
-            rel_tf = rel_tf.at_val(
-                y*eleceng[gamma > rel_bound], y*delta, 
-                bounds_error=False, fill_value = 1e-200
+
+            # OLD METHOD: call at_val
+
+            # rel_tf = rel_tf.at_val(
+            #     y*eleceng[gamma > rel_bound], y*delta, 
+            #     bounds_error=False, fill_value = 1e-200
+            # )
+            # spec[rel] = y**4*rel_tf.grid_vals.flatten()
+
+            # NEW METHOD: call interpolator
+            rel_tf_interp = rel_tf.interp_func(
+                np.log(y*delta),
+                np.log(y*eleceng[gamma > rel_bound])
             )
-            spec[rel] = y**4*rel_tf.grid_vals.flatten()
+            spec[rel] = y**4*rel_tf_interp.flatten()
+
         else:
 
             print('Computing relativistic energy loss spectrum...')
@@ -623,11 +634,21 @@ def engloss_spec(
         #     bounds_error = False,
         #     fill_value = (np.nan, 0)
         # )
-        nonrel_tf = nonrel_tf.at_val(
-            eleckineng[gamma <= rel_bound], delta/y,
-            bounds_error = False, fill_value = 1e-200
+
+        # OLD METHOD: call at_val
+        # nonrel_tf = nonrel_tf.at_val(
+        #     eleckineng[gamma <= rel_bound], delta/y,
+        #     bounds_error = False, fill_value = 1e-200
+        # )
+        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+
+        # NEW METHOD: call interpolator
+        nonrel_tf_interp = nonrel_tf.interp_func(
+            np.log(delta/y),
+            np.log(eleckineng[gamma <= rel_bound])
         )
-        spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+        spec[~rel] = y**2*nonrel_tf_interp.flatten()
+
     else:
         print('Computing nonrelativistic energy loss spectrum...')
         # beta_small obviously doesn't intersect with rel. 
@@ -659,6 +680,10 @@ def engloss_spec(
             for sp, in_eng in zip(spec, eleckineng)
         ]
 
-        return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        return TransFuncAtRedshift(
+            spec_arr, dlnz=dlnz, 
+            in_eng = eleckineng, eng = delta,
+            with_interp_func=True
+        )
 
 

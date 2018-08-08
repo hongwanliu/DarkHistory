@@ -126,7 +126,7 @@ class Spectrum:
 
         # Removed ability to add int or float. Not likely to be useful I think?
 
-        if np.issubclass_(type(other), Spectrum):
+        if type(other) == type(self):
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two Spectrum objects.")
@@ -189,7 +189,7 @@ class Spectrum:
         
         # Removed ability to add int or float. Not likely to be useful I think?
 
-        if np.issubclass_(type(other), Spectrum):
+        if type(other) == type(self):
             # Some typical errors.
             if not np.array_equal(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two `Spectrum` objects.")

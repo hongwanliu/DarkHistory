@@ -728,7 +728,11 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         ]
 
         # Injection energy is kinetic energy of the electron.
-        spec_tf = TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        spec_tf = TransFuncAtRedshift(
+            spec_arr, dlnz=dlnz, 
+            in_eng = eleckineng, eng = photeng,
+            with_interp_func = True
+        )
 
         return spec_tf
 
@@ -893,7 +897,11 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
             for s, in_eng in zip(spec, eleceng)
         ]
 
-        spec_tf = TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        spec_tf = TransFuncAtRedshift(
+            spec_arr, dlnz=dlnz, 
+            in_eng = eleceng, eng = photeng,
+            with_interp_func = True
+        )
 
         return spec_tf 
 
@@ -952,7 +960,7 @@ def ics_spec(
 
     rel = (gamma_mask > rel_bound)
 
-    y = T/phys.TCMB(1000)
+    y = T/phys.TCMB(400)
 
     if rel_tf != None:
         if as_pairs:
@@ -966,12 +974,23 @@ def ics_spec(
         #     bounds_error = False, 
         #     fill_value = (np.nan, 0)
         # )
-        rel_tf = rel_tf.at_val(
-            y*eleceng[gamma > rel_bound], y*photeng, 
-            bounds_error = False, fill_value = 1e-200
-        )
+
+        # OLD METHOD: call at_val
+
+        # rel_tf = rel_tf.at_val(
+        #     y*eleceng[gamma > rel_bound], y*photeng, 
+        #     bounds_error = False, fill_value = 1e-200
+        # )
         
-        spec[rel] = y**4*rel_tf.grid_vals.flatten()
+        # spec[rel] = y**4*rel_tf.grid_vals.flatten()
+
+        # NEW METHOD: call interpolator. 
+        rel_tf_interp = rel_tf.interp_func(
+            np.log(y*photeng),
+            np.log(y*eleceng[gamma > rel_bound])
+        )
+        spec[rel] = y**4*rel_tf_interp.flatten()
+
     else: 
         spec[rel] = rel_spec(
             eleceng_mask[rel], photeng_mask[rel], T, 
@@ -985,11 +1004,22 @@ def ics_spec(
         #     bounds_error = False,
         #     fill_value = (np.nan, 0)
         # )
-        nonrel_tf = nonrel_tf.at_val(
-            eleckineng[gamma <= rel_bound], photeng/y, 
-            bounds_error = False, fill_value = 1e-200
+
+        # OLD METHOD: call at_val
+
+        # nonrel_tf = nonrel_tf.at_val(
+        #     eleckineng[gamma <= rel_bound], photeng/y, 
+        #     bounds_error = False, fill_value = 1e-200
+        # )
+        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+
+        # NEW METHOD: call interpolator directly.
+        nonrel_tf_interp = nonrel_tf.interp_func(
+            np.log(photeng/y),
+            np.log(eleckineng[gamma <= rel_bound]) 
         )
-        spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+        spec[~rel] = y**2*nonrel_tf_interp.flatten()
+
     else:
         spec[~rel] = nonrel_spec(
             eleckineng_mask[~rel], photeng_mask[~rel], 
