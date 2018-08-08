@@ -268,22 +268,16 @@ def get_ics_cooling_tf(
         deposited_eng /= scattered_engfrac
 
         # Get the full secondary photon spectrum. Type 'N'
-        # resolved_phot_spec = sec_phot_tf.sum_specs(sec_elec_spec.N)
-        resolved_phot_spec_vals = np.dot(
-            sec_elec_spec.N, sec_phot_tf._grid_vals
-        )
+        resolved_phot_spec = sec_phot_tf.sum_specs(sec_elec_spec.N)
+
         # Get the full secondary low energy electron spectrum. Type 'N'.
-        # resolved_lowengelec_spec = (
-        #     sec_lowengelec_tf.sum_specs(sec_elec_spec.N)
-        # )
-        resolved_lowengelec_spec_vals = np.dot(
-            sec_elec_spec.N, sec_lowengelec_tf._grid_vals
+        resolved_lowengelec_spec = (
+            sec_lowengelec_tf.sum_specs(sec_elec_spec.N)
         )
 
         # Add the resolved spectrum to the first scatter.
-        # sec_phot_spec += resolved_phot_spec
-        sec_phot_spec.N += resolved_phot_spec_vals
-
+        sec_phot_spec += resolved_phot_spec
+        
         # Resolve the secondary electron continuum loss and deposition.
         continuum_engloss += np.dot(sec_elec_spec.N, cont_loss_vec)
         
@@ -294,23 +288,21 @@ def get_ics_cooling_tf(
         # Do this without calling append of course: just add to the zeros 
         # that fill the current row in _grid_vals.
         sec_phot_tf._grid_vals[i] += sec_phot_spec.N
-        # sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec.N
-        sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec_vals
-
+        sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec.N
+        
         # Set the correct values in cont_loss_vec and deposited_vec.
         cont_loss_vec[i] = continuum_engloss
         deposited_vec[i] = deposited_eng
 
         # Conservation of energy check. Check that it is 1e-10 of eng.
         
-        conservation_check = 0.005
-
-        # conservation_check = (
-        #     eng 
-        #     - resolved_lowengelec_spec.toteng() 
-        #     + cont_loss_vec[i]
-        #     - sec_phot_spec.toteng()
-        #                  )
+        
+        conservation_check = (
+            eng 
+            - resolved_lowengelec_spec.toteng() 
+            + cont_loss_vec[i]
+            - sec_phot_spec.toteng()
+                         )
 
         # print('***************************************************')
         # print('injected energy: ', eng)
@@ -423,8 +415,7 @@ def get_ics_cooling_tf_fast(
         dlnz = -1, spec_type = 'dNdE'
     )
 
-    # append_sec_elec_tf = sec_elec_tf.append
-
+    
     # Change from energy loss spectrum to secondary electron spectrum.
     for i, in_eng in enumerate(eleceng):
         spec = engloss_tf[i]
@@ -466,26 +457,6 @@ def get_ics_cooling_tf_fast(
     # Start building sec_phot_tf and sec_lowengelec_tf. 
     # Low energy regime first. 
 
-    ####################################
-    # OLD: for loop to add identity.   #
-    # Not very clever.                 #
-    ####################################
-
-
-    # for i, eng in zip(eleceng_low_ind, eleceng_low):
-    #     # Zero out delta function test spectrum, set it correctly
-    #     # for the loop ahead. 
-    #     delta_spec *= 0
-    #     delta_spec[i] = 1
-    #     # Add the trivial secondary electron spectrum to the 
-    #     # transfer function. 
-    #     sec_lowengelec_tf._grid_vals[i] += delta_spec
-
-    ####################################
-    # NEW: Just set the relevant       #
-    # part to be the identity matrix   #
-    ####################################
-
     sec_lowengelec_tf._grid_vals[:eleceng_low.size, :eleceng_low.size] = (
         np.identity(eleceng_low.size)
     )
@@ -525,51 +496,6 @@ def get_ics_cooling_tf_fast(
         # Deposited energy per unit time, dD/dt. 
         deposited_eng = sec_elec_spec.totN()*eng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
 
-        # print('-------- Injection Energy: ', eng)
-        # print(
-        #     '-------- No. of Scatters (Analytic): ', 
-        #     phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
-        # )
-        # print(
-        #     '-------- No. of Scatters (Computed): ',
-        #     tot_N_scatter
-        # )
-        # gamma_elec = 1 + eng/phys.me
-        # beta_elec  = np.sqrt(eng/phys.me*(gamma_elec+1)/gamma_elec**2)
-        # print(
-        #     '-------- Energy lost (Analytic): ',
-        #     (4/3)*phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
-        #         gamma_elec**2 * beta_elec**2
-        #     )
-        # )
-        # print(
-        #     '-------- Energy lost (Computed from photons): ',
-        #     engloss_tf[i].toteng()
-        # )
-        # print(
-        #     '-------- Energy lost (Computed from electrons): ',
-        #     sec_elec_spec.totN()*eng - sec_elec_toteng
-        # )
-        # print(
-        #     '-------- Energy of upscattered photons: ',
-        #     CMB_upscatter_eng_rate
-        # )
-        # print(
-        #     '-------- Energy in secondary photons (Computed): ',
-        #     sec_phot_toteng
-        # )
-        # print(
-        #     '-------- Energy in secondary photons (Analytic): ',
-        #     phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
-        #         1 + (4/3)* gamma_elec**2 * beta_elec**2
-        #     )
-        # )
-        # print(
-        #     '-------- Energy gain from photons: ',
-        #     sec_phot_toteng - CMB_upscatter_eng_rate
-        # )
-        # print('-------- Deposited Energy: ', deposited_eng)
-
         # In the original code, the energy of the electron has gamma > 20, 
         # then the continuum energy loss is assigned to deposited_eng instead. 
         # I'm not sure if this is necessary, but let's be consistent with the 
@@ -603,86 +529,32 @@ def get_ics_cooling_tf_fast(
         deposited_eng /= scattered_engfrac
 
         # Get the full secondary photon spectrum. Type 'N'
-        # resolved_phot_spec = sec_phot_tf.sum_specs(sec_elec_spec.N)
         resolved_phot_spec_vals = np.dot(
             sec_elec_spec.N, sec_phot_tf._grid_vals
         )
         # Get the full secondary low energy electron spectrum. Type 'N'.
-        # resolved_lowengelec_spec = (
-        #     sec_lowengelec_tf.sum_specs(sec_elec_spec.N)
-        # )
+
         resolved_lowengelec_spec_vals = np.dot(
             sec_elec_spec.N, sec_lowengelec_tf._grid_vals
         )
 
         # Add the resolved spectrum to the first scatter.
-        # sec_phot_spec += resolved_phot_spec
         sec_phot_spec.N += resolved_phot_spec_vals
 
         # Resolve the secondary electron continuum loss and deposition.
         continuum_engloss += np.dot(sec_elec_spec.N, cont_loss_vec)
         
-        # utils.compare_arr([sec_elec_spec.N, deposited_vec])
         deposited_eng += np.dot(sec_elec_spec.N, deposited_vec)
         
         # Now, append the resulting spectrum to the transfer function.
         # Do this without calling append of course: just add to the zeros 
         # that fill the current row in _grid_vals.
         sec_phot_tf._grid_vals[i] += sec_phot_spec.N
-        # sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec.N
         sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec_vals
 
         # Set the correct values in cont_loss_vec and deposited_vec.
         cont_loss_vec[i] = continuum_engloss
         deposited_vec[i] = deposited_eng
-
-        # Conservation of energy check. Check that it is 1e-10 of eng.
-        
-        conservation_check = 0.005
-
-        # conservation_check = (
-        #     eng 
-        #     - resolved_lowengelec_spec.toteng() 
-        #     + cont_loss_vec[i]
-        #     - sec_phot_spec.toteng()
-        #                  )
-
-        # print('***************************************************')
-        # print('injected energy: ', eng)
-        # print('low energy e: ', resolved_lowengelec_spec.toteng())
-        # print('scattered phot: ', sec_phot_spec.toteng())
-        # print('continuum_engloss: ', cont_loss_vec[i])
-        # print('diff: ', sec_phot_spec.toteng() - cont_loss_vec[i])
-        # print('energy is conserved up to (%): ', conservation_check/eng*100)
-        # print('deposited: ', deposited_vec[i])
-        # print(
-        #     'energy conservation with deposited (%): ', 
-        #     (conservation_check - deposited_vec[i])/eng*100
-        # )
-        # print('***************************************************')
-        
-        if (
-            conservation_check/eng > 0.01
-        ):
-            print('***************************************************')
-            print('rs: ', rs)
-            print('injected energy: ', eng)
-            print('low energy e: ', resolved_lowengelec_spec.toteng())
-            print('scattered phot: ', sec_phot_spec.toteng())
-            print('continuum_engloss: ', cont_loss_vec[i])
-            print('diff: ', sec_phot_spec.toteng() - cont_loss_vec[i])
-            print('energy is conserved up to (%): ', conservation_check/eng*100)
-            print('deposited: ', deposited_vec[i])
-            print(
-                'energy conservation with deposited (%): ', 
-                (conservation_check - deposited_vec[i])/eng*100
-            )
-            print('***************************************************')
-        
-            raise RuntimeError('Conservation of energy failed.')
-            
-        # Force conservation of energy. 
-        # deposited_vec[i] += conservation_check
 
     return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec)
        
