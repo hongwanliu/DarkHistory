@@ -108,7 +108,9 @@ def get_indx(eng, E):
     """
     return np.searchsorted(get_bin_bound(eng),E)-1
 
-def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
+def rebin_N_arr(
+    N_arr, in_eng, out_eng=None, spec_type='dNdE', log_bin_width=None
+):
     """Rebins an array of particle number with fixed energy.
 
     Returns an array or a `Spectrum` object. The rebinning conserves both total number and total energy.
@@ -123,6 +125,8 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
         The new abscissa to bin into. If unspecified, assumed to be in_eng.
     spec_type : {'N', 'dNdE'}, optional
         The spectrum type to be output. Default is 'dNdE'.
+    log_bin_width : ndarray, optional
+        The bin width of the output abscissa.
 
     Returns
     -------
@@ -154,7 +158,8 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
         raise TypeError("The array for number of particles has a different length from the abscissa.")
 
     if out_eng is None:
-        log_bin_width = get_log_bin_width(in_eng)
+        if log_bin_width is None:
+            log_bin_width = get_log_bin_width(in_eng)
         return Spectrum(in_eng, N_arr/(in_eng*log_bin_width))
 
     if not np.all(np.diff(out_eng) > 0):
@@ -193,7 +198,13 @@ def rebin_N_arr(N_arr, in_eng, out_eng=None, spec_type='dNdE'):
     toteng_arr_low = toteng_arr[ind_low]
 
     # Bin width of the new array. Use only the log bin width, so that dN/dE = N/(E d log E)
-    new_E_dlogE = new_eng * np.diff(np.log(get_bin_bound(new_eng)))
+    if log_bin_width is None:
+        new_E_dlogE = new_eng * np.diff(np.log(get_bin_bound(new_eng)))
+    else:
+        new_log_bin_width = np.insert(
+            log_bin_width, 0, log_bin_width[0]
+        )
+        new_E_dlogE = new_eng * new_log_bin_width
 
     # Regular bins first, done in a completely vectorized fashion.
 

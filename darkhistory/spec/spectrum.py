@@ -877,11 +877,10 @@ class Spectrum:
             self.switch_spec_type()
 
         self.rebin(out_eng)
-         
-        
 
-
-    def engloss_rebin(self, in_eng, out_eng):
+    def engloss_rebin(
+        self, in_eng, out_eng, log_bin_width=None, out_spec_type=None
+    ):
         """ Converts an energy loss spectrum to a secondary spectrum.
 
         Parameters
@@ -890,6 +889,10 @@ class Spectrum:
             The injection energy of the primary which gives rise to self.dNdE as the energy loss spectrum. 
         out_eng : ndarray
             The final energy abscissa to bin into. If not specified, it is assumed to be the same as the initial abscissa.
+        log_bin_width: ndarray, optional
+            The bin width of `out_eng`.
+        out_spec_type: {'N', 'dNdE'}, optional
+            The spec_type of the output spectrum. If not specified, the output spectrum will have spec_type given by self.spec_type.
 
         Note
         ----
@@ -897,18 +900,40 @@ class Spectrum:
 
         """ 
 
-        # sec_spec_eng is the injected energy - delta, 
-        sec_spec_eng = np.flipud(in_eng - self.eng)
+        # sec_spec_eng is the injected energy - delta,
+        # use float128 for very small differences. 
+        sec_spec_eng = np.flipud(np.float128(in_eng) - np.float128(self.eng))
     
         N_arr = np.flipud(self.N)
 
         # consider only positive energy
         pos_eng = sec_spec_eng > 0
 
-        new_spec = rebin_N_arr(
-            N_arr[pos_eng], sec_spec_eng[pos_eng], 
-            out_eng, spec_type = self._spec_type
+        # new_spec = rebin_N_arr(
+        #     N_arr[pos_eng], sec_spec_eng[pos_eng], 
+        #     out_eng, spec_type = self._spec_type, log_bin_width=log_bin_width
+        # )
+
+        # print(sec_spec_eng[pos_eng])
+
+        new_spec = Spectrum(
+            sec_spec_eng[pos_eng], N_arr[pos_eng],
+            spec_type = 'N'
         )
+
+        # downcast the energy array.
+        new_spec.eng = np.float64(new_spec.eng)
+
+        new_spec.rebin(out_eng)
+
+        if out_spec_type is not None:
+            if new_spec.spec_type != out_spec_type:
+                new_spec.switch_spec_type()
+            if self.spec_type != out_spec_type:
+                self.switch_spec_type()
+        else:
+            if new_spec.spec_type != self.spec_type:
+                new_spec.switch_spec_type()
 
         self.eng  = out_eng 
         self._data = new_spec._data
