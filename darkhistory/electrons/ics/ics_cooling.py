@@ -10,7 +10,8 @@ import darkhistory.spec.spectools as spectools
 from darkhistory.spec.spectrum import Spectrum
 
 from darkhistory.electrons.ics.ics_spectrum import ics_spec 
-from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec 
+from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
+# from darkhistory.electrons.ics.ics_engloss_spectrum import scattered_elec_spec
 
 def get_ics_cooling_tf(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf, 
@@ -97,6 +98,12 @@ def get_ics_cooling_tf(
         # Add to the appropriate row.
         sec_elec_tf._grid_vals[i] += spec.dNdE
 
+    # sec_elec_tf_2 = scattered_elec_spec(
+    #     eleceng, eleceng, T, 
+    #     nonrel_tf=raw_scattered_elec_nonrel_tf,
+    #     rel_tf = raw_scattered_elec_rel_tf
+    # )
+
     # Low and high energy boundaries
     loweng = 3000
     eleceng_high = eleceng[eleceng > loweng]
@@ -172,6 +179,10 @@ def get_ics_cooling_tf(
         sec_elec_spec = sec_elec_tf[i]
         if sec_elec_spec.spec_type == 'dNdE':
             sec_elec_spec.switch_spec_type()
+
+        # sec_elec_spec_2 = sec_elec_tf_2[i]
+        # if sec_elec_spec_2.spec_type == 'dNdE':
+        #     sec_elec_spec_2.switch_spec_type()
 
         # The total number of primaries scattered is equal to the total number of scattered *photons*.
         # The scattered electrons is obtained from the *net* energy loss, and

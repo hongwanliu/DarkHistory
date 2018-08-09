@@ -919,8 +919,6 @@ class Spectrum:
         # consider only positive energy
         pos_eng = sec_spec_eng > 0
 
-        print(sec_spec_eng[pos_eng])
-
         # new_spec = rebin_N_arr(
         #     N_arr[pos_eng], sec_spec_eng[pos_eng], 
         #     out_eng, spec_type = self._spec_type, log_bin_width=log_bin_width
