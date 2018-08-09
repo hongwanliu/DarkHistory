@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import warnings
 
 from scipy import integrate
+from scipy.interpolate import interp1d
 
 
 def get_bin_bound(eng):
@@ -175,10 +176,13 @@ def rebin_N_arr(
 
     # Find the relative bin indices for in_eng wrt new_eng. The first bin in new_eng has bin index -1.
 
-    bin_ind = np.interp(
-        in_eng, new_eng, np.arange(new_eng.size)-1,
-        left = -2, right = new_eng.size
+
+    bin_ind_interp = interp1d(
+        new_eng, np.arange(new_eng.size)-1,
+        bounds_error = False, fill_value = (-2, new_eng.size)
     )
+
+    bin_ind = bin_ind_interp(in_eng)
 
     # Locate where bin_ind is below 0, above self.length-1 and in between.
     ind_low = np.where(bin_ind < 0)

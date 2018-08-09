@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import warnings
 
 from scipy import integrate
+from scipy.interpolate import interp1d
 
 class Spectrum:
     """Structure for photon and electron spectra with log-binning in energy. 
@@ -736,8 +737,17 @@ class Spectrum:
 
 
         # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
-        bin_ind = np.interp(self.eng, new_eng, 
-            np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
+
+        bin_ind_interp = interp1d(
+            new_eng, np.arange(new_eng.size)-1,
+            bounds_error = False, fill_value = (-2, new_eng.size)
+        )
+
+        bin_ind = bin_ind_interp(self.eng)
+
+
+        # bin_ind = np.interp(self.eng, new_eng, 
+        #     np.arange(new_eng.size)-1, left = -2, right = new_eng.size)
 
         # Locate where bin_ind is below 0, above self.length-1 and in between.
         ind_low = np.where(bin_ind < 0)
@@ -909,6 +919,8 @@ class Spectrum:
         # consider only positive energy
         pos_eng = sec_spec_eng > 0
 
+        print(sec_spec_eng[pos_eng])
+
         # new_spec = rebin_N_arr(
         #     N_arr[pos_eng], sec_spec_eng[pos_eng], 
         #     out_eng, spec_type = self._spec_type, log_bin_width=log_bin_width
@@ -916,15 +928,34 @@ class Spectrum:
 
         # print(sec_spec_eng[pos_eng])
 
-        new_spec = Spectrum(
-            sec_spec_eng[pos_eng], N_arr[pos_eng],
-            spec_type = 'N'
-        )
+        out_eng = np.float128(out_eng)
+
+        if N_arr[pos_eng].size > 1:
+
+            new_spec = Spectrum(
+                sec_spec_eng[pos_eng], N_arr[pos_eng],
+                spec_type = 'N'
+            )
+
+            new_spec.rebin(out_eng)
+
+        elif N_arr[pos_eng].size > 0 and N_arr[pos_eng].size <= 1:
+            
+            new_spec = rebin_N_arr(
+                N_arr[pos_eng], sec_spec_eng[pos_eng], 
+                out_eng, spec_type = self._spec_type, 
+                log_bin_width=log_bin_width
+            )
+
+        else:
+
+            new_spec = Spectrum(
+                out_eng, np.zeros_like(out_eng), spec_type = 'N'
+            )
 
         # downcast the energy array.
         new_spec.eng = np.float64(new_spec.eng)
 
-        new_spec.rebin(out_eng)
 
         if out_spec_type is not None:
             if new_spec.spec_type != out_spec_type:

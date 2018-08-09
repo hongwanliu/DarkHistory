@@ -423,8 +423,7 @@ def get_ics_cooling_tf_fast(
 
     
     # Change from energy loss spectrum to secondary electron spectrum.
-    # eleceng_log_bin_width = np.diff(np.log(spectools.get_bin_bound(eleceng)))
-    eleceng_log_bin_width = np.ones_like(eleceng)*0.05869538
+    eleceng_log_bin_width = np.diff(np.log(spectools.get_bin_bound(eleceng)))
     for i, in_eng in enumerate(eleceng):
         spec = engloss_tf[i]
         spec.engloss_rebin(
