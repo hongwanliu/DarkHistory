@@ -3,6 +3,7 @@
 import numpy as np
 from darkhistory import physics as phys
 from darkhistory import utilities as utils
+from darkhistory.numpy_groupies import aggregate as agg
 import matplotlib.pyplot as plt
 import warnings
 
@@ -649,8 +650,30 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
 #     print(reg_bin_upp[ind_reg])
 #     print('reg_data_upp[ind_reg]:')
 #     print(reg_data_upp[ind_reg])
-    np.add.at(new_data, (in_eng_mask[ind_reg], reg_bin_low[ind_reg]+1), reg_data_low[ind_reg])
-    np.add.at(new_data, (in_eng_mask[ind_reg], reg_bin_upp[ind_reg]+1), reg_data_upp[ind_reg])
+
+    ## Replace add.at with agg.aggregate
+
+    # np.add.at(new_data, (in_eng_mask[ind_reg], reg_bin_low[ind_reg]+1), reg_data_low[ind_reg])
+    # np.add.at(new_data, (in_eng_mask[ind_reg], reg_bin_upp[ind_reg]+1), reg_data_upp[ind_reg])
+
+    low_data = agg.aggregate(
+        np.array(
+            [in_eng_mask[ind_reg], reg_bin_low[ind_reg]+1]
+        ),
+        reg_data_low[ind_reg].astype('float64'),
+        size = new_data.shape, func='sum', fill_value = 0
+    )
+
+    upp_data = agg.aggregate(
+        np.array(
+            [in_eng_mask[ind_reg], reg_bin_upp[ind_reg]+1]
+        ),
+        reg_data_upp[ind_reg].astype('float64'),
+        size = new_data.shape, func='sum', fill_value = 0
+    )
+
+    new_data += (low_data + upp_data)
+
 #     print('new_data: ')
 #     print(new_data)
     return new_data[:, 1:]

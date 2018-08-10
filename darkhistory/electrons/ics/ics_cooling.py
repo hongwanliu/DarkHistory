@@ -553,9 +553,14 @@ def get_ics_cooling_tf_fast(
         )
         # Get the full secondary low energy electron spectrum. Type 'N'.
 
-        resolved_lowengelec_spec_vals = np.dot(
-            sec_elec_spec_N, sec_lowengelec_tf._grid_vals
-        )
+        # resolved_lowengelec_spec_vals = np.dot(
+        #     sec_elec_spec_N, sec_lowengelec_tf._grid_vals
+        # )
+
+        # The resolved lowengelec spectrum is simply one electron
+        # in the bin just below 3 keV. Removed the dot for speed.
+        resolved_lowengelec_spec_vals = np.zeros(eleceng.size)
+        resolved_lowengelec_spec_vals[eleceng_low_ind[-1]] += 1
 
         # Add the resolved spectrum to the first scatter.
         sec_phot_spec_N += resolved_phot_spec_vals
@@ -575,7 +580,7 @@ def get_ics_cooling_tf_fast(
         cont_loss_vec[i] = continuum_engloss
         deposited_vec[i] = deposited_eng
 
-        check = True
+        check = False
 
         if check:
             conservation_check = (
