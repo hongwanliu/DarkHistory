@@ -251,9 +251,8 @@ class TransFuncAtRedshift(Spectra):
             
             interp_grid  = non_zero_grid
 
-            self.interp_func = interpolate.interp2d(
-                np.log(self.eng), np.log(self.in_eng),  
-                interp_grid            
+            self.interp_func = interpolate.RegularGridInterpolator(
+                (np.log(self.eng), np.log(self.in_eng)), interp_grid
             )
 
 

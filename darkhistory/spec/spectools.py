@@ -605,8 +605,8 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     # particles in N_arr_reg, similarly reg_bin_upp. This should also
     # take care of the case where bin_ind is an integer. 
     
-    reg_bin_low = -2*np.ones_like(bin_ind).astype(int)
-    reg_bin_upp = -2*np.ones_like(bin_ind).astype(int)
+    reg_bin_low = -2*np.ones_like(bin_ind, dtype=int)
+    reg_bin_upp = -2*np.ones_like(bin_ind, dtype=int)
 
     reg_bin_low[ind_reg] = np.floor(bin_ind[ind_reg]).astype(int)
     reg_bin_upp[ind_reg] = reg_bin_low[ind_reg] + 1
@@ -633,11 +633,12 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
 #     print('reg_data_upp:')
 #     print(reg_data_upp)
 
-    in_eng_mask = np.outer(np.arange(in_eng.size), np.ones_like(eng)).astype(int)
+    in_eng_mask = np.outer(
+        np.arange(in_eng.size, dtype=int), np.ones_like(eng, dtype=int))
 #     print('in_eng_mask:')
 #     print(in_eng_mask)
     
-    low_bin_low = -2*np.ones_like(bin_ind)
+    low_bin_low = -2*np.ones_like(bin_ind, dtype=int)
     
     # Handle low bins. 
     low_bin_low[ind_low] = np.floor(bin_ind[ind_low]).astype(int)
@@ -673,7 +674,7 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
         np.array(
             [in_eng_mask[ind_reg], reg_bin_low[ind_reg]+1]
         ),
-        reg_data_low[ind_reg].astype('float64'),
+        reg_data_low[ind_reg],
         size = new_data.shape, func='sum', fill_value = 0
     )
 
@@ -681,7 +682,7 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
         np.array(
             [in_eng_mask[ind_reg], reg_bin_upp[ind_reg]+1]
         ),
-        reg_data_upp[ind_reg].astype('float64'),
+        reg_data_upp[ind_reg],
         size = new_data.shape, func='sum', fill_value = 0
     )
 
