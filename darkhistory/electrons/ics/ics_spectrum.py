@@ -1037,11 +1037,16 @@ def ics_spec(
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [
-            Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
-            for sp, in_eng in zip(spec, eleckineng)
-        ]
+        # spec_arr = [
+        #     Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
+        #     for sp, in_eng in zip(spec, eleckineng)
+        # ]
 
-        # Use kinetic energy of the electron for better interpolation when necessary. 
-        return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        # # Use kinetic energy of the electron for better interpolation when necessary. 
+        # return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 
+        return TransFuncAtRedshift(
+            spec, in_eng = eleckineng, eng = photeng, 
+            rs = np.ones_like(eleckineng)*rs, dlnz=dlnz,
+            spec_type = 'dNdE'
+        )

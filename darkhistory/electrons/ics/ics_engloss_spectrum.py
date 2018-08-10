@@ -857,15 +857,21 @@ def scattered_elec_spec(
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [
-            Spectrum(eleckineng_out, sp, rs=rs, in_eng=in_eng) 
-            for sp, in_eng in zip(spec, eleckineng_in)
-        ]
+        # spec_arr = [
+        #     Spectrum(eleckineng_out, sp, rs=rs, in_eng=in_eng) 
+        #     for sp, in_eng in zip(spec, eleckineng_in)
+        # ]
+
+        # return TransFuncAtRedshift(
+        #     spec_arr, dlnz=dlnz, 
+        #     in_eng = eleckineng_in, eng = eleckineng_out,
+        #     with_interp_func=True
+        # )
 
         return TransFuncAtRedshift(
-            spec_arr, dlnz=dlnz, 
-            in_eng = eleckineng_in, eng = eleckineng_out,
-            with_interp_func=True
+            spec, in_eng = eleckineng_in, eng = eleckineng_out, 
+            rs = np.ones_like(eleckineng_in)*rs, dlnz=dlnz,
+            spec_type = 'dNdE', with_interp_func=True
         )
 
 

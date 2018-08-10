@@ -589,6 +589,7 @@ def get_ics_cooling_tf_fast(
                 + cont_loss_vec[i]
                 - np.dot(sec_phot_spec_N, photeng)
             )
+
             if (
                 conservation_check/eng > 0.01
             ):
