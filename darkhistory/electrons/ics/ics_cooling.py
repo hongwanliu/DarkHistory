@@ -201,50 +201,50 @@ def get_ics_cooling_tf(
         # Deposited energy per unit time, dD/dt. 
         deposited_eng = sec_elec_spec.totN()*eng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
 
-        # print('-------- Injection Energy: ', eng)
-        # print(
-        #     '-------- No. of Scatters (Analytic): ', 
-        #     phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
-        # )
-        # print(
-        #     '-------- No. of Scatters (Computed): ',
-        #     tot_N_scatter
-        # )
-        # gamma_elec = 1 + eng/phys.me
-        # beta_elec  = np.sqrt(eng/phys.me*(gamma_elec+1)/gamma_elec**2)
-        # print(
-        #     '-------- Energy lost (Analytic): ',
-        #     (4/3)*phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
-        #         gamma_elec**2 * beta_elec**2
-        #     )
-        # )
-        # print(
-        #     '-------- Energy lost (Computed from photons): ',
-        #     engloss_tf[i].toteng()
-        # )
-        # print(
-        #     '-------- Energy lost (Computed from electrons): ',
-        #     sec_elec_spec.totN()*eng - sec_elec_toteng
-        # )
-        # print(
-        #     '-------- Energy of upscattered photons: ',
-        #     CMB_upscatter_eng_rate
-        # )
-        # print(
-        #     '-------- Energy in secondary photons (Computed): ',
-        #     sec_phot_toteng
-        # )
-        # print(
-        #     '-------- Energy in secondary photons (Analytic): ',
-        #     phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
-        #         1 + (4/3)* gamma_elec**2 * beta_elec**2
-        #     )
-        # )
-        # print(
-        #     '-------- Energy gain from photons: ',
-        #     sec_phot_toteng - CMB_upscatter_eng_rate
-        # )
-        # print('-------- Deposited Energy: ', deposited_eng)
+        print('-------- Injection Energy: ', eng)
+        print(
+            '-------- No. of Scatters (Analytic): ', 
+            phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
+        )
+        print(
+            '-------- No. of Scatters (Computed): ',
+            tot_N_scatter
+        )
+        gamma_elec = 1 + eng/phys.me
+        beta_elec  = np.sqrt(eng/phys.me*(gamma_elec+1)/gamma_elec**2)
+        print(
+            '-------- Energy lost (Analytic): ',
+            (4/3)*phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
+                gamma_elec**2 * beta_elec**2
+            )
+        )
+        print(
+            '-------- Energy lost (Computed from photons): ',
+            engloss_tf[i].toteng()
+        )
+        print(
+            '-------- Energy lost (Computed from electrons): ',
+            sec_elec_spec.totN()*eng - sec_elec_toteng
+        )
+        print(
+            '-------- Energy of upscattered photons: ',
+            CMB_upscatter_eng_rate
+        )
+        print(
+            '-------- Energy in secondary photons (Computed): ',
+            sec_phot_toteng
+        )
+        print(
+            '-------- Energy in secondary photons (Analytic): ',
+            phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
+                1 + (4/3)* gamma_elec**2 * beta_elec**2
+            )
+        )
+        print(
+            '-------- Energy gain from photons: ',
+            sec_phot_toteng - CMB_upscatter_eng_rate
+        )
+        print('-------- Deposited Energy: ', deposited_eng)
 
         # In the original code, the energy of the electron has gamma > 20, 
         # then the continuum energy loss is assigned to deposited_eng instead. 
@@ -515,6 +515,55 @@ def get_ics_cooling_tf_fast(
         # Deposited energy per unit time, dD/dt. 
         deposited_eng = sec_elec_totN*eng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
 
+        diagnostics = False
+
+        if diagnostics:
+            print('-------- Injection Energy: ', eng)
+            print(
+                '-------- No. of Scatters (Analytic): ', 
+                phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
+            )
+            print(
+                '-------- No. of Scatters (Computed): ',
+                tot_N_scatter
+            )
+            gamma_elec = 1 + eng/phys.me
+            beta_elec  = np.sqrt(eng/phys.me*(gamma_elec+1)/gamma_elec**2)
+            print(
+                '-------- Energy lost (Analytic): ',
+                (4/3)*phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
+                    gamma_elec**2 * beta_elec**2
+                )
+            )
+            print(
+                '-------- Energy lost (Computed from photons): ',
+                engloss_tf[i].toteng()
+            )
+            print(
+                '-------- Energy lost (Computed from electrons): ',
+                sec_elec_totN*eng - sec_elec_toteng
+            )
+            print(
+                '-------- Energy of upscattered photons: ',
+                CMB_upscatter_eng_rate
+            )
+            print(
+                '-------- Energy in secondary photons (Computed): ',
+                sec_phot_toteng
+            )
+            print(
+                '-------- Energy in secondary photons (Analytic): ',
+                phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)*(
+                    1 + (4/3)* gamma_elec**2 * beta_elec**2
+                )
+            )
+            print(
+                '-------- Energy gain from photons: ',
+                sec_phot_toteng - CMB_upscatter_eng_rate
+            )
+            print('-------- Deposited Energy: ', deposited_eng)
+
+
         # In the original code, the energy of the electron has gamma > 20, 
         # then the continuum energy loss is assigned to deposited_eng instead. 
         # I'm not sure if this is necessary, but let's be consistent with the 
@@ -580,9 +629,10 @@ def get_ics_cooling_tf_fast(
         cont_loss_vec[i] = continuum_engloss
         deposited_vec[i] = deposited_eng
 
-        check = False
+        check = True
 
         if check:
+
             conservation_check = (
                 eng 
                 - np.dot(resolved_lowengelec_spec_vals, eleceng)

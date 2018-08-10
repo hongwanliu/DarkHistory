@@ -9,6 +9,7 @@ import warnings
 
 from scipy import integrate
 from scipy.interpolate import interp1d
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 
 def get_bin_bound(eng):
@@ -566,17 +567,29 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     # new_eng has bin index -1. Underflow has index -2, overflow
     # corresponds to new_eng.size
     
-    bin_ind_interp = interp1d(
-        new_eng, np.arange(new_eng.size)-1,
-        bounds_error = False, fill_value = (-2, new_eng.size)
-    )
+    # bin_ind_interp = interp1d(
+    #     new_eng, np.arange(new_eng.size)-1,
+    #     bounds_error = False, fill_value = (-2, new_eng.size),
+    #     assume_sorted=True
+    # )
     
+    new_eng = np.float64(new_eng)
+    sec_spec_eng = np.float64(sec_spec_eng)
+
+    bin_ind_interp = InterpolatedUnivariateSpline(
+        new_eng, np.arange(new_eng.size)-1, k=1
+    )
+
 #     print('sec_spec_eng:')
 #     print(sec_spec_eng)
 #     print('new_eng:')
 #     print(new_eng)
     
     bin_ind = bin_ind_interp(sec_spec_eng)
+
+    # Only for InterpolatedUnivariateSpline
+    bin_ind[bin_ind < -1] = -2
+    bin_ind[bin_ind > new_eng.size-2] = new_eng.size
 #     print('bin_ind: ')
 #     print(bin_ind)
     
