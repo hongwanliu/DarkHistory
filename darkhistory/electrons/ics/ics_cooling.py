@@ -432,15 +432,18 @@ def get_ics_cooling_tf_fast(
         dlnz = -1, spec_type = 'N'
     )
 
+    sec_elec_tf._grid_vals = spectools.engloss_rebin_fast(
+        eleceng, photeng, engloss_tf.grid_vals, eleceng
+    )
     
     # Change from energy loss spectrum to secondary electron spectrum.
-    for i, in_eng in enumerate(eleceng):
-        spec = engloss_tf[i]
-        spec.engloss_rebin(
-            in_eng, eleceng, out_spec_type='N', fast=True
-        )
-        # Add to the appropriate row.
-        sec_elec_tf._grid_vals[i] += spec.N
+    # for i, in_eng in enumerate(eleceng):
+    #     spec = engloss_tf[i]
+    #     spec.engloss_rebin(
+    #         in_eng, eleceng, out_spec_type='N', fast=True
+    #     )
+    #     # Add to the appropriate row.
+    #     sec_elec_tf._grid_vals[i] += spec.N
 
     # Low and high energy boundaries
     loweng = 3000
