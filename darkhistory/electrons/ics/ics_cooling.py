@@ -94,7 +94,7 @@ def get_ics_cooling_tf(
     # Change from energy loss spectrum to secondary electron spectrum.
     for i, in_eng in enumerate(eleceng):
         spec = engloss_tf[i]
-        spec.engloss_rebin(in_eng, eleceng)
+        spec.engloss_rebin(in_eng, eleceng, fast=True)
         # Add to the appropriate row.
         sec_elec_tf._grid_vals[i] += spec.dNdE
 
@@ -434,12 +434,10 @@ def get_ics_cooling_tf_fast(
 
     
     # Change from energy loss spectrum to secondary electron spectrum.
-    eleceng_log_bin_width = np.diff(np.log(spectools.get_bin_bound(eleceng)))
     for i, in_eng in enumerate(eleceng):
         spec = engloss_tf[i]
         spec.engloss_rebin(
-            in_eng, eleceng, 
-            log_bin_width=eleceng_log_bin_width, out_spec_type='N'
+            in_eng, eleceng, out_spec_type='N', fast=True
         )
         # Add to the appropriate row.
         sec_elec_tf._grid_vals[i] += spec.N

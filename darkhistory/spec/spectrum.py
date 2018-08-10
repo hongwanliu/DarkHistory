@@ -834,62 +834,84 @@ class Spectrum:
         self.underflow['N'] += N_underflow
         self.underflow['eng'] += eng_underflow
 
-    def rebin_smooth(self, out_eng):
-        """ Re-bins the `Spectrum` object according to a new abscissa.
+    def rebin_fast(self, out_eng):
+        """ Rebins the `Spectrum` with `spec_type = 'N'` quickly.
 
-        Rebinning conserves total number and total energy. This method also ensures smoothness of the rebinning.
+        Rebinning conserves total number and total energy. No checks are made: use with caution!
         
         Parameters
         ----------
-        out_eng : ndarray
-            The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]`, then the new underflow will be filled. If `self.eng` has values that exceed `out_eng[-1]`, then an error is returned.
-
-        Raises
-        ------
-        OverflowError
-            The maximum energy in `out_eng` cannot be smaller than any bin in `self.eng`. 
+        out_eng_interp : ndarray
+            The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]` or larger than `out_eng[-1]`, then the value is discarded *without error*. 
 
         
         Note
         ----
-        Before passing the spectrum to the actual rebin function, we use spec.Spectrum.totN to find the total number of particles `N` lying in the new binning given by `out_eng`, and spec.Spectrum.toteng to find the total energy in these bins `E_tot`. Then we minimize a Lagrangian that penalizes deviations from local conservation of number and energy, while conserving total number and energy.  
+        The total number and total energy is conserved by assigning the number of particles N in a bin of energy eng to two adjacent bins in new_eng, with energies eng_low and eng_upp such that eng_low < eng < eng_upp. Then dN_low_dE_low = (eng_upp - eng)/(eng_upp - eng_low)*(N/(E * dlogE_low)), and dN_upp_dE_upp = (eng - eng_low)/(eng_upp - eng_low)*(N/(E*dlogE_upp)).
+
+        This implementation dispenses with underflow, and some checks.
+
+
 
         See Also
         --------
-        spec.Spectrum.rebin
+        spec.Spectrum.rebin()
 
         """
 
-        eng_bin_bound = get_bin_bound(out_eng)
-        
-        N_tot_arr   = self.totN(bound_type='eng', bound_arr=eng_bin_bound)
-        eng_tot_arr = self.toteng(bound_type='eng', bound_arr=eng_bin_bound)
+        first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
+        new_eng = np.insert(out_eng, 0, first_bin_eng)
 
-        out_eng_absc = np.divide(
-            eng_tot_arr, N_tot_arr, 
-            out=np.zeros_like(N_tot_arr), 
-            where=N_tot_arr != 0
+
+        # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1. 
+
+        bin_ind_interp = interp1d(
+            new_eng, np.arange(new_eng.size)-1,
+            bounds_error = False, fill_value = (-2, new_eng.size)
         )
 
-        out_eng_absc[out_eng_absc == 0] = out_eng[out_eng_absc == 0]
+        bin_ind = bin_ind_interp(self.eng)
 
-        self.eng = out_eng_absc
-        self.length = out_eng_absc.size
-        self.underflow = {'N': 0., 'eng': 0.}
-        
-        switch = False
-        if self.spec_type == 'dNdE':
-            switch = True
-        
-        self._data = N_tot_arr
-        self._spec_type = 'N'
-        if switch:
-            self.switch_spec_type()
+        # Locate where bin_ind is in between.
+        ind_low = np.where(bin_ind < 0)
+        ind_reg = np.where( (bin_ind >= 0) & (bin_ind <= new_eng.size - 1) )
 
-        self.rebin(out_eng)
+        N_arr = self.N
+
+        N_arr_low = N_arr[ind_low]
+        N_arr_reg = N_arr[ind_reg]
+
+        # Regular bins first, done in a completely vectorized fashion. 
+
+        # reg_bin_low is the array of the lower bins to be allocated the particles in N_arr_reg, similarly reg_bin_upp. This should also take care of the fact that bin_ind is an integer.
+        reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
+        reg_bin_upp = reg_bin_low + 1
+
+        # Takes care of the case where eng[-1] = new_eng[-1]
+        reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
+        reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
+
+        reg_N_low = (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
+        reg_N_upp = (bin_ind[ind_reg] - reg_bin_low) * N_arr_reg
+
+        # Low bins. 
+        low_bin_low = np.floor(bin_ind[ind_low]).astype(int) 
+        N_above_underflow = np.sum((bin_ind[ind_low] - low_bin_low) 
+            * N_arr_low)
+
+        # Add up, obtain the new data.
+        new_data = np.zeros(new_eng.size)
+        new_data[1] += N_above_underflow
+        np.add.at(new_data, reg_bin_low+1, reg_N_low)
+        np.add.at(new_data, reg_bin_upp+1, reg_N_upp)
+        
+        # Implement changes.
+        self.eng = new_eng[1:]
+        self._data = new_data[1:]
+        self.length = self.eng.size 
 
     def engloss_rebin(
-        self, in_eng, out_eng, log_bin_width=None, out_spec_type=None
+        self, in_eng, out_eng, out_spec_type=None, fast=False
     ):
         """ Converts an energy loss spectrum to a secondary spectrum.
 
@@ -899,10 +921,10 @@ class Spectrum:
             The injection energy of the primary which gives rise to self.dNdE as the energy loss spectrum. 
         out_eng : ndarray
             The final energy abscissa to bin into. If not specified, it is assumed to be the same as the initial abscissa.
-        log_bin_width: ndarray, optional
-            The bin width of `out_eng`.
         out_spec_type: {'N', 'dNdE'}, optional
             The spec_type of the output spectrum. If not specified, the output spectrum will have spec_type given by self.spec_type.
+        fast: bool, optional
+            If fast, uses Spectrum.rebin_fast instead of Spectrum.rebin. 
 
         Note
         ----
@@ -935,14 +957,16 @@ class Spectrum:
                 spec_type = 'N'
             )
 
-            new_spec.rebin(out_eng)
+            if fast:
+                new_spec.rebin_fast(out_eng)
+            else:
+                new_spec.rebin(out_eng)
 
         elif N_arr[pos_eng].size > 0 and N_arr[pos_eng].size <= 1:
             
             new_spec = rebin_N_arr(
                 N_arr[pos_eng], sec_spec_eng[pos_eng], 
-                out_eng, spec_type = self._spec_type, 
-                log_bin_width=log_bin_width
+                out_eng, spec_type = self._spec_type
             )
 
         else:
