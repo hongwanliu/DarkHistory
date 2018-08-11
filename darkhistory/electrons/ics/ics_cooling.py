@@ -11,7 +11,6 @@ from darkhistory.spec.spectrum import Spectrum
 
 from darkhistory.electrons.ics.ics_spectrum import ics_spec 
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
-# from darkhistory.electrons.ics.ics_engloss_spectrum import scattered_elec_spec
 
 def get_ics_cooling_tf(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf, 
@@ -354,6 +353,7 @@ def get_ics_cooling_tf(
 
     return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec)
        
+
 def get_ics_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf, 
     eleceng, photeng, rs
@@ -607,9 +607,10 @@ def get_ics_cooling_tf_fast(
         # )
 
         # The resolved lowengelec spectrum is simply one electron
-        # in the bin just below 3 keV. Removed the dot for speed.
-        resolved_lowengelec_spec_vals = np.zeros(eleceng.size)
-        resolved_lowengelec_spec_vals[eleceng_low_ind[-1]] += 1
+        # in the bin just below 3 keV. 
+        # Added directly to sec_lowengelec_tf. Removed the dot for speed.
+        # resolved_lowengelec_spec_vals = np.zeros_like(eleceng)
+        # resolved_lowengelec_spec_vals[eleceng_low_ind[-1]] += 1
 
         # Add the resolved spectrum to the first scatter.
         sec_phot_spec_N += resolved_phot_spec_vals
@@ -623,13 +624,12 @@ def get_ics_cooling_tf_fast(
         # Do this without calling append of course: just add to the zeros 
         # that fill the current row in _grid_vals.
         sec_phot_tf._grid_vals[i] += sec_phot_spec_N
-        sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec_vals
-
+        sec_lowengelec_tf._grid_vals[i, eleceng_low_ind[-1]] += 1
         # Set the correct values in cont_loss_vec and deposited_vec.
         cont_loss_vec[i] = continuum_engloss
         deposited_vec[i] = deposited_eng
 
-        check = True
+        check = False
 
         if check:
 

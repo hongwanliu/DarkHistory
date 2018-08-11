@@ -1,6 +1,7 @@
 """Functions useful for processing spectral data."""
 
 import numpy as np
+
 from darkhistory import physics as phys
 from darkhistory import utilities as utils
 from darkhistory.numpy_groupies import aggregate as agg
@@ -540,7 +541,8 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     """
 
     # 2D array, (i,j) = in_eng[i] - eng[j], in ascending order.
-    sec_spec_eng = np.fliplr(np.float128(in_eng[:,None]) - np.float128(eng))
+    # sec_spec_eng = np.fliplr(np.float128(in_eng[:,None]) - np.float128(eng))
+    sec_spec_eng = np.fliplr(in_eng[:,None] - eng)
 
     # Flipped as well.
     N_arr = np.fliplr(grid_vals)
@@ -548,7 +550,7 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
 #     print(N_arr)
 
 
-    final_eng = np.float128(final_eng)
+    # final_eng = np.float128(final_eng)
 
     # Get the bin indices that the current abscissa (eng)
     # corresponds to in the new abscissa (final_eng). Bin indices are 
@@ -573,8 +575,8 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     #     assume_sorted=True
     # )
     
-    new_eng = np.float64(new_eng)
-    sec_spec_eng = np.float64(sec_spec_eng)
+    # new_eng = np.float64(new_eng)
+    # sec_spec_eng = np.float64(sec_spec_eng)
 
     bin_ind_interp = InterpolatedUnivariateSpline(
         new_eng, np.arange(new_eng.size)-1, k=1
