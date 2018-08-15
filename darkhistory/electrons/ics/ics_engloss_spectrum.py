@@ -2,12 +2,14 @@
 
 import numpy as np
 
+from darkhistory import physics as phys
+from darkhistory import utilities as utils
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.transferfunction import TransFuncAtRedshift
+
 from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.engloss_diff_terms import *
 import darkhistory.electrons.ics.ics_spectrum as ics_spectrum
-from darkhistory import physics as phys
-from darkhistory.spec.spectrum import Spectrum
-from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
 from tqdm import tqdm_notebook as tqdm
@@ -609,10 +611,17 @@ def engloss_spec(
             # spec[rel] = y**4*rel_tf.grid_vals.flatten()
 
             # NEW METHOD: call interpolator
-            rel_tf_interp = rel_tf.interp_func(
-                np.log(y*delta),
-                np.log(y*eleceng[gamma > rel_bound])
-            )
+            # points = utils.get_grid(
+            #     np.log(y*eleceng[gamma > rel_bound]), np.log(y*delta)
+            # )
+            # rel_tf_interp = rel_tf.interp_func(points)
+            
+            rel_tf_interp = np.transpose(
+                rel_tf.interp_func(
+                    np.log(y*eleceng[gamma > rel_bound]), np.log(y*delta)
+                )
+            )    
+
             spec[rel] = y**4*rel_tf_interp.flatten()
 
         else:
@@ -643,10 +652,18 @@ def engloss_spec(
         # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
 
         # NEW METHOD: call interpolator
-        nonrel_tf_interp = nonrel_tf.interp_func(
-            np.log(delta/y),
-            np.log(eleckineng[gamma <= rel_bound])
+        # points = utils.get_grid(
+        #     np.log(eleckineng[gamma <= rel_bound]), np.log(delta/y)
+        # )
+
+        # nonrel_tf_interp = nonrel_tf.interp_func(points)
+        
+        nonrel_tf_interp = np.transpose(
+            nonrel_tf.interp_func(
+                np.log(eleckineng[gamma <= rel_bound]), np.log(delta/y)
+            )
         )
+
         spec[~rel] = y**2*nonrel_tf_interp.flatten()
 
     else:
@@ -691,193 +708,4 @@ def engloss_spec(
             rs = np.ones_like(eleckineng)*rs, dlnz=dlnz,
             spec_type = 'dNdE', with_interp_func=True
         )
-
-def scattered_elec_spec(
-    eleckineng_in, eleckineng_out, T, 
-    as_pairs=False, nonrel=None, nonrel_tf=None, rel_tf=None,
-    spec_type='new'
-):
-    """ Energy loss ICS spectrum. 
-
-    Switches between `engloss_spec_series` and `engloss_spec_diff`. 
-
-    Parameters
-    ----------
-    eleckineng_in : ndarray
-        Incoming electron kinetic energy. 
-    eleckineng_out : ndarray
-        Outgoing electron kinetic energy. 
-    T : float
-        CMB temperature.
-    as_pairs : bool, optional
-        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
-    nonrel : bool, optional
-        If true, computes the nonrelativistic energy loss spectrum. Otherwise, computes the relativistic case. Ignored if `nonrel_tf` and `rel_tf` are specified.
-    nonrel_tf : TransFuncAtRedshift, optional
-        Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
-    rel_tf : TransFuncAtRedshift, optional
-        Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
-    spec_type : {'old', 'new'}
-        The ICS secondary photon spectrum to integrate over. 
-
-    Returns
-    -------
-    TransFuncAtRedshift or ndarray
-        dN/(dt d Delta) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, delta). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, delta). 
-    """
-
-    gamma = eleckineng_in/phys.me + 1
-    beta = np.sqrt(eleckineng_in/phys.me*(gamma+1)/gamma**2)
-    delta = (eleckineng_in[:,None] - eleckineng_out)
-    eta = delta/T
-
-    # where to switch between nonrelativistic and relativistic treatments.
-    if nonrel:
-        rel_bound = np.inf 
-    else:
-        rel_bound = 20
-
-    # 2D masks have dimensions (eleceng, delta).
-
-    if as_pairs:
-        if eleckineng_in.size != eleckineng_out.size:
-            raise TypeError('delta and electron energy arrays must have the same length for pairwise computation.')
-        gamma_mask = gamma
-        beta_mask = beta
-        eleckineng_in_mask = eleckineng_in
-        delta_mask = eleckineng_in - eleckineng_out
-        spec = np.zeros_like(gamma)
-    else:
-        gamma_mask = np.outer(gamma, np.ones_like(eleckineng_out))
-        beta_mask = np.outer(beta, np.ones_like(eleckineng_out))
-        eleckineng_in_mask = np.outer(eleckineng_in, np.ones_like(eleckineng_out))
-        delta_mask = delta
-        spec = np.zeros(
-            (eleckineng_in.size, eleckineng_out.size), dtype='float128'
-        )
-
-    # beta_small = beta_mask < 0.05
-    if spec_type == 'old':
-        beta_small = beta_mask < 0.05
-    if spec_type == 'new':
-        beta_small = beta_mask < 0.1
-    rel = gamma_mask > rel_bound
-    delta_pos = delta_mask > 0
-
-    y = T/phys.TCMB(400)
-
-    if rel_tf is not None:
-        if as_pairs:
-            raise TypeError('When reading from file, the keyword as_pairs is not supported.')
-        # If the electron energy at which interpolation is to be taken is outside rel_tf, then an error should be returned, since the file has not gone up to high enough energies.
-        #rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > rel_bound])
-        # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
-        # rel_tf = rel_tf.at_eng(
-        #     y*delta, 
-        #     bounds_error = False,
-        #     fill_value = (np.nan, 0)
-        # )
-
-        # OLD METHOD: call at_val
-
-        # rel_tf = rel_tf.at_val(
-        #     y*eleceng[gamma > rel_bound], y*delta, 
-        #     bounds_error=False, fill_value = 1e-200
-        # )
-        # spec[rel] = y**4*rel_tf.grid_vals.flatten()
-
-        # NEW METHOD: call interpolator
-        rel_tf_interp = rel_tf.interp_func(
-            np.log(y*eleckineng_out),
-            np.log(y*eleckineng_in[gamma > rel_bound])
-        )
-        spec[rel] = y**4*rel_tf_interp.flatten()
-
-    if nonrel_tf is not None:
-        # nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= rel_bound] - phys.me)
-        # nonrel_tf = nonrel_tf.at_eng(
-        #     delta/y,
-        #     bounds_error = False,
-        #     fill_value = (np.nan, 0)
-        # )
-
-        # OLD METHOD: call at_val
-        # nonrel_tf = nonrel_tf.at_val(
-        #     eleckineng[gamma <= rel_bound], delta/y,
-        #     bounds_error = False, fill_value = 1e-200
-        # )
-        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
-
-        # NEW METHOD: call interpolator
-        nonrel_tf_interp = np.stack([
-            nonrel_tf.interp_func(
-                np.log(eleckineng_out/y + (1-1/y)*in_eng),
-                np.log(in_eng)
-            ) for in_eng in eleckineng_in[gamma <= rel_bound]
-        ])
-        print('for real?')
-        spec[~rel] = y**2*nonrel_tf_interp.flatten()
-
-    if nonrel is not None:
-
-        # If computing the first time, returns the computation
-        # for every energy (even nonrelativistic, because we will need
-        # to interpolate later).
-        
-        if not nonrel:
-
-            print('Computing scattered electron spectrum...')
-
-            
-            spec[delta_pos] = ics_spectrum.rel_spec(
-                eleckineng_in_mask[delta_pos],
-                delta_mask[delta_pos],
-                T, inf_upp_bound=True, as_pairs=True 
-            )
-
-            print('Relativistic energy loss spectrum complete!')
-
-        else:
-            print('Computing nonrelativistic scattered electron spectrum...')
-            # beta_small obviously doesn't intersect with rel. 
-            spec[beta_small & delta_pos] = engloss_spec_diff(
-                eleckineng_in_mask[beta_small & delta_pos],
-                delta_mask[beta_small & delta_pos],
-                T, as_pairs=True, spec_type=spec_type
-            )
-
-            spec[~beta_small & delta_pos] = engloss_spec_series(
-                eleckineng_in_mask[~beta_small & delta_pos],
-                delta_mask[~beta_small & delta_pos],
-                T, as_pairs=True, spec_type=spec_type
-            )
-            print('Nonrelativistic energy loss spectrum computed!')
-
-    # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero to take log interpolation later. 
-    spec[spec < 1e-100] = 0.
-    
-    if as_pairs:
-        return spec 
-    else:
-
-        rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
-
-        # spec_arr = [
-        #     Spectrum(eleckineng_out, sp, rs=rs, in_eng=in_eng) 
-        #     for sp, in_eng in zip(spec, eleckineng_in)
-        # ]
-
-        # return TransFuncAtRedshift(
-        #     spec_arr, dlnz=dlnz, 
-        #     in_eng = eleckineng_in, eng = eleckineng_out,
-        #     with_interp_func=True
-        # )
-
-        return TransFuncAtRedshift(
-            spec, in_eng = eleckineng_in, eng = eleckineng_out, 
-            rs = np.ones_like(eleckineng_in)*rs, dlnz=dlnz,
-            spec_type = 'dNdE', with_interp_func=True
-        )
-
 

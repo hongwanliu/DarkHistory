@@ -7,6 +7,7 @@ from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.nonrel_diff_terms import *
 from darkhistory.utilities import log_1_plus_x
 from darkhistory import physics as phys
+from darkhistory import utilities as utils
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
@@ -985,10 +986,19 @@ def ics_spec(
         # spec[rel] = y**4*rel_tf.grid_vals.flatten()
 
         # NEW METHOD: call interpolator. 
-        rel_tf_interp = rel_tf.interp_func(
-            np.log(y*photeng),
-            np.log(y*eleceng[gamma > rel_bound])
+
+        # points = utils.get_grid(
+        #     np.log(y*eleceng[gamma > rel_bound]), np.log(y*photeng)
+        # )
+
+        # rel_tf_interp = rel_tf.interp_func(points)
+
+        rel_tf_interp = np.transpose(
+            rel_tf.interp_func(
+                np.log(y*eleceng[gamma > rel_bound]), np.log(y*photeng)
+            )
         )
+
         spec[rel] = y**4*rel_tf_interp.flatten()
 
     else: 
@@ -1014,10 +1024,18 @@ def ics_spec(
         # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
 
         # NEW METHOD: call interpolator directly.
-        nonrel_tf_interp = nonrel_tf.interp_func(
-            np.log(photeng/y),
-            np.log(eleckineng[gamma <= rel_bound]) 
+
+        # points = utils.get_grid(
+        #     np.log(eleckineng[gamma <= rel_bound]), np.log(photeng/y)
+        # )
+        # nonrel_tf_interp = nonrel_tf.interp_func(points)
+
+        nonrel_tf_interp = np.transpose(
+            nonrel_tf.interp_func(
+                np.log(eleckineng[gamma <= rel_bound]), np.log(photeng/y)
+            )
         )
+
         spec[~rel] = y**2*nonrel_tf_interp.flatten()
 
     else:

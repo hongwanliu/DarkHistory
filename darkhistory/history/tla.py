@@ -122,29 +122,33 @@ def get_history(
 
     chi = phys.nHe/phys.nH
 
-    if photoion_rate_func is None:
+    if reion_switch:
 
-        photoion_rate_HI   = reion.photoion_rate('HI')
-        photoion_rate_HeI  = reion.photoion_rate('HeI')
-        photoion_rate_HeII = reion.photoion_rate('HeII')
+        if photoion_rate_func is None:
 
-    else:
+            photoion_rate_HI   = reion.photoion_rate('HI')
+            photoion_rate_HeI  = reion.photoion_rate('HeI')
+            photoion_rate_HeII = reion.photoion_rate('HeII')
 
-        photoion_rate_HI   = photoion_rate_func[0]
-        photoion_rate_HeI  = photoion_rate_func[1]
-        photoion_rate_HeII = photoion_rate_func[2]
+        else:
 
-    if photoheat_rate_func is None:
+            photoion_rate_HI   = photoion_rate_func[0]
+            photoion_rate_HeI  = photoion_rate_func[1]
+            photoion_rate_HeII = photoion_rate_func[2]
 
-        photoheat_rate_HI   = reion.photoheat_rate('HI')
-        photoheat_rate_HeI  = reion.photoheat_rate('HeI')
-        photoheat_rate_HeII = reion.photoheat_rate('HeII')
+    if reion_switch:
 
-    else:
+        if photoheat_rate_func is None:
 
-        photoheat_rate_HI   = photoheat_rate_func[0]
-        photoheat_rate_HeI  = photoheat_rate_func[1]
-        photoheat_rate_HeII = photoheat_rate_func[2]
+            photoheat_rate_HI   = reion.photoheat_rate('HI')
+            photoheat_rate_HeI  = reion.photoheat_rate('HeI')
+            photoheat_rate_HeII = reion.photoheat_rate('HeII')
+
+        else:
+
+            photoheat_rate_HI   = photoheat_rate_func[0]
+            photoheat_rate_HeI  = photoheat_rate_func[1]
+            photoheat_rate_HeII = photoheat_rate_func[2]
 
     def tla_before_reion(var, rs):
         # Returns an array of values for [dT/dz, dyHII/dz,
