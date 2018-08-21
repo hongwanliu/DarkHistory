@@ -7,6 +7,7 @@ from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.nonrel_diff_terms import *
 from darkhistory.utilities import log_1_plus_x
 from darkhistory import physics as phys
+from darkhistory import utilities as utils
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
@@ -728,7 +729,11 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         ]
 
         # Injection energy is kinetic energy of the electron.
-        spec_tf = TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        spec_tf = TransFuncAtRedshift(
+            spec_arr, dlnz=dlnz, 
+            in_eng = eleckineng, eng = photeng,
+            with_interp_func = True
+        )
 
         return spec_tf
 
@@ -893,7 +898,11 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
             for s, in_eng in zip(spec, eleceng)
         ]
 
-        spec_tf = TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        spec_tf = TransFuncAtRedshift(
+            spec_arr, dlnz=dlnz, 
+            in_eng = eleceng, eng = photeng,
+            with_interp_func = True
+        )
 
         return spec_tf 
 
@@ -952,7 +961,7 @@ def ics_spec(
 
     rel = (gamma_mask > rel_bound)
 
-    y = T/phys.TCMB(1000)
+    y = T/phys.TCMB(400)
 
     if rel_tf != None:
         if as_pairs:
@@ -966,12 +975,32 @@ def ics_spec(
         #     bounds_error = False, 
         #     fill_value = (np.nan, 0)
         # )
-        rel_tf = rel_tf.at_val(
-            y*eleceng[gamma > rel_bound], y*photeng, 
-            bounds_error = False, fill_value = 1e-200
-        )
+
+        # OLD METHOD: call at_val
+
+        # rel_tf = rel_tf.at_val(
+        #     y*eleceng[gamma > rel_bound], y*photeng, 
+        #     bounds_error = False, fill_value = 1e-200
+        # )
         
-        spec[rel] = y**4*rel_tf.grid_vals.flatten()
+        # spec[rel] = y**4*rel_tf.grid_vals.flatten()
+
+        # NEW METHOD: call interpolator. 
+
+        # points = utils.get_grid(
+        #     np.log(y*eleceng[gamma > rel_bound]), np.log(y*photeng)
+        # )
+
+        # rel_tf_interp = rel_tf.interp_func(points)
+
+        rel_tf_interp = np.transpose(
+            rel_tf.interp_func(
+                np.log(y*eleceng[gamma > rel_bound]), np.log(y*photeng)
+            )
+        )
+
+        spec[rel] = y**4*rel_tf_interp.flatten()
+
     else: 
         spec[rel] = rel_spec(
             eleceng_mask[rel], photeng_mask[rel], T, 
@@ -985,11 +1014,30 @@ def ics_spec(
         #     bounds_error = False,
         #     fill_value = (np.nan, 0)
         # )
-        nonrel_tf = nonrel_tf.at_val(
-            eleckineng[gamma <= rel_bound], photeng/y, 
-            bounds_error = False, fill_value = 1e-200
+
+        # OLD METHOD: call at_val
+
+        # nonrel_tf = nonrel_tf.at_val(
+        #     eleckineng[gamma <= rel_bound], photeng/y, 
+        #     bounds_error = False, fill_value = 1e-200
+        # )
+        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+
+        # NEW METHOD: call interpolator directly.
+
+        # points = utils.get_grid(
+        #     np.log(eleckineng[gamma <= rel_bound]), np.log(photeng/y)
+        # )
+        # nonrel_tf_interp = nonrel_tf.interp_func(points)
+
+        nonrel_tf_interp = np.transpose(
+            nonrel_tf.interp_func(
+                np.log(eleckineng[gamma <= rel_bound]), np.log(photeng/y)
+            )
         )
-        spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+
+        spec[~rel] = y**2*nonrel_tf_interp.flatten()
+
     else:
         spec[~rel] = nonrel_spec(
             eleckineng_mask[~rel], photeng_mask[~rel], 
@@ -1007,11 +1055,16 @@ def ics_spec(
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [
-            Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
-            for sp, in_eng in zip(spec, eleckineng)
-        ]
+        # spec_arr = [
+        #     Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
+        #     for sp, in_eng in zip(spec, eleckineng)
+        # ]
 
-        # Use kinetic energy of the electron for better interpolation when necessary. 
-        return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        # # Use kinetic energy of the electron for better interpolation when necessary. 
+        # return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 
+        return TransFuncAtRedshift(
+            spec, in_eng = eleckineng, eng = photeng, 
+            rs = np.ones_like(eleckineng)*rs, dlnz=dlnz,
+            spec_type = 'dNdE'
+        )

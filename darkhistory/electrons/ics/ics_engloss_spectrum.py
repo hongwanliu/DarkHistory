@@ -2,12 +2,14 @@
 
 import numpy as np
 
+from darkhistory import physics as phys
+from darkhistory import utilities as utils
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.transferfunction import TransFuncAtRedshift
+
 from darkhistory.electrons.ics.bose_einstein_integrals import *
 from darkhistory.electrons.ics.engloss_diff_terms import *
 import darkhistory.electrons.ics.ics_spectrum as ics_spectrum
-from darkhistory import physics as phys
-from darkhistory.spec.spectrum import Spectrum
-from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 
 from tqdm import tqdm_notebook as tqdm
@@ -585,7 +587,7 @@ def engloss_spec(
         beta_small = beta_mask < 0.1
     rel = gamma_mask > rel_bound
 
-    y = T/phys.TCMB(1000)
+    y = T/phys.TCMB(400)
 
     if not nonrel:
         if rel_tf != None:
@@ -599,11 +601,29 @@ def engloss_spec(
             #     bounds_error = False,
             #     fill_value = (np.nan, 0)
             # )
-            rel_tf = rel_tf.at_val(
-                y*eleceng[gamma > rel_bound], y*delta, 
-                bounds_error=False, fill_value = 1e-200
-            )
-            spec[rel] = y**4*rel_tf.grid_vals.flatten()
+
+            # OLD METHOD: call at_val
+
+            # rel_tf = rel_tf.at_val(
+            #     y*eleceng[gamma > rel_bound], y*delta, 
+            #     bounds_error=False, fill_value = 1e-200
+            # )
+            # spec[rel] = y**4*rel_tf.grid_vals.flatten()
+
+            # NEW METHOD: call interpolator
+            # points = utils.get_grid(
+            #     np.log(y*eleceng[gamma > rel_bound]), np.log(y*delta)
+            # )
+            # rel_tf_interp = rel_tf.interp_func(points)
+            
+            rel_tf_interp = np.transpose(
+                rel_tf.interp_func(
+                    np.log(y*eleceng[gamma > rel_bound]), np.log(y*delta)
+                )
+            )    
+
+            spec[rel] = y**4*rel_tf_interp.flatten()
+
         else:
 
             print('Computing relativistic energy loss spectrum...')
@@ -623,11 +643,29 @@ def engloss_spec(
         #     bounds_error = False,
         #     fill_value = (np.nan, 0)
         # )
-        nonrel_tf = nonrel_tf.at_val(
-            eleckineng[gamma <= rel_bound], delta/y,
-            bounds_error = False, fill_value = 1e-200
+
+        # OLD METHOD: call at_val
+        # nonrel_tf = nonrel_tf.at_val(
+        #     eleckineng[gamma <= rel_bound], delta/y,
+        #     bounds_error = False, fill_value = 1e-200
+        # )
+        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+
+        # NEW METHOD: call interpolator
+        # points = utils.get_grid(
+        #     np.log(eleckineng[gamma <= rel_bound]), np.log(delta/y)
+        # )
+
+        # nonrel_tf_interp = nonrel_tf.interp_func(points)
+        
+        nonrel_tf_interp = np.transpose(
+            nonrel_tf.interp_func(
+                np.log(eleckineng[gamma <= rel_bound]), np.log(delta/y)
+            )
         )
-        spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
+
+        spec[~rel] = y**2*nonrel_tf_interp.flatten()
+
     else:
         print('Computing nonrelativistic energy loss spectrum...')
         # beta_small obviously doesn't intersect with rel. 
@@ -654,11 +692,20 @@ def engloss_spec(
         rs = T/phys.TCMB(1)
         dlnz = 1/(phys.dtdz(rs)*rs)
 
-        spec_arr = [
-            Spectrum(delta, sp, rs=rs, in_eng=in_eng) 
-            for sp, in_eng in zip(spec, eleckineng)
-        ]
+        # spec_arr = [
+        #     Spectrum(delta, sp, rs=rs, in_eng=in_eng) 
+        #     for sp, in_eng in zip(spec, eleckineng)
+        # ]
 
-        return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
+        # return TransFuncAtRedshift(
+        #     spec_arr, dlnz=dlnz, 
+        #     in_eng = eleckineng, eng = delta,
+        #     with_interp_func=True
+        # )
 
+        return TransFuncAtRedshift(
+            spec, in_eng = eleckineng, eng = delta, 
+            rs = np.ones_like(eleckineng)*rs, dlnz=dlnz,
+            spec_type = 'dNdE', with_interp_func=True
+        )
 
