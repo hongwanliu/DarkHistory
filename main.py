@@ -186,9 +186,9 @@ def evolve(
 
     # Load the standard TLA solution if necessary.
     if std_soln:
-        soln = pickle.load(open("../darkhistory/history/std_soln.p", "rb"))
-        xe_std  = interp1d(soln[0,:], soln[2,:])
-        Tm_std = interp1d(soln[0,:], soln[1,:])
+        soln = np.loadtxt(open("/Users/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
+        xe_std  = interp1d(soln[:,0], soln[:,2])
+        #Tm_std = interp1d(soln[0,:], soln[1,:])
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
