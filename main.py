@@ -4,6 +4,7 @@
 
 import numpy as np
 import pickle
+from tqdm import tqdm_notebook as tqdm
 
 from scipy.interpolate import interp1d
 
@@ -14,6 +15,14 @@ import darkhistory.spec.transferfunclist as tflist
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
 import darkhistory.history.tla as tla
+
+from darkhistory.electrons.ics.ics_spectrum import ics_spec
+from darkhistory.electrons.ics.ics_spectrum import nonrel_spec
+from darkhistory.electrons.ics.ics_spectrum import rel_spec
+from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
+from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf
+
+from darkhistory.electrons import positronium as pos
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 
@@ -115,11 +124,44 @@ def load_trans_funcs():
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp
 
+def load_ics_data():
+    """ Load Inverse Compton Scattering Transfer Functions
+    """
+    Emax = 1e20
+    Emin = 1e-8
+    nEe = 5000
+    nEp  = 5000
+
+    dlnEp = np.log(Emax/Emin)/nEp
+    lowengEp_rel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)
+
+    dlnEe = np.log(Emax/Emin)/nEe
+    lowengEe_rel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
+
+    Emax = 1e10
+    Emin = 1e-8
+    nEe = 5000
+    nEp  = 5000
+
+    dlnEp = np.log(Emax/Emin)/nEp
+    lowengEp_nonrel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp
+
+    dlnEe = np.log(Emax/Emin)/nEe
+    lowengEe_nonrel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
+
+    print('********* Thomson regime scattered photon spectrum *********')
+    ics_thomson_ref_tf = nonrel_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400))
+    print('********* Relativistic regime scattered photon spectrum *********')
+    ics_rel_ref_tf = rel_spec(lowengEe_rel, lowengEp_rel, phys.TCMB(400), inf_upp_bound=True)
+    print('********* Thomson regime energy loss spectrum *********')
+    engloss_ref_tf = engloss_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400), nonrel=True)
+    return ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
 
 def evolve(
     in_spec_elec, in_spec_phot,
     rate_func_N, rate_func_eng, end_rs,
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
+    ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
     xe_init=None, Tm_init=None,
     coarsen_factor=1, std_soln=False, user=None
 ):
@@ -155,6 +197,13 @@ def evolve(
     next_lowengphot_spec  = None
     next_lowengelec_spec  = None
 
+    if (
+        highengphot_tf_interp.dlnz    != lowengphot_tf_interp.dlnz
+        or highengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz
+        or lowengphot_tf_interp.dlnz  != lowengelec_tf_interp.dlnz
+    ):
+        raise TypeError('Input spectra must have the same rs.')
+
     if in_spec_elec.rs != in_spec_phot.rs:
         raise TypeError('Input spectra must have the same rs.')
 
@@ -164,15 +213,29 @@ def evolve(
     rs = in_spec_phot.rs
     dt = dlnz/phys.hubble(rs)
 
-    # The initial input dN/dE per annihilation to per baryon per dlnz, 
-    # based on the specified rate. 
-    # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
+    # Function that changes the normalization from per annihilation to per baryon. 
+    def norm_fac(rs):
+        return rate_func_N(rs) * dlnz * coarsen_factor /phys.hubble(rs) / (phys.nB * rs**3)
 
-    # ICS for in_spec_elec goes here.
+    elec_processes = False
 
-    init_inj_spec = (
-        in_spec_phot * rate_func_N(rs) * dt / (phys.nB * rs**3)
-    )
+    if in_spec_elec.totN() > 0:
+        elec_processes = True
+
+    if elec_processes:
+        (ics_sec_phot_tf, ics_sec_elec_tf, continuum_loss) = get_ics_cooling_tf(
+            ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
+            eleceng, photeng, rs, fast=True
+        )
+
+        ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+        ics_lowengelec_spec = ics_sec_elec_tf.sum_specs(in_spec_elec)
+        positronium_phot_spec = pos.weighted_photon_spec(photeng)*in_spec_elec.totN()/2
+        if positronium_phot_spec.spec_type != 'N':
+            positronium_phot_spec.switch_spec_type()
+            init_inj_spec = (in_spec_phot + ics_phot_spec + positronium_phot_spec)*norm_fac(rs)
+        else:
+            init_inj_spec = in_spec_phot * norm_fac(rs)
 
     # Initialize the Spectra object that will contain all the 
     # output spectra during the evolution.
@@ -197,8 +260,14 @@ def evolve(
     append_lowengphot_spec  = out_lowengphot_specs.append
     append_lowengelec_spec  = out_lowengelec_specs.append
 
+    # For the tqdm bar
+    pbar = tqdm(total = np.floor((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor).astype(int))
+
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
+        # Update tqdm bar.
+        pbar.update(1)
+
         # If prev_rs exists, calculate xe and T_m. 
         if prev_rs is not None:
             # f_continuum, f_lyman, f_ionH, f_ionHe, f_heat
@@ -236,11 +305,24 @@ def evolve(
             lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_arr[-1])
             lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_arr[-1])
 
-        #!!! Coarsening goes here
+
+        if coarsen_factor > 1:
+            prop_tf = np.zeros_like(highengphot_tf._grid_vals)
+            for i in np.arange(coarsen_factor):
+                prop_tf += matrix_power(highengphot_tf._grid_vals, i)
+            lowengphot_tf._grid_vals = np.matmul(prop_tf, lowengphot_tf._grid_vals)
+            lowengelec_tf._grid_vals = np.matmul(prop_tf, lowengelec_tf._grid_vals)
+            highengphot_tf._grid_vals = matrix_power(
+                highengphot_tf._grid_vals, coarsen_factor
+            )
 
         next_highengphot_spec = highengphot_tf.sum_specs(out_highengphot_specs[-1])
         next_lowengphot_spec  = lowengphot_tf.sum_specs(out_highengphot_specs[-1])
-        next_lowengelec_spec  = lowengelec_tf.sum_specs(out_highengphot_specs[-1])
+
+        if elec_processes:
+            next_lowengelec_spec  = lowengelec_tf.sum_specs(out_highengphot_specs[-1]) + ics_lowengelec_spec*norm_fac(rs)
+        else:
+            next_lowengelec_spec  = lowengelec_tf.sum_specs(out_highengphot_specs[-1])
 
         # Re-define existing variables.
         prev_rs = rs
@@ -252,9 +334,18 @@ def evolve(
         next_lowengelec_spec.rs  = rs
 
         # Add the next injection spectrum to next_highengphot_spec
-        next_inj_spec = (
-            in_spec_phot * rate_func_N(rs)* dt / (phys.nB * rs**3)
-        )
+        if elec_processes:
+            (ics_sec_phot_tf, ics_sec_elec_tf, continuum_loss) = get_ics_cooling_tf(
+                ics_thomson_ref_tf_2, ics_rel_ref_tf_2, engloss_ref_tf_2,
+                eleceng, photeng, rs, fast=True
+            )
+
+            ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+            ics_lowengelec_spec = ics_sec_elec_tf.sum_specs(in_spec_elec)
+
+            next_inj_spec = (in_spec_phot + ics_phot_spec + positronium_phot_spec)*norm_fac(rs)
+        else:
+            next_inj_spec = in_spec_phot * norm_fac(rs)
 
         # This keeps the redshift. 
         next_highengphot_spec.N += next_inj_spec.N
