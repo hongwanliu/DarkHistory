@@ -121,7 +121,7 @@ def evolve(
     rate_func_N, rate_func_eng, end_rs,
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     xe_init=None, Tm_init=None,
-    coarsen_factor=1, std_soln=False
+    coarsen_factor=1, std_soln=False, user=None
 ):
     """
     Main function that computes the temperature and ionization history.
@@ -146,6 +146,8 @@ def evolve(
         Coarsening to apply to the transfer function matrix.
     std_soln : bool
         If true, uses the standard TLA solution for f(z).
+    user : str
+        specify which user is accessing the code, so that the standard solution can be downloaded.  Must be changed!!!
     """
 
     # Initialize the next spectrum as None.
@@ -186,9 +188,9 @@ def evolve(
 
     # Load the standard TLA solution if necessary.
     if std_soln:
-        soln = pickle.load(open("../darkhistory/history/std_soln.p", "rb"))
-        xe_std  = interp1d(soln[0,:], soln[2,:])
-        Tm_std = interp1d(soln[0,:], soln[1,:])
+        soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
+        xe_std  = interp1d(soln[:,0], soln[:,2])
+        #Tm_std = interp1d(soln[0,:], soln[1,:])
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append

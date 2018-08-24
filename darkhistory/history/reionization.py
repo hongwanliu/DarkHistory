@@ -162,6 +162,7 @@ def alphaA_recomb(species, T):
             1.544e-9 * T**-1.5 * (0.3*np.exp(-48.596/T) + np.exp(-40.496/T))
         )
 
+
     elif species == 'HeII':
         return alphaA_recomb('HeIIr', T) + alphaA_recomb('HeIId', T)
 
@@ -222,13 +223,13 @@ def recomb_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 
 	return (
 		-6.24e11 * (phys.nH * rs**3)**2 * (
-			1.036e-16 * T_m * alphaA_recomb('HII', T_m) 
+			1.036e-16 * T_m/phys.kB * alphaA_recomb('HII', T_m) 
 				* xe * xHII
 			+ (
-				1.036e-16 * T_m * alphaA_recomb('HeIIr', T_m)
+				1.036e-16 * T_m/phys.kB * alphaA_recomb('HeIIr', T_m)
 				+ 6.526e-11 * alphaA_recomb('HeIId', T_m)
-			) * xe * xHII
-			+ 1.036e-16 * T_m * alphaA_recomb('HeIII', T_m)
+			) * xe * xHeII
+			+ 1.036e-16 * T_m/phys.kB * alphaA_recomb('HeIII', T_m)
 				* xe * xHeIII
 		) 
 	)
@@ -300,7 +301,7 @@ def coll_exc_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 		-6.24e11 * xe * (phys.nH * rs**3)**2 * (
 			7.50e-19 * np.exp(-118348/T_in_K) * T_5_factor * xHI
 			+ 9.10e-27 * T_in_K**-0.1687 * np.exp(-13179.0/T_in_K)
-				* T_5_factor * xe * (phys.nH * rs**3) * xHeII
+				* T_5_factor * xe * (phys.nH * rs**3) * xHeI
 			+ 5.54e-17 * T_in_K**-0.397 *  np.exp(-473638 /T_in_K)
 				* T_5_factor * xHeII
 		)
@@ -331,8 +332,8 @@ def brem_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 	xe   = xHII + xHeII + 2*xHeIII
 
 	T_in_K = T_m/phys.kB
-
-	gaunt_fac = 1.1 + 0.34 * np.exp(-(5.5 - np.log10(T_in_K))**2)
+    # See astro-ph/9509107 Eq. 23
+	gaunt_fac = 1.1 + 0.34 * np.exp(-(5.5 - np.log10(T_in_K))**2/3.0)
 
 	return (
 		-xe * 6.24e11 * (phys.nH*rs**3)**2 * (
