@@ -17,18 +17,17 @@ import darkhistory.history.tla as tla
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 
-def load_trans_funcs():
+def load_trans_funcs(direc):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
-    user = 'gridgway'
-    highengphot_tflist_arr = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
+    highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
     print('Loaded high energy photons...')
-    lowengphot_tflist_arr  = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
+    lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
     print('Low energy photons...')
-    lowengelec_tflist_arr  = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
+    lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
     print('Low energy electrons...')
-    CMB_engloss_arr = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/CMB_engloss_60eV_complete_coarse.raw", "rb"))
+    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
     print('CMB losses.\n')
 
     photeng = highengphot_tflist_arr[0].eng
@@ -115,6 +114,36 @@ def load_trans_funcs():
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp
 
+def load_ics_data()
+    Emax = 1e20
+    Emin = 1e-8
+    nEe = 5000
+    nEp  = 5000
+
+    dlnEp = np.log(Emax/Emin)/nEp
+    lowengEp_rel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)        
+
+    dlnEe = np.log(Emax/Emin)/nEe
+    lowengEe_rel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
+
+    Emax = 1e10
+    Emin = 1e-8
+    nEe = 5000
+    nEp  = 5000
+
+    dlnEp = np.log(Emax/Emin)/nEp
+    lowengEp_nonrel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)  
+
+    dlnEe = np.log(Emax/Emin)/nEe
+    lowengEe_nonrel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
+
+    print('********* Thomson regime scattered photon spectrum *********')
+    ics_thomson_ref_tf = nonrel_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400))
+    print('********* Relativistic regime scattered photon spectrum *********')
+    ics_rel_ref_tf = rel_spec(lowengEe_rel, lowengEp_rel, phys.TCMB(400), inf_upp_bound=True)
+    print('********* Thomson regime energy loss spectrum *********')
+    engloss_ref_tf = engloss_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400), nonrel=True)
+    return ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
 
 def evolve(
     in_spec_elec, in_spec_phot,
@@ -188,8 +217,10 @@ def evolve(
 
     # Load the standard TLA solution if necessary.
     if std_soln:
-        soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
-        xe_std  = interp1d(soln[:,0], soln[:,2])
+        soln = pickle.load(open("../darkhistory/history/std_soln.p", "rb"))
+        xe_std  = interp1d(soln[0,:], soln[2,:])
+        #soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
+        #xe_std  = interp1d(soln[:,0], soln[:,2])
         #Tm_std = interp1d(soln[0,:], soln[1,:])
 
     # Define these methods for speed.
