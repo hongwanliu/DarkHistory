@@ -114,7 +114,7 @@ def load_trans_funcs(direc):
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp
 
-def load_ics_data()
+def load_ics_data():
     Emax = 1e20
     Emin = 1e-8
     nEe = 5000
