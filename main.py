@@ -217,7 +217,7 @@ def evolve(
 
     # Load the standard TLA solution if necessary.
     if std_soln:
-        soln = pickle.load(open("../darkhistory/history/std_soln.p", "rb"))
+        soln = pickle.load(open("/Users/hongwan/GitHub/DarkHistory/darkhistory/history/std_soln.p", "rb"))
         xe_std  = interp1d(soln[0,:], soln[2,:])
         #soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
         #xe_std  = interp1d(soln[:,0], soln[:,2])

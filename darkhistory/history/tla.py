@@ -196,6 +196,10 @@ def get_history(
 
         def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
+            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+                # At this point, leave at 1 - 1e-6
+                return 0
+
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
             xHI = 1 - xHII(yHII)
@@ -218,6 +222,11 @@ def get_history(
             )
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+                # At this point, leave at 1 - 1e-6
+                return 0
+
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
@@ -225,6 +234,11 @@ def get_history(
             return 0
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+                # At this point, leave at 1 - 1e-6
+                return 0
+                
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
 
@@ -311,6 +325,11 @@ def get_history(
 
         def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
+            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+                # At this point, leave at 1 - 1e-6
+                return 0
+
+
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
             xHI = 1 - xHII(yHII)
@@ -339,6 +358,11 @@ def get_history(
             )
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+            if 1 - xHeII(yHeII) < 1e-6 and rs < 100:
+                # At this point, leave at 1 - 1e-6
+                return 0
+
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
@@ -359,6 +383,11 @@ def get_history(
             )
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
+
+            if 1 - xHeIII(yHeIII) < 1e-6 and rs < 100:
+                # At this point, leave at 1 - 1e-6
+                return 0
+
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
 
