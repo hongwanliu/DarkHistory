@@ -6,6 +6,7 @@ import numpy as np
 import darkhistory.physics as phys
 import darkhistory.history.reionization as reion
 from scipy.integrate import odeint
+from scipy.misc import derivative
 
 def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     """Returns the Compton cooling rate.
@@ -45,7 +46,7 @@ def get_history(
     init_cond, f_H_ion_in, f_H_exc_in, f_heating_in,
     dm_injection_rate_in, rs_vec, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    mxstep = 1000
+    xe_reion_func=None, mxstep = 1000
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -70,7 +71,9 @@ def get_history(
     photoion_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
     photoheat_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`.  
+        Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
+    xe_reion_func : function, optional
+        Specifies a fixed ionization history after reion_rs.  
     mxstep : int, optional
         Maximum number of (internally defined) steps allowed for each integration point in t. See scipy.integrate.odeint
 
@@ -238,7 +241,7 @@ def get_history(
             if 1 - xHII(yHII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
-                
+
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * phys.nH*rs**3
 
@@ -254,6 +257,7 @@ def get_history(
         ]
 
     def tla_reion(var, rs):
+        # TLA with photoionization/photoheating reionization model.
         # Returns an array of values for [dT/dz, dyHII/dz,
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
@@ -409,6 +413,46 @@ def get_history(
             dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
         ]
 
+    def tla_reion_fixed_xe(var, rs):
+        # TLA with fixed ionization history. 
+        # Returns an array of values for [dT/dz, dyHII/dz].]. 
+        # var is the [temperature, xHII] input.
+
+        def dxe_dz(rs):
+
+            return derivative(xe_reion_func, rs)
+
+        def dT_dz(T_m, rs):
+
+            xe  = xe_reion_func(rs)
+            xHI = 1 - xe_reion_func(rs)
+
+            # This is the temperature loss per redshift. 
+            adiabatic_cooling_rate = 2 * T_m/rs
+
+            # This rate is *energy* loss per redshift, divided by
+            # 3/2 * phys.nH * rs**3 * (1 + chi + xe). 
+            entropy_cooling_rate = -T_m * (
+                dxe_dz(rs)
+            )/(1 + chi + xe)
+
+            return (
+                adiabatic_cooling_rate
+                + entropy_cooling_rate
+                + (
+                    - phys.dtdz(rs)*(
+                        compton_cooling_rate(
+                            xe, 0, 0, T_m, rs
+                        )
+                        + f_heating(rs, xHI, 0, 0) * dm_injection_rate(rs)
+                    )
+                ) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
+            )
+
+        T_m = var
+
+        return dT_dz(T_m, rs)
+
 
     if init_cond[1] == 1:
         init_cond[1] = 1 - 1e-12
@@ -432,6 +476,56 @@ def get_history(
         soln = odeint(
                 tla_before_reion, init_cond, rs_vec, mxstep = mxstep
             )
+    elif xe_reion_func is not None:
+        # Fixed xe reionization model implemented. 
+        # First, solve without reionization.
+        soln_no_reion = odeint(
+            tla_before_reion, init_cond, rs_vec, mxstep = mxstep
+        )
+        # Check if reionization model is required in the first place.
+        if rs_reion_vec.size == 0:
+            soln = soln_no_reion
+            # Convert to xe
+            soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
+        else:
+            xe_no_reion = 0.5 + 0.5*np.tanh(soln_no_reion[:,1])
+            xe_reion = xe_reion_func(rs_vec)
+            # Find where to solve the TLA. Must lie below reion_rs and 
+            # have xe_reion > xe_no_reion.
+            where_new_soln = (xe_reion > xe_no_reion) & (rs_vec < reion_rs)
+
+            # Find the respective redshift arrays. 
+            rs_above_std_xe_vec = rs_vec[where_new_soln]
+            rs_below_std_xe_vec = rs_vec[~where_new_soln]
+            # Append the last redshift before reionization model. 
+            rs_above_std_xe_vec = np.insert(
+                rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
+            )
+
+            # Define the solution array. Get the entries from soln_no_reion.
+            soln = np.zeros_like(soln_no_reion)
+            soln[~where_new_soln, :] = soln_no_reion[~where_new_soln, :]
+            # Convert to xe.
+            soln[~where_new_soln, 1] = 0.5 + 0.5*np.tanh(
+                soln[~where_new_soln,1]
+            )
+            
+
+            # Solve for all subsequent redshifts. 
+            if rs_above_std_xe_vec.size > 0:
+                init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
+                soln_with_reion = odeint(
+                    tla_reion_fixed_xe, init_cond_fixed_xe, 
+                    rs_above_std_xe_vec, mxstep=mxstep
+                )
+                # Remove the initial step, save to soln.
+                soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
+                soln[where_new_soln, 1] = xe_reion_func(
+                    rs_vec[where_new_soln]
+                )
+
+            return soln
+
     else:
         # Reionization model implemented. 
         # First, check if required in the first place. 
