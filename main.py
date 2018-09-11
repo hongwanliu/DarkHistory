@@ -125,7 +125,8 @@ def load_trans_funcs():
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp
 
 def load_ics_data():
-    """ Load Inverse Compton Scattering Transfer Functions
+    """
+        Load Inverse Compton Scattering Transfer Functions
     """
     Emax = 1e20
     Emin = 1e-8
@@ -144,7 +145,7 @@ def load_ics_data():
     nEp  = 5000
 
     dlnEp = np.log(Emax/Emin)/nEp
-    lowengEp_nonrel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp
+    lowengEp_nonrel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)
 
     dlnEe = np.log(Emax/Emin)/nEe
     lowengEe_nonrel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
@@ -155,6 +156,7 @@ def load_ics_data():
     ics_rel_ref_tf = rel_spec(lowengEe_rel, lowengEp_rel, phys.TCMB(400), inf_upp_bound=True)
     print('********* Thomson regime energy loss spectrum *********')
     engloss_ref_tf = engloss_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400), nonrel=True)
+
     return ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
 
 def evolve(
