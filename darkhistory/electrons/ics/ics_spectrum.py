@@ -908,7 +908,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
 def ics_spec(
     eleckineng, photeng, T, as_pairs=False, 
-    nonrel_tf=None, rel_tf=None
+    nonrel_tf=None, rel_tf=None, T_ref=None
 ):
     """ ICS spectrum of secondary photons.
 
@@ -925,9 +925,11 @@ def ics_spec(
     as_pairs : bool, optional
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
     nonrel_tf : TransFuncAtRedshift, optional
-        Reference nonrelativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
+        Reference nonrelativistic ICS transfer function. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
-        Reference relativistic ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
+        Reference relativistic ICS transfer function. If specified, calculation is done by interpolating over the transfer function. 
+    T_ref : float, optional
+        The reference temperature at which the reference transfer functions is evaluated. If not specified, defaults to phys.TCMB(400).
 
     Returns
     -------
@@ -961,7 +963,10 @@ def ics_spec(
 
     rel = (gamma_mask > rel_bound)
 
-    y = T/phys.TCMB(400)
+    if T_ref is None:
+        T_ref = phys.TCMB(400)
+
+    y = T/T_ref
 
     if rel_tf != None:
         if as_pairs:

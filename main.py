@@ -26,18 +26,17 @@ from darkhistory.electrons import positronium as pos
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 
-def load_trans_funcs():
+def load_trans_funcs(direc):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
-    user = 'gridgway'
-    highengphot_tflist_arr = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
+    highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
     print('Loaded high energy photons...')
-    lowengphot_tflist_arr  = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
+    lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
     print('Low energy photons...')
-    lowengelec_tflist_arr  = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
+    lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
     print('Low energy electrons...')
-    CMB_engloss_arr = pickle.load(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/CMB_engloss_60eV_complete_coarse.raw", "rb"))
+    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
     print('CMB losses.\n')
 
     photeng = highengphot_tflist_arr[0].eng
@@ -253,8 +252,10 @@ def evolve(
 
     # Load the standard TLA solution if necessary.
     if std_soln:
-        soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
-        xe_std  = interp1d(soln[:,0], soln[:,2])
+        soln = pickle.load(open("/Users/hongwan/GitHub/DarkHistory/darkhistory/history/std_soln.p", "rb"))
+        xe_std  = interp1d(soln[0,:], soln[2,:])
+        #soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
+        #xe_std  = interp1d(soln[:,0], soln[:,2])
         #Tm_std = interp1d(soln[0,:], soln[1,:])
 
     # Define these methods for speed.
