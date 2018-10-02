@@ -28,7 +28,7 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     time_step : float
         The time-step associated with the deposited spectra, in seconds.
     cmbloss : float
-        Total amount of energy in upscattered photons that came from the CMB.
+        Total amount of energy in upscattered photons that came from the CMB, per baryon per time, d(E/N_B)/dt
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
@@ -46,7 +46,6 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     Think about the exceptions that should be thrown (spec_elec.rs should equal spec_phot.rs)
     """
 
-    norm_fac = phys.nB * spec_phot.rs**3 / time_step / dE_dVdt_inj
     ion_indx = spectools.get_indx(
         spec_phot.eng, phys.rydberg
     ) #Check this, also check spec_phot.eng?
@@ -83,7 +82,7 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     #print('f_phot: ', f_phot)
     #print('f_elec: ', f_elec)
     f_final = np.array([
-        f_phot[0]+f_elec[0] - cmbloss * norm_fac,
+        f_phot[0]+f_elec[0] - cmbloss * phys.nB * spec_phot.rs**3 / dE_dVdt_inj,
         f_phot[1]+f_elec[1],
         f_phot[2]+f_elec[2],
         f_phot[3]+f_phot[4]+f_elec[3],

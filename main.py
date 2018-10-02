@@ -96,11 +96,11 @@ def load_trans_funcs(direc):
         lowengelec_tflist._grid_vals = np.atleast_3d(
             np.stack([tf.grid_vals for tf in lowengelec_tflist._tflist])
         )
-    print("low energy electrons.\n")
+    print("low energy electrons...\n")
 
-    #!!! engloss must be included
     for engloss in CMB_engloss_arr:
         engloss = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
+    print("CMB losses.\n")
 
     # free electron fractions for which transfer functions are evaluated
     xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
@@ -112,7 +112,7 @@ def load_trans_funcs(direc):
     lowengelec_tf_interp = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
     print("Done.\n")
 
-    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp
+    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, CMB_engloss_arr
 
 def load_ics_data():
     Emax = 1e20
