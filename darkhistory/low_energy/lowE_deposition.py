@@ -28,7 +28,7 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     time_step : float
         The time-step associated with the deposited spectra, in seconds.
     cmbloss : float
-        Total amount of energy in upscattered photons that came from the CMB, per baryon per time, d(E/N_B)/dt
+        Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.

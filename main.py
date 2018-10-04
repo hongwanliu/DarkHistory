@@ -17,6 +17,11 @@ import darkhistory.history.tla as tla
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 
+import os
+cwd = os.getcwd()
+abspath = os.path.abspath(__file__)
+dir_path = os.path.dirname(abspath)
+
 def load_trans_funcs(direc):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
@@ -106,10 +111,11 @@ def load_trans_funcs(direc):
     xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
 
     print("Generating TransferFuncInterp objects for each tflist...")
-    #interpolate at each of the electron fractions defined above
+    # interpolate over xe
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
     lowengphot_tf_interp = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
     lowengelec_tf_interp = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
+    CMB_engloss_interp = interp1d(xes, np.sum(CMB_engloss_arr, 1), axis=0)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, CMB_engloss_arr
@@ -121,7 +127,7 @@ def load_ics_data():
     nEp  = 5000
 
     dlnEp = np.log(Emax/Emin)/nEp
-    lowengEp_rel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)        
+    lowengEp_rel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)
 
     dlnEe = np.log(Emax/Emin)/nEe
     lowengEe_rel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
@@ -132,7 +138,7 @@ def load_ics_data():
     nEp  = 5000
 
     dlnEp = np.log(Emax/Emin)/nEp
-    lowengEp_nonrel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)  
+    lowengEp_nonrel = Emin*np.exp((np.arange(nEp)+0.5)*dlnEp)
 
     dlnEe = np.log(Emax/Emin)/nEe
     lowengEe_nonrel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
@@ -216,12 +222,14 @@ def evolve(
     f_arr = np.array([])
 
     # Load the standard TLA solution if necessary.
+    os.chdir(dir_path)
     if std_soln:
-        soln = pickle.load(open("/Users/hongwan/GitHub/DarkHistory/darkhistory/history/std_soln.p", "rb"))
+        soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
         xe_std  = interp1d(soln[0,:], soln[2,:])
         #soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
         #xe_std  = interp1d(soln[:,0], soln[:,2])
         #Tm_std = interp1d(soln[0,:], soln[1,:])
+    os.chdir(cwd)
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
@@ -237,12 +245,12 @@ def evolve(
             if std_soln:
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng(rs), dt
+                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng(rs), dt, 0
                 )
             else:
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng(rs), dt
+                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng(rs), dt, 0
                 )
 
             f_arr = np.append(f_arr, f_raw)
@@ -284,7 +292,7 @@ def evolve(
 
         # Add the next injection spectrum to next_highengphot_spec
         next_inj_spec = (
-            in_spec_phot * rate_func_N(rs)* dt / (phys.nB * rs**3)
+            in_spec_phot * rate_func_N(rs) * dt / (phys.nB * rs**3)
         )
 
         # This keeps the redshift. 
