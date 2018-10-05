@@ -9,7 +9,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
+def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into continuum photons,
@@ -23,10 +23,12 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
         spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_ per time.
     x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
-    dE_dVdt : float
+    dE_dVdt_inj : float
         DM energy injection rate, dE/dVdt injected.
     time_step : float
         The time-step associated with the deposited spectra, in seconds.
+    cmbloss : float
+        Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
@@ -70,21 +72,21 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt, time_step, method="old"):
     tmp_spec_elec.N[:indx+1] += ionized_elec.N
 
     f_phot = lowE_photons.compute_fs(
-        spec_phot, x, dE_dVdt, time_step, method
+        spec_phot, x, dE_dVdt_inj, time_step, method
     )
 
     f_elec = lowE_electrons.compute_fs(
-        tmp_spec_elec, 1-x[0], dE_dVdt, time_step
+        tmp_spec_elec, 1-x[0], dE_dVdt_inj, time_step
     )
 
     #print('f_phot: ', f_phot)
     #print('f_elec: ', f_elec)
-    f_final = [
-        f_phot[0]+f_elec[0],
+    f_final = np.array([
+        f_phot[0]+f_elec[0] - cmbloss * phys.nB * spec_phot.rs**3 / dE_dVdt_inj,
         f_phot[1]+f_elec[1],
         f_phot[2]+f_elec[2],
         f_phot[3]+f_phot[4]+f_elec[3],
         f_elec[4],
-    ]
+    ])
 
     return f_final
