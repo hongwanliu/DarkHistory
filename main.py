@@ -193,6 +193,8 @@ def evolve(
     rs = in_spec_phot.rs
     dt = dlnz/phys.hubble(rs)
 
+    #!!!print("dlnz, rs, dt: ", dlnz, " ", prev_rs, " ", dt) 
+
     # The initial input dN/dE per annihilation to per baryon per dlnz, 
     # based on the specified rate. 
     # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
@@ -293,6 +295,9 @@ def evolve(
         append_highengphot_spec(next_highengphot_spec)
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
+
+        #print("rs: ", rs)
+        #sys.exit() #!!!
 
     f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
     return (
