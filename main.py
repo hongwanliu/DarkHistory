@@ -3,6 +3,7 @@
 """
 
 import numpy as np
+from numpy.linalg import matrix_power
 import pickle
 
 from scipy.interpolate import interp1d
@@ -199,13 +200,27 @@ def evolve(
     rs = in_spec_phot.rs
     dt = dlnz/phys.hubble(rs)
 
-    #!!!print("dlnz, rs, dt: ", dlnz, " ", prev_rs, " ", dt) 
-
     # The initial input dN/dE per annihilation to per baryon per dlnz, 
     # based on the specified rate. 
     # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
 
     # ICS for in_spec_elec goes here.
+    elec_processes = False
+
+    if in_spec_elec.totN() > 0:
+        elec_processes = True
+
+    if elec_processes:
+        (ics_sec_phot_tf, ics_sec_elec_tf, continuum_loss) = get_ics_cooling_tf(
+            ics_thomson_ref_tf_2, ics_rel_ref_tf_2, engloss_ref_tf_2,
+            eleceng, photeng, rs, fast=True
+        )
+
+        ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+        ics_lowengelec_spec = ics_sec_elec_tf.sum_specs(in_spec_elec)
+        positronium_phot_spec = pos.weighted_photon_spec(photeng)*in_spec_elec.totN()/2
+        if positronium_phot_spec.spec_type != 'N':
+            positronium_phot_spec.switch_spec_type()
 
     init_inj_spec = (
         in_spec_phot * rate_func_N(rs) * dt / (phys.nB * rs**3)
@@ -303,9 +318,6 @@ def evolve(
         append_highengphot_spec(next_highengphot_spec)
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
-
-        #print("rs: ", rs)
-        #sys.exit() #!!!
 
     f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
     return (
