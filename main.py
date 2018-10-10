@@ -173,8 +173,8 @@ def evolve(
     in_spec_elec, in_spec_phot,
     rate_func_N, rate_func_eng, end_rs,
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
-    ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-    reion_switch=False, reion_rs = None, photoion_rate_func=None, photoheat_rate_func=None,
+    ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
+    reion_switch=False, reion_rs = None, photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     xe_init=None, Tm_init=None,
     coarsen_factor=1, std_soln=False, user=None
 ):
@@ -229,8 +229,8 @@ def evolve(
     """
 
     # Electron and Photon abscissae
-    eleceng = lowengelec_tflist_arr[0].eng
-    photeng = lowengphot_tflist_arr[0].eng
+    eleceng = lowengelec_tf_interp.eng
+    photeng = lowengphot_tf_interp.eng
     #???Are these the correct eleceng and photengs???
 
     # Initialize the next spectrum as None.
@@ -256,10 +256,13 @@ def evolve(
     if in_spec_elec.totN() > 0:
         elec_processes = True
 
+        if ics_thomson_ref_tf is None or ics_rel_ref_tf is None or engloss_ref_tf is None:
+            raise TypeError('Must specify transfer functions for electron processes')
+
     if elec_processes:
         (ics_sec_phot_tf, ics_sec_elec_tf, continuum_loss) = get_ics_cooling_tf(
             ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-            eleceng, photeng, rs, fast=True 
+            eleceng, photeng, rs, fast=True
         )
 
         ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
