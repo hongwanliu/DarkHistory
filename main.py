@@ -16,6 +16,14 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
 import darkhistory.history.tla as tla
 
+from darkhistory.electrons.ics.ics_spectrum import ics_spec
+from darkhistory.electrons.ics.ics_spectrum import nonrel_spec
+from darkhistory.electrons.ics.ics_spectrum import rel_spec
+from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
+from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf
+
+from darkhistory.electrons import positronium as pos
+
 from darkhistory.low_energy.lowE_deposition import compute_fs
 
 import os
@@ -245,11 +253,11 @@ def evolve(
     dlnz = highengphot_tf_interp.dlnz
     prev_rs = None
     rs = in_spec_phot.rs
-    dt = dlnz/phys.hubble(rs)
+    dt = dlnz * coarsen_factor / phys.hubble(rs)
 
     # Function that changes the normalization from per annihilation to per baryon.
     def norm_fac(rs):
-        return rate_func_N(rs) * dlnz * coarsen_factor /phys.hubble(rs) / (phys.nB * rs**3)
+        return rate_func_N(rs) * dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
 
     # If in_spec_elec is empty, turn off electron processes.
     elec_processes = False
@@ -360,9 +368,9 @@ def evolve(
 
         # Re-define existing variables.
         prev_rs = rs
-        rs = np.exp(np.log(rs) - 0.002)
+        rs = np.exp(np.log(rs) - dlnz * coarsen_factor)
 
-        dt = dlnz/phys.hubble(rs)
+        dt = dlnz * coarsen_factor/phys.hubble(rs)
         next_highengphot_spec.rs = rs
         next_lowengphot_spec.rs  = rs
         next_lowengelec_spec.rs  = rs
@@ -387,6 +395,8 @@ def evolve(
         append_highengphot_spec(next_highengphot_spec)
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
+
+        #print("completed rs: ", prev_rs)
 
     f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
     return (
