@@ -330,11 +330,11 @@ def evolve(
             init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
             new_vals = tla.get_history(
-                init_cond, f_raw[2], f_raw[1], f_raw[4],
+                init_cond, f_raw[0], f_raw[2], f_raw[3],
                 rate_func_eng, np.array([prev_rs, rs]),
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func 
+                xe_reion_func=xe_reion_func
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
