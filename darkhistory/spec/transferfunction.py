@@ -7,7 +7,7 @@ from tqdm import tqdm_notebook as tqdm
 import darkhistory.physics as phys
 from darkhistory.spec.spectools import rebin_N_arr
 from darkhistory.spec.spectra import Spectra
-from darkhistory.spec.spectrum import Spectrum 
+# from darkhistory.spec.spectrum import Spectrum 
 
 
 class TransFuncAtEnergy(Spectra):
@@ -19,13 +19,19 @@ class TransFuncAtEnergy(Spectra):
     ----------
     spec_arr : list of Spectrum
         List of Spectrum to be stored together.
+    eng : ndarray, optional
+        Energy abscissa. 
+    in_eng : ndarray, optional
+        Injection energy abscissa.
+    rs : ndarray, optional
+        The redshift of the spectra.
     spec_type : {'N', 'dNdE'}, optional
         Type of data stored, 'dNdE' is the default.
     dlnz : float
         The d ln(1+z) step for the transfer function. 
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the Spectrum objects into.
-
+    
     Attributes
     ----------
     in_eng : ndarray
@@ -209,6 +215,9 @@ class TransFuncAtRedshift(Spectra):
         Redshift of this transfer function.
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the Spectrum objects into. 
+    with_interp_func : bool
+        If true, also returns an interpolation function of the grid.
+
 
     Attributes
     ----------
@@ -217,18 +226,42 @@ class TransFuncAtRedshift(Spectra):
     dlnz : float
         d ln(1+z) associated with this transfer function.
     rs : float
-        Redshift of this transfer function.      
+        Redshift of this transfer function. 
+    interp_func : function
+        The 2D interpolation function.
+
     """
 
     def __init__(
         self, spec_arr, eng=None, in_eng=None, rs=None, 
-        dlnz=-1, spec_type='dNdE', rebin_eng=None
+        dlnz=-1, spec_type='dNdE', rebin_eng=None, with_interp_func = False
     ):
 
         super().__init__(
             spec_arr, eng=eng, in_eng=in_eng, rs=rs,spec_type=spec_type, rebin_eng=rebin_eng
         )
         self.dlnz = dlnz
+
+        if with_interp_func:
+            non_zero_grid = self.grid_vals
+            # set zero values to some small value for log interp.
+            non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
+            
+            # interp_grid  = np.log(non_zero_grid)
+            
+            interp_grid  = non_zero_grid
+
+            self.interp_func = interpolate.interp2d(
+                np.log(self.in_eng), np.log(self.eng), 
+                np.transpose(interp_grid), bounds_error = False,
+                fill_value = 1e-200
+            )
+
+            # self.interp_func = interpolate.RegularGridInterpolator(
+            #     (np.log(self.in_eng), np.log(self.eng)), interp_grid,
+            #     bounds_error = False, fill_value = 1e-200
+            # )
+
 
         # if spec_arr != []:
         #     self._grid_vals = np.atleast_2d(
@@ -507,9 +540,8 @@ class TransFuncAtRedshift(Spectra):
                 eng_und_grid = non_zero_eng_und 
 
             interp_func = interpolate.interp2d(
-                np.log(self.eng),
-                np.log(self.in_eng),  
-                interp_grid, 
+                np.log(self.eng), np.log(self.in_eng),  
+                interp_grid,
                 bounds_error=bounds_error, 
                 fill_value=np.log(fill_value)
             )
@@ -711,121 +743,121 @@ class TransFuncAtRedshift(Spectra):
         super().append(spec)
 
 
-def process_raw_tf(file):
-    """Processes raw data to return transfer functions.
+# def process_raw_tf(file):
+#     """Processes raw data to return transfer functions.
     
-    Parameters
-    ----------
-    file : str
-        File to be processed. 
+#     Parameters
+#     ----------
+#     file : str
+#         File to be processed. 
 
-    Returns
-    -------
-    list of TransferFunction
-        List indexed by injection energy. 
+#     Returns
+#     -------
+#     list of TransferFunction
+#         List indexed by injection energy. 
 
 
-    """
+#     """
 
-    from darkhistory.spec.transferfunclist import TransferFuncList
+#     from darkhistory.spec.transferfunclist import TransferFuncList
 
-    def get_out_eng_absc(in_eng):
-        """ Returns the output energy abscissa for a given input energy. 
+#     def get_out_eng_absc(in_eng):
+#         """ Returns the output energy abscissa for a given input energy. 
 
-        Parameters
-        ----------
-        in_eng : float
-            Input energy (in eV). 
+#         Parameters
+#         ----------
+#         in_eng : float
+#             Input energy (in eV). 
 
-        Returns
-        -------
-        ndarray
-            Output energy abscissa. 
-        """
-        log_bin_width = np.log((phys.me + in_eng)/1e-4)/500
-        bin_boundary = 1e-4 * np.exp(np.arange(501) * log_bin_width)
-        bin_boundary_low = bin_boundary[0:500]
-        bin_boundary_upp = bin_boundary[1:501]
+#         Returns
+#         -------
+#         ndarray
+#             Output energy abscissa. 
+#         """
+#         log_bin_width = np.log((phys.me + in_eng)/1e-4)/500
+#         bin_boundary = 1e-4 * np.exp(np.arange(501) * log_bin_width)
+#         bin_boundary_low = bin_boundary[0:500]
+#         bin_boundary_upp = bin_boundary[1:501]
 
-        return np.sqrt(bin_boundary_low * bin_boundary_upp)
+#         return np.sqrt(bin_boundary_low * bin_boundary_upp)
 
-    #Redshift abscissa. In decreasing order.
-    rs_step = 50
-    rs_upp  = 31. 
-    rs_low  = 4. 
+#     #Redshift abscissa. In decreasing order.
+#     rs_step = 50
+#     rs_upp  = 31. 
+#     rs_low  = 4. 
 
-    log_rs_absc = (np.log(rs_low) + (np.arange(rs_step) + 1)
-                 *(np.log(rs_upp) - np.log(rs_low))/rs_step)
-    log_rs_absc = np.flipud(log_rs_absc)
+#     log_rs_absc = (np.log(rs_low) + (np.arange(rs_step) + 1)
+#                  *(np.log(rs_upp) - np.log(rs_low))/rs_step)
+#     log_rs_absc = np.flipud(log_rs_absc)
 
-    # Input energy abscissa. 
+#     # Input energy abscissa. 
 
-    in_eng_step = 500
-    low_in_eng_absc = 3e3 + 100.
-    upp_in_eng_absc = 5e3 * np.exp(39 * np.log(1e13/5e3) / 40)
-    in_eng_absc = low_in_eng_absc * np.exp((np.arange(in_eng_step)) * 
-                  np.log(upp_in_eng_absc/low_in_eng_absc) / in_eng_step)
+#     in_eng_step = 500
+#     low_in_eng_absc = 3e3 + 100.
+#     upp_in_eng_absc = 5e3 * np.exp(39 * np.log(1e13/5e3) / 40)
+#     in_eng_absc = low_in_eng_absc * np.exp((np.arange(in_eng_step)) * 
+#                   np.log(upp_in_eng_absc/low_in_eng_absc) / in_eng_step)
 
-    # Output energy abscissa
-    out_eng_absc_arr = np.array([get_out_eng_absc(in_eng) 
-                                for in_eng in in_eng_absc])
+#     # Output energy abscissa
+#     out_eng_absc_arr = np.array([get_out_eng_absc(in_eng) 
+#                                 for in_eng in in_eng_absc])
 
-    # Initial injected bin in output energy abscissa
-    init_inj_eng_arr = np.array([out_eng_absc[out_eng_absc < in_eng][-1] 
-        for in_eng,out_eng_absc in zip(in_eng_absc, out_eng_absc_arr)
-    ])
+#     # Initial injected bin in output energy abscissa
+#     init_inj_eng_arr = np.array([out_eng_absc[out_eng_absc < in_eng][-1] 
+#         for in_eng,out_eng_absc in zip(in_eng_absc, out_eng_absc_arr)
+#     ])
 
-    # Import raw data.
-    # Raw data has shape in_eng, rs, xe, out_eng, 
-    # type:{photonspectrum, lowengphot, lowengelec}
+#     # Import raw data.
+#     # Raw data has shape in_eng, rs, xe, out_eng, 
+#     # type:{photonspectrum, lowengphot, lowengelec}
 
-    tf_raw = np.load(file)
-    tf_raw = np.swapaxes(tf_raw, 0, 1)
-    tf_raw = np.swapaxes(tf_raw, 1, 2)
-    tf_raw = np.swapaxes(tf_raw, 2, 3)
-    tf_raw = np.flip(tf_raw, axis=0)
+#     tf_raw = np.load(file)
+#     tf_raw = np.swapaxes(tf_raw, 0, 1)
+#     tf_raw = np.swapaxes(tf_raw, 1, 2)
+#     tf_raw = np.swapaxes(tf_raw, 2, 3)
+#     tf_raw = np.flip(tf_raw, axis=0)
 
-    # tf_raw has indices (redshift, xe, out_eng, in_eng), redshift in decreasing order.
+#     # tf_raw has indices (redshift, xe, out_eng, in_eng), redshift in decreasing order.
 
-    # Prepare the output.
+#     # Prepare the output.
 
-    norm_fac = (in_eng_absc/init_inj_eng_arr)*2
-    # The transfer function is expressed as a dN/dE spectrum as a result of injecting approximately 2 particles in out_eng_absc[-1]. The exact number is computed and the transfer function appropriately normalized to 1 particle injection (at energy out_eng_absc[-1]).
+#     norm_fac = (in_eng_absc/init_inj_eng_arr)*2
+#     # The transfer function is expressed as a dN/dE spectrum as a result of injecting approximately 2 particles in out_eng_absc[-1]. The exact number is computed and the transfer function appropriately normalized to 1 particle injection (at energy out_eng_absc[-1]).
 
-    tf_raw_list = [
-        [
-            Spectrum(
-                out_eng_absc_arr[i], tf_raw[j,0,:,i]/norm_fac[i], 
-                rs=np.exp(log_rs_absc[j]), in_eng = init_inj_eng_arr[i]
-            ) for j in np.arange(tf_raw.shape[0])
-        ]
-        for i in np.arange(tf_raw.shape[-1])
-    ]
+#     tf_raw_list = [
+#         [
+#             Spectrum(
+#                 out_eng_absc_arr[i], tf_raw[j,0,:,i]/norm_fac[i], 
+#                 rs=np.exp(log_rs_absc[j]), in_eng = init_inj_eng_arr[i]
+#             ) for j in np.arange(tf_raw.shape[0])
+#         ]
+#         for i in np.arange(tf_raw.shape[-1])
+#     ]
 
-    normfac2 = rebin_N_arr(np.ones(init_inj_eng_arr.size), 
-        init_inj_eng_arr
-    ).dNdE
-    # This rescales the transfer function so that it is now normalized to
-    # dN/dE = 1. 
+#     normfac2 = rebin_N_arr(np.ones(init_inj_eng_arr.size), 
+#         init_inj_eng_arr
+#     ).dNdE
+#     # This rescales the transfer function so that it is now normalized to
+#     # dN/dE = 1. 
 
-    # print(normfac2)
+#     # print(normfac2)
     
 
-    transfer_func_table = TransferFuncList([
-        TransFuncAtEnergy(
-            spec_arr/N, dlnz=0.002, rebin_eng = init_inj_eng_arr
-        ) for N, spec_arr in zip(normfac2, tqdm(tf_raw_list))
-    ])
+#     transfer_func_table = TransferFuncList([
+#         TransFuncAtEnergy(
+#             spec_arr/N, dlnz=0.002, rebin_eng = init_inj_eng_arr
+#         ) for N, spec_arr in zip(normfac2, tqdm(tf_raw_list))
+#     ])
 
-    # This further rescales the spectrum so that it is now the transfer
-    # function for dN/dE = 1 in in_eng_absc. 
+#     # This further rescales the spectrum so that it is now the transfer
+#     # function for dN/dE = 1 in in_eng_absc. 
 
 
-    #Rebin to the desired abscissa, which is in_eng_absc.
-    # for spec_list,out_eng_absc in zip(tqdm(tf_raw_list),out_eng_absc_arr):
-    #     for spec in spec_list:
-    #         spec.rebin(in_eng_absc)
-    #     # Note that the injection energy is out_eng_absc[-1] due to our conventions in the high energy code.
-    #     transfer_func_table.append(TransferFunction(spec_list, out_eng_absc[-1]))
+#     #Rebin to the desired abscissa, which is in_eng_absc.
+#     # for spec_list,out_eng_absc in zip(tqdm(tf_raw_list),out_eng_absc_arr):
+#     #     for spec in spec_list:
+#     #         spec.rebin(in_eng_absc)
+#     #     # Note that the injection energy is out_eng_absc[-1] due to our conventions in the high energy code.
+#     #     transfer_func_table.append(TransferFunction(spec_list, out_eng_absc[-1]))
 
-    return transfer_func_table
+#     return transfer_func_table

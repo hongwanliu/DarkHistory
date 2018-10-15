@@ -264,6 +264,32 @@ def hyp2f1_func_real(n, x):
 
     return expr
 
+def get_grid(a, b):
+    """ Returns a 2D grid of coordinates from 2 1D arrays.
+
+    Parameters
+    ----------
+    a : ndarray
+        First array. 
+    b : ndarray
+        Second array. 
+
+    Returns
+    -------
+    ndarray
+        2D array with grid values from `a` and `b`.
+
+    Note
+    ----
+    This function returns an array that when passed to RegularGridInterpolator produces the same result as scipy.interpolate.interp2d(a, b).
+    """
+
+    grid_list = np.meshgrid(a,b)
+
+    # order = 'F' required so that the points are sorted by values 
+    # in a (index 1) first, followed by values in b (index 2). 
+    return np.transpose(np.array([m.flatten(order='F') for m in grid_list]))
+
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.
     
