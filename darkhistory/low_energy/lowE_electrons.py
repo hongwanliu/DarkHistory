@@ -72,7 +72,7 @@ def make_interpolators():
 make_interpolators()
 def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     """ Given an electron energy spectrum, calculate how much of that energy splits into
-    heating of the IGM, lyman_alpha transitions, H ionization, He ionization, and continuum photons.
+    continuum photons, lyman_alpha transitions, H ionization, He ionization, and heating of the IGM.
 
     Parameters
     ----------

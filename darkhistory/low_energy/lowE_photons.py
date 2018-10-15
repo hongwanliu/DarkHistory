@@ -189,7 +189,7 @@ def compute_fs(photspec, x, dE_dVdt_inj, time_step, method='old'):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited photons, resolve its energy into continuum photons,
-    HI excitation, and HI, HeI, HeII ionization in that order.
+    continuum photons, HI excitation, and HI, HeI, HeII ionization in that order.
 
     Parameters
     ----------

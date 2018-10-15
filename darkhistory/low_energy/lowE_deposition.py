@@ -12,8 +12,8 @@ from darkhistory.low_energy import lowE_photons
 def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
-    Given a spectrum of deposited electrons and photons, resolve their energy into continuum photons,
-    HI excitation, and HI, HeI, HeII ionization in that order.
+    Given a spectrum of deposited electrons and photons, resolve their energy into
+    H ionization, and ionization, H excitation, heating, and continuum photons in that order.
 
     Parameters
      ----------
@@ -82,11 +82,11 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     #print('f_phot: ', f_phot)
     #print('f_elec: ', f_elec)
     f_final = np.array([
-        f_phot[0]+f_elec[0] - cmbloss * phys.nB * spec_phot.rs**3 / dE_dVdt_inj,
-        f_phot[1]+f_elec[1],
         f_phot[2]+f_elec[2],
         f_phot[3]+f_phot[4]+f_elec[3],
+        f_phot[1]+f_elec[1],
         f_elec[4],
+        f_phot[0]+f_elec[0] - cmbloss * phys.nB * spec_phot.rs**3 / dE_dVdt_inj
     ])
 
     return f_final
