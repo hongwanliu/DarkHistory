@@ -227,7 +227,6 @@ def ionize_s_cs(E_in, E_sec, atoms):
     return sigma
 
 
-
 def ionize_s_cs_H(E_in, E_sec):
     
     '''
@@ -275,11 +274,98 @@ def ionize_s_cs_H(E_in, E_sec):
 
         return S/(B*(t+(u+1)))*((N_i/N-2)/(t+1)*(1/(w+1)+1/(t-w))*(2-N_i/N)*(1/(w+1)**2+1/(t-w)**2)+ numpy.log(t)/(N*(w+1))*df_dw) #cm^2/eV
 
-    for n in range(len(E_sec)):
-        sigma[n] = integrate.quad(integrand, edges[n], edges[n+1])[0]
+    #generates vector for summation
+    integrand_vec = np.zeros(len(E_sec))
+    for i in range(len(E_sec)):
+        integrand_vec[i]=integrand(E_sec[i])
+    
+    #performs summation
+    for n in range(len(E_sec)-1):
+        sigma[n] = integrate.trapz(integrand_vec[n:n+2], E_sec[n:n+2])
+    
+    #integrates continuously
+    #for n in range(len(E_sec)):
+        #sigma[n] = integrate.quad(integrand, edges[n], edges[n+1])[0]
         
     sigma = sigma.clip(min=0)
     return sigma
+
+
+def ionize_s_cs_H_2(E_in, E_sec):
+    
+    '''
+    Calculates the integrated, singly-differential ionization cross section (xsec) 
+    for electrons impacting H at a particular 
+    kinetic energy of the incident over a log-space vector of secondary energies. 
+    
+    Parameters
+    ----------
+    E_in : float
+        Primary electron's initial kinetic energy (eV).
+    E_sec : ndarray ([Spectrum].eng)
+        The energy of one secondary electron for each initial electron (eV).
+
+    Returns
+    ----------
+    sigma : ndarray
+        The cross section for ionization integrated over a log-bin centered at each
+        secondary energy (E_sec[n]); (given in cm^2). 
+    
+    See Also
+    --------
+    ionize_cs : Gives total ionization xsec
+    ionize_s_cs: Gives individual values for multi-atom singly-diff xsecs
+    '''
+    
+    #initialize return variable
+    sigma = numpy.zeros(len(E_sec))
+    
+    #get bin boundaries for integration
+    edges = get_bin_bound(E_sec)
+    
+    def integrand(W): #W=E_sec[n]
+        T=E_in 
+        B=13.6057 #eV: binding energy
+        U=13.6057 #eV: 
+        t=T/B
+        w=W/B
+        y=1/(w+1)
+        df_dw=-0.022473*y**2+1.1775*y**3-0.46264*y**4+0.089064*y**5
+        N=1 # number of bound electrons in subshell
+        N_i= 0.4343 #integral of df/dw from 0 to infinity
+        u=U/B 
+        S=4*math.pi*p.value('Bohr radius')**2*N*(13.6057/B)**2 #m^2
+
+        return S/(B*(t+(u+1)))*((N_i/N-2)/(t+1)*(1/(w+1)+1/(t-w))*(2-N_i/N)*(1/(w+1)**2+1/(t-w)**2)+ numpy.log(t)/(N*(w+1))*df_dw) #cm^2/eV
+
+    #generates vector for summation
+    integrand_vec = np.zeros(len(E_sec))
+    
+    #change begins
+    B=13.6057
+    f_max = (E_in - B)/2
+    for i,E_s in enumerate(E_sec):
+        if E_s>E_in-B:
+            integrand_vec[i]=0
+        elif E_s > f_max:
+            f_delta = E_s-f_max
+            integrand_vec[i]=integrand(E_s-2*f_delta)  
+        else:
+            integrand_vec[i]=integrand(E_s)
+    
+    #change ends
+    
+    #performs summation
+    for n in range(len(E_sec)-1):
+        sigma[n] = integrate.trapz(integrand_vec[n:n+2], E_sec[n:n+2])
+    
+    #integrates continuously
+    #for n in range(len(E_sec)):
+        #sigma[n] = integrate.quad(integrand, edges[n], edges[n+1])[0]
+        
+    sigma = sigma.clip(min=0)
+    return sigma
+
 
 
 def ionize_s_cs_He(E_in, E_sec):
