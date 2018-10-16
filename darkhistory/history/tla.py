@@ -509,7 +509,6 @@ def get_history(
             soln[~where_new_soln, 1] = 0.5 + 0.5*np.tanh(
                 soln[~where_new_soln,1]
             )
-            
 
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:

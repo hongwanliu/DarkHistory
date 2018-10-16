@@ -371,6 +371,8 @@ def evolve(
         rs = np.exp(np.log(rs) - dlnz * coarsen_factor)
 
         dt = dlnz * coarsen_factor/phys.hubble(rs)
+        if rs<6:
+            print(dt)
         next_highengphot_spec.rs = rs
         next_lowengphot_spec.rs  = rs
         next_lowengelec_spec.rs  = rs
