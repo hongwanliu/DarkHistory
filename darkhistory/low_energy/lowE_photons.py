@@ -115,7 +115,7 @@ def getf_continuum(photspec, norm_fac):
     # All photons below 10.2eV get deposited into the continuum
     return photspec.toteng(
         bound_type='eng',
-        bound_arr=np.array([0,phys.lya_eng])
+        bound_arr=np.array([photspec.eng[0],phys.lya_eng])
     )[0] * norm_fac
 
 #excitation
@@ -153,7 +153,7 @@ def getf_ion(photspec, norm_fac, n, method):
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
         tot_ion_eng = phys.rydberg * photspec.totN(
             bound_type='eng',
-            bound_arr=np.array([phys.lya_eng, 10*photspec.eng[-1]])
+            bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
         )
         f_HI = tot_ion_eng * norm_fac
         f_HeI = 0

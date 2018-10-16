@@ -46,30 +46,26 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     Think about the exceptions that should be thrown (spec_elec.rs should equal spec_phot.rs)
     """
 
-    ion_indx = spectools.get_indx(
-        spec_phot.eng, phys.rydberg
-    ) #Check this, also check spec_phot.eng?
-
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
     # constructor, instead of simply a reference. 
+    ion_bounds = spectools.get_bounds_between(spec_phot.eng, phys.rydberg)
+    ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
     ionized_elec = Spectrum(
-        np.array(spec_phot.eng[ion_indx:]), np.array(spec_phot.N[ion_indx:]), rs=spec_phot.rs, spec_type='N'
-    ) #Change this so that it uses totN(bin_bounds)
+        ion_engs,
+        spec_phot.totN(bound_type="eng", bound_arr=ion_bounds),
+        rs=spec_phot.rs,
+        spec_type='N'
+    )
 
-    new_eng = ionized_elec.eng - phys.rydberg
-    if new_eng[0] < 0: #Is this the best way to do this?
-        new_eng = np.insert(new_eng[1:], 0, 1e-12)
+    new_eng = ion_engs - phys.rydberg
     ionized_elec.shift_eng(new_eng)
 
     # rebin so that ionized_elec may be added to spec_elec
-    indx = ionized_elec.eng.size
-    ionized_elec.rebin(spec_elec.eng[:indx+1])
+    ionized_elec.rebin(spec_elec.eng)
 
-    # Changed this so that spec_elec is not modified. 
-    # spec_elec.N[:indx+1] += ionized_elec.N
     tmp_spec_elec = Spectrum(np.array(spec_elec.eng), np.array(spec_elec.N), rs=spec_elec.rs, spec_type='N')
-    tmp_spec_elec.N[:indx+1] += ionized_elec.N
+    tmp_spec_elec.N += ionized_elec.N
 
     f_phot = lowE_photons.compute_fs(
         spec_phot, x, dE_dVdt_inj, time_step, method
@@ -79,8 +75,6 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
         tmp_spec_elec, 1-x[0], dE_dVdt_inj, time_step
     )
 
-    #print('f_phot: ', f_phot)
-    #print('f_elec: ', f_elec)
     f_final = np.array([
         f_phot[2]+f_elec[2],
         f_phot[3]+f_phot[4]+f_elec[3],
