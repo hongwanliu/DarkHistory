@@ -166,10 +166,12 @@ def load_std(xe_init, Tm_init, rs):
     If xe_init and/or Tm_init aren't initialized, set them to their standard values.
     """
     os.chdir(dir_path)
-    soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
-    #soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
-    xe_std  = interp1d(soln[0,:], soln[2,:])
-    Tm_std = interp1d(soln[0,:], soln[1,:])
+    #soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
+    #xe_std  = interp1d(soln[0,:], soln[2,:])
+    #Tm_std = interp1d(soln[0,:], soln[1,:])
+    soln = np.loadtxt(open("darkhistory/history/recfast_standard.txt", "rb"))
+    xe_std = interp1d(soln[:,0], soln[:,2])
+    Tm_std = interp1d(soln[:,0], soln[:,1])
     os.chdir(cwd)
     if xe_init is None:
         xe_init = xe_std(rs)
@@ -183,6 +185,7 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
     reion_switch=False, reion_rs = None, photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
+    struct_boost=None,
     xe_init=None, Tm_init=None,
     coarsen_factor=1, std_soln=False, user=None
 ):
@@ -224,6 +227,8 @@ def evolve(
         Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`.
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.
+    struct_boost : function, optional
+        Energy injection boost factor due to structure formation
     xe_init : float
         xe at the initial redshift.
     Tm_init : float
@@ -308,22 +313,40 @@ def evolve(
     append_highengphot_spec = out_highengphot_specs.append
     append_lowengphot_spec  = out_lowengphot_specs.append
     append_lowengelec_spec  = out_lowengelec_specs.append
+    #print('starting...\n')
 
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
         # If prev_rs exists, calculate xe and T_m. 
         if prev_rs is not None:
-            # f_continuum, f_lyman, f_ionH, f_ionHe, f_heat
-            # f_raw takes in dE/(dV dt)
+            # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
+
+            #The denominator of f is dE/dVdt_inj assuming no structure formation
+            if struct_boost is not None:
+                if struct_boost(rs) == 1:
+                    rate_func_eng_unclustered = rate_func_eng
+                else:
+                    def rate_func_eng_unclustered(rs):
+                        return rate_func_eng(rs)/struct_boost(rs)
+                    tmp = compute_fs(
+                        next_lowengelec_spec, next_lowengphot_spec,
+                        np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 0
+                    )
+                    tmp2 = compute_fs(
+                        next_lowengelec_spec, next_lowengphot_spec,
+                        np.array([1-xe_std(rs), 0, 0]), rate_func_eng(rs), dt, 0
+                    )
+                    print(rs, rate_func_eng(rs)/rate_func_eng_unclustered(rs), struct_boost(rs), "\n", tmp, "\n", tmp2)
+
             if std_soln:
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng(rs), dt, 0
+                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 0
                 )
             else:
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng(rs), dt, 0
+                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng_unclustered(rs), dt, 0
                 )
 
             f_arr = np.append(f_arr, f_raw)
@@ -331,7 +354,7 @@ def evolve(
 
             new_vals = tla.get_history(
                 init_cond, f_raw[0], f_raw[2], f_raw[3],
-                rate_func_eng, np.array([prev_rs, rs]),
+                rate_func_eng_unclustered, np.array([prev_rs, rs]),
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func,
                 xe_reion_func=xe_reion_func
@@ -371,8 +394,6 @@ def evolve(
         rs = np.exp(np.log(rs) - dlnz * coarsen_factor)
 
         dt = dlnz * coarsen_factor/phys.hubble(rs)
-        if rs<6:
-            print(dt)
         next_highengphot_spec.rs = rs
         next_lowengphot_spec.rs  = rs
         next_lowengelec_spec.rs  = rs

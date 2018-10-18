@@ -24,7 +24,7 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
     dE_dVdt_inj : float
-        DM energy injection rate, dE/dVdt injected.
+        DM energy injection rate, dE/dVdt injected.  This is for unclustered DM (i.e. without structure formation).
     time_step : float
         The time-step associated with the deposited spectra, in seconds.
     cmbloss : float
