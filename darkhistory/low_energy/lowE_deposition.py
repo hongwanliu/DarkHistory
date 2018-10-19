@@ -9,7 +9,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method="old"):
+def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, cmbloss, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -25,8 +25,8 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
     dE_dVdt_inj : float
         DM energy injection rate, dE/dVdt injected.  This is for unclustered DM (i.e. without structure formation).
-    time_step : float
-        The time-step associated with the deposited spectra, in seconds.
+    dt : float
+        time in seconds over which these spectra were deposited.
     cmbloss : float
         Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt
     method : {'old','ion','new'}
@@ -37,7 +37,7 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     Returns
     -------
     tuple of floats
-    f_c(z) for z within spec.rs +/- time_step/2
+    f_c(z) for z within spec.rs +/- dt/2
     The order of the channels is {continuum photons, HI excitation, HI ionization, HeI ion, HeII ion}
 
     NOTE
@@ -68,11 +68,11 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, time_step, cmbloss, method=
     tmp_spec_elec.N += ionized_elec.N
 
     f_phot = lowE_photons.compute_fs(
-        spec_phot, x, dE_dVdt_inj, time_step, method
+        spec_phot, x, dE_dVdt_inj, dt, method
     )
 
     f_elec = lowE_electrons.compute_fs(
-        tmp_spec_elec, 1-x[0], dE_dVdt_inj, time_step
+        tmp_spec_elec, 1-x[0], dE_dVdt_inj, dt
     )
 
     f_final = np.array([
