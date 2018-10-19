@@ -315,6 +315,8 @@ def evolve(
     append_lowengelec_spec  = out_lowengelec_specs.append
     #print('starting...\n')
 
+    rate_func_eng_unclustered = rate_func_eng
+
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
         # If prev_rs exists, calculate xe and T_m. 
