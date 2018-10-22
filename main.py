@@ -315,28 +315,21 @@ def evolve(
     append_lowengelec_spec  = out_lowengelec_specs.append
     #print('starting...\n')
 
+    rate_func_eng_unclustered = rate_func_eng
+
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
         # If prev_rs exists, calculate xe and T_m. 
         if prev_rs is not None:
             # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
 
-            #The denominator of f is dE/dVdt_inj assuming no structure formation
+            # dE/dVdt_inj without structure formation should be passed into compute_fs
             if struct_boost is not None:
                 if struct_boost(rs) == 1:
                     rate_func_eng_unclustered = rate_func_eng
                 else:
                     def rate_func_eng_unclustered(rs):
                         return rate_func_eng(rs)/struct_boost(rs)
-                    tmp = compute_fs(
-                        next_lowengelec_spec, next_lowengphot_spec,
-                        np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 0
-                    )
-                    tmp2 = compute_fs(
-                        next_lowengelec_spec, next_lowengphot_spec,
-                        np.array([1-xe_std(rs), 0, 0]), rate_func_eng(rs), dt, 0
-                    )
-                    print(rs, rate_func_eng(rs)/rate_func_eng_unclustered(rs), struct_boost(rs), "\n", tmp, "\n", tmp2)
 
             if std_soln:
                 f_raw = compute_fs(
