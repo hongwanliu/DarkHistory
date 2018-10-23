@@ -70,18 +70,20 @@ def make_interpolators():
     ]
 
 make_interpolators()
-def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
+def compute_fs(spec_elec, xHII, dE_dVdt_inj, dt):
     """ Given an electron energy spectrum, calculate how much of that energy splits into
     continuum photons, lyman_alpha transitions, H ionization, He ionization, and heating of the IGM.
 
     Parameters
     ----------
-    e_spectrum : Spectrum object
-        spectrum of primary electrons
+    spec_elec : Spectrum object
+        spectrum of low energy electrons. spec_elec.toteng() should return energy per baryon.
     xHII : float
         The ionization fraction nHII/nH.
     dE_dVdt_inj : float
         dE/dVdt, i.e. energy injection rate of DM per volume per time
+    dt : float
+        time in seconds over which these electrons were deposited.
 
     Returns
     -------
@@ -90,11 +92,11 @@ def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
         The order of the channels is heat, lyman, ionH, ionHe, cont
     """
     global interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_cont
-    rs = e_spectrum.rs
+    rs = spec_elec.rs
 
     #Fractions of energy being split off into each channel
     heat, lyman, ionH, ionHe, cont = [
-        np.exp(f(np.log(e_spectrum.eng),[np.log(xHII)])) for f in [
+        np.exp(f(np.log(spec_elec.eng),[np.log(xHII)])) for f in [
             interp_heat, interp_lyman, interp_ionH, interp_ionHe, interp_cont
         ]
     ]
@@ -114,8 +116,8 @@ def compute_fs(e_spectrum, xHII, dE_dVdt_inj, time_step):
     #)
 
     #compute ratio of deposited divided by injected
-    norm_factor = phys.nB * rs**3 / (time_step * dE_dVdt_inj)
-    tmpList = e_spectrum.eng * e_spectrum.N * norm_factor
+    norm_factor = phys.nB * rs**3 / (dt * dE_dVdt_inj)
+    tmpList = spec_elec.eng * spec_elec.N * norm_factor
     f_elec =  np.array([
         np.dot(cont, tmpList),
         np.dot(lyman, tmpList),

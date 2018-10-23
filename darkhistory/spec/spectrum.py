@@ -55,7 +55,7 @@ class Spectrum:
              same size.""")
         if eng.size == 1:
             raise TypeError("abscissa must be more than length 1.")
-        if not all(np.diff(eng) > 0):
+        if not np.all(np.diff(eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
         if spec_type != 'N' and spec_type != 'dNdE':
             raise TypeError("invalid spec_type specified.")
