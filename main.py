@@ -242,14 +242,21 @@ def evolve(
     """
 
     # Electron and Photon abscissae
-    eleceng = lowengelec_tf_interp.eng
-    photeng = lowengphot_tf_interp.eng
+    eleceng = in_spec_elec.eng
+    photeng = in_spec_phot.eng
     #???Are these the correct eleceng and photengs???
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None
     next_lowengphot_spec  = None
     next_lowengelec_spec  = None
+
+    if (
+        highengphot_tf_interp.dlnz    != lowengphot_tf_interp.dlnz
+        or highengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz
+        or lowengphot_tf_interp.dlnz  != lowengelec_tf_interp.dlnz
+    ):
+        raise TypeError('TransferFuncInterp objects must all have the same dlnz.')
 
     if in_spec_elec.rs != in_spec_phot.rs:
         raise TypeError('Input spectra must have the same rs.')
@@ -284,14 +291,12 @@ def evolve(
         if positronium_phot_spec.spec_type != 'N':
             positronium_phot_spec.switch_spec_type()
 
+        # The initial input dN/dE per annihilation to per baryon per dlnz, 
+        # based on the specified rate. 
+        # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
         init_inj_spec = (in_spec_phot + ics_phot_spec + positronium_phot_spec)*norm_fac(rs)
     else:
         init_inj_spec = in_spec_phot * norm_fac(rs)
-
-    # The initial input dN/dE per annihilation to per baryon per dlnz, 
-    # based on the specified rate. 
-    # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
-    init_inj_spec = in_spec_phot * norm_fac(rs)
 
     # Initialize the Spectra object that will contain all the 
     # output spectra during the evolution.
@@ -319,17 +324,18 @@ def evolve(
 
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
+
+        # dE/dVdt_inj without structure formation should be passed into compute_fs
+        if struct_boost is not None:
+            if struct_boost(rs) == 1:
+                rate_func_eng_unclustered = rate_func_eng
+            else:
+                def rate_func_eng_unclustered(rs):
+                    return rate_func_eng(rs)/struct_boost(rs)
+
         # If prev_rs exists, calculate xe and T_m. 
         if prev_rs is not None:
             # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
-
-            # dE/dVdt_inj without structure formation should be passed into compute_fs
-            if struct_boost is not None:
-                if struct_boost(rs) == 1:
-                    rate_func_eng_unclustered = rate_func_eng
-                else:
-                    def rate_func_eng_unclustered(rs):
-                        return rate_func_eng(rs)/struct_boost(rs)
 
             if std_soln:
                 f_raw = compute_fs(
@@ -355,6 +361,13 @@ def evolve(
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
             xe_arr  = np.append(xe_arr,  new_vals[-1,1])
+
+        #print('x_e at '+str(rs)+': '+ str(xe_arr[-1]))
+        #print('Standard x_e at '+str(rs)+': '+str(xe_std(rs)))
+        #print('T_m at '+str(rs)+': '+ str(Tm_arr[-1]))
+        #print('Standard T_m at '+str(rs)+': '+str(Tm_std(rs)))
+        #if prev_rs is not None:
+        #    print('standard f_ionH, f_ionHe, f_exc, f_heat, f_cont: ', f_raw)
 
         if std_soln:
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_std(rs))
