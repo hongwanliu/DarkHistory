@@ -5,6 +5,7 @@ from darkhistory import utilities as utils
 from darkhistory.spec.spectools import get_log_bin_width
 from darkhistory.spec.spectools import rebin_N_arr
 from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.spectools import get_bin_bound
 
 import matplotlib.pyplot as plt
 import warnings
@@ -754,7 +755,7 @@ class Spectra:
                             * self.eng[low_floor] * log_bin_width[low_floor]
                         )
 
-                        if upp_floor < eng.size:
+                        if upp_floor < self.eng.size:
                             # If upp_floor is eng.size, then there is no
                             # partial bin for the upper index.
                             eng_part_bins += (
