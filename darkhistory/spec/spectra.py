@@ -712,8 +712,8 @@ class Spectra:
                 if bound_arr[0] > self.eng.size or bound_arr[-1] < 0:
                     return eng_in_bin
 
-                for i, (low,upp) in enumerate(
-                    (bound_arr[:-1], bound_arr[1:])
+                for low,upp,i in zip(
+                    bound_arr[:-1], bound_arr[1:], np.arange(eng_in_bin.shape[0])
                 ):
 
                     # Set the lower and upper bounds, including case where
