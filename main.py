@@ -244,7 +244,6 @@ def evolve(
     # Electron and Photon abscissae
     eleceng = in_spec_elec.eng
     photeng = in_spec_phot.eng
-    #???Are these the correct eleceng and photengs???
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None

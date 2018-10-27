@@ -411,20 +411,3 @@ class TransferFuncInterp:
             rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
             spec_type = self.spec_type
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
