@@ -173,6 +173,8 @@ def load_std(xe_init, Tm_init, rs):
     xe_std = interp1d(soln[:,0], soln[:,2])
     Tm_std = interp1d(soln[:,0], soln[:,1])
     os.chdir(cwd)
+    #def xe_std(rs):
+    #    return 0.00027458
     if xe_init is None:
         xe_init = xe_std(rs)
     if Tm_init is None:
