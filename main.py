@@ -36,16 +36,16 @@ def load_trans_funcs(direc):
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
     #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
-    highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    highengphot_tflist_arr = pickle.load(open(direc+"tflists/tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Loaded high energy photons...')
     #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
-    lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    lowengphot_tflist_arr  = pickle.load(open(direc+"tflists/tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Low energy photons...')
     #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
-    lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    lowengelec_tflist_arr  = pickle.load(open(direc+"tflists/tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Low energy electrons...')
     #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
-    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    CMB_engloss_arr = pickle.load(open(direc+"tflists/CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('CMB losses.\n')
 
     photeng = highengphot_tflist_arr[0].eng
@@ -121,7 +121,8 @@ def load_trans_funcs(direc):
     print("CMB losses.\n")
 
     # free electron fractions for which transfer functions are evaluated
-    xes = 0.5 + 0.5*np.tanh([-5., -4.1])#, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+    # xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+    xes = 0.5 + 0.5*np.tanh([-5., -4.1])
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
