@@ -26,11 +26,11 @@ def make_interpolators():
     -------
     """
 
-    engs = [10.2, 13.6, 14, 30, 60, 100, 300, 3000]
+    #engs = [10.2, 13.6, 14, 30, 60, 100, 300, 3000]
     #print('AHHHHHH NOOOOOO!')
     #engs = [10.2, 14, 30, 60, 100, 300, 3000]
-    #engs = [14, 30, 60, 100, 300, 3000]
-    #print('AHHHH YEAHHHH!')
+    engs = [14, 30, 60, 100, 300, 3000]
+    print('AHHHH YEAHHHH!')
     xHII = []
     heat, lyman, ionH, ionHe, cont = [
         [ [] for i in range(len(engs))] for j in range(5)
