@@ -115,7 +115,7 @@ def getf_continuum(photspec, norm_fac):
     # All photons below 10.2eV get deposited into the continuum
     return photspec.toteng(
         bound_type='eng',
-        bound_arr=np.array([0,phys.lya_eng])
+        bound_arr=np.array([photspec.eng[0],phys.lya_eng])
     )[0] * norm_fac
 
 #excitation
@@ -153,7 +153,7 @@ def getf_ion(photspec, norm_fac, n, method):
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
         tot_ion_eng = phys.rydberg * photspec.totN(
             bound_type='eng',
-            bound_arr=np.array([phys.lya_eng, 10*photspec.eng[-1]])
+            bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
         )
         f_HI = tot_ion_eng * norm_fac
         f_HeI = 0
@@ -185,16 +185,16 @@ def getf_ion(photspec, norm_fac, n, method):
     return (f_HI, f_HeI, f_HeII)
 
 
-def compute_fs(photspec, x, dE_dVdt_inj, time_step, method='old'):
+def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old'):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited photons, resolve its energy into continuum photons,
-    HI excitation, and HI, HeI, HeII ionization in that order.
+    continuum photons, HI excitation, and HI, HeI, HeII ionization in that order.
 
     Parameters
     ----------
     photspec : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return energy per baryon per time.
+        spectrum of photons. spec.toteng() should return energy per baryon.
     x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photspec.rs
     dE_dVdt_inj : float
@@ -203,6 +203,8 @@ def compute_fs(photspec, x, dE_dVdt_inj, time_step, method='old'):
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
         'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
+    dt : float
+        time in seconds over which these photons were deposited.
 
     Returns
     -------
@@ -217,10 +219,10 @@ def compute_fs(photspec, x, dE_dVdt_inj, time_step, method='old'):
     n = x * phys.nH * photspec.rs**3
 
     # norm_fac converts from total deposited energy to f_c(z) = (dE/dVdt)dep / (dE/dVdt)inj
-    norm_fac = phys.nB * photspec.rs**3 / time_step / dE_dVdt_inj
+    norm_fac = phys.nB * photspec.rs**3 / dt / dE_dVdt_inj
 
     f_continuum = getf_continuum(photspec, norm_fac)
-    f_excite_HI = getf_excitation(photspec, norm_fac, time_step, xe, n, method)
+    f_excite_HI = getf_excitation(photspec, norm_fac, dt, xe, n, method)
     f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, n, method)
 
     return np.array([f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII])

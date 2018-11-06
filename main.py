@@ -35,13 +35,13 @@ def load_trans_funcs(direc):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
-    highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
+    highengphot_tflist_arr = pickle.load(open(direc+"tflists/tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Loaded high energy photons...')
-    lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
+    lowengphot_tflist_arr  = pickle.load(open(direc+"tflists/tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Low energy photons...')
-    lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
+    lowengelec_tflist_arr  = pickle.load(open(direc+"tflists/tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Low energy electrons...')
-    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
+    CMB_engloss_arr = pickle.load(open(direc+"tflists/CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('CMB losses.\n')
 
     photeng = highengphot_tflist_arr[0].eng
@@ -117,7 +117,8 @@ def load_trans_funcs(direc):
     print("CMB losses.\n")
 
     # free electron fractions for which transfer functions are evaluated
-    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+    # xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+    xes = 0.5 + 0.5*np.tanh([-5., -4.1])
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
@@ -166,10 +167,12 @@ def load_std(xe_init, Tm_init, rs):
     If xe_init and/or Tm_init aren't initialized, set them to their standard values.
     """
     os.chdir(dir_path)
-    soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
-    #soln = np.loadtxt(open("/Users/"+user+"/Dropbox (MIT)/Photon Deposition/recfast_standard.txt", "rb"))
-    xe_std  = interp1d(soln[0,:], soln[2,:])
-    Tm_std = interp1d(soln[0,:], soln[1,:])
+    #soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
+    #xe_std  = interp1d(soln[0,:], soln[2,:])
+    #Tm_std = interp1d(soln[0,:], soln[1,:])
+    soln = np.loadtxt(open("darkhistory/history/recfast_standard.txt", "rb"))
+    xe_std = interp1d(soln[:,0], soln[:,2])
+    Tm_std = interp1d(soln[:,0], soln[:,1])
     os.chdir(cwd)
     if xe_init is None:
         xe_init = xe_std(rs)
@@ -183,6 +186,7 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
     reion_switch=False, reion_rs = None, photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
+    struct_boost=None,
     xe_init=None, Tm_init=None,
     coarsen_factor=1, std_soln=False, user=None
 ):
@@ -224,6 +228,8 @@ def evolve(
         Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`.
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.
+    struct_boost : function, optional
+        Energy injection boost factor due to structure formation
     xe_init : float
         xe at the initial redshift.
     Tm_init : float
@@ -237,14 +243,21 @@ def evolve(
     """
 
     # Electron and Photon abscissae
-    eleceng = lowengelec_tf_interp.eng
-    photeng = lowengphot_tf_interp.eng
+    eleceng = in_spec_elec.eng
+    photeng = in_spec_phot.eng
     #???Are these the correct eleceng and photengs???
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None
     next_lowengphot_spec  = None
     next_lowengelec_spec  = None
+
+    if (
+        highengphot_tf_interp.dlnz    != lowengphot_tf_interp.dlnz
+        or highengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz
+        or lowengphot_tf_interp.dlnz  != lowengelec_tf_interp.dlnz
+    ):
+        raise TypeError('TransferFuncInterp objects must all have the same dlnz.')
 
     if in_spec_elec.rs != in_spec_phot.rs:
         raise TypeError('Input spectra must have the same rs.')
@@ -279,14 +292,12 @@ def evolve(
         if positronium_phot_spec.spec_type != 'N':
             positronium_phot_spec.switch_spec_type()
 
+        # The initial input dN/dE per annihilation to per baryon per dlnz, 
+        # based on the specified rate. 
+        # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
         init_inj_spec = (in_spec_phot + ics_phot_spec + positronium_phot_spec)*norm_fac(rs)
     else:
         init_inj_spec = in_spec_phot * norm_fac(rs)
-
-    # The initial input dN/dE per annihilation to per baryon per dlnz, 
-    # based on the specified rate. 
-    # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
-    init_inj_spec = in_spec_phot * norm_fac(rs)
 
     # Initialize the Spectra object that will contain all the 
     # output spectra during the evolution.
@@ -308,37 +319,56 @@ def evolve(
     append_highengphot_spec = out_highengphot_specs.append
     append_lowengphot_spec  = out_lowengphot_specs.append
     append_lowengelec_spec  = out_lowengelec_specs.append
+    #print('starting...\n')
+
+    rate_func_eng_unclustered = rate_func_eng
 
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
+
+        # dE/dVdt_inj without structure formation should be passed into compute_fs
+        if struct_boost is not None:
+            if struct_boost(rs) == 1:
+                rate_func_eng_unclustered = rate_func_eng
+            else:
+                def rate_func_eng_unclustered(rs):
+                    return rate_func_eng(rs)/struct_boost(rs)
+
         # If prev_rs exists, calculate xe and T_m. 
         if prev_rs is not None:
-            # f_continuum, f_lyman, f_ionH, f_ionHe, f_heat
-            # f_raw takes in dE/(dV dt)
+            # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
+
             if std_soln:
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng(rs), dt, 0
+                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 0
                 )
             else:
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng(rs), dt, 0
+                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng_unclustered(rs), dt, 0
                 )
 
             f_arr = np.append(f_arr, f_raw)
             init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
             new_vals = tla.get_history(
-                init_cond, f_raw[2], f_raw[1], f_raw[4],
-                rate_func_eng, np.array([prev_rs, rs]),
+                init_cond, f_raw[0], f_raw[2], f_raw[3],
+                rate_func_eng_unclustered, np.array([prev_rs, rs]),
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func 
+                xe_reion_func=xe_reion_func
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
             xe_arr  = np.append(xe_arr,  new_vals[-1,1])
+
+        #print('x_e at '+str(rs)+': '+ str(xe_arr[-1]))
+        #print('Standard x_e at '+str(rs)+': '+str(xe_std(rs)))
+        #print('T_m at '+str(rs)+': '+ str(Tm_arr[-1]))
+        #print('Standard T_m at '+str(rs)+': '+str(Tm_std(rs)))
+        #if prev_rs is not None:
+        #    print('Back Reaction f_ionH, f_ionHe, f_exc, f_heat, f_cont: ', f_raw)
 
         if std_soln:
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_std(rs))
