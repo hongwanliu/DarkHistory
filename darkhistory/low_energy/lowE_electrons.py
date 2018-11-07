@@ -51,7 +51,7 @@ def make_interpolators():
             heat[i], lyman[i], ionH[i], ionHe[i], cont[i] = [
                 [
                     #set 0 to 10^-15 to avoid -\infty
-                    np.log(max(float(line.split('\t')[k]),1.0e-15))
+                    np.log(max(float(line.split('\t')[k]),1.0e-10))
                     for line in lines_list[2:]
                 ] for k in [1,2,3,4,5]
             ]
