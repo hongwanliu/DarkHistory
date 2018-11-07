@@ -24,28 +24,19 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="DarkHistory  documentation" href="../../index.html"/>
-        <link rel="up" title="spec" href="../darkhistory.spec.html"/>
-        <link rel="next" title="electrons" href="../darkhistory.electrons.html"/>
-        <link rel="prev" title="transferfunction" href="darkhistory.spec.transferfunction.html"/> 
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="electrons" href="../darkhistory.electrons.html" />
+    <link rel="prev" title="transferfunction" href="darkhistory.spec.transferfunction.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -90,7 +81,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html">main</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.spec.html">spec</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectools.html">spectools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">spectrum</a></li>
@@ -116,7 +107,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">DarkHistory</a>
@@ -124,9 +115,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -175,12 +167,27 @@
   <div class="section" id="module-darkhistory.spec.transferfunclist">
 <span id="transferfunclist"></span><h1>transferfunclist<a class="headerlink" href="#module-darkhistory.spec.transferfunclist" title="Permalink to this headline">¶</a></h1>
 <p>Functions and classes for processing lists of transfer functions.</p>
+<p class="rubric">Table of Classes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList" title="darkhistory.spec.transferfunclist.TransferFuncList"><code class="xref py py-obj docutils literal"><span class="pre">TransferFuncList</span></code></a>(tflist)</td>
+<td>List of transfer functions.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncInterp" title="darkhistory.spec.transferfunclist.TransferFuncInterp"><code class="xref py py-obj docutils literal"><span class="pre">TransferFuncInterp</span></code></a>(xe_arr,&nbsp;tflist_arr)</td>
+<td>Interpolation function over list of TransferFuncList objects.</td>
+</tr>
+</tbody>
+</table>
 <div class="section" id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="darkhistory.spec.transferfunclist.TransferFuncList">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunclist.</code><code class="descname">TransferFuncList</code><span class="sig-paren">(</span><em>tflist</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncList" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>List of transfer functions.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -233,13 +240,13 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.at_val" title="darkhistory.spec.transferfunclist.TransferFuncList.at_val"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_val</span></code></a>(axis,&nbsp;new_val[,&nbsp;bounds_error,&nbsp;fill_value])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.at_val" title="darkhistory.spec.transferfunclist.TransferFuncList.at_val"><code class="xref py py-obj docutils literal"><span class="pre">at_val</span></code></a>(axis,&nbsp;new_val[,&nbsp;bounds_error,&nbsp;fill_value])</td>
 <td>Returns the transfer functions at the new abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.coarsen" title="darkhistory.spec.transferfunclist.TransferFuncList.coarsen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coarsen</span></code></a>(dlnz_factor[,&nbsp;delete_tfs,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.coarsen" title="darkhistory.spec.transferfunclist.TransferFuncList.coarsen"><code class="xref py py-obj docutils literal"><span class="pre">coarsen</span></code></a>(dlnz_factor[,&nbsp;delete_tfs,&nbsp;…])</td>
 <td>Coarsens the new transfer function with larger dlnz.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.transpose" title="darkhistory.spec.transferfunclist.TransferFuncList.transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transpose</span></code></a>()</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncList.transpose" title="darkhistory.spec.transferfunclist.TransferFuncList.transpose"><code class="xref py py-obj docutils literal"><span class="pre">transpose</span></code></a>()</td>
 <td>Transposes the list of transfer functions.</td>
 </tr>
 </tbody>
@@ -254,7 +261,7 @@
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>axis</strong> (<em>{'rs'</em><em>, </em><em>'in_eng'</em><em>, </em><em>'2D_in_eng'}</em>) – The axis along which to perform the interpolation. If the axis is ‘rs’, then the list will be transposed into tftype ‘in_eng’ and vice-versa.</li>
-<li><strong>new_val</strong> (<em>ndarray</em><em> or </em><em>tuple of ndarrays</em><em> (</em><em>in_eng</em><em>, </em><em>eng</em><em>)</em>) – The new redshift or injection energy abscissa.</li>
+<li><strong>new_val</strong> (<em>ndarray</em><em> or </em><em>tuple of ndarrays</em><em> (</em><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra.in_eng" title="darkhistory.spec.spectra.Spectra.in_eng"><em>in_eng</em></a><em>, </em><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum.eng" title="darkhistory.spec.spectrum.Spectrum.eng"><em>eng</em></a><em>)</em>) – The new redshift or injection energy abscissa.</li>
 <li><strong>bounds_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d</li>
 <li><strong>fill_value</strong> (<em>array-like</em><em> or </em><em>(</em><em>array-like</em><em>, </em><em>array-like</em><em>) or </em><em>&quot;extrapolate&quot;</em><em>, </em><em>optional</em>) – See scipy.interpolate.interp1d</li>
 </ul>
@@ -329,14 +336,84 @@
 
 </dd></dl>
 
+<dl class="class">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp">
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunclist.</code><code class="descname">TransferFuncInterp</code><span class="sig-paren">(</span><em>xe_arr</em>, <em>tflist_arr</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Interpolation function over list of TransferFuncList objects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tflist_arr</strong> (<em>list of TransferFuncList</em>) – List of TransferFuncList objects to interpolate over.</li>
+<li><strong>xe_arr</strong> (<em>ndarray</em>) – List of xe values corresponding to tflist_arr.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.rs">
+<code class="descname">rs</code><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.rs" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – Redshift abscissa of the transfer functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.in_eng">
+<code class="descname">in_eng</code><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.in_eng" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – Injection energy abscissa of the transfer functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.eng">
+<code class="descname">eng</code><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.eng" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>ndarray</em> – Energy abscissa of the spectrum.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.dlnz">
+<code class="descname">dlnz</code><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.dlnz" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> – The d ln(1+z) step for the transfer functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.spec_type">
+<code class="descname">spec_type</code><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.spec_type" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>{‘N’, ‘dNdE’}</em> – The type of spectra stored in the transfer functions.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.interp_func">
+<code class="descname">interp_func</code><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.interp_func" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>function</em> – A 2D interpolation function over xe and rs.</p>
+</dd></dl>
+
+<p class="rubric">Table of Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.get_tf" title="darkhistory.spec.transferfunclist.TransferFuncInterp.get_tf"><code class="xref py py-obj docutils literal"><span class="pre">get_tf</span></code></a>(rs,&nbsp;xe)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="darkhistory.spec.transferfunclist.TransferFuncInterp.get_tf">
+<code class="descname">get_tf</code><span class="sig-paren">(</span><em>rs</em>, <em>xe</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunclist.TransferFuncInterp.get_tf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -354,11 +431,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Hongwan Liu.
+        &copy; Copyright 2017, Hongwan Liu
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -373,35 +450,33 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

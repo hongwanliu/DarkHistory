@@ -199,12 +199,12 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old'):
         number of (HI, HeI, HeII) divided by nH at redshift photspec.rs
     dE_dVdt_inj : float
         energy injection rate DM, dE/dVdt |_inj
+    dt : float
+        time in seconds over which these photons were deposited.
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
         'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
-    dt : float
-        time in seconds over which these photons were deposited.
 
     Returns
     -------

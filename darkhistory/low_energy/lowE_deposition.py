@@ -9,7 +9,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, cmbloss, method="old"):
+def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -27,6 +27,8 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, cmbloss, method="old"):
         DM energy injection rate, dE/dVdt injected.  This is for unclustered DM (i.e. without structure formation).
     dt : float
         time in seconds over which these spectra were deposited.
+    highengdep : list of floats
+        total amount of energy deposited by high energy particles into {H_ionization, H_excitation, heating, continuum} per baryon per time, in that order.
     cmbloss : float
         Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt
     method : {'old','ion','new'}
@@ -75,12 +77,19 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, cmbloss, method="old"):
         tmp_spec_elec, 1-x[0], dE_dVdt_inj, dt
     )
 
+    #print('photons:', f_phot[2], f_phot[3]+f_phot[4], f_phot[1], 0, f_phot[0])
+    #print('electrons:', f_elec[2], f_elec[3], f_elec[1], f_elec[4], f_elec[0])
+
     f_final = np.array([
         f_phot[2]+f_elec[2],
         f_phot[3]+f_phot[4]+f_elec[3],
         f_phot[1]+f_elec[1],
         f_elec[4],
-        f_phot[0]+f_elec[0] - cmbloss * phys.nB * spec_phot.rs**3 / dE_dVdt_inj
+        f_phot[0]+f_elec[0]
     ])
+
+    f_final += np.array(
+            [highengdep[0], 0, highengdep[1], highengdep[2], highengdep[3] - cmbloss]
+            ) * phys.nB * spec_phot.rs**3 / dE_dVdt_inj
 
     return f_final

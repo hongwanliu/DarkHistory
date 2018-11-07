@@ -511,7 +511,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects.
+        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects.
 
         See Also
         --------
@@ -835,6 +835,9 @@ class Spectra:
             new_data = np.dot(weight, self.grid_vals)
             return Spectrum(self.eng, new_data, spec_type=self.spec_type)
         elif isinstance(weight, Spectrum):
+            if not np.array_equal(self.in_eng, weight.eng):
+                raise TypeError('spectra.in_eng must equal weight.eng')
+
             new_data = np.dot(weight._data, self.grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type

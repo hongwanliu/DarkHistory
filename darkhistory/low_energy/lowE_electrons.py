@@ -26,11 +26,11 @@ def make_interpolators():
     -------
     """
 
-    engs = [10.2, 13.6, 14, 30, 60, 100, 300, 3000]
+    #engs = [10.2, 13.6, 14, 30, 60, 100, 300, 3000]
     #print('AHHHHHH NOOOOOO!')
     #engs = [10.2, 14, 30, 60, 100, 300, 3000]
-    #engs = [14, 30, 60, 100, 300, 3000]
-    #print('AHHHH YEAHHHH!')
+    engs = [14, 30, 60, 100, 300, 3000]
+    print('AHHHH YEAHHHH!')
     xHII = []
     heat, lyman, ionH, ionHe, cont = [
         [ [] for i in range(len(engs))] for j in range(5)
@@ -51,7 +51,7 @@ def make_interpolators():
             heat[i], lyman[i], ionH[i], ionHe[i], cont[i] = [
                 [
                     #set 0 to 10^-15 to avoid -\infty
-                    np.log(max(float(line.split('\t')[k]),1.0e-15))
+                    np.log(max(float(line.split('\t')[k]),1.0e-10))
                     for line in lines_list[2:]
                 ] for k in [1,2,3,4,5]
             ]

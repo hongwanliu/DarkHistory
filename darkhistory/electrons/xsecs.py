@@ -7,6 +7,9 @@ from astropy.io import fits
 from scipy.interpolate import interp1d
 import math
 import scipy.constants as p
+sys.path.append("../..")
+from spec.spectrum import *
+import spec.spectools as spectools
 
 
 def thermalize_cs(T, f=0.05, lnV=10):
@@ -318,7 +321,7 @@ def ionize_s_cs_H_2(E_in, E_sec):
     sigma = numpy.zeros(len(E_sec))
     
     #get bin boundaries for integration
-    edges = get_bin_bound(E_sec)
+    edges = spectools.get_bin_bound(E_sec)
     
     def integrand(W): #W=E_sec[n]
         T=E_in 

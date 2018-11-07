@@ -8,6 +8,7 @@ darkhistory
    
    darkhistory.physics
    darkhistory.utilities
+   main
 
 .. rubric:: Table of Packages
 
