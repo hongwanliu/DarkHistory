@@ -14,6 +14,7 @@ import darkhistory.spec.spectools as spectools
 import darkhistory.spec.transferfunclist as tflist
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
+import darkhistory.history.histools as ht
 import darkhistory.history.tla as tla
 
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
@@ -36,20 +37,25 @@ def load_trans_funcs(direc):
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
     #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
-    highengphot_tflist_arr = pickle.load(open(direc+"tflists/tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete.raw", "rb"))
     print('Loaded high energy photons...')
     #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
-    lowengphot_tflist_arr  = pickle.load(open(direc+"tflists/tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete.raw", "rb"))
     print('Low energy photons...')
     #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
-    lowengelec_tflist_arr  = pickle.load(open(direc+"tflists/tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete.raw", "rb"))
     print('Low energy electrons...')
     #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
-    CMB_engloss_arr = pickle.load(open(direc+"tflists/CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete.raw", "rb"))
+    CMB_engloss_arr = np.swapaxes(CMB_engloss_arr, 1, 2)
+    print('CMB losses.\n')
+    highdep_arr = pickle.load(open(direc+"highdeposited_60eV_complete.raw", "rb"))
+    highdep_arr = np.swapaxes(highdep_arr, 1, 2)
     print('CMB losses.\n')
 
     photeng = highengphot_tflist_arr[0].eng
     eleceng = lowengelec_tflist_arr[0].eng
+    rs_list = highengphot_tflist_arr[0].rs
 
     #Split photeng into high and low energy. 
     photeng_high = photeng[photeng > 60]
@@ -120,16 +126,21 @@ def load_trans_funcs(direc):
         engloss = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
     print("CMB losses.\n")
 
+    for highdep in highdep_arr:
+        highdep = np.pad(highdep, ((0,0),(photeng_low.size, 0)), 'constant')
+    print("high energy deposited.\n")
+
     # free electron fractions for which transfer functions are evaluated
-    # xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
-    xes = 0.5 + 0.5*np.tanh([-5., -4.1])
+    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+    #xes = 0.5 + 0.5*np.tanh([-5., -4.1])
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
     lowengphot_tf_interp = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
     lowengelec_tf_interp = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
-    #CMB_engloss_interp = interp1d(xes, np.sum(CMB_engloss_arr, 1), axis=0)
+    CMB_engloss_interp = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = highengphot_tflist_arr[0].in_eng)
+    highdep_interp = ht.IonRSInterp(xes, rs_list, highdep_arr, in_eng = highengphot_tflist_arr[0].in_eng)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, CMB_engloss_arr
