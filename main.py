@@ -36,23 +36,30 @@ def load_trans_funcs(direc):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
-    #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete_coarse.raw", "rb"))
     highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete.raw", "rb"))
+    #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Loaded high energy photons...')
-    #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete_coarse.raw", "rb"))
+
     lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete.raw", "rb"))
+    #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Low energy photons...')
-    #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete_coarse.raw", "rb"))
+
     lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete.raw", "rb"))
+    #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     print('Low energy electrons...')
-    #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
-    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete.raw", "rb"))
+
+    highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_complete.raw", "rb"))
+    #highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+    highengdep_arr = np.swapaxes(highengdep_arr, 1, 2)
+    print('high energy deposition.\n')
+
+    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
+    #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     CMB_engloss_arr = np.swapaxes(CMB_engloss_arr, 1, 2)
     print('CMB losses.\n')
-    highdep_arr = pickle.load(open(direc+"highdeposited_60eV_complete.raw", "rb"))
-    highdep_arr = np.swapaxes(highdep_arr, 1, 2)
-    print('CMB losses.\n')
 
+    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
+    #xes = 0.5 + 0.5*np.tanh([-5., -4.1])
     photeng = highengphot_tflist_arr[0].eng
     eleceng = lowengelec_tflist_arr[0].eng
     rs_list = highengphot_tflist_arr[0].rs
@@ -121,29 +128,29 @@ def load_trans_funcs(direc):
             np.stack([tf.grid_vals for tf in lowengelec_tflist._tflist])
         )
     print("low energy electrons...\n")
+    
+    tmp = np.zeros((len(xes),len(rs_list),len(photeng), 4))
+    for i, highdep in enumerate(highengdep_arr):
+        tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
+    highengdep_arr = tmp.copy()
+    print("high energy deposition.\n")
 
-    for engloss in CMB_engloss_arr:
-        engloss = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
+    tmp = np.zeros((len(xes),len(rs_list),len(photeng)))
+    for i, engloss in enumerate(CMB_engloss_arr):
+        tmp[i] = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
+    CMB_engloss_arr = tmp.copy()
     print("CMB losses.\n")
-
-    for highdep in highdep_arr:
-        highdep = np.pad(highdep, ((0,0),(photeng_low.size, 0)), 'constant')
-    print("high energy deposited.\n")
-
-    # free electron fractions for which transfer functions are evaluated
-    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
-    #xes = 0.5 + 0.5*np.tanh([-5., -4.1])
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
-    lowengphot_tf_interp = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
-    lowengelec_tf_interp = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
-    CMB_engloss_interp = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = highengphot_tflist_arr[0].in_eng)
-    highdep_interp = ht.IonRSInterp(xes, rs_list, highdep_arr, in_eng = highengphot_tflist_arr[0].in_eng)
+    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
+    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng)
+    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng)
     print("Done.\n")
 
-    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, CMB_engloss_arr
+    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
 
 def load_ics_data():
     Emax = 1e20
@@ -201,11 +208,12 @@ def evolve(
     in_spec_elec, in_spec_phot,
     rate_func_N, rate_func_eng, end_rs,
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
+    highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
     reion_switch=False, reion_rs = None, photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
     xe_init=None, Tm_init=None,
-    coarsen_factor=1, std_soln=False, user=None
+    coarsen_factor=1, std_soln=False, user=None, verbose=False
 ):
     """
     Main function that computes the temperature and ionization history.
@@ -231,6 +239,10 @@ def evolve(
         low energy photon transfer function interpolation object.
     lowengelec_tf_interp : TransFuncInterp
         low energy electron transfer function interpolation object.
+    highengdep_interp : IonRSInterp
+        energy deposition from high energy particles, interpolation object
+    CMB_engloss_interp : IonRSInterp
+        energy losses to CMB, interpolation object
     ics_thomson_ref_tf : Transfer Function
         ???Thomson regime
     ics_rel_ref_tf : Transfer Function
@@ -354,15 +366,34 @@ def evolve(
         if prev_rs is not None:
             # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
 
+
             if std_soln:
+                cmbloss_arr = CMB_engloss_interp.get_val(xe_std(rs), rs)
+                highengdep_arr = highengdep_interp.get_val(xe_std(rs), rs)
+                cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
+                highengdep = np.dot(
+                        np.swapaxes(highengdep_arr, 0, 1), 
+                        out_highengphot_specs[-2].N/coarsen_factor
+                        )
+
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 0
+                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 
+                    highengdep, cmbloss
                 )
             else:
+                cmbloss_arr = CMB_engloss_interp.get_val(xe_arr[-1], rs)
+                highengdep_arr = highengdep_interp.get_val(xe_arr[-1], rs)
+                cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
+                highengdep = np.dot(
+                        np.swapaxes(highengdep_arr, 0, 1), 
+                        out_highengphot_specs[-2].N/coarsen_factor
+                        )
+
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng_unclustered(rs), dt, 0
+                    np.array([1-xe_arr[-1], 0, 0]), rate_func_eng_unclustered(rs), dt,
+                    highengdep, cmbloss
                 )
 
             f_arr = np.append(f_arr, f_raw)
@@ -442,7 +473,8 @@ def evolve(
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
 
-        #print("completed rs: ", prev_rs)
+        if verbose:
+            print("completed rs: ", prev_rs)
 
     f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
     return (
