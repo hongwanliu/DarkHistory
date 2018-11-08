@@ -53,7 +53,7 @@ def load_trans_funcs(direc):
     highengdep_arr = np.swapaxes(highengdep_arr, 1, 2)
     print('high energy deposition.\n')
 
-    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete_coarse.raw", "rb"))
+    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete.raw", "rb"))
     #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
     CMB_engloss_arr = np.swapaxes(CMB_engloss_arr, 1, 2)
     print('CMB losses.\n')
@@ -368,12 +368,10 @@ def evolve(
 
 
             if std_soln:
-                cmbloss_arr = CMB_engloss_interp.get_val(xe_std(rs), rs)
-                highengdep_arr = highengdep_interp.get_val(xe_std(rs), rs)
                 cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
                 highengdep = np.dot(
                         np.swapaxes(highengdep_arr, 0, 1), 
-                        out_highengphot_specs[-2].N/coarsen_factor
+                        out_highengphot_specs[-2].N
                         )
 
                 f_raw = compute_fs(
@@ -382,12 +380,10 @@ def evolve(
                     highengdep, cmbloss
                 )
             else:
-                cmbloss_arr = CMB_engloss_interp.get_val(xe_arr[-1], rs)
-                highengdep_arr = highengdep_interp.get_val(xe_arr[-1], rs)
                 cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
                 highengdep = np.dot(
                         np.swapaxes(highengdep_arr, 0, 1), 
-                        out_highengphot_specs[-2].N/coarsen_factor
+                        out_highengphot_specs[-2].N
                         )
 
                 f_raw = compute_fs(
@@ -421,10 +417,14 @@ def evolve(
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_std(rs))
             lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_std(rs))
             lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_std(rs))
+            cmbloss_arr = CMB_engloss_interp.get_val(xe_std(rs), rs)
+            highengdep_arr = highengdep_interp.get_val(xe_std(rs), rs)
         else:
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_arr[-1])
             lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_arr[-1])
             lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_arr[-1])
+            cmbloss_arr = CMB_engloss_interp.get_val(xe_arr[-1], rs)
+            highengdep_arr = highengdep_interp.get_val(xe_arr[-1], rs)
 
         if coarsen_factor > 1:
             prop_tf = np.zeros_like(highengphot_tf._grid_vals)
@@ -435,6 +435,8 @@ def evolve(
             highengphot_tf._grid_vals = matrix_power(
                 highengphot_tf._grid_vals, coarsen_factor
             )
+            cmbloss_arr = np.matmul(prop_tf, cmbloss_arr)/coarsen_factor
+            highengdep_arr = np.matmul(prop_tf, highengdep_arr)/coarsen_factor
 
         next_highengphot_spec = highengphot_tf.sum_specs(out_highengphot_specs[-1])
         next_lowengphot_spec  = lowengphot_tf.sum_specs(out_highengphot_specs[-1])
