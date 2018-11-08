@@ -9,7 +9,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old"):
+def compute_fs(elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -17,10 +17,10 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, highengdep, cmbloss, me
 
     Parameters
      ----------
-    spec_phot : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_ per time.
-    spec_elec : Spectrum object
-        spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_ per time.
+    phot_spec : Spectrum object
+        spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_.
+    elec_spec : Spectrum object
+        spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_.
     x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
     dE_dVdt_inj : float
@@ -45,36 +45,36 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, highengdep, cmbloss, me
     NOTE
     ----
     The CMB component hasn't been subtracted from the continuum photons yet
-    Think about the exceptions that should be thrown (spec_elec.rs should equal spec_phot.rs)
+    Think about the exceptions that should be thrown (elec_spec.rs should equal phot_spec.rs)
     """
 
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
     # constructor, instead of simply a reference. 
-    ion_bounds = spectools.get_bounds_between(spec_phot.eng, phys.rydberg)
+    ion_bounds = spectools.get_bounds_between(phot_spec.eng, phys.rydberg)
     ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
     ionized_elec = Spectrum(
         ion_engs,
-        spec_phot.totN(bound_type="eng", bound_arr=ion_bounds),
-        rs=spec_phot.rs,
+        phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
+        rs=phot_spec.rs,
         spec_type='N'
     )
 
     new_eng = ion_engs - phys.rydberg
     ionized_elec.shift_eng(new_eng)
 
-    # rebin so that ionized_elec may be added to spec_elec
-    ionized_elec.rebin(spec_elec.eng)
+    # rebin so that ionized_elec may be added to elec_spec
+    ionized_elec.rebin(elec_spec.eng)
 
-    tmp_spec_elec = Spectrum(np.array(spec_elec.eng), np.array(spec_elec.N), rs=spec_elec.rs, spec_type='N')
-    tmp_spec_elec.N += ionized_elec.N
+    tmp_elec_spec = Spectrum(np.array(elec_spec.eng), np.array(elec_spec.N), rs=elec_spec.rs, spec_type='N')
+    tmp_elec_spec.N += ionized_elec.N
 
     f_phot = lowE_photons.compute_fs(
-        spec_phot, x, dE_dVdt_inj, dt, method
+        phot_spec, x, dE_dVdt_inj, dt, method
     )
 
     f_elec = lowE_electrons.compute_fs(
-        tmp_spec_elec, 1-x[0], dE_dVdt_inj, dt
+        tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
     )
 
     #print('photons:', f_phot[2], f_phot[3]+f_phot[4], f_phot[1], 0, f_phot[0])
@@ -90,6 +90,6 @@ def compute_fs(spec_elec, spec_phot, x, dE_dVdt_inj, dt, highengdep, cmbloss, me
 
     f_final += np.array(
             [highengdep[0], 0, highengdep[1], highengdep[2], highengdep[3] - cmbloss]
-            ) * phys.nB * spec_phot.rs**3 / dE_dVdt_inj
+            ) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
 
     return f_final
