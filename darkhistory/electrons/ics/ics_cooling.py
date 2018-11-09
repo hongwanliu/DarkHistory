@@ -1,6 +1,6 @@
 """Electron cooling through ICS."""
 
-import numpy as np 
+import numpy as np
 import pickle
 
 import darkhistory.physics as phys
@@ -9,11 +9,11 @@ import darkhistory.spec.spectools as spectools
 
 from darkhistory.spec.spectrum import Spectrum
 
-from darkhistory.electrons.ics.ics_spectrum import ics_spec 
+from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
 def get_ics_cooling_tf(
-    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf, 
+    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
     eleceng, photeng, rs, fast=True
 ):
 
@@ -24,13 +24,13 @@ def get_ics_cooling_tf(
     nonrel_tf : TransFuncAtRedshift
         Raw nonrelativistic primary electron ICS transfer function.
     rel_tf : string
-        Raw relativistic primary electron ICS transfer function. 
+        Raw relativistic primary electron ICS transfer function.
     engloss_tf_filename : string
-        Raw primary electron ICS energy loss transfer function. 
+        Raw primary electron ICS energy loss transfer function.
     eleceng : ndarray
-        The electron kinetic energy abscissa. 
+        The electron kinetic energy abscissa.
     photeng : ndarray
-        The photon energy abscissa. 
+        The photon energy abscissa.
     rs : float
         The redshift.
     fast : bool, optional
@@ -45,13 +45,13 @@ def get_ics_cooling_tf(
     Note
     ----
     The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
-    photon spectrum after scattering by one electron. 
+    photon spectrum after scattering by one electron.
 
     """
 
     if fast:
         return get_ics_cooling_tf_fast(
-            raw_nonrel_tf, raw_rel_tf, raw_engloss_tf, 
+            raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
             eleceng, photeng, rs
         )
 
@@ -67,8 +67,8 @@ def get_ics_cooling_tf(
     # Downcasting speeds up np.dot
     ICS_tf._grid_vals = ICS_tf.grid_vals.astype('float64')
 
-    # Energy loss transfer function for single primary electron 
-    # single scattering. This is dN/(dE dt), dt = 1 s. 
+    # Energy loss transfer function for single primary electron
+    # single scattering. This is dN/(dE dt), dt = 1 s.
     engloss_tf = engloss_spec(
         eleceng, photeng, T, nonrel_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
@@ -76,15 +76,15 @@ def get_ics_cooling_tf(
     # Downcasting speeds up np.dot
     engloss_tf._grid_vals = engloss_tf.grid_vals.astype('float64')
 
-    # Define some useful lengths. 
+    # Define some useful lengths.
     N_eleceng = eleceng.size
     N_photeng = photeng.size
 
     # Create the secondary electron transfer function.
 
     sec_elec_tf = tf.TransFuncAtRedshift(
-        np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng, 
-        rs = rs*np.ones_like(eleceng), eng = eleceng, 
+        np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
+        rs = rs*np.ones_like(eleceng), eng = eleceng,
         dlnz = -1, spec_type = 'dNdE'
     )
 
@@ -98,7 +98,7 @@ def get_ics_cooling_tf(
         sec_elec_tf._grid_vals[i] += spec.dNdE
 
     # sec_elec_tf_2 = scattered_elec_spec(
-    #     eleceng, eleceng, T, 
+    #     eleceng, eleceng, T,
     #     nonrel_tf=raw_scattered_elec_nonrel_tf,
     #     rel_tf = raw_scattered_elec_rel_tf
     # )
@@ -113,29 +113,29 @@ def get_ics_cooling_tf(
     if eleceng_low.size == 0:
         raise TypeError('Energy abscissa must contain a low energy bin below 3 keV.')
 
-    # Empty containers for quantities. 
-    # Final secondary photon spectrum. 
+    # Empty containers for quantities.
+    # Final secondary photon spectrum.
     sec_phot_tf = tf.TransFuncAtRedshift(
         np.zeros((N_eleceng, N_photeng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = photeng, 
+        rs = rs*np.ones_like(eleceng), eng = photeng,
         dlnz = -1, spec_type = 'N'
     )
     # Final secondary low energy electron spectrum.
     sec_lowengelec_tf = tf.TransFuncAtRedshift(
         np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = eleceng, 
+        rs = rs*np.ones_like(eleceng), eng = eleceng,
         dlnz = -1, spec_type = 'N'
     )
     # Total upscattered photon energy.
     cont_loss_vec = np.zeros_like(eleceng)
-    # Deposited energy, enforces energy conservation. 
+    # Deposited energy, enforces energy conservation.
     deposited_vec = np.zeros_like(eleceng)
 
-    # Test input electron to get the spectra. 
+    # Test input electron to get the spectra.
     delta_spec = np.zeros_like(eleceng)
 
-    # Start building sec_phot_tf and sec_lowengelec_tf. 
-    # Low energy regime first. 
+    # Start building sec_phot_tf and sec_lowengelec_tf.
+    # Low energy regime first.
 
     ####################################
     # OLD: for loop to add identity.   #
@@ -145,11 +145,11 @@ def get_ics_cooling_tf(
 
     # for i, eng in zip(eleceng_low_ind, eleceng_low):
     #     # Zero out delta function test spectrum, set it correctly
-    #     # for the loop ahead. 
+    #     # for the loop ahead.
     #     delta_spec *= 0
     #     delta_spec[i] = 1
-    #     # Add the trivial secondary electron spectrum to the 
-    #     # transfer function. 
+    #     # Add the trivial secondary electron spectrum to the
+    #     # transfer function.
     #     sec_lowengelec_tf._grid_vals[i] += delta_spec
 
     ####################################
@@ -161,13 +161,13 @@ def get_ics_cooling_tf(
         np.identity(eleceng_low.size)
     )
 
-    # Continuum energy loss rate, dU_CMB/dt. 
+    # Continuum energy loss rate, dU_CMB/dt.
     CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
 
 
     # High energy electron loop to get fully resolved spectrum.
     for i, eng in zip(eleceng_high_ind, eleceng_high):
-        
+
         # print('Check energies and indexing: ')
         # print(i, eleceng[i], eng)
 
@@ -187,22 +187,22 @@ def get_ics_cooling_tf(
         # The scattered electrons is obtained from the *net* energy loss, and
         # so is not indicative of number of scatters.
         tot_N_scatter = sec_phot_spec.totN()
-        # The total energy of primary electrons which is scattered per unit time. 
+        # The total energy of primary electrons which is scattered per unit time.
         tot_eng_scatter = tot_N_scatter*eng
         # The *net* total number of secondary photons produced
         # per unit time.
         sec_elec_N = sec_elec_spec.totN()
-        # The *net* total energy of secondary electrons produced 
-        # per unit time. 
+        # The *net* total energy of secondary electrons produced
+        # per unit time.
         sec_elec_toteng = sec_elec_spec.toteng()
-        # The total energy of secondary photons produced per unit time. 
+        # The total energy of secondary photons produced per unit time.
         sec_phot_toteng = sec_phot_spec.toteng()
-        # Deposited energy per unit time, dD/dt. 
+        # Deposited energy per unit time, dD/dt.
         deposited_eng = sec_elec_spec.totN()*eng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
 
         print('-------- Injection Energy: ', eng)
         print(
-            '-------- No. of Scatters (Analytic): ', 
+            '-------- No. of Scatters (Analytic): ',
             phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
         )
         print(
@@ -245,10 +245,10 @@ def get_ics_cooling_tf(
         )
         print('-------- Deposited Energy: ', deposited_eng)
 
-        # In the original code, the energy of the electron has gamma > 20, 
-        # then the continuum energy loss is assigned to deposited_eng instead. 
-        # I'm not sure if this is necessary, but let's be consistent with the 
-        # original code for now. 
+        # In the original code, the energy of the electron has gamma > 20,
+        # then the continuum energy loss is assigned to deposited_eng instead.
+        # I'm not sure if this is necessary, but let's be consistent with the
+        # original code for now.
 
         continuum_engloss = CMB_upscatter_eng_rate
 
@@ -257,7 +257,7 @@ def get_ics_cooling_tf(
             continuum_engloss = 0
 
         # Normalize to one secondary electron.
-        
+
         sec_phot_spec /= sec_elec_N
         sec_elec_spec /= sec_elec_N
         continuum_engloss /= sec_elec_N
@@ -287,29 +287,29 @@ def get_ics_cooling_tf(
 
         # Add the resolved spectrum to the first scatter.
         sec_phot_spec += resolved_phot_spec
-        
+
         # Resolve the secondary electron continuum loss and deposition.
         continuum_engloss += np.dot(sec_elec_spec.N, cont_loss_vec)
-        
+
         # utils.compare_arr([sec_elec_spec.N, deposited_vec])
         deposited_eng += np.dot(sec_elec_spec.N, deposited_vec)
-        
+
         # Now, append the resulting spectrum to the transfer function.
-        # Do this without calling append of course: just add to the zeros 
+        # Do this without calling append of course: just add to the zeros
         # that fill the current row in _grid_vals.
         sec_phot_tf._grid_vals[i] += sec_phot_spec.N
         sec_lowengelec_tf._grid_vals[i] += resolved_lowengelec_spec.N
-        
+
         # Set the correct values in cont_loss_vec and deposited_vec.
         cont_loss_vec[i] = continuum_engloss
         deposited_vec[i] = deposited_eng
 
         # Conservation of energy check. Check that it is 1e-10 of eng.
-        
-        
+
+
         conservation_check = (
-            eng 
-            - resolved_lowengelec_spec.toteng() 
+            eng
+            - resolved_lowengelec_spec.toteng()
             + cont_loss_vec[i]
             - sec_phot_spec.toteng()
                          )
@@ -323,11 +323,11 @@ def get_ics_cooling_tf(
         # print('energy is conserved up to (%): ', conservation_check/eng*100)
         # print('deposited: ', deposited_vec[i])
         # print(
-        #     'energy conservation with deposited (%): ', 
+        #     'energy conservation with deposited (%): ',
         #     (conservation_check - deposited_vec[i])/eng*100
         # )
         # print('***************************************************')
-        
+
         if (
             conservation_check/eng > 0.01
         ):
@@ -341,21 +341,21 @@ def get_ics_cooling_tf(
             print('energy is conserved up to (%): ', conservation_check/eng*100)
             print('deposited: ', deposited_vec[i])
             print(
-                'energy conservation with deposited (%): ', 
+                'energy conservation with deposited (%): ',
                 (conservation_check - deposited_vec[i])/eng*100
             )
             print('***************************************************')
-        
+
             raise RuntimeError('Conservation of energy failed.')
-            
-        # Force conservation of energy. 
+
+        # Force conservation of energy.
         # deposited_vec[i] += conservation_check
 
     return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec)
-       
+
 
 def get_ics_cooling_tf_fast(
-    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf, 
+    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
     eleceng, photeng, rs
 ):
 
@@ -366,13 +366,13 @@ def get_ics_cooling_tf_fast(
     nonrel_tf : TransFuncAtRedshift
         Raw nonrelativistic primary electron ICS transfer function.
     rel_tf : string
-        Raw relativistic primary electron ICS transfer function. 
+        Raw relativistic primary electron ICS transfer function.
     engloss_tf_filename : string
-        Raw primary electron ICS energy loss transfer function. 
+        Raw primary electron ICS energy loss transfer function.
     eleceng : ndarray
-        The electron kinetic energy abscissa. 
+        The electron kinetic energy abscissa.
     photeng : ndarray
-        The photon energy abscissa. 
+        The photon energy abscissa.
     rs : float
         The redshift.
     fast : bool, optional
@@ -387,7 +387,7 @@ def get_ics_cooling_tf_fast(
     Note
     ----
     The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
-    photon spectrum after scattering by one electron. 
+    photon spectrum after scattering by one electron.
 
     This version of the code works faster, but dispenses with energy conservation checks and several other safeguards. Use only with default abscissa, or when get_ics_cooling_tf works.
 
@@ -404,8 +404,8 @@ def get_ics_cooling_tf_fast(
     # Downcasting speeds up np.dot
     ICS_tf._grid_vals = ICS_tf.grid_vals.astype('float64')
 
-    # Energy loss transfer function for single primary electron 
-    # single scattering. This is dN/(dE dt), dt = 1 s. 
+    # Energy loss transfer function for single primary electron
+    # single scattering. This is dN/(dE dt), dt = 1 s.
     engloss_tf = engloss_spec(
         eleceng, photeng, T, nonrel_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
@@ -415,27 +415,27 @@ def get_ics_cooling_tf_fast(
 
     # Switch the spectra type here to type 'N'.
     if ICS_tf.spec_type == 'dNdE':
-        ICS_tf.switch_spec_type() 
+        ICS_tf.switch_spec_type()
     if engloss_tf.spec_type == 'dNdE':
         engloss_tf.switch_spec_type()
 
 
-    # Define some useful lengths. 
+    # Define some useful lengths.
     N_eleceng = eleceng.size
     N_photeng = photeng.size
 
     # Create the secondary electron transfer function.
 
     sec_elec_tf = tf.TransFuncAtRedshift(
-        np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng, 
-        rs = rs*np.ones_like(eleceng), eng = eleceng, 
+        np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
+        rs = rs*np.ones_like(eleceng), eng = eleceng,
         dlnz = -1, spec_type = 'N'
     )
 
     sec_elec_tf._grid_vals = spectools.engloss_rebin_fast(
         eleceng, photeng, engloss_tf.grid_vals, eleceng
     )
-    
+
     # Change from energy loss spectrum to secondary electron spectrum.
     # for i, in_eng in enumerate(eleceng):
     #     spec = engloss_tf[i]
@@ -456,63 +456,64 @@ def get_ics_cooling_tf_fast(
     if eleceng_low.size == 0:
         raise TypeError('Energy abscissa must contain a low energy bin below 3 keV.')
 
-    # Empty containers for quantities. 
-    # Final secondary photon spectrum. 
+    # Empty containers for quantities.
+    # Final secondary photon spectrum.
     sec_phot_tf = tf.TransFuncAtRedshift(
         np.zeros((N_eleceng, N_photeng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = photeng, 
+        rs = rs*np.ones_like(eleceng), eng = photeng,
         dlnz = -1, spec_type = 'N'
     )
     # Final secondary low energy electron spectrum.
     sec_lowengelec_tf = tf.TransFuncAtRedshift(
         np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = eleceng, 
+        rs = rs*np.ones_like(eleceng), eng = eleceng,
         dlnz = -1, spec_type = 'N'
     )
     # Total upscattered photon energy.
     cont_loss_vec = np.zeros_like(eleceng)
-    # Deposited energy, enforces energy conservation. 
+    # Deposited energy, enforces energy conservation.
     deposited_vec = np.zeros_like(eleceng)
 
-    # Test input electron to get the spectra. 
+    # Test input electron to get the spectra.
     delta_spec = np.zeros_like(eleceng)
 
-    # Start building sec_phot_tf and sec_lowengelec_tf. 
-    # Low energy regime first. 
+    # Start building sec_phot_tf and sec_lowengelec_tf.
+    # Low energy regime first.
 
     sec_lowengelec_tf._grid_vals[:eleceng_low.size, :eleceng_low.size] = (
         np.identity(eleceng_low.size)
     )
 
-    # Continuum energy loss rate, dU_CMB/dt. 
+    # Continuum energy loss rate, dU_CMB/dt.
     CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
 
 
     # High energy electron loop to get fully resolved spectrum.
     for i, eng in zip(eleceng_high_ind, eleceng_high):
-        
+
         # print('Check energies and indexing: ')
         # print(i, eleceng[i], eng)
 
         sec_phot_spec_N = ICS_tf._grid_vals[i]
-        
+
         sec_elec_spec_N = sec_elec_tf._grid_vals[i]
-        
+
         # The total number of primaries scattered is equal to the total number of scattered *photons*.
         # The scattered electrons is obtained from the *net* energy loss, and
         # so is not indicative of number of scatters.
         tot_N_scatter = np.sum(sec_phot_spec_N)
-        # The total energy of primary electrons which is scattered per unit time. 
+        # The total energy of primary electrons which is scattered per unit time.
         tot_eng_scatter = tot_N_scatter*eng
         # The *net* total number of secondary photons produced
         # per unit time.
         sec_elec_totN = np.sum(sec_elec_spec_N)
-        # The *net* total energy of secondary electrons produced 
-        # per unit time. 
+        # The *net* total energy of secondary electrons produced
+        # per unit time.
         sec_elec_toteng = np.dot(sec_elec_spec_N, eleceng)
-        # The total energy of secondary photons produced per unit time. 
+        # The total energy of secondary photons produced per unit time.
         sec_phot_toteng = np.dot(sec_phot_spec_N, photeng)
-        # Deposited energy per unit time, dD/dt. 
+        # Deposited energy per unit time, dD/dt.
+        # Numerical error (should be zero except for numerics)
         deposited_eng = sec_elec_totN*eng - sec_elec_toteng - (sec_phot_toteng - CMB_upscatter_eng_rate)
 
         diagnostics = False
@@ -520,7 +521,7 @@ def get_ics_cooling_tf_fast(
         if diagnostics:
             print('-------- Injection Energy: ', eng)
             print(
-                '-------- No. of Scatters (Analytic): ', 
+                '-------- No. of Scatters (Analytic): ',
                 phys.thomson_xsec*phys.c*phys.CMB_N_density(T)
             )
             print(
@@ -564,10 +565,10 @@ def get_ics_cooling_tf_fast(
             print('-------- Deposited Energy: ', deposited_eng)
 
 
-        # In the original code, the energy of the electron has gamma > 20, 
-        # then the continuum energy loss is assigned to deposited_eng instead. 
-        # I'm not sure if this is necessary, but let's be consistent with the 
-        # original code for now. 
+        # In the original code, the energy of the electron has gamma > 20,
+        # then the continuum energy loss is assigned to deposited_eng instead.
+        # I'm not sure if this is necessary, but let's be consistent with the
+        # original code for now.
 
         continuum_engloss = CMB_upscatter_eng_rate
 
@@ -576,7 +577,7 @@ def get_ics_cooling_tf_fast(
             continuum_engloss = 0
 
         # Normalize to one secondary electron.
-        
+
         sec_phot_spec_N /= sec_elec_totN
         sec_elec_spec_N /= sec_elec_totN
         continuum_engloss /= sec_elec_totN
@@ -607,7 +608,7 @@ def get_ics_cooling_tf_fast(
         # )
 
         # The resolved lowengelec spectrum is simply one electron
-        # in the bin just below 3 keV. 
+        # in the bin just below 3 keV.
         # Added directly to sec_lowengelec_tf. Removed the dot for speed.
         # resolved_lowengelec_spec_vals = np.zeros_like(eleceng)
         # resolved_lowengelec_spec_vals[eleceng_low_ind[-1]] += 1
@@ -617,11 +618,11 @@ def get_ics_cooling_tf_fast(
 
         # Resolve the secondary electron continuum loss and deposition.
         continuum_engloss += np.dot(sec_elec_spec_N, cont_loss_vec)
-        
+
         deposited_eng += np.dot(sec_elec_spec_N, deposited_vec)
-        
+
         # Now, append the resulting spectrum to the transfer function.
-        # Do this without calling append of course: just add to the zeros 
+        # Do this without calling append of course: just add to the zeros
         # that fill the current row in _grid_vals.
         sec_phot_tf._grid_vals[i] += sec_phot_spec_N
         sec_lowengelec_tf._grid_vals[i, eleceng_low_ind[-1]] += 1
@@ -634,7 +635,7 @@ def get_ics_cooling_tf_fast(
         if check:
 
             conservation_check = (
-                eng 
+                eng
                 - np.dot(resolved_lowengelec_spec_vals, eleceng)
                 + cont_loss_vec[i]
                 - np.dot(sec_phot_spec_N, photeng)
@@ -647,28 +648,28 @@ def get_ics_cooling_tf_fast(
                 print('rs: ', rs)
                 print('injected energy: ', eng)
                 print(
-                    'low energy e: ', 
+                    'low energy e: ',
                     np.dot(resolved_lowengelec_spec_vals, eleceng)
                 )
                 print('scattered phot: ', np.dot(sec_phot_spec_N, photeng))
                 print('continuum_engloss: ', cont_loss_vec[i])
                 print(
-                    'diff: ', 
+                    'diff: ',
                     np.dot(sec_phot_spec_N, photeng) - cont_loss_vec[i]
                 )
                 print(
-                    'energy is conserved up to (%): ', 
+                    'energy is conserved up to (%): ',
                     conservation_check/eng*100
                 )
                 print('deposited: ', deposited_vec[i])
                 print(
-                    'energy conservation with deposited (%): ', 
+                    'energy conservation with deposited (%): ',
                     (conservation_check - deposited_vec[i])/eng*100
                 )
                 print('***************************************************')
-            
+
                 raise RuntimeError('Conservation of energy failed.')
-        
+
 
     return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec)
-       
+
