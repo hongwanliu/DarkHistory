@@ -24,8 +24,8 @@ class IonRSInterp:
     ----------
     interp_func : function
         A 2D interpolation function over xe and rs. 
-    dim : int
-        number of dimensions of val_arr
+    _grid_vals : ndarray
+        a nD array of input data
     
     """
 
