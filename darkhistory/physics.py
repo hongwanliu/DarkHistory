@@ -535,7 +535,7 @@ def coll_ion_xsec(eng, species=None):
     prefac = 1e-14/(u*ion_pot**2)
 
     xsec = prefac*(
-        A_coeff*(1 - 1/u)+ B_coeff*(1 - 1/u)**2 
+        A_coeff*(1 - 1/u) + B_coeff*(1 - 1/u)**2 
         + C_coeff*np.log(u) + D_coeff*np.log(u)/u
     )
 
@@ -546,6 +546,114 @@ def coll_ion_xsec(eng, species=None):
             return 0
 
     return xsec
+
+def coll_ion_sec_elec_spec(in_eng, eng, species=None):
+    """ Returns the secondary electron spectrum after collisional ionization. See 0910.4410. 
+
+    Parameters
+    ----------
+    in_eng : float
+        The incoming electron energy.
+    eng : ndarray
+        Abscissa of *kinetic* energies. 
+    species : {'HI', 'HeI', 'HeII'}
+        Species of interest. 
+
+    Returns
+    -------
+    ndarray
+        Secondary electron spectrum. Total number of electrons = 2.
+
+    Note
+    ----
+    Includes both the freed and initial electrons. Conservation of energy
+    is not enforced, but number of electrons is.
+
+    """
+
+    from darkhistory.spec.spectrum import Spectrum
+    from darkhistory.spec import spectools
+
+    if species == 'HI':
+        eps_i = 8.
+        ion_pot = rydberg
+    elif species == 'HeI':
+        eps_i = 15.8
+        ion_pot = He_ion_eng
+    elif species == 'HeII':
+        eps_i = 32.6
+        ion_pot = 4*rydberg
+    else:
+        raise TypeError('invalid species.')
+
+    # if in_eng < ion_pot:
+    #     return np.zeros_like(eng)
+
+    dNdE_1 = 1/(1 + (eng/eps_i)**2.1)
+    # This spectrum describes the lower energy electron only.
+    dNdE_1[eng >= (in_eng - ion_pot)/2] = 0
+    # Normalize the spectrum to one electron.
+
+    dNdE_1_spec = Spectrum(eng, dNdE_1)
+    if np.sum(dNdE_1) == 0:
+        # Either in_eng < in_pot, or the lowest bin lies 
+        # above the halfway point, (in_eng - ion_pot)/2.
+        # Add to the lowest bin. 
+        return np.zeros_like(eng)
+
+    dNdE_1_spec /= dNdE_1_spec.totN()
+
+    in_eng = np.array([in_eng])
+
+    dNdE_1_grid_vals = np.outer(np.ones_like(in_eng), dNdE_1_spec.N)
+
+    dNdE_2_grid_vals = spectools.engloss_rebin_fast(
+        in_eng, eng + ion_pot, dNdE_1_grid_vals, eng
+    )
+
+    return np.squeeze(dNdE_1_grid_vals + dNdE_2_grid_vals)
+
+def elec_heating_engloss_rate(eng, xe, rs):
+    """Returns the electron energy loss rate due to heating of the gas.
+    
+    Parameters
+    ----------
+    eng : ndarray
+        Abscissa of electron *kinetic* energy.
+    xe : float
+        The free electron fraction. 
+    rs : float
+        The redshift.
+
+    Returns
+    -------
+    ndarray
+        The energy loss rate due to heating (positive). 
+
+    Note
+    -------
+    See 0910.4410 for the expression. The units have e^2/r being in units of energy, so to convert to SI, we insert 1/(4*pi*eps_0)^2.
+    """
+
+    w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
+    ne = xe*nH*rs**3
+
+    eps_0 = 8.85418782e-12 # in SI units
+
+    prefac = 4*np.pi*ele**4/(4*np.pi*eps_0)**2
+    # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2). 
+    prefac *= 100**2/ele**2
+
+    # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c 
+    # Because she factored out beta, and left m_e c in numfac. 
+
+    zeta_e = 7.40e-11*ne
+    coulomb_log = np.log(4*eng/zeta_e)
+
+    # must use the mass of the electron in eV m^2 s^-2. 
+    return prefac*ne*coulomb_log/(me/c**2*w)
+
+
 
 def tau_sobolev(rs):
     """Sobolev optical depth.
