@@ -403,7 +403,7 @@ def evolve(
         #print('T_m at '+str(rs)+': '+ str(Tm_arr[-1]))
         #print('Standard T_m at '+str(rs)+': '+str(Tm_std(rs)))
         #if prev_rs is not None:
-        #    print('Back Reaction f_ionH, f_ionHe, f_exc, f_heat, f_cont: ', f_raw)
+        #    print('Back Reaction f_ionH, f_ion, f_exc, f_heat, f_cont: ', f_raw)
 
         if std_soln:
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_std(rs))
