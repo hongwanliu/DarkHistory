@@ -146,8 +146,8 @@ def load_trans_funcs(direc):
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
     lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
     lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng)
-    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng)
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
+    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
@@ -330,10 +330,10 @@ def evolve(
     # Initialize the Spectra object that will contain all the 
     # output spectra during the evolution.
     out_highengphot_specs = Spectra([init_inj_spec], spec_type=init_inj_spec.spec_type)
-    out_lowengphot_specs  = Spectra([], spec_type=init_inj_spec.spec_type)
-    out_lowengelec_specs  = Spectra([], spec_type=init_inj_spec.spec_type)
+    out_lowengphot_specs  = Spectra([in_spec_phot*0], spec_type=in_spec_phot.spec_type)
+    out_lowengelec_specs  = Spectra([in_spec_elec*0], spec_type=init_inj_spec.spec_type)
 
-    f_arr = np.array([])
+    f_arr = np.array([[0,0,0,0,0]])
 
     # Load the standard TLA solution and set xe/Tm initialize conditions if necessary.
     if std_soln or xe_init == None or Tm_init == None:
@@ -350,6 +350,10 @@ def evolve(
     #print('starting...\n')
 
     rate_func_eng_unclustered = rate_func_eng
+    cmbloss_grid = np.array([0])
+    highengdep_grid = np.array([[0,0,0,0]])
+    #cmbloss = np.array([0])
+    #highengdep = np.array([0,0,0,0])
 
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
@@ -368,28 +372,16 @@ def evolve(
 
 
             if std_soln:
-                cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
-                highengdep = np.dot(
-                        np.swapaxes(highengdep_arr, 0, 1), 
-                        out_highengphot_specs[-2].N
-                        )
-
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 
-                    highengdep, cmbloss
+                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt,
+                    highengdep_grid[-1], cmbloss_grid[-1]
                 )
             else:
-                cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
-                highengdep = np.dot(
-                        np.swapaxes(highengdep_arr, 0, 1), 
-                        out_highengphot_specs[-2].N
-                        )
-
                 f_raw = compute_fs(
                     next_lowengelec_spec, next_lowengphot_spec,
                     np.array([1-xe_arr[-1], 0, 0]), rate_func_eng_unclustered(rs), dt,
-                    highengdep, cmbloss
+                    highengdep_grid[-1], cmbloss_grid[-1]
                 )
 
             f_arr = np.append(f_arr, f_raw)
@@ -438,6 +430,12 @@ def evolve(
             cmbloss_arr = np.matmul(prop_tf, cmbloss_arr)/coarsen_factor
             highengdep_arr = np.matmul(prop_tf, highengdep_arr)/coarsen_factor
 
+        cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-1].N)
+        highengdep = np.dot(
+            np.swapaxes(highengdep_arr, 0, 1),
+            out_highengphot_specs[-1].N
+        )
+
         next_highengphot_spec = highengphot_tf.sum_specs(out_highengphot_specs[-1])
         next_lowengphot_spec  = lowengphot_tf.sum_specs(out_highengphot_specs[-1])
         if elec_processes:
@@ -474,6 +472,10 @@ def evolve(
         append_highengphot_spec(next_highengphot_spec)
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
+        cmbloss_grid = np.append(cmbloss_grid, cmbloss)
+        highengdep_grid = np.concatenate(
+            (highengdep_grid, np.array([highengdep]))
+        )
 
         if verbose:
             print("completed rs: ", prev_rs)
