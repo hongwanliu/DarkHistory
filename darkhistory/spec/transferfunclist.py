@@ -386,7 +386,8 @@ class TransferFuncInterp:
         # The ordering should be correct... 
         # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
 
-        self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), self._grid_vals)
+        self._grid_vals[self._grid_vals<=0] = 1e-200
+        self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals))
 
     def get_tf(self, rs, xe):
 
@@ -404,8 +405,8 @@ class TransferFuncInterp:
         if xe < self.xe[0]:
             xe = self.xe[0]
 
-        out_grid_vals = np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
-        
+        out_grid_vals = np.exp(np.squeeze(self.interp_func([np.log(xe), np.log(rs)])))
+
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
             rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
