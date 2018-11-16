@@ -447,7 +447,7 @@ def coll_exc_xsec(eng, species=None):
             E_bind = He_ion_eng
             E_exc  = He_exc_eng
 
-        prefac = 4*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
+        prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
 
         xsec = prefac*(
             A_coeff*np.log(eng/rydberg) + B_coeff + C_coeff*rydberg/eng
@@ -647,7 +647,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c 
     # Because she factored out beta, and left m_e c in numfac. 
 
-    zeta_e = 7.40e-11*ne
+    zeta_e = 7.40e-11*nH*rs**3
     coulomb_log = np.log(4*eng/zeta_e)
 
     # must use the mass of the electron in eV m^2 s^-2. 
