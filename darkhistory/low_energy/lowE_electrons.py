@@ -90,4 +90,4 @@ def compute_fs(MEDEA_interp, spec_elec, xe, dE_dVdt_inj, dt):
         np.sum(totengList * fracs) for fracs in np.transpose(fracs_grid)
     ])
 
-    return f_elec
+    return np.array([f_elec[4], f_elec[1], f_elec[2], f_elec[3], f_elec[0]])
