@@ -44,7 +44,7 @@ def make_interpolator():
             grid_vals[:,i,:] = np.transpose(np.array([
                 [
                     #set 0 to 10^-15 to avoid -\infty
-                    max(float(line.split('\t')[k]),1.0e-10)
+                    max(float(line.split('\t')[k]),1.0e-200)
                     for line in lines_list[2:]
                 ] for k in [1,2,3,4,5]
             ]))
