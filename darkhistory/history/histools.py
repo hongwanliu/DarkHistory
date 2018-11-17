@@ -12,9 +12,9 @@ class IonRSInterp:
     val_arr : list of objects
         List of objects
     xe_arr : ndarray
-        List of xe values corresponding to val_arr. 
+        List of xe values corresponding to val_arr.
     rs_arr : ndarray
-        List of redshift values corresponding to val_arr. 
+        List of redshift values corresponding to val_arr.
     in_eng : ndarray
         Injection energy abscissa of entries of val_arr.
     eng : ndarray
@@ -23,17 +23,17 @@ class IonRSInterp:
     Attributes
     ----------
     interp_func : function
-        A 2D interpolation function over xe and rs. 
+        A 2D interpolation function over xe and rs.
     _grid_vals : ndarray
         a nD array of input data
-    
+
     """
 
     def __init__(self, xe_arr, rs_arr, val_arr, in_eng=None, eng=None, logInterp=False):
 
         if str(type(val_arr)) != "<class 'numpy.ndarray'>":
             raise TypeError('val_arr must be an ndarray')
-        
+
         if len(xe_arr) != np.size(val_arr, 0):
             raise TypeError('0th dimension of val_arr must be the xe dimension')
 

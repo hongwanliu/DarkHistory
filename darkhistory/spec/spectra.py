@@ -124,6 +124,8 @@ class Spectra:
             self._N_underflow = np.array([])
             self._eng_underflow = np.array([])
 
+        self.n = 0
+
     @property
     def eng(self):
         return self._eng
@@ -184,6 +186,18 @@ class Spectra:
             return out_spec_list
         else:
             raise TypeError("indexing is invalid.")
+
+    #def __iter__(self):
+    #    return self
+
+    #def __next__(self):
+    #    self.n += 1
+    #    try:
+    #        return self[self.n-1]
+    #    except IndexError:
+    #        self.n = 0
+    #        raise StopIteration
+    #next = __next__
 
     def __setitem__(self, key, value):
         if np.issubdtype(type(key), int):
