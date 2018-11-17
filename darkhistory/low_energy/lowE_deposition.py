@@ -9,7 +9,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old"):
+def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old"):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -74,7 +74,7 @@ def compute_fs(elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss, me
     )
 
     f_elec = lowE_electrons.compute_fs(
-        tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
+        MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
     )
 
     #print('photons:', f_phot[2], f_phot[3]+f_phot[4], f_phot[1], 0, f_phot[0])

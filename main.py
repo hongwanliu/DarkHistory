@@ -26,6 +26,7 @@ from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf
 from darkhistory.electrons import positronium as pos
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
+from darkhistory.low_energy.lowE_electrons import make_interpolator
 
 import os
 cwd = os.getcwd()
@@ -64,11 +65,11 @@ def load_trans_funcs(direc):
     eleceng = lowengelec_tflist_arr[0].eng
     rs_list = highengphot_tflist_arr[0].rs
 
-    #Split photeng into high and low energy. 
+    #Split photeng into high and low energy.
     photeng_high = photeng[photeng > 60]
     photeng_low  = photeng[photeng <= 60]
 
-    # Split eleceng into high and low energy. 
+    # Split eleceng into high and low energy.
     eleceng_high = eleceng[eleceng > 3000]
     eleceng_low  = eleceng[eleceng <= 3000]
 
@@ -76,7 +77,7 @@ def load_trans_funcs(direc):
     print('Padding tflists with zeros...')
     for highengphot_tflist in highengphot_tflist_arr:
         for tf in highengphot_tflist:
-            # Pad with zeros so that it becomes photeng x photeng. 
+            # Pad with zeros so that it becomes photeng x photeng.
             tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size, 0), (0, 0)), 'constant')
             tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
             tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
@@ -94,7 +95,7 @@ def load_trans_funcs(direc):
     # lowengphot_tflist.in_eng set to photeng_high
     for lowengphot_tflist in lowengphot_tflist_arr:
         for tf in lowengphot_tflist:
-            # Pad with zeros so that it becomes photeng x photeng. 
+            # Pad with zeros so that it becomes photeng x photeng.
             tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size,0), (0,0)), 'constant')
             # Photons in the low energy bins should be immediately deposited.
             tf._grid_vals[0:photeng_low.size, 0:photeng_low.size] = np.identity(photeng_low.size)
@@ -111,10 +112,10 @@ def load_trans_funcs(direc):
         )
     print("low energy photons...")
 
-    # lowengelec_tflist.in_eng set to photeng_high 
+    # lowengelec_tflist.in_eng set to photeng_high
     for lowengelec_tflist in lowengelec_tflist_arr:
         for tf in lowengelec_tflist:
-            # Pad with zeros so that it becomes photeng x eleceng. 
+            # Pad with zeros so that it becomes photeng x eleceng.
             tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size,0), (0,0)), 'constant')
             tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
             tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
@@ -128,7 +129,7 @@ def load_trans_funcs(direc):
             np.stack([tf.grid_vals for tf in lowengelec_tflist._tflist])
         )
     print("low energy electrons...\n")
-    
+
     tmp = np.zeros((len(xes),len(rs_list),len(photeng), 4))
     for i, highdep in enumerate(highengdep_arr):
         tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
@@ -146,8 +147,8 @@ def load_trans_funcs(direc):
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
     lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
     lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng)
-    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng)
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
+    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
@@ -290,7 +291,7 @@ def evolve(
     if in_spec_elec.rs != in_spec_phot.rs:
         raise TypeError('Input spectra must have the same rs.')
 
-    # redshift/timestep related quantities. 
+    # redshift/timestep related quantities.
     dlnz = highengphot_tf_interp.dlnz
     prev_rs = None
     rs = in_spec_phot.rs
@@ -320,20 +321,20 @@ def evolve(
         if positronium_phot_spec.spec_type != 'N':
             positronium_phot_spec.switch_spec_type()
 
-        # The initial input dN/dE per annihilation to per baryon per dlnz, 
-        # based on the specified rate. 
+        # The initial input dN/dE per annihilation to per baryon per dlnz,
+        # based on the specified rate.
         # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
         init_inj_spec = (in_spec_phot + ics_phot_spec + positronium_phot_spec)*norm_fac(rs)
     else:
         init_inj_spec = in_spec_phot * norm_fac(rs)
 
-    # Initialize the Spectra object that will contain all the 
+    # Initialize the Spectra object that will contain all the
     # output spectra during the evolution.
     out_highengphot_specs = Spectra([init_inj_spec], spec_type=init_inj_spec.spec_type)
-    out_lowengphot_specs  = Spectra([], spec_type=init_inj_spec.spec_type)
-    out_lowengelec_specs  = Spectra([], spec_type=init_inj_spec.spec_type)
+    out_lowengphot_specs  = Spectra([in_spec_phot*0], spec_type=in_spec_phot.spec_type)
+    out_lowengelec_specs  = Spectra([in_spec_elec*0], spec_type=init_inj_spec.spec_type)
 
-    f_arr = np.array([])
+    f_arr = np.array([[0,0,0,0,0]])
 
     # Load the standard TLA solution and set xe/Tm initialize conditions if necessary.
     if std_soln or xe_init == None or Tm_init == None:
@@ -350,6 +351,10 @@ def evolve(
     #print('starting...\n')
 
     rate_func_eng_unclustered = rate_func_eng
+    cmbloss_grid = np.array([0])
+    highengdep_grid = np.array([[0,0,0,0]])
+
+    MEDEA_interp = make_interpolator()
 
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
@@ -362,34 +367,22 @@ def evolve(
                 def rate_func_eng_unclustered(rs):
                     return rate_func_eng(rs)/struct_boost(rs)
 
-        # If prev_rs exists, calculate xe and T_m. 
+        # If prev_rs exists, calculate xe and T_m.
         if prev_rs is not None:
             # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
 
 
             if std_soln:
-                cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
-                highengdep = np.dot(
-                        np.swapaxes(highengdep_arr, 0, 1), 
-                        out_highengphot_specs[-2].N
-                        )
-
                 f_raw = compute_fs(
-                    next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt, 
-                    highengdep, cmbloss
+                    MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
+                    np.array([1-xe_std(rs), 0, 0]), rate_func_eng_unclustered(rs), dt,
+                    highengdep_grid[-1], cmbloss_grid[-1]
                 )
             else:
-                cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-2].N)
-                highengdep = np.dot(
-                        np.swapaxes(highengdep_arr, 0, 1), 
-                        out_highengphot_specs[-2].N
-                        )
-
                 f_raw = compute_fs(
-                    next_lowengelec_spec, next_lowengphot_spec,
+                    MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
                     np.array([1-xe_arr[-1], 0, 0]), rate_func_eng_unclustered(rs), dt,
-                    highengdep, cmbloss
+                    highengdep_grid[-1], cmbloss_grid[-1]
                 )
 
             f_arr = np.append(f_arr, f_raw)
@@ -438,6 +431,12 @@ def evolve(
             cmbloss_arr = np.matmul(prop_tf, cmbloss_arr)/coarsen_factor
             highengdep_arr = np.matmul(prop_tf, highengdep_arr)/coarsen_factor
 
+        cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-1].N)
+        highengdep = np.dot(
+            np.swapaxes(highengdep_arr, 0, 1),
+            out_highengphot_specs[-1].N
+        )
+
         next_highengphot_spec = highengphot_tf.sum_specs(out_highengphot_specs[-1])
         next_lowengphot_spec  = lowengphot_tf.sum_specs(out_highengphot_specs[-1])
         if elec_processes:
@@ -468,12 +467,16 @@ def evolve(
         else:
             next_inj_spec = in_spec_phot * norm_fac(rs)
 
-        # This keeps the redshift. 
+        # This keeps the redshift.
         next_highengphot_spec.N += next_inj_spec.N
 
         append_highengphot_spec(next_highengphot_spec)
         append_lowengphot_spec(next_lowengphot_spec)
         append_lowengelec_spec(next_lowengelec_spec)
+        cmbloss_grid = np.append(cmbloss_grid, cmbloss)
+        highengdep_grid = np.concatenate(
+            (highengdep_grid, np.array([highengdep]))
+        )
 
         if verbose:
             print("completed rs: ", prev_rs)
