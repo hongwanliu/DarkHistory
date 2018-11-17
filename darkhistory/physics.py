@@ -611,6 +611,12 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
         in_eng, eng + ion_pot, dNdE_1_grid_vals, eng
     )
 
+
+    # import darkhistory.utilities as utils
+    # utils.compare_arr([
+    #     eng, np.squeeze(dNdE_1_grid_vals), np.squeeze(dNdE_2_grid_vals)
+    # ])
+
     return np.squeeze(dNdE_1_grid_vals + dNdE_2_grid_vals)
 
 def elec_heating_engloss_rate(eng, xe, rs):
@@ -647,7 +653,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c 
     # Because she factored out beta, and left m_e c in numfac. 
 
-    zeta_e = 7.40e-11*nH*rs**3
+    zeta_e = 7.40e-11*nB*rs**3
     coulomb_log = np.log(4*eng/zeta_e)
 
     # must use the mass of the electron in eV m^2 s^-2. 
@@ -719,7 +725,7 @@ def TCMB(rs):
     float
     """
 
-    return 2.7255 * 8.61733e-5 * rs
+    return 2.7255 * kB * rs
 
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons/cm^3/eV.
