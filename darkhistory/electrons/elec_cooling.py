@@ -13,7 +13,7 @@ from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
 def get_elec_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
-    eleceng, photeng, rs, xe, xHe=0
+    eleceng, photeng, rs, xe, xHe=0, verbose=False
 ):
 
     """Returns transfer function for complete electron cooling through ICS and atomic processes.
@@ -36,6 +36,8 @@ def get_elec_cooling_tf_fast(
         Free electron fraction. 
     xHe : float, optional
         Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.
+    verbose : bool
+        If true, prints energy conservation checks.
     
     Returns
     -------
@@ -295,8 +297,6 @@ def get_elec_cooling_tf_fast(
         sec_phot_toteng = np.dot(sec_phot_spec_N, photeng)
         # Deposited ICS energy per unit time, dD/dt.
         # Numerical error (should be zero except for numerics)
-        print(np.sum(phot_ICS_N))
-        print(np.sum(elec_ICS_N))
         deposited_ICS_eng = (
             np.sum(elec_ICS_N)*eng - np.dot(elec_ICS_N, eleceng)
             - (np.dot(phot_ICS_N, photeng) - CMB_upscatter_eng_rate)
@@ -326,7 +326,7 @@ def get_elec_cooling_tf_fast(
         continuum_engloss = CMB_upscatter_eng_rate
         
         if eng + phys.me > 20*phys.me:
-            deposited_ICS_eng += CMB_upscatter_eng_rate
+            deposited_ICS_eng -= CMB_upscatter_eng_rate
             continuum_engloss = 0
 
         # Remove self-scattering.
