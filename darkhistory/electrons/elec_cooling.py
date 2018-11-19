@@ -13,7 +13,8 @@ from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
 def get_elec_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
-    eleceng, photeng, rs, xe, xHe=0, verbose=False
+    eleceng, photeng, rs, xe, xHe=0, check_conservation_eng = False, 
+    verbose=False
 ):
 
     """Returns transfer function for complete electron cooling through ICS and atomic processes.
@@ -36,6 +37,8 @@ def get_elec_cooling_tf_fast(
         Free electron fraction. 
     xHe : float, optional
         Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.
+    check_conservation_eng : bool
+        If true, checks for energy conservation.
     verbose : bool
         If true, prints energy conservation checks.
     
@@ -391,7 +394,6 @@ def get_elec_cooling_tf_fast(
 
         
         check = True
-        verbose = False
         failed_conservation_check = False
         
         if check:

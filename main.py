@@ -550,13 +550,17 @@ def evolve(
                         eleceng, photeng, rs, fast=True
                     )
             else:
+                if std_soln:
+                    xe_elec_cooling = xe_std(rs)
+                else:
+                    xe_elec_cooling = xe_arr[-1]
                 (
                     ics_sec_phot_tf, ics_sec_elec_tf, 
                     deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                     continuum_loss, deposited_ICS_arr
                 ) = get_elec_cooling_tf_fast(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                        eleceng, photeng, rs, xe_arr[-1]
+                        eleceng, photeng, rs, xe_elec_cooling
                     )
 
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
