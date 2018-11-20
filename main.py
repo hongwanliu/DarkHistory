@@ -191,12 +191,12 @@ def load_std(xe_init, Tm_init, rs):
     If xe_init and/or Tm_init aren't initialized, set them to their standard values.
     """
     os.chdir(dir_path)
-    #soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
-    #xe_std  = interp1d(soln[0,:], soln[2,:])
-    #Tm_std = interp1d(soln[0,:], soln[1,:])
-    soln = np.loadtxt(open("darkhistory/history/recfast_standard.txt", "rb"))
-    xe_std = interp1d(soln[:,0], soln[:,2])
-    Tm_std = interp1d(soln[:,0], soln[:,1])
+    soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
+    xe_std  = interp1d(soln[0,:], soln[2,:])
+    Tm_std = interp1d(soln[0,:], soln[1,:])
+    # soln = np.loadtxt(open("darkhistory/history/recfast_standard.txt", "rb"))
+    # xe_std = interp1d(soln[:,0], soln[:,2])
+    # Tm_std = interp1d(soln[:,0], soln[:,1])
     os.chdir(cwd)
     #def xe_std(rs):
     #    return 0.00027458
@@ -275,6 +275,8 @@ def evolve(
         specify which user is accessing the code, so that the standard solution can be downloaded.  Must be changed!!!
     """
 
+    # CODE UP f(z) FOR ARBITRARY INPUT xe
+
     # Electron and Photon abscissae
     eleceng = in_spec_elec.eng
     photeng = in_spec_phot.eng
@@ -311,7 +313,9 @@ def evolve(
     dt = dlnz * coarsen_factor / phys.hubble(rs)
 
     # Function that changes the normalization 
-    # from per annihilation to per baryon.
+    # from per annihilation to per baryon in the step.
+    # rate_func_N converts from per annihilation per volume per time,
+    # other factors do the rest of the conversion.
     def norm_fac(rs):
         return rate_func_N(rs) * (
             dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
@@ -346,8 +350,10 @@ def evolve(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                     eleceng, photeng, rs, xe_arr[-1]
                 )
-            
+
+        # Quantities are still per annihilation.            
         ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+        # NOTE: THIS NEEDS TO BE ADDED TO lowengelec!!
         ics_lowengelec_spec = ics_sec_elec_tf.sum_specs(in_spec_elec)
 
         if not ics_only:
