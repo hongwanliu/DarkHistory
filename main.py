@@ -145,9 +145,9 @@ def load_trans_funcs(direc):
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
-    highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr)
-    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr)
-    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr)
+    highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr, log_interp = False)
+    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False)
+    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False)
     highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
     CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
     print("Done.\n")
