@@ -9,7 +9,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old"):
+def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss, method="old", separate_higheng=False):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -35,12 +35,14 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
         'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
+    separate_higheng : bool, optional
+        If True, returns separate high energy deposition. 
 
     Returns
     -------
-    tuple of floats
+    ndarray or tuple of ndarray
     f_c(z) for z within spec.rs +/- dt/2
-    The order of the channels is {continuum photons, HI excitation, HI ionization, HeI ion, HeII ion}
+    The order of the channels is {H Ionization, He Ionization, H Excitation, Heating and Continuum} 
 
     NOTE
     ----
@@ -80,7 +82,8 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     #print('photons:', f_phot[2], f_phot[3]+f_phot[4], f_phot[1], 0, f_phot[0])
     #print('electrons:', f_elec[2], f_elec[3], f_elec[1], f_elec[4], f_elec[0])
 
-    f_final = np.array([
+    # f_low is {H ion, He ion, Lya Excitation, Heating, Continuum}
+    f_low = np.array([
         f_phot[2]+f_elec[2],
         f_phot[3]+f_phot[4]+f_elec[3],
         f_phot[1]+f_elec[1],
@@ -88,8 +91,12 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         f_phot[0]+f_elec[0]
     ])
 
-    f_final += np.array(
-            [highengdep[0], 0, highengdep[1], highengdep[2], highengdep[3] - cmbloss]
-            ) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
+    f_high = np.array([
+        highengdep[0], 0, highengdep[1], 
+        highengdep[2], highengdep[3] - cmbloss
+    ]) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
 
-    return f_final
+    if separate_higheng:
+        return (f_low, f_high)
+    else:
+        return f_low + f_high
