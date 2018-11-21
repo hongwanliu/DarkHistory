@@ -158,10 +158,22 @@ class Spectra:
         return iter(self.grid_vals)
 
     def __getitem__(self, key):
+        try self._in_eng[key]:
+            in_eng = self._in_eng[key]
+        except:
+            # Set the in_eng to -1, either as an array or number.
+            in_eng = self._rs[key]*0 - 1
+
+        try self._rs[key]:
+            rs = self._rs[key]
+        except:
+            # Set the rs to -1, either as an array or number.
+            rs = self._in_eng[key]*0 - 1
+
         if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
                 self.eng, self._grid_vals[key],
-                in_eng=self._in_eng[key], rs=self._rs[key],
+                in_eng=in_eng, rs=rs,
                 spec_type=self.spec_type
             )
             if self.N_underflow.size > 0 and self.eng_underflow.size > 0:
@@ -170,8 +182,8 @@ class Spectra:
             return out_spec
         elif isinstance(key, slice):
             data_arr          = self._grid_vals[key]
-            in_eng_arr        = self._in_eng[key]
-            rs_arr            = self._rs[key]
+            in_eng_arr        = in_eng
+            rs_arr            = rs
             N_underflow_arr   = self._N_underflow[key]
             eng_underflow_arr = self._eng_underflow[key]
             out_spec_list = [
