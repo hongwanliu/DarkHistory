@@ -155,7 +155,15 @@ class Spectra:
         return self._eng_underflow
 
     def __iter__(self):
-        return iter(self.grid_vals)
+        return iter([
+            Spectrum(
+                self.eng, spec, in_eng=in_eng, rs=rs, 
+                spec_type=self.spec_type
+            ) for spec, in_eng, rs in zip(
+                self.grid_vals, self.in_eng, self.rs
+            )
+        ])
+        # return iter(self.grid_vals)
 
     def __getitem__(self, key):
 
