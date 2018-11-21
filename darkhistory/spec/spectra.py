@@ -67,7 +67,7 @@ class Spectra:
 
             if in_eng is None:
                 self._in_eng = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if in_eng.size != spec_arr.shape[0]:
@@ -75,7 +75,7 @@ class Spectra:
                 self._in_eng = in_eng
             if rs is None:
                 self._rs = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if rs.size != spec_arr.shape[0]:
@@ -158,22 +158,11 @@ class Spectra:
         return iter(self.grid_vals)
 
     def __getitem__(self, key):
-        try self._in_eng[key]:
-            in_eng = self._in_eng[key]
-        except:
-            # Set the in_eng to -1, either as an array or number.
-            in_eng = self._rs[key]*0 - 1
-
-        try self._rs[key]:
-            rs = self._rs[key]
-        except:
-            # Set the rs to -1, either as an array or number.
-            rs = self._in_eng[key]*0 - 1
 
         if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
                 self.eng, self._grid_vals[key],
-                in_eng=in_eng, rs=rs,
+                in_eng=self._in_eng[key], rs=self._rs[key],
                 spec_type=self.spec_type
             )
             if self.N_underflow.size > 0 and self.eng_underflow.size > 0:
