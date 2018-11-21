@@ -212,12 +212,12 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
-    ics_only=False, highengdep_switch = True,
+    ics_only=False, highengdep_switch = True, separate_higheng=False,
     reion_switch=False, reion_rs = None, 
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
     xe_init=None, Tm_init=None,
-    coarsen_factor=1, std_soln=False, user=None, 
+    coarsen_factor=1, std_soln=False, xe_func=None, user=None, 
     verbose=False, use_tqdm=False
 ):
     """
@@ -258,6 +258,8 @@ def evolve(
         If True, turns off atomic cooling for input electrons.
     highengdep_switch: bool, optional
         If False, turns off high energy deposition estimate.
+    separate_higheng : bool, optional
+        If True, reports the high and low f(z) separately.
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
     photoion_rate_func : tuple of functions, optional
@@ -276,6 +278,8 @@ def evolve(
         Coarsening to apply to the transfer function matrix.
     std_soln : bool
         If true, uses the standard TLA solution for f(z).
+    xe_func : function, optional
+        If provided, fixes the ionization history to the output of this function (which takes redshift as its sole argument). Superceded by xe_reion_func past reion_rs. std_soln must be true.
     user : str
         specify which user is accessing the code, so that the standard solution can be downloaded.  Must be changed!!!
     use_tqdm : bool, optional
@@ -304,10 +308,14 @@ def evolve(
         raise TypeError('Input spectra must have the same rs.')
 
     # Load the standard TLA solution and set xe/Tm initialize conditions if necessary.
-    if std_soln or xe_init == None or Tm_init == None:
+    if std_soln or xe_init == None or Tm_init == None: 
         xe_std, Tm_std, xe_init, Tm_init = load_std(
             xe_init, Tm_init, in_spec_phot.rs
         )
+    if std_soln and xe_func is not None:
+        xe_std = xe_func
+        xe_init = xe_std(in_spec_phot.rs)
+
 
     # Initialize the xe and T array that will store the solutions.
     xe_arr  = np.array([xe_init])
@@ -417,7 +425,11 @@ def evolve(
         [in_spec_elec*0], spec_type=init_inj_spec.spec_type
     )
 
-    f_arr = np.array([[0., 0., 0., 0., 0.]])
+    if separate_higheng:
+        f_low = np.zeros((1,5))
+        f_high = np.zeros((1,5))
+    else:
+        f_arr = np.zeros((1,5))
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
@@ -426,8 +438,8 @@ def evolve(
     #print('starting...\n')
 
     rate_func_eng_unclustered = rate_func_eng
-    cmbloss_grid = np.array([0.])
-    highengdep_grid = np.array([[0., 0., 0., 0.]])
+    cmbloss_grid = np.zeros(1)
+    highengdep_grid = np.zeros((1,4))
     if elec_processes:
         # Add energy deposited in atomic processes. Rescale to
         # energy per baryon per unit time.
@@ -470,21 +482,38 @@ def evolve(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
                     np.array([1-xe_std(rs), 0, 0]), 
                     rate_func_eng_unclustered(rs), dt,
-                    highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1]
+                    highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
+                    separate_higheng=separate_higheng
                 )
             else:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
                     np.array([1-xe_arr[-1], 0, 0]), 
                     rate_func_eng_unclustered(rs), dt,
-                    highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1]
+                    highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
+                    separate_higheng=separate_higheng
                 )
+            if separate_higheng:
+                f_low  = np.append(f_low, [f_raw[0]], axis=0)
+                f_high = np.append(f_high, [f_raw[1]], axis=0)
 
-            f_arr = np.append(f_arr, f_raw)
+                # Compute the f's for the TLA: sum low and high.
+                f_H_ion = f_raw[0][0] + f_raw[1][0]
+                f_exc   = f_raw[0][2] + f_raw[1][2]
+                f_heat  = f_raw[0][3] + f_raw[1][3]
+            else:
+                f_arr = np.append(f_arr, [f_raw], axis=0)
+                # Compute the f's for the TLA.
+                f_H_ion = f_raw[0]
+                f_exc   = f_raw[2]
+                f_heat  = f_raw[3]
+
             init_cond = np.array([Tm_arr[-1], xe_arr[-1], 0, 0])
 
+
+
             new_vals = tla.get_history(
-                init_cond, f_raw[0], f_raw[2], f_raw[3],
+                init_cond, f_H_ion, f_exc, f_heat,
                 rate_func_eng_unclustered, np.array([prev_rs, rs]),
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func, 
@@ -643,13 +672,18 @@ def evolve(
         if verbose:
             print("completed rs: ", prev_rs)
 
-    f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
+    # f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
 
     if use_tqdm:
         pbar.close()
 
+    if separate_higheng:
+        f_to_return = (f_low, f_high)
+    else:
+        f_to_return = f_arr
+
     return (
         xe_arr, Tm_arr,
         out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs,
-        f_arr
+        f_to_return
     )
