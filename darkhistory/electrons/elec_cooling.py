@@ -56,7 +56,7 @@ def get_elec_cooling_tf_fast(
     This version of the code works faster, but dispenses with energy conservation checks and several other safeguards. Use only with default abscissa, or when get_ics_cooling_tf works.
 
     """
-    
+
     if xHe is None:
         xHe = xe*phys.nHe/phys.nH
         

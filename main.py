@@ -212,12 +212,13 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
-    ics_only=False,
+    ics_only=False, highengdep_switch = True,
     reion_switch=False, reion_rs = None, 
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
     xe_init=None, Tm_init=None,
-    coarsen_factor=1, std_soln=False, user=None, verbose=False
+    coarsen_factor=1, std_soln=False, user=None, 
+    verbose=False, use_tqdm=False
 ):
     """
     Main function that computes the temperature and ionization history.
@@ -253,6 +254,10 @@ def evolve(
         ICS relativistic regime scattered photon transfer function.
     engloss_ref_tf : Transferfunction
         ICS energy loss scattered photon transfer function.
+    ics_only : bool, optional
+        If True, turns off atomic cooling for input electrons.
+    highengdep_switch: bool, optional
+        If False, turns off high energy deposition estimate.
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
     photoion_rate_func : tuple of functions, optional
@@ -273,6 +278,8 @@ def evolve(
         If true, uses the standard TLA solution for f(z).
     user : str
         specify which user is accessing the code, so that the standard solution can be downloaded.  Must be changed!!!
+    use_tqdm : bool, optional
+        Uses tqdm if true.
     """
 
     # CODE UP f(z) FOR ARBITRARY INPUT xe
@@ -312,6 +319,11 @@ def evolve(
     rs = in_spec_phot.rs
     dt = dlnz * coarsen_factor / phys.hubble(rs)
 
+    # tqdm related stuff. 
+    if use_tqdm:
+        from tqdm import tqdm_notebook as tqdm
+        pbar = tqdm(total=np.floor((np.log(rs) - np.log(end_rs))/dlnz))
+
     # Function that changes the normalization 
     # from per annihilation to per baryon in the step.
     # rate_func_N converts from per annihilation per volume per time,
@@ -348,7 +360,7 @@ def evolve(
                 continuum_loss, deposited_ICS_arr
             ) = get_elec_cooling_tf_fast(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                    eleceng, photeng, rs, xe_arr[-1]
+                    eleceng, photeng, rs, xe_arr[-1], xHe=0
                 )
 
         # Quantities are still per annihilation.            
@@ -432,6 +444,9 @@ def evolve(
     # Loop while we are still at a redshift above end_rs.
     while rs > end_rs:
 
+        if use_tqdm:
+            pbar.update(1)
+
         # dE/dVdt_inj without structure formation 
         # should be passed into compute_fs
         if struct_boost is not None:
@@ -445,20 +460,24 @@ def evolve(
         if prev_rs is not None:
             # f_H_ion, f_He_ion, f_exc, f_heat, f_continuum
 
+            if not highengdep_switch:
+                highengdep_fac = 0
+            else:
+                highengdep_fac = 1
 
             if std_soln:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
                     np.array([1-xe_std(rs), 0, 0]), 
                     rate_func_eng_unclustered(rs), dt,
-                    highengdep_grid[-1], cmbloss_grid[-1]
+                    highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1]
                 )
             else:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
                     np.array([1-xe_arr[-1], 0, 0]), 
                     rate_func_eng_unclustered(rs), dt,
-                    highengdep_grid[-1], cmbloss_grid[-1]
+                    highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1]
                 )
 
             f_arr = np.append(f_arr, f_raw)
@@ -566,7 +585,7 @@ def evolve(
                     continuum_loss, deposited_ICS_arr
                 ) = get_elec_cooling_tf_fast(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                        eleceng, photeng, rs, xe_elec_cooling
+                        eleceng, photeng, rs, xe_elec_cooling, xHe=0
                     )
 
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
@@ -625,6 +644,10 @@ def evolve(
             print("completed rs: ", prev_rs)
 
     f_arr = np.reshape(f_arr,(int(len(f_arr)/5), 5))
+
+    if use_tqdm:
+        pbar.close()
+
     return (
         xe_arr, Tm_arr,
         out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs,
