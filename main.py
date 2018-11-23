@@ -685,5 +685,5 @@ def evolve(
     return (
         xe_arr, Tm_arr,
         out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs,
-        f_to_return
+        cmbloss_grid, f_to_return
     )
