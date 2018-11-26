@@ -55,7 +55,10 @@ class IonRSInterp:
         # Now, data is stored in *increasing* rs.
 
         if not logInterp:
-            self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), self._grid_vals)
+            # self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), self._grid_vals)
+            self.interp_func = RegularGridInterpolator(
+                (self.xe, self.rs), self._grid_vals
+            )
         else:
             self._grid_vals[self._grid_vals <= 0] = 1e-200
             self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals))
@@ -75,6 +78,7 @@ class IonRSInterp:
             rs = self.rs[0]
 
         if not self.logInterp:
-            return np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
+            # return np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
+            return np.squeeze(self.interp_func([xe, rs]))
         else:
             return np.exp(np.squeeze(self.interp_func([np.log(xe), np.log(rs)])))

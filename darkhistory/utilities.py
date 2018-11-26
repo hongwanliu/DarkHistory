@@ -353,7 +353,8 @@ class Interpolator2D:
         self.logInterp = logInterp
 
         if not logInterp:
-            self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), self._grid_vals)
+            # self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), self._grid_vals)
+            self.interp_func = RegularGridInterpolator((arr0, arr1), self._grid_vals)
         else:
             self._grid_vals[self._grid_vals <= 0] = 1e-200
             self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), np.log(self._grid_vals))
@@ -389,9 +390,13 @@ class Interpolator2D:
         vals1[vals1 > self.arr1[-1]] = self.arr1[-1]
         vals1[vals1 < self.arr1[0]] = self.arr1[0]
 
-        points = np.transpose([val0 * np.ones_like(vals1), vals1])
+        # points = np.transpose([val0 * np.ones_like(vals1), vals1])
 
         if not self.logInterp:
+            points = np.transpose(
+                [val0 * np.ones_like(vals1), vals1]
+            )
             return self.interp_func(points)
         else:
+            points = np.transpose([val0 * np.ones_like(vals1), vals1])
             return np.exp(self.interp_func(np.log(points)))

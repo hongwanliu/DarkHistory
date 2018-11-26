@@ -331,6 +331,8 @@ class TransferFuncInterp:
         List of TransferFuncList objects to interpolate over.
     xe_arr : ndarray
         List of xe values corresponding to tflist_arr.
+    log_interp : bool, optional
+        If True, performs an interpolation over log of the grid values.
 
     Attributes
     ----------
@@ -349,7 +351,7 @@ class TransferFuncInterp:
 
     """
 
-    def __init__(self, xe_arr, tflist_arr):
+    def __init__(self, xe_arr, tflist_arr, log_interp=True):
 
         if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
             raise TypeError('all TransferFuncList must have the same tftype.')
@@ -375,6 +377,7 @@ class TransferFuncInterp:
         self.dlnz   = tflist_arr[0].dlnz
         self.spec_type = tflist_arr[0].spec_type
         self._grid_vals = grid_vals
+        self._log_interp = log_interp
 
         if self.rs[0] - self.rs[1] > 0:
             # data points have been stored in decreasing rs.
@@ -386,8 +389,15 @@ class TransferFuncInterp:
         # The ordering should be correct...
         # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
 
-        self._grid_vals[self._grid_vals<=0] = 1e-200
-        self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals))
+        if self._log_interp:
+            self._grid_vals[self._grid_vals<=0] = 1e-200
+            self.interp_func = RegularGridInterpolator(
+                (np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals)
+            )
+        else:
+            self.interp_func = RegularGridInterpolator(
+                (self.xe, self.rs), self._grid_vals
+            )
 
     def get_tf(self, rs, xe):
 
@@ -405,7 +415,15 @@ class TransferFuncInterp:
         if xe < self.xe[0]:
             xe = self.xe[0]
 
-        out_grid_vals = np.exp(np.squeeze(self.interp_func([np.log(xe), np.log(rs)])))
+        if self._log_interp:
+            out_grid_vals = np.exp(
+                np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
+            )
+        else:
+            out_grid_vals = np.squeeze(
+                self.interp_func([xe, rs])
+            )
+            
 
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,

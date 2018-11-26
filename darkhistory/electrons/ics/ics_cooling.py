@@ -253,7 +253,7 @@ def get_ics_cooling_tf(
         continuum_engloss = CMB_upscatter_eng_rate
 
         if eng + phys.me > 20*phys.me:
-            deposited_eng += CMB_upscatter_eng_rate
+            deposited_eng -= CMB_upscatter_eng_rate
             continuum_engloss = 0
 
         # Normalize to one secondary electron.
@@ -351,7 +351,7 @@ def get_ics_cooling_tf(
         # Force conservation of energy.
         # deposited_vec[i] += conservation_check
 
-    return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec)
+    return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec, deposited_vec)
 
 
 def get_ics_cooling_tf_fast(
@@ -671,5 +671,5 @@ def get_ics_cooling_tf_fast(
                 raise RuntimeError('Conservation of energy failed.')
 
 
-    return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec)
+    return (sec_phot_tf, sec_lowengelec_tf, cont_loss_vec, deposited_vec)
 

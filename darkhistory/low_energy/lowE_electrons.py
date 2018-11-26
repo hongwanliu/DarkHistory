@@ -12,7 +12,7 @@ abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 #dir_path = os.path.dirname(os.path.realpath(__file__))
 
-def make_interpolator():
+def make_interpolator(interp_type='2D'):
     """Creates cubic splines that interpolate the Medea Data.  Stores them in globally defined variables so that these functions are only computed once
 
     Assumes that the data files are in the same directory as this script.
@@ -20,8 +20,14 @@ def make_interpolator():
     Parameters
     ----------
 
+    interp_type : {'1D', '2D'}, optional
+        Returns the type of interpolation over the MEDEA data. 
+
     Returns
     -------
+
+    Interpolator2D or function
+        The interpolating function (takes x_e and electron energy)
     """
 
     #engs = np.array([10.2, 13.6, 14, 30, 60, 100, 300, 3000])
@@ -44,14 +50,51 @@ def make_interpolator():
             grid_vals[:,i,:] = np.transpose(np.array([
                 [
                     #set 0 to 10^-15 to avoid -\infty
-                    max(float(line.split('\t')[k]),1.0e-200)
+                    # HL: changed to 1e-4 for consistency with Tracy
+                    max(float(line.split('\t')[k]),1e-4)
                     for line in lines_list[2:]
                 ] for k in [1,2,3,4,5]
             ]))
 
     os.chdir(cwd)
 
-    MEDEA_interp = utils.Interpolator2D(xes, 'xes', engs, 'engs', grid_vals, logInterp=True)
+    if interp_type == '2D':
+
+        MEDEA_interp = utils.Interpolator2D(
+            xes, 'xes', engs, 'engs', grid_vals, logInterp=True
+        )
+
+    elif interp_type == '1D':
+
+        from scipy.interpolate import interp1d
+
+        class Fake_Interpolator2D:
+
+            def __init__(
+                self, interp_log_xe_func
+            ):
+
+                self.interp_log_xe_func = interp_log_xe_func
+
+            def get_vals(self, xe, eng):
+
+                log_grid_vals = interp_log_xe_func(np.log(xe))
+                interp_log_eng_func = interp1d(
+                    np.log(engs), log_grid_vals, axis=0,
+                    bounds_error=False, 
+                    fill_value=(log_grid_vals[0], log_grid_vals[-1])
+                )
+                return np.exp(interp_log_eng_func(np.log(eng)))
+        
+        interp_log_xe_func = interp1d(
+            np.log(xes), np.log(grid_vals), axis=0
+        )
+
+        MEDEA_interp = Fake_Interpolator2D(interp_log_xe_func)
+
+    else:
+
+        raise TypeError('Invalid interp_type.')
 
     return MEDEA_interp
 

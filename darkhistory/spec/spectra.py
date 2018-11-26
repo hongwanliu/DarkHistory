@@ -67,7 +67,7 @@ class Spectra:
 
             if in_eng is None:
                 self._in_eng = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if in_eng.size != spec_arr.shape[0]:
@@ -75,7 +75,7 @@ class Spectra:
                 self._in_eng = in_eng
             if rs is None:
                 self._rs = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if rs.size != spec_arr.shape[0]:
@@ -155,9 +155,18 @@ class Spectra:
         return self._eng_underflow
 
     def __iter__(self):
-        return iter(self.grid_vals)
+        return iter([
+            Spectrum(
+                self.eng, spec, in_eng=in_eng, rs=rs, 
+                spec_type=self.spec_type
+            ) for spec, in_eng, rs in zip(
+                self.grid_vals, self.in_eng, self.rs
+            )
+        ])
+        # return iter(self.grid_vals)
 
     def __getitem__(self, key):
+
         if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
                 self.eng, self._grid_vals[key],
@@ -170,8 +179,8 @@ class Spectra:
             return out_spec
         elif isinstance(key, slice):
             data_arr          = self._grid_vals[key]
-            in_eng_arr        = self._in_eng[key]
-            rs_arr            = self._rs[key]
+            in_eng_arr        = in_eng
+            rs_arr            = rs
             N_underflow_arr   = self._N_underflow[key]
             eng_underflow_arr = self._eng_underflow[key]
             out_spec_list = [
