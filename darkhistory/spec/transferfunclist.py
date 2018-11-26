@@ -395,8 +395,9 @@ class TransferFuncInterp:
                 (np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals)
             )
         else:
+            print('noninterp')
             self.interp_func = RegularGridInterpolator(
-                (self.xe, self.rs), self._grid_vals
+                (self.xe, np.log(self.rs)), self._grid_vals
             )
 
     def get_tf(self, rs, xe):
@@ -421,7 +422,7 @@ class TransferFuncInterp:
             )
         else:
             out_grid_vals = np.squeeze(
-                self.interp_func([xe, rs])
+                self.interp_func([xe, np.log(rs)])
             )
             
 
