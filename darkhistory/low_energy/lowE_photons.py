@@ -113,20 +113,28 @@ def kappa_DM(photspec, xe):
 #continuum
 def getf_continuum(photspec, norm_fac):
     # All photons below 10.2eV get deposited into the continuum
-    return photspec.toteng(
-        bound_type='eng',
-        bound_arr=np.array([photspec.eng[0],phys.lya_eng])
-    )[0] * norm_fac
+    # return photspec.toteng(
+    #     bound_type='eng',
+    #     bound_arr=np.array([photspec.eng[0],phys.lya_eng])
+    # )[0] * norm_fac
+    return np.dot(
+        photspec.N[photspec.eng < 10.2],
+        photspec.eng[photspec.eng < 10.2]*norm_fac
+    )
 
 #excitation
 def getf_excitation(photspec, norm_fac, dt, xe, n, method):
     if((method == 'old') or (method == 'ion')):
         # All photons between 10.2eV and 13.6eV are deposited into excitation
-        tot_excite_eng = (
-            photspec.toteng(
-                bound_type='eng',
-                bound_arr=np.array([phys.lya_eng,phys.rydberg])
-            )[0]
+        # tot_excite_eng = (
+        #     photspec.toteng(
+        #         bound_type='eng',
+        #         bound_arr=np.array([phys.lya_eng,phys.rydberg])
+        #     )[0]
+        # )
+        tot_excite_eng = np.dot(
+            photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
+            photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
         )
         f_excite_HI = tot_excite_eng * norm_fac
     else:
@@ -151,9 +159,12 @@ def getf_ion(photspec, norm_fac, n, method):
 
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
-        tot_ion_eng = phys.rydberg * photspec.totN(
-            bound_type='eng',
-            bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
+        # tot_ion_eng = phys.rydberg * photspec.totN(
+        #     bound_type='eng',
+        #     bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
+        # )
+        tot_ion_eng = phys.rydberg*np.sum(
+            photspec.N[photspec.eng > 13.6]
         )
         f_HI = tot_ion_eng * norm_fac
         f_HeI = 0
@@ -199,12 +210,12 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old'):
         number of (HI, HeI, HeII) divided by nH at redshift photspec.rs
     dE_dVdt_inj : float
         energy injection rate DM, dE/dVdt |_inj
+    dt : float
+        time in seconds over which these photons were deposited.
     method : {'old','ion','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
         'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
         'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
-    dt : float
-        time in seconds over which these photons were deposited.
 
     Returns
     -------

@@ -3,15 +3,17 @@
 """
 
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
+
 
 def arrays_equal(ndarray_list):
     """Check if the arrays contained in `ndarray_list` are equal.
-        
+
     Parameters
     ----------
     ndarray_list : sequence of ndarrays
         List of arrays to compare.
-    
+
     Returns
     -------
         bool
@@ -22,19 +24,19 @@ def arrays_equal(ndarray_list):
     same = True
     ind = 0
     while same and ind < len(ndarray_list) - 1:
-        same = same & np.array_equal(ndarray_list[ind], 
+        same = same & np.array_equal(ndarray_list[ind],
             ndarray_list[ind+1])
         ind += 1
     return same
 
 def is_log_spaced(arr):
     """Checks if `arr` is a log-spaced array.
-        
+
     Parameters
     ----------
     arr : ndarray
         Array for checking.
-    
+
     Returns
     -------
         bool
@@ -57,19 +59,19 @@ def compare_arr(ndarray_list):
     return 0
 
 def log_1_plus_x(x):
-    """ Computes log(1+x) with greater floating point accuracy. 
+    """ Computes log(1+x) with greater floating point accuracy.
 
     Unlike scipy.special.log1p, this can take float128. However the performance is certainly slower. See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.
 
     Parameters
     ----------
     x : ndarray
-        The input value. 
+        The input value.
 
     Returns
     -------
     ndarray
-        log(1+x). 
+        log(1+x).
     """
     ind_not_zero = ((1+x) - 1 != 0)
     expr = np.zeros_like(x)
@@ -82,7 +84,7 @@ def log_1_plus_x(x):
 
     if np.any(~ind_not_zero):
         expr[~ind_not_zero] = (
-            x[~ind_not_zero] - x[~ind_not_zero]**2/2 
+            x[~ind_not_zero] - x[~ind_not_zero]**2/2
             + x[~ind_not_zero]**3/3
             - x[~ind_not_zero]**4/4 + x[~ind_not_zero]**5/5
             - x[~ind_not_zero]**6/6 + x[~ind_not_zero]**7/7
@@ -92,14 +94,14 @@ def log_1_plus_x(x):
     return expr
 
 def bernoulli(k):
-    """ Returns the kth Bernoulli number. 
+    """ Returns the kth Bernoulli number.
 
-    This function is written as a look-up table for the first few Bernoulli numbers for speed. 
+    This function is written as a look-up table for the first few Bernoulli numbers for speed.
 
     Parameters
     ----------
     k : int
-        The Bernoulli number to return. 
+        The Bernoulli number to return.
 
     Returns
     -------
@@ -110,8 +112,8 @@ def bernoulli(k):
     import scipy.special as sp
 
     B_n = np.array([1, -1/2, 1/6, 0, -1/30,
-        0, 1/42, 0, -1/30, 0, 5/66, 
-        0, -691/2730, 0, 7/6, 0, -3617/510, 
+        0, 1/42, 0, -1/30, 0, 5/66,
+        0, -691/2730, 0, 7/6, 0, -3617/510,
         0, 43867/798, 0, -174611/330, 0, 854513/138
     ])
 
@@ -121,19 +123,19 @@ def bernoulli(k):
         return sp.bernoulli(k)[-1]
 
 def log_series_diff(b, a):
-    """ Returns the Taylor series for log(1+b) - log(1+a). 
+    """ Returns the Taylor series for log(1+b) - log(1+a).
 
     Parameters
     ----------
     a : ndarray
-        Input for log(1+a). 
+        Input for log(1+a).
     b : ndarray
-        Input for log(1+b). 
+        Input for log(1+b).
 
     Returns
     -------
     ndarray
-        The Taylor series log(1+b) - log(1+a), up to the 11th order term. 
+        The Taylor series log(1+b) - log(1+a), up to the 11th order term.
 
     """
     return(
@@ -144,19 +146,19 @@ def log_series_diff(b, a):
     )
 
 def spence_series_diff(b, a):
-    """ Returns the Taylor series for Li2(b) - Li2(a). 
+    """ Returns the Taylor series for Li2(b) - Li2(a).
 
     Parameters
     ----------
     a : ndarray
-        Input for Li2(a). 
+        Input for Li2(a).
     b : ndarray
-        Input for Li2(b). 
+        Input for Li2(b).
 
     Returns
     -------
     ndarray
-        The Taylor series Li2(b) - Li2(a), up to the 11th order term. 
+        The Taylor series Li2(b) - Li2(a), up to the 11th order term.
 
     """
 
@@ -169,16 +171,16 @@ def spence_series_diff(b, a):
     )
 
 def exp_expn(n, x):
-    """ Returns exp(x)*E_n(n, x). 
+    """ Returns exp(x)*E_n(n, x).
 
-    Circumvents overflow error in np.exp by expanding the exponential integral in a series. 
-    
+    Circumvents overflow error in np.exp by expanding the exponential integral in a series.
+
     Parameters
     ----------
     n : {1,2}
-        The order of the exponential integral. 
+        The order of the exponential integral.
     x : ndarray
-        The argument of the function. 
+        The argument of the function.
 
     Returns
     -------
@@ -198,13 +200,13 @@ def exp_expn(n, x):
         expr[low] = np.exp(x[low])*sp.expn(n, x_flt64[low])
     if np.any(high):
         if n == 1:
-            # The relative error is roughly 1e-15 for 700, smaller for larger arguments. 
+            # The relative error is roughly 1e-15 for 700, smaller for larger arguments.
             expr[high] = (
                 1/x[high] - 1/x[high]**2 + 2/x[high]**3 - 6/x[high]**4
                 + 24/x[high]**5
             )
         elif n == 2:
-            # The relative error is roughly 6e-17 for 700, smaller for larger arguments. 
+            # The relative error is roughly 6e-17 for 700, smaller for larger arguments.
             expr[high] = (
                 1/x[high] - 2/x[high]**2 + 6/x[high]**3 - 24/x[high]**4
                 + 120/x[high]**5 - 720/x[high]**6
@@ -215,21 +217,21 @@ def exp_expn(n, x):
     return expr
 
 def hyp2f1_func_real(n, x):
-    """ Returns the real part of 2F1(1, n+1, n+2, x). 
+    """ Returns the real part of 2F1(1, n+1, n+2, x).
 
-    Avoids the need for complex numbers in scipy.special.hyp2f1, which is very slow. 
-    
+    Avoids the need for complex numbers in scipy.special.hyp2f1, which is very slow.
+
     Parameters
     ----------
     n : integer
-        The order of 2F1(1, n+1, n+2, x) to evaluate. 
+        The order of 2F1(1, n+1, n+2, x) to evaluate.
     x : ndarray
-        The main argument of the function. 
+        The main argument of the function.
 
     Returns
     -------
     ndarray
-        The result of 2F1(1, n+1, n+2, x). 
+        The result of 2F1(1, n+1, n+2, x).
 
     """
 
@@ -245,7 +247,7 @@ def hyp2f1_func_real(n, x):
         expr[x_gt_1] -= (
             (n+1)*(1/x_1)**(n+1)
             *(np.log(x_1) + np.log1p(-1/x_1))
-            # just log(x-1) but works for x ~ 2. 
+            # just log(x-1) but works for x ~ 2.
         )
 
     if np.any(x_lt_1_large_abs):
@@ -270,9 +272,9 @@ def get_grid(a, b):
     Parameters
     ----------
     a : ndarray
-        First array. 
+        First array.
     b : ndarray
-        Second array. 
+        Second array.
 
     Returns
     -------
@@ -286,26 +288,115 @@ def get_grid(a, b):
 
     grid_list = np.meshgrid(a,b)
 
-    # order = 'F' required so that the points are sorted by values 
-    # in a (index 1) first, followed by values in b (index 2). 
+    # order = 'F' required so that the points are sorted by values
+    # in a (index 1) first, followed by values in b (index 2).
     return np.transpose(np.array([m.flatten(order='F') for m in grid_list]))
 
 def check_err(val, err, epsrel):
     """ Checks the relative error given a tolerance.
-    
+
     Parameters
     ----------
     val : float or ndarray
-        The computed value. 
+        The computed value.
     err : float or ndarray
-        The computed error. 
+        The computed error.
     epsrel : float
-        The target tolerance. 
+        The target tolerance.
 
     """
     if np.max(np.abs(err/val)) > epsrel:
         print('Series relative error is: ', err/val)
         print('Relative error required is: ', epsrel)
         raise RuntimeError('Relative error in series too large.')
-        
+
     return None
+
+class Interpolator2D:
+
+    """Interpolation function over list of objects
+
+    Parameters
+    ----------
+    val_arr : list of objects
+        List of objects, ndim = (arr0.size, arr1.size, ...)
+    arr0 : ndarray
+        list of values along 0th dimension
+    arr1 : ndarray
+        list of values along 1st dimension
+
+    Attributes
+    ----------
+    interp_func : function
+        A 2D interpolation function over xe and rs.
+    _grid_vals : ndarray
+        a nD array of input data
+    """
+
+    def __init__(self, arr0, name0, arr1, name1, val_arr, logInterp=False):
+
+        if str(type(val_arr)) != "<class 'numpy.ndarray'>":
+            raise TypeError('val_arr must be an ndarray')
+
+        if len(arr0) != np.size(val_arr, 0):
+            raise TypeError('0th dimension of val_arr must be the arr0')
+
+        if len(arr1) != np.size(val_arr, 1):
+            raise TypeError('1st dimension of val_arr (val_arr[0,:,0,0,...]) must be the arr1 dimension')
+
+        self.arr0 = arr0
+        setattr(self, name0, self.arr0)
+        self.arr1 = arr1
+        setattr(self, name1, self.arr1)
+        self._grid_vals = val_arr
+
+        self.logInterp = logInterp
+
+        if not logInterp:
+            # self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), self._grid_vals)
+            self.interp_func = RegularGridInterpolator((arr0, arr1), self._grid_vals)
+        else:
+            self._grid_vals[self._grid_vals <= 0] = 1e-200
+            self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), np.log(self._grid_vals))
+
+
+    def get_val(self, val0, val1):
+
+        # xe must lie between these values.
+        if val0 > self.arr0[-1]:
+            val0 = self.arr0[-1]
+        if val0 < self.arr0[0]:
+            val0 = self.arr0[0]
+
+        if val1 > self.arr1[-1]:
+            val1 = self.arr1[-1]
+        if val1 < self.arr1[0]:
+            val1 = self.arr1[0]
+
+        if not self.logInterp:
+            return np.squeeze(self.interp_func([val0, val1]))
+        else:
+            return np.exp(np.squeeze(self.interp_func([np.log(val0), np.log(val1)])))
+
+    def get_vals(self, val0, vals1):
+
+        # xe must lie between these values.
+        if val0 > self.arr0[-1]:
+            val0 = self.arr0[-1]
+        if val0 < self.arr0[0]:
+            val0 = self.arr0[0]
+
+        vals1 = np.array(vals1)
+        vals1[vals1 > self.arr1[-1]] = self.arr1[-1]
+        vals1[vals1 < self.arr1[0]] = self.arr1[0]
+
+        # points = np.transpose([val0 * np.ones_like(vals1), vals1])
+
+        if not self.logInterp:
+            points = np.transpose(
+                [val0 * np.ones_like(vals1), vals1]
+            )
+            return self.interp_func(points)
+        else:
+            points = np.transpose([val0 * np.ones_like(vals1), vals1])
+            return np.exp(self.interp_func(np.log(points)))

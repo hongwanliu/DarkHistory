@@ -10,7 +10,7 @@ from darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
 
 class TransferFuncList:
-    """List of transfer functions. 
+    """List of transfer functions.
 
     Parameters
     ----------
@@ -23,7 +23,7 @@ class TransferFuncList:
     tftype : {'rs', 'in_eng'}
         Type of transfer functions in the list: 'rs' for TransFuncAtRedshift, 'in_eng' for TransFuncAtEnergy
     rs : ndarray
-        Redshift abscissa of the transfer functions. 
+        Redshift abscissa of the transfer functions.
     in_eng : ndarray
         Injection energy abscissa of the transfer functions.
     spec_type : {'N', 'dNdE'}
@@ -37,7 +37,7 @@ class TransferFuncList:
         self._tflist = tflist
         self.spec_type = tflist[0].spec_type
 
-        if (not np.all([isinstance(tfunc, tf.TransFuncAtRedshift) 
+        if (not np.all([isinstance(tfunc, tf.TransFuncAtRedshift)
                 for tfunc in tflist]) and
             not np.all([isinstance(tfunc, tf.TransFuncAtEnergy)
                 for tfunc in tflist])
@@ -119,7 +119,7 @@ class TransferFuncList:
         Parameters
         ----------
         axis : {'rs', 'in_eng', '2D_in_eng'}
-            The axis along which to perform the interpolation. If the axis is 'rs', then the list will be transposed into tftype 'in_eng' and vice-versa. 
+            The axis along which to perform the interpolation. If the axis is 'rs', then the list will be transposed into tftype 'in_eng' and vice-versa.
         new_val : ndarray or tuple of ndarrays (in_eng, eng)
             The new redshift or injection energy abscissa.
         bounds_error : bool, optional
@@ -128,7 +128,7 @@ class TransferFuncList:
             See scipy.interpolate.interp1d
         """
 
-        # i enables the use of tqdm. 
+        # i enables the use of tqdm.
 
         transposed = False
 
@@ -167,11 +167,11 @@ class TransferFuncList:
 
             if self.tftype != 'rs':
                 self.transpose()
-                transposed = True 
-            
+                transposed = True
+
             new_tflist = [
                 tf.at_val(
-                    new_val[0], new_val[1], 
+                    new_val[0], new_val[1],
                     bounds_error=bounds_error, fill_value=fill_value
                 ) for i,tf in zip(
                         np.arange(len(self.tflist)), self.tflist
@@ -182,22 +182,22 @@ class TransferFuncList:
             self._in_eng = new_val[0]
             self._eng    = new_val[1]
 
-        else: 
+        else:
             raise TypeError('TransferFuncList.tftype is neither rs nor eng')
 
         if transposed:
             self.transpose()
 
     def transpose(self):
-        """ Transposes the list of transfer functions. 
+        """ Transposes the list of transfer functions.
 
-        This takes a TransferFuncList made of TransFuncAtEnergy into a list a TransferFuncList made of TransFuncAtRedshift and vice-versa. 
+        This takes a TransferFuncList made of TransFuncAtEnergy into a list a TransferFuncList made of TransFuncAtRedshift and vice-versa.
         """
 
         if self.tftype == 'in_eng':
 
             new_tflist = [tf.TransFuncAtRedshift(
-                    [tfunc[i] for tfunc in self.tflist], 
+                    [tfunc[i] for tfunc in self.tflist],
                     self.dlnz
                 ) for i,rs in enumerate(self.rs)
             ]
@@ -209,7 +209,7 @@ class TransferFuncList:
         elif self.tftype == 'rs':
 
             new_tflist = [tf.TransFuncAtEnergy(
-                    [tfunc[i] for tfunc in self.tflist], 
+                    [tfunc[i] for tfunc in self.tflist],
                     self.dlnz
                 ) for i,in_eng in enumerate(self.in_eng)
             ]
@@ -226,18 +226,18 @@ class TransferFuncList:
         self, dlnz_factor, delete_tfs=True, coarsen_type='prop',
         prop_transfunclist=None
     ):
-        """Coarsens the new transfer function with larger dlnz. 
+        """Coarsens the new transfer function with larger dlnz.
 
-        This is obtained by multiplying the transfer function by itself several times, and removing intermediate transfer functions. 
+        This is obtained by multiplying the transfer function by itself several times, and removing intermediate transfer functions.
 
         Parameters
         ----------
         dlnz_factor : int
-            The factor to increase dlnz by. 
+            The factor to increase dlnz by.
         delete_tfs : bool
-            If true, only retains transfer functions in tflist that have an index that is a multiple of dlnz_factor. 
+            If true, only retains transfer functions in tflist that have an index that is a multiple of dlnz_factor.
         coarsen_type : {'prop', 'dep'}
-            The type of coarsening. Use 'prop' to coarsen by taking powers of the transfer function. Use 'dep' for deposition transfer functions, where coarsening is done by taking self * sum_i prop_tf**i. 
+            The type of coarsening. Use 'prop' to coarsen by taking powers of the transfer function. Use 'dep' for deposition transfer functions, where coarsening is done by taking self * sum_i prop_tf**i.
         prop_tflist : TransferFuncList
             The transfer function for propagation, if the transfer function represents deposition.
 
@@ -254,7 +254,7 @@ class TransferFuncList:
                     0, len(self.tflist), dlnz_factor
                 )
             ]
-        else: 
+        else:
             # list() needed to create a new copy, not just point.
             new_tflist = list(self.tflist)
 
@@ -280,7 +280,7 @@ class TransferFuncList:
                 new_spec_arr = [
                     Spectrum(
                         tfunc.eng, new_grid_val[i],
-                        spec_type = tfunc.spec_type, 
+                        spec_type = tfunc.spec_type,
                         rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                     )
                     for i in np.arange(in_eng_arr.size)
@@ -290,19 +290,19 @@ class TransferFuncList:
                     tf.TransFuncAtRedshift(
                         new_spec_arr, self.dlnz*dlnz_factor
                     )
-                )     
+                )
 
         elif coarsen_type == 'prop':
 
             for (i,tfunc) in enumerate(new_tflist):
-                
+
                 in_eng_arr = tfunc.in_eng
                 new_grid_val = matrix_power(
                     tfunc._grid_vals,dlnz_factor
                 )
                 new_spec_arr = [
                     Spectrum(
-                        tfunc.eng, new_grid_val[i], 
+                        tfunc.eng, new_grid_val[i],
                         spec_type = tfunc.spec_type,
                         rs = tfunc.rs[0], in_eng = in_eng_arr[i]
                     )
@@ -330,26 +330,28 @@ class TransferFuncInterp:
     tflist_arr : list of TransferFuncList
         List of TransferFuncList objects to interpolate over.
     xe_arr : ndarray
-        List of xe values corresponding to tflist_arr. 
+        List of xe values corresponding to tflist_arr.
+    log_interp : bool, optional
+        If True, performs an interpolation over log of the grid values.
 
     Attributes
     ----------
     rs : ndarray
-        Redshift abscissa of the transfer functions. 
+        Redshift abscissa of the transfer functions.
     in_eng : ndarray
         Injection energy abscissa of the transfer functions.
     eng : ndarray
-        Energy abscissa of the spectrum. 
+        Energy abscissa of the spectrum.
     dlnz : float
         The d ln(1+z) step for the transfer functions.
     spec_type : {'N', 'dNdE'}
         The type of spectra stored in the transfer functions.
     interp_func : function
-        A 2D interpolation function over xe and rs. 
-    
+        A 2D interpolation function over xe and rs.
+
     """
 
-    def __init__(self, xe_arr, tflist_arr):
+    def __init__(self, xe_arr, tflist_arr, log_interp=True):
 
         if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
             raise TypeError('all TransferFuncList must have the same tftype.')
@@ -358,15 +360,15 @@ class TransferFuncInterp:
         grid_vals = np.array(
             np.stack(
                 [tflist.grid_vals for tflist in tflist_arr]
-            ), 
+            ),
             ndmin = 4
         )
         if tftype == 'eng':
             # grid_vals should have indices corresponding to
-            # (xe, rs, in_eng, eng). 
+            # (xe, rs, in_eng, eng).
             grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
 
-        # grid_vals is (xe, rs, in_eng, eng). 
+        # grid_vals is (xe, rs, in_eng, eng).
 
         self.rs     = tflist_arr[0].rs
         self.xe     = xe_arr
@@ -375,6 +377,7 @@ class TransferFuncInterp:
         self.dlnz   = tflist_arr[0].dlnz
         self.spec_type = tflist_arr[0].spec_type
         self._grid_vals = grid_vals
+        self._log_interp = log_interp
 
         if self.rs[0] - self.rs[1] > 0:
             # data points have been stored in decreasing rs.
@@ -383,10 +386,19 @@ class TransferFuncInterp:
 
         # Now, data is stored in *increasing* rs.
 
-        # The ordering should be correct... 
+        # The ordering should be correct...
         # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
 
-        self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), self._grid_vals)
+        if self._log_interp:
+            self._grid_vals[self._grid_vals<=0] = 1e-200
+            self.interp_func = RegularGridInterpolator(
+                (np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals)
+            )
+        else:
+            print('noninterp')
+            self.interp_func = RegularGridInterpolator(
+                (self.xe, np.log(self.rs)), self._grid_vals
+            )
 
     def get_tf(self, rs, xe):
 
@@ -394,7 +406,7 @@ class TransferFuncInterp:
         # interp_vals_rs = interp1d(self.rs, interp_vals_xe, axis=0)
 
         # return tf.TransFuncAtRedshift(
-        #     interp_vals_rs(rs), eng=self.eng, 
+        #     interp_vals_rs(rs), eng=self.eng,
         #     in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
         # )
 
@@ -404,27 +416,18 @@ class TransferFuncInterp:
         if xe < self.xe[0]:
             xe = self.xe[0]
 
-        out_grid_vals = np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
-        
+        if self._log_interp:
+            out_grid_vals = np.exp(
+                np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
+            )
+        else:
+            out_grid_vals = np.squeeze(
+                self.interp_func([xe, np.log(rs)])
+            )
+            
+
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
             rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
             spec_type = self.spec_type
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -24,28 +24,19 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="DarkHistory  documentation" href="../../index.html"/>
-        <link rel="up" title="spec" href="../darkhistory.spec.html"/>
-        <link rel="next" title="spectrum" href="darkhistory.spec.spectrum.html"/>
-        <link rel="prev" title="spec" href="../darkhistory.spec.html"/> 
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="spectrum" href="darkhistory.spec.spectrum.html" />
+    <link rel="prev" title="spec" href="../darkhistory.spec.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -90,7 +81,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html">main</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.spec.html">spec</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">spectools</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#methods">Methods</a></li>
@@ -116,7 +107,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">DarkHistory</a>
@@ -124,9 +115,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -182,20 +174,35 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">discretize</span></code></a>(eng,&nbsp;func_dNdE,&nbsp;*args)</td>
-<td>Discretizes a continuous function.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_bin_bound" title="darkhistory.spec.spectools.get_bin_bound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_bin_bound" title="darkhistory.spec.spectools.get_bin_bound"><code class="xref py py-obj docutils literal"><span class="pre">get_bin_bound</span></code></a>(eng)</td>
 <td>Returns the bin boundary of an abscissa.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_log_bin_width" title="darkhistory.spec.spectools.get_log_bin_width"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_log_bin_width</span></code></a>(eng)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_log_bin_width" title="darkhistory.spec.spectools.get_log_bin_width"><code class="xref py py-obj docutils literal"><span class="pre">get_log_bin_width</span></code></a>(eng)</td>
 <td>Return the log bin width of the abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng[,&nbsp;out_eng,&nbsp;spec_type])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_bounds_between" title="darkhistory.spec.spectools.get_bounds_between"><code class="xref py py-obj docutils literal"><span class="pre">get_bounds_between</span></code></a>(eng,&nbsp;E1[,&nbsp;E2,&nbsp;bound_type])</td>
+<td>Returns the bin boundary of an abscissa between two energies.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_indx" title="darkhistory.spec.spectools.get_indx"><code class="xref py py-obj docutils literal"><span class="pre">get_indx</span></code></a>(eng,&nbsp;E)</td>
+<td>Returns index of bin containing E.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-obj docutils literal"><span class="pre">rebin_N_arr</span></code></a>(N_arr,&nbsp;in_eng[,&nbsp;out_eng,&nbsp;…])</td>
 <td>Rebins an array of particle number with fixed energy.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evolve</span></code></a>(in_spec,&nbsp;tflist[,&nbsp;evolve_type,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.discretize" title="darkhistory.spec.spectools.discretize"><code class="xref py py-obj docutils literal"><span class="pre">discretize</span></code></a>(eng,&nbsp;func_dNdE,&nbsp;*args)</td>
+<td>Discretizes a continuous function.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.scatter" title="darkhistory.spec.spectools.scatter"><code class="xref py py-obj docutils literal"><span class="pre">scatter</span></code></a>(tf,&nbsp;spec[,&nbsp;new_eng,&nbsp;dlnz,&nbsp;frac])</td>
+<td>Produces a secondary spectrum.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.evolve" title="darkhistory.spec.spectools.evolve"><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code></a>(in_spec,&nbsp;tflist[,&nbsp;evolve_type,&nbsp;…])</td>
 <td>Evolves a spectrum using a list of transfer functions.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectools.get_normalized_spec" title="darkhistory.spec.spectools.get_normalized_spec"><code class="xref py py-obj docutils literal"><span class="pre">get_normalized_spec</span></code></a>(spec,&nbsp;dE_dVdt,&nbsp;rs)</td>
+<td>Normalizes the spectrum to per baryon per dlnz, given dE/(dV dt).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectools.engloss_rebin_fast" title="darkhistory.spec.spectools.engloss_rebin_fast"><code class="xref py py-obj docutils literal"><span class="pre">engloss_rebin_fast</span></code></a>(in_eng,&nbsp;eng,&nbsp;grid_vals,&nbsp;…)</td>
+<td>Fast energy loss rebin.</td>
 </tr>
 </tbody>
 </table>
@@ -203,32 +210,6 @@
 <h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="function">
-<dt id="darkhistory.spec.spectools.discretize">
-<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">discretize</code><span class="sig-paren">(</span><em>eng</em>, <em>func_dNdE</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.discretize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Discretizes a continuous function.</p>
-<p>The function is integrated between the bin boundaries specified by <cite>eng</cite> to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin <strong>boundaries</strong>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>eng</strong> (<em>ndarray</em>) – Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers).</li>
-<li><strong>func_dNdE</strong> (<em>function</em>) – A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value.</li>
-<li><strong>*args</strong> (<em>optional</em>) – Additional arguments and keyword arguments to be passed to <cite>func_dNdE</cite>.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The discretized spectrum. rs is set to -1, and must be set manually.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
 <dt id="darkhistory.spec.spectools.get_bin_bound">
 <code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">get_bin_bound</code><span class="sig-paren">(</span><em>eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.get_bin_bound" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the bin boundary of an abscissa.</p>
@@ -264,8 +245,60 @@
 </dd></dl>
 
 <dl class="function">
+<dt id="darkhistory.spec.spectools.get_bounds_between">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">get_bounds_between</code><span class="sig-paren">(</span><em>eng</em>, <em>E1</em>, <em>E2=None</em>, <em>bound_type='inc'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.get_bounds_between" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bin boundary of an abscissa between two energies.</p>
+<p>If set to inc(lusive), E1 and E2 are part of the returned bounds.
+If set to exc(lusive), the bin boundaries between E1 and E2 are returned.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>eng</strong> (<em>ndarray</em>) – Abscissa from which the bin boundary is obtained.</li>
+<li><strong>E1</strong> (<em>float</em>) – Lower bound</li>
+<li><strong>E2</strong> (<em>float</em><em>, </em><em>optional</em>) – Upper bound.  If None, E2 = max(bound of eng)</li>
+<li><strong>bound_type</strong> (<em>{'inc'</em><em>, </em><em>'exc'}</em><em>, </em><em>optional</em>) – if ‘inc’, E1 and E2 are part of the returned bounds. If ‘exc’, they are not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The bin boundaries between E1 and E2.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.get_indx">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">get_indx</code><span class="sig-paren">(</span><em>eng</em>, <em>E</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.get_indx" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns index of bin containing E.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>eng</strong> (<em>ndarray</em>) – Energy abscissa</li>
+<li><strong>E</strong> (<em>float</em>) – You would like to know the bin index containing this energy</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Index of bin that contains E</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="darkhistory.spec.spectools.rebin_N_arr">
-<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng=None</em>, <em>spec_type='dNdE'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng=None</em>, <em>spec_type='dNdE'</em>, <em>log_bin_width=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rebins an array of particle number with fixed energy.</p>
 <p>Returns an array or a <cite>Spectrum</cite> object. The rebinning conserves both total number and total energy.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -277,6 +310,7 @@
 <li><strong>in_eng</strong> (<em>ndarray</em>) – An array of the energy abscissa for each bin. The total energy in each bin <cite>i</cite> should be <cite>N_arr[i]*in_eng[i]</cite>.</li>
 <li><strong>out_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – The new abscissa to bin into. If unspecified, assumed to be in_eng.</li>
 <li><strong>spec_type</strong> (<em>{'N'</em><em>, </em><em>'dNdE'}</em><em>, </em><em>optional</em>) – The spectrum type to be output. Default is ‘dNdE’.</li>
+<li><strong>log_bin_width</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – The bin width of the output abscissa.</li>
 </ul>
 </td>
 </tr>
@@ -286,7 +320,7 @@
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OverflowError</span></code> – The maximum energy in <cite>out_eng</cite> cannot be smaller than any bin in <cite>self.eng</cite>.</p>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">OverflowError</span></code> – The maximum energy in <cite>out_eng</cite> cannot be smaller than any bin in <cite>self.eng</cite>.</p>
 </td>
 </tr>
 </tbody>
@@ -299,7 +333,65 @@
 </div>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-func docutils literal notranslate"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
+<p class="last"><code class="xref py py-func docutils literal"><span class="pre">spectrum.Spectrum.rebin()</span></code></p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.discretize">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">discretize</code><span class="sig-paren">(</span><em>eng</em>, <em>func_dNdE</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.discretize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discretizes a continuous function.</p>
+<p>The function is integrated between the bin boundaries specified by <cite>eng</cite> to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin <strong>boundaries</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>eng</strong> (<em>ndarray</em>) – Both the bin boundaries to integrate between and the new abscissa after discretization (bin centers).</li>
+<li><strong>func_dNdE</strong> (<em>function</em>) – A single variable function that takes in energy as an input, and then returns a dN/dE spectrum value.</li>
+<li><strong>*args</strong> (<em>optional</em>) – Additional arguments and keyword arguments to be passed to <cite>func_dNdE</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The discretized spectrum. rs is set to -1, and must be set manually.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.scatter">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">scatter</code><span class="sig-paren">(</span><em>tf</em>, <em>spec</em>, <em>new_eng=None</em>, <em>dlnz=-1.0</em>, <em>frac=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.scatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produces a secondary spectrum.</p>
+<p>Takes a primary spectrum, and multiplies it with the transfer function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tf</strong> (<a class="reference internal" href="darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a>) – The secondary spectrum scattering rate, given in dN/(dE dt).</li>
+<li><strong>spec</strong> (<a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – The primary spectrum.</li>
+<li><strong>new_eng</strong> (<em>ndarray</em><em>, </em><em>optional</em>) – The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.</li>
+<li><strong>dlnz</strong> (<em>float</em><em>, </em><em>optional</em>) – The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt).</li>
+<li><strong>frac</strong> (<em>float</em><em> or </em><em>ndarray</em><em>, </em><em>optional</em>) – The fraction of the spectrum or each bin of the spectrum which produces the secondary spectrum.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The secondary spectrum, N, dN/dt, dN/dE or dN/(dE dt), with spec_type in agreement with tf.spec_type.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">tf can be of type ‘N’ or ‘dNdE’, but multiplies spec.N to produce a spectrum of type ‘N’ or ‘dNdE’.</p>
 </div>
 </dd></dl>
 
@@ -335,15 +427,64 @@
 </div>
 </dd></dl>
 
+<dl class="function">
+<dt id="darkhistory.spec.spectools.get_normalized_spec">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">get_normalized_spec</code><span class="sig-paren">(</span><em>spec</em>, <em>dE_dVdt</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.get_normalized_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes the spectrum to per baryon per dlnz, given dE/(dV dt).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>spec</strong> (<a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – Input spectrum to be normalized.</li>
+<li><strong>dE_dVdt</strong> (<em>float</em>) – The injection dE/(dV dt) in eV cm^-3 s^-1.</li>
+<li><strong>rs</strong> (<em>float</em>) – The redshift (1+z).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The normalized spectrum (per baryon per dlnz).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.spec.spectools.engloss_rebin_fast">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">engloss_rebin_fast</code><span class="sig-paren">(</span><em>in_eng</em>, <em>eng</em>, <em>grid_vals</em>, <em>final_eng</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.engloss_rebin_fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fast energy loss rebin.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>in_eng</strong> (<em>ndarray</em>) – Injection energies (first dimension of <cite>grid_vals</cite>)</li>
+<li><strong>eng</strong> (<em>ndarray</em>) – Energy abscissa (second dimension of <cite>grid_vals</cite>)</li>
+<li><strong>grid_vals</strong> (<em>2D ndarray</em>) – Number of particles with the given energy in <cite>eng</cite>.</li>
+<li><strong>final_eng</strong> (<em>ndarray</em>) – The final energy abscissa to bin into.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The final rebinned spectra.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="darkhistory.spec.spectra.html#darkhistory.spec.spectra.Spectra" title="darkhistory.spec.spectra.Spectra">Spectra</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div></blockquote>
 </div>
 </div>
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -361,11 +502,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Hongwan Liu.
+        &copy; Copyright 2017, Hongwan Liu
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -380,35 +521,33 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

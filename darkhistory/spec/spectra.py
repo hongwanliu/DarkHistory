@@ -67,7 +67,7 @@ class Spectra:
 
             if in_eng is None:
                 self._in_eng = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if in_eng.size != spec_arr.shape[0]:
@@ -75,7 +75,7 @@ class Spectra:
                 self._in_eng = in_eng
             if rs is None:
                 self._rs = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if rs.size != spec_arr.shape[0]:
@@ -124,6 +124,8 @@ class Spectra:
             self._N_underflow = np.array([])
             self._eng_underflow = np.array([])
 
+        self.n = 0
+
     @property
     def eng(self):
         return self._eng
@@ -153,9 +155,18 @@ class Spectra:
         return self._eng_underflow
 
     def __iter__(self):
-        return iter(self.grid_vals)
+        return iter([
+            Spectrum(
+                self.eng, spec, in_eng=in_eng, rs=rs, 
+                spec_type=self.spec_type
+            ) for spec, in_eng, rs in zip(
+                self.grid_vals, self.in_eng, self.rs
+            )
+        ])
+        # return iter(self.grid_vals)
 
     def __getitem__(self, key):
+
         if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
                 self.eng, self._grid_vals[key],
@@ -168,8 +179,8 @@ class Spectra:
             return out_spec
         elif isinstance(key, slice):
             data_arr          = self._grid_vals[key]
-            in_eng_arr        = self._in_eng[key]
-            rs_arr            = self._rs[key]
+            in_eng_arr        = in_eng
+            rs_arr            = rs
             N_underflow_arr   = self._N_underflow[key]
             eng_underflow_arr = self._eng_underflow[key]
             out_spec_list = [
@@ -184,6 +195,18 @@ class Spectra:
             return out_spec_list
         else:
             raise TypeError("indexing is invalid.")
+
+    #def __iter__(self):
+    #    return self
+
+    #def __next__(self):
+    #    self.n += 1
+    #    try:
+    #        return self[self.n-1]
+    #    except IndexError:
+    #        self.n = 0
+    #        raise StopIteration
+    #next = __next__
 
     def __setitem__(self, key, value):
         if np.issubdtype(type(key), int):
@@ -511,7 +534,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects.
+        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects.
 
         See Also
         --------
@@ -835,6 +858,9 @@ class Spectra:
             new_data = np.dot(weight, self.grid_vals)
             return Spectrum(self.eng, new_data, spec_type=self.spec_type)
         elif isinstance(weight, Spectrum):
+            if not np.array_equal(self.in_eng, weight.eng):
+                raise TypeError('spectra.in_eng must equal weight.eng')
+
             new_data = np.dot(weight._data, self.grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type
