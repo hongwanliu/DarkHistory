@@ -333,7 +333,7 @@ def evolve(
     # tqdm related stuff. 
     if use_tqdm:
         from tqdm import tqdm_notebook as tqdm
-        pbar = tqdm(total=np.floor((np.log(rs) - np.log(end_rs))/dlnz))
+        pbar = tqdm(total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor))
 
     # Function that changes the normalization 
     # from per annihilation to per baryon in the step.
@@ -452,7 +452,6 @@ def evolve(
             deposited_heat/dt,
             deposited_ICS/dt
         ]])
-        
 
     MEDEA_interp = make_interpolator()
 
