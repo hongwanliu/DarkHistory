@@ -133,7 +133,9 @@ def load_trans_funcs(direc):
 
     tmp = np.zeros((len(xes),len(rs_list),len(photeng), 4))
     for i, highdep in enumerate(highengdep_arr):
-        tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
+        tmp[i] = np.pad(
+            highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant'
+        )
     highengdep_arr = tmp.copy()
     print("high energy deposition.\n")
 
@@ -148,8 +150,9 @@ def load_trans_funcs(direc):
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr, log_interp = False)
     lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False)
     lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False)
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
-    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
+    # highengdep_interp cannot be log interpolated, contains negative values.
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=False)
+    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=False)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
@@ -493,6 +496,7 @@ def evolve(
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                     separate_higheng=separate_higheng
                 )
+
             if separate_higheng:
                 f_low  = np.append(f_low, [f_raw[0]], axis=0)
                 f_high = np.append(f_high, [f_raw[1]], axis=0)
