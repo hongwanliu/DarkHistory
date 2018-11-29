@@ -34,7 +34,7 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc):
+def load_trans_funcs(direc, xes):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     print('Loading transfer functions...')
@@ -60,8 +60,6 @@ def load_trans_funcs(direc):
     CMB_engloss_arr = np.swapaxes(CMB_engloss_arr, 1, 2)
     print('CMB losses.\n')
 
-    xes = 0.5 + 0.5*np.tanh([-5., -4.1, -3.2, -2.3, -1.4, -0.5, 0.4, 1.3, 2.2, 3.1, 4])
-    #xes = 0.5 + 0.5*np.tanh([-5., -4.1])
     photeng = highengphot_tflist_arr[0].eng
     eleceng = lowengelec_tflist_arr[0].eng
     rs_list = highengphot_tflist_arr[0].rs
@@ -148,7 +146,7 @@ def load_trans_funcs(direc):
     highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr, log_interp = False)
     lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False)
     lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False)
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=False)
     CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
     print("Done.\n")
 
