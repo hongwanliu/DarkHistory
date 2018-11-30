@@ -34,15 +34,14 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc, xes, divisions=0):
+def load_trans_funcs(direc, xes, divisions=0, string_arr = [""]):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
 
     if divisions == 0:
-        string_arr = np.array([""])
         arr = [None]
     else:
-        string_arr = np.array(["", "_pre1700"])
+        string_arr = ["", "_pre1700"]
         arr = [None, None]
 
     highengphot_tflist_arr = arr.copy()
@@ -143,28 +142,38 @@ def load_trans_funcs(direc, xes, divisions=0):
             )
         print("low energy electrons...\n")
 
-        tmp = np.zeros((len(xes),len(rs_list),len(photeng), 4))
+        tmp = np.zeros((len(xes), len(rs_list), len(photeng), 4))
         for i, highdep in enumerate(highengdep_arr[ii]):
             tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
-        highengdep_arr = tmp.copy()
+        highengdep_arr[ii] = tmp.copy()
+        highengdep_arr[ii] = np.swapaxes(highengdep_arr[ii], 0, 1)
         print("high energy deposition.\n")
 
-        tmp = np.zeros((len(xes),len(rs_list),len(photeng)))
+        tmp = np.zeros((len(xes), len(rs_list), len(photeng)))
         for i, engloss in enumerate(CMB_engloss_arr[ii]):
             tmp[i] = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
-        CMB_engloss_arr = tmp.copy()
+        CMB_engloss_arr[ii] = tmp.copy()
+        CMB_engloss_arr[ii] = np.swapaxes(CMB_engloss_arr[ii], 0, 1)
         print("CMB losses.\n")
+
+    # If there are no divisions, we have a bunch of 1-element arrays
+    if divisions == 0:
+        highengphot_tflist_arr = highengphot_tflist_arr[0]
+        lowengphot_tflist_arr = lowengphot_tflist_arr[0]
+        lowengelec_tflist_arr = lowengelec_tflist_arr[0]
+        highengdep_arr = highengdep_arr[0]
+        CMB_engloss_arr = CMB_engloss_arr[0]
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
-    highengphot_tf_interp = tflist.TransferFuncInterp(xes, np.squeeze(highengphot_tflist_arr), log_interp = False, divisions=divisions)
-    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, np.squeeze(lowengphot_tflist_arr), log_interp = False, divisions=divisions)
-    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, np.squeeze(lowengelec_tflist_arr), log_interp = False, divisions=divisions)
-    #highengdep_interp     = ht.IonRSInterp(xes, rs_list, np.squeeze(highengdep_arr), in_eng = photeng, logInterp=False, divisions=divisions)
-    #CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, np.squeeze(CMB_engloss_arr), in_eng = photeng, logInterp=True, divisions=divisions)
+    highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr, log_interp = False, divisions=divisions)
+    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False, divisions=divisions)
+    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False, divisions=divisions)
+    highengdep_interp     = utils.Interpolator2D(rs_list, 'rs', xes, 'xes', highengdep_arr, logInterp=False)
+    CMB_engloss_interp    = utils.Interpolator2D(rs_list, 'rs', xes, 'xes', CMB_engloss_arr, logInterp=True)
     print("Done.\n")
 
-    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp#, highengdep_interp, CMB_engloss_interp
+    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
 
 def load_ics_data():
     Emax = 1e20
@@ -546,14 +555,14 @@ def evolve(
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_std(rs))
             lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_std(rs))
             lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_std(rs))
-            cmbloss_arr = CMB_engloss_interp.get_val(xe_std(rs), rs)
-            highengdep_arr = highengdep_interp.get_val(xe_std(rs), rs)
+            cmbloss_arr = CMB_engloss_interp.get_val(rs, xe_std(rs))
+            highengdep_arr = highengdep_interp.get_val(rs, xe_std(rs))
         else:
             highengphot_tf = highengphot_tf_interp.get_tf(rs, xe_arr[-1])
             lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xe_arr[-1])
             lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xe_arr[-1])
-            cmbloss_arr = CMB_engloss_interp.get_val(xe_arr[-1], rs)
-            highengdep_arr = highengdep_interp.get_val(xe_arr[-1], rs)
+            cmbloss_arr = CMB_engloss_interp.get_val(rs, xe_arr[-1])
+            highengdep_arr = highengdep_interp.get_val(rs, xe_arr[-1])
 
         if coarsen_factor > 1:
             prop_tf = np.zeros_like(highengphot_tf._grid_vals)
