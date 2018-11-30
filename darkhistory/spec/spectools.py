@@ -528,7 +528,7 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     in_eng : ndarray
         Injection energies (first dimension of `grid_vals`)
     eng : ndarray
-        Energy abscissa (second dimension of `grid_vals`)
+        Energy loss abscissa (second dimension of `grid_vals`)
     grid_vals : 2D ndarray
         Number of particles with the given energy in `eng`.  
     final_eng : ndarray
@@ -546,13 +546,10 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
 
     # Flipped as well.
     N_arr = np.fliplr(grid_vals)
-#     print('N_arr:')
-#     print(N_arr)
-
 
     # final_eng = np.float128(final_eng)
 
-    # Get the bin indices that the current abscissa (eng)
+    # Get the bin indices that the current abscissa (sec_spec_eng)
     # corresponds to in the new abscissa (final_eng). Bin indices are 
     # with respect to bin centers. 
 
@@ -581,20 +578,13 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     bin_ind_interp = InterpolatedUnivariateSpline(
         new_eng, np.arange(new_eng.size)-1, k=1
     )
-
-#     print('sec_spec_eng:')
-#     print(sec_spec_eng)
-#     print('new_eng:')
-#     print(new_eng)
     
     bin_ind = bin_ind_interp(sec_spec_eng)
 
     # Only for InterpolatedUnivariateSpline
     bin_ind[bin_ind < -1] = -2
     bin_ind[bin_ind > new_eng.size-2] = new_eng.size
-#     print('bin_ind: ')
-#     print(bin_ind)
-    
+
     # Locate where bin_ind is below 0, above self.length-1 
     # or in between. 
 
@@ -612,12 +602,7 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
 
     reg_bin_low[ind_reg] = np.floor(bin_ind[ind_reg]).astype(int)
     reg_bin_upp[ind_reg] = reg_bin_low[ind_reg] + 1
-    
-#     print('reg_bin_low: ')
-#     print(reg_bin_low)
-#     print('reg_bin_upp: ')
-#     print(reg_bin_upp)
-    
+       
     # Takes care of the case where eng[-1] = new_eng[-1], which falls
     # under regular indices. Remember the extra bin on the left. 
     reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
@@ -627,45 +612,29 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     reg_data_upp = np.zeros_like(bin_ind)
     
     # Split the particles up into the lower bin and upper bin. 
-    reg_data_low[ind_reg] = (reg_bin_upp[ind_reg] - bin_ind[ind_reg]) * N_arr[ind_reg]
-    reg_data_upp[ind_reg] = (bin_ind[ind_reg] - reg_bin_low[ind_reg]) * N_arr[ind_reg]
-
-#     print('reg_data_low:')
-#     print(reg_data_low)
-#     print('reg_data_upp:')
-#     print(reg_data_upp)
+    reg_data_low[ind_reg] = (
+        (reg_bin_upp[ind_reg] - bin_ind[ind_reg]) * N_arr[ind_reg]
+    )
+    reg_data_upp[ind_reg] = (
+        (bin_ind[ind_reg] - reg_bin_low[ind_reg]) * N_arr[ind_reg]
+    )
 
     in_eng_mask = np.outer(
-        np.arange(in_eng.size, dtype=int), np.ones_like(eng, dtype=int))
-#     print('in_eng_mask:')
-#     print(in_eng_mask)
+        np.arange(in_eng.size, dtype=int), np.ones_like(eng, dtype=int)
+    )
     
     low_bin_low = -2*np.ones_like(bin_ind, dtype=int)
     
     # Handle low bins. 
     low_bin_low[ind_low] = np.floor(bin_ind[ind_low]).astype(int)
-#     print('low_bin_low:')
-#     print(low_bin_low)
     
     N_above_underflow = np.zeros_like(bin_ind)
     
     N_above_underflow[ind_low] = (bin_ind[ind_low] - low_bin_low[ind_low]) * N_arr[ind_low]
-#     print('N_above_underflow:')
-#     print(N_above_underflow)
 
     # Add up.
     new_data = np.zeros((in_eng.size, new_eng.size))
     new_data[:,1] += np.sum(N_above_underflow, axis=1)
-#     print('in_eng_mask[ind_reg]:')
-#     print(in_eng_mask[ind_reg])
-#     print('reg_bin_low[ind_reg]:')
-#     print(reg_bin_low[ind_reg])
-#     print('reg_data_low[ind_reg]:')
-#     print(reg_data_low[ind_reg])
-#     print('reg_bin_upp[ind_reg]:')
-#     print(reg_bin_upp[ind_reg])
-#     print('reg_data_upp[ind_reg]:')
-#     print(reg_data_upp[ind_reg])
 
     ## Replace add.at with agg.aggregate
 
@@ -690,9 +659,188 @@ def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
 
     new_data += (low_data + upp_data)
 
-#     print('new_data: ')
-#     print(new_data)
     return new_data[:, 1:]
 
+class EnglossRebinData:
+    """ Structure for energy loss rebinning data. 
 
+    Parameters
+    ----------
+    in_eng : ndarray
+        The injected energy. 
+    engloss_arr : ndarray
+        Energy loss abscissa (second dimension of `grid_vals`) 
+    final_eng : ndarray
+        The final energy abscissa to bin into.
+
+    Attributes
+    ----------
+    in_eng : ndarray
+        The injected energy. 
+    engloss_arr : ndarray
+        Energy loss abscissa (second dimension of `grid_vals`) 
+    final_eng : ndarray
+        The final energy abscissa to bin into.
+    new_eng : ndarray
+        final_eng, but with additional first bin for underflow.
+    bin_ind : 2D ndarray
+        The (fractional) bin indices of final_eng that the data will be assigned to.
+    ind_low : slice
+        Slice which should have some part assigned to underflow. 
+    ind_reg : slice
+        Slice which should have some part rebinned in the grid.
+    reg_bin_low : ndarray
+        Index of lower energy bins of the grid that particles should be assigned to.
+    reg_bin_upp : ndarray
+        Index of higher energy bins of the grid that particles should be assigned to.
+    low_bin_low : ndarray
+        Marks grid points that have some component assigned to underflow.
+    in_eng_mask : ndarray
+        in_eng index of every point on the grid.
+
+    Notes
+    -----
+    This class is used to store data for energy loss rebinning
+    that only depends on the abscissae specified. 
+
+    """
+
+    def __init__(
+        self, in_eng, engloss_arr, final_eng
+    ):
+
+        self.in_eng  = in_eng
+        self.engloss_arr = engloss_arr
+        self.final_eng = final_eng
+
+        # 2D array, (i,j) = in_eng[i] - engloss_arr[j], in ascending order.
+        sec_spec_eng = np.fliplr(in_eng[:,None] - engloss_arr)
+
+        # Get the bin indices that the current abscissa (sec_spec_eng)
+        # corresponds to in the new abscissa (final_eng). Bin indices are 
+        # with respect to bin centers. 
+
+        # Add an additional bin at the lower end of out_eng so that
+        # underflow can be treated easily. 
+        first_bin_eng = np.exp(
+            np.log(final_eng[0])
+            - (np.log(final_eng[1]) - np.log(final_eng[0]))
+        )
+
+        self.new_eng = np.insert(final_eng, 0, first_bin_eng)
+
+        # Find the relative bin indices for sec_spec_eng. The first bin in 
+        # new_eng has bin index -1. Underflow has index -2, overflow
+        # corresponds to new_eng.size.
+
+        bin_ind_interp = InterpolatedUnivariateSpline(
+            self.new_eng, np.arange(self.new_eng.size)-1, k=1
+        )
+        
+        self.bin_ind = bin_ind_interp(sec_spec_eng)
+        # self.bin_ind is a 2D array.
+        self.bin_ind[self.bin_ind < -1] = -2
+        self.bin_ind[self.bin_ind > self.new_eng.size-2] = self.new_eng.size
+
+        # Locate where self.bin_ind is below 0, above self.length-1 
+        # or in between. 
+
+        self.ind_low  = self.bin_ind < 0
+        self.ind_reg  = (
+            (self.bin_ind >= 0) & (self.bin_ind <= self.new_eng.size - 1)
+        )
+
+        # reg_bin_low is the array of the lower energy bins that particles
+        # should be assigned to, similarly for reg_bin_upp. 
+        # This should also take care of the case where 
+        # bin_ind is an integer. 
+        
+        self.reg_bin_low = -2*np.ones_like(self.bin_ind, dtype=int)
+        self.reg_bin_upp = -2*np.ones_like(self.bin_ind, dtype=int)
+
+        self.reg_bin_low[self.ind_reg] = np.floor(
+            self.bin_ind[self.ind_reg]
+        ).astype(int)
+        self.reg_bin_upp[self.ind_reg] = self.reg_bin_low[self.ind_reg] + 1
+           
+        # Takes care of the case where eng[-1] = new_eng[-1], which falls
+        # under regular indices. Remember the extra bin on the left. 
+        self.reg_bin_low[self.reg_bin_low == self.new_eng.size-2] = (
+            self.new_eng.size - 3
+        )
+        self.reg_bin_upp[self.reg_bin_upp == self.new_eng.size-1] = (
+            self.new_eng.size - 2
+        )
+
+        # low_bin_low is the array of the bins that need to be assigned
+        # to underflow.
+        self.low_bin_low = -2*np.ones_like(self.bin_ind, dtype=int)
+        self.low_bin_low[self.ind_low] = np.floor(
+            self.bin_ind[self.ind_low]
+        ).astype(int)
+
+        # in_eng_mask labels the bin number for in_eng. 
+        self.in_eng_mask = np.outer(
+            np.arange(self.in_eng.size, dtype=int), 
+            np.ones_like(self.engloss_arr, dtype=int)
+        )
+
+    def rebin(self, grid_vals):
+
+        # Flip grid_vals, since sec_spec_eng is flipped. 
+        N_arr = np.fliplr(grid_vals)
+
+        # Initialize arrays that will store the number of particles
+        # to assign to lower/upper bins.
+
+        reg_data_low = np.zeros_like(self.bin_ind)
+        reg_data_upp = np.zeros_like(self.bin_ind)
+
+        # Compute the assignments.
+        reg_data_low[self.ind_reg] = (
+            (self.reg_bin_upp[self.ind_reg] - self.bin_ind[self.ind_reg]) 
+            * N_arr[self.ind_reg]
+        )
+        reg_data_upp[self.ind_reg] = (
+            (self.bin_ind[self.ind_reg] - self.reg_bin_low[self.ind_reg]) 
+            * N_arr[self.ind_reg]
+        )
+
+        # Handle case where some gets assigned to underflow, some to the 
+        # first bin.
+        N_above_underflow = np.zeros_like(self.bin_ind)
+
+        N_above_underflow[self.ind_low] = (
+            (self.bin_ind[self.ind_low] - self.low_bin_low[self.ind_low]) 
+            * N_arr[self.ind_low]
+        )
+
+        new_data = np.zeros((self.in_eng.size, self.new_eng.size))
+        new_data[:,1] += np.sum(N_above_underflow, axis=1)
+
+        # Get number of particles assigned into lower energy bin.
+        low_data = agg.aggregate(
+            np.array([
+                self.in_eng_mask[self.ind_reg], 
+                self.reg_bin_low[self.ind_reg]+1
+            ]),
+            reg_data_low[self.ind_reg],
+            size = new_data.shape, func='sum', fill_value = 0
+        )
+
+        upp_data = agg.aggregate(
+            np.array([
+                self.in_eng_mask[self.ind_reg], 
+                self.reg_bin_upp[self.ind_reg]+1
+            ]),
+            reg_data_upp[self.ind_reg],
+            size = new_data.shape, func='sum', fill_value = 0
+        )
+
+        new_data += (low_data + upp_data)
+
+        return new_data[:, 1:]
+
+
+    
 

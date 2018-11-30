@@ -11,9 +11,11 @@ from scipy.interpolate import interp1d
 import darkhistory.physics as phys
 import darkhistory.utilities as utils
 import darkhistory.spec.spectools as spectools
+from darkhistory.spec.spectools import EnglossRebinData
 import darkhistory.spec.transferfunclist as tflist
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
+from darkhistory.spec import transferfunction as tf
 import darkhistory.history.histools as ht
 import darkhistory.history.tla as tla
 
@@ -151,8 +153,8 @@ def load_trans_funcs(direc):
     lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False)
     lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False)
     # highengdep_interp cannot be log interpolated, contains negative values.
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=False)
-    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=False)
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
+    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
@@ -365,13 +367,58 @@ def evolve(
                     eleceng, photeng, rs, fast=True
                 )
         else:
+            # Compute the collisional ionization spectra.
+            coll_ion_sec_elec_specs = (
+                phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HI'),
+                phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeI'),
+                phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeII')
+            )
+            # Compute the collisional excitation spectra.
+            id_mat = np.identity(eleceng.size)
+
+            coll_exc_sec_elec_tf_HI = tf.TransFuncAtRedshift(
+                np.squeeze(id_mat[:, np.where(eleceng > phys.lya_eng)]),
+                in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
+                eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
+                dlnz = -1, spec_type = 'N'
+            )
+
+            coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
+                np.squeeze(id_mat[:, np.where(eleceng > phys.He_exc_eng)]),
+                in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
+                eng = eleceng[eleceng > phys.He_exc_eng] - phys.He_exc_eng,
+                dlnz = -1, spec_type = 'N'
+            )
+
+            coll_exc_sec_elec_tf_HeII = tf.TransFuncAtRedshift(
+                np.squeeze(id_mat[:, np.where(eleceng > 4*phys.lya_eng)]),
+                in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
+                eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
+                dlnz = -1, spec_type = 'N'
+            )
+
+            coll_exc_sec_elec_tf_HI.rebin(eleceng)
+            coll_exc_sec_elec_tf_HeI.rebin(eleceng)
+            coll_exc_sec_elec_tf_HeII.rebin(eleceng)
+
+            coll_exc_sec_elec_specs = (
+                coll_exc_sec_elec_tf_HI.grid_vals,
+                coll_exc_sec_elec_tf_HeI.grid_vals,
+                coll_exc_sec_elec_tf_HeII.grid_vals
+            )
+
+            # Store the ICS rebinning data for speed.
+            ics_engloss_data = EnglossRebinData(eleceng, photeng, eleceng)
+
             (
                 ics_sec_phot_tf, ics_sec_elec_tf, 
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 continuum_loss, deposited_ICS_arr
             ) = get_elec_cooling_tf_fast(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                    eleceng, photeng, rs, xe_arr[-1], xHe=0
+                    coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+                    eleceng, photeng, rs, xe_arr[-1], xHe=0, 
+                    ics_engloss_data=ics_engloss_data
                 )
 
         # Quantities are still per annihilation.            
@@ -617,7 +664,9 @@ def evolve(
                     continuum_loss, deposited_ICS_arr
                 ) = get_elec_cooling_tf_fast(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                        eleceng, photeng, rs, xe_elec_cooling, xHe=0
+                        coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+                        eleceng, photeng, rs, xe_elec_cooling, xHe=0,
+                        ics_engloss_data=ics_engloss_data
                     )
 
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
