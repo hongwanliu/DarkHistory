@@ -986,8 +986,33 @@ class Spectra:
         new_data = np.zeros((self.in_eng.size, new_eng.size))
         new_data[:,1] += low_data
 
-        np.add.at(new_data, (slice(None), reg_bin_low+1), reg_data_low)
-        np.add.at(new_data, (slice(None), reg_bin_upp+1), reg_data_upp)
+
+        # np.add.at(new_data, (slice(None), reg_bin_low+1), reg_data_low)
+        # np.add.at(new_data, (slice(None), reg_bin_upp+1), reg_data_upp)
+
+        # Replace with agg.aggregate
+        from darkhistory.numpy_groupies import aggregate as agg
+
+        # low_data = agg.aggregate(
+        #     reg_bin_low+1, reg_data_low, func='sum', fill_value=0, axis=1, size=new_eng.size
+        # )
+
+        # upp_data = agg.aggregate(
+        #     reg_bin_upp+1, reg_data_upp, func='sum', fill_value=0, axis=1, size=new_eng.size
+        # )
+        # new_data = (low_data + upp_data)
+
+        low_data = agg.aggregate(
+            reg_bin_low+1, np.transpose(reg_data_low), func='sum', 
+            fill_value=0, axis=0, size=new_eng.size
+        )
+
+        upp_data = agg.aggregate(
+            reg_bin_upp+1, np.transpose(reg_data_upp), func='sum', 
+            fill_value=0, axis=0, size=new_eng.size
+        )
+
+        new_data += np.transpose(low_data + upp_data)
 
         # new_data[:,reg_bin_low+1] += reg_data_low
         # new_data[:,reg_bin_upp+1] += reg_data_upp
