@@ -485,7 +485,7 @@ class TransferFuncInterp:
                 return obj
             invFunc = func
 
-        if divisions==0:
+        if self.divisions==0:
             # xe must lie between these values.
             if self.xe is not None:
                 if xe > self.xe[-1]:
@@ -501,7 +501,7 @@ class TransferFuncInterp:
 
         else:
 
-            interpInd = divisions+1 - np.searchsorted(self.rs_nodes, rs)
+            interpInd = self.divisions+1 - np.searchsorted(self.rs_nodes, rs)
             xes = self.xe[interpInd]
 
             if xes is not None:
