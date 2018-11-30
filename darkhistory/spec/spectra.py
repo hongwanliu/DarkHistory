@@ -81,8 +81,8 @@ class Spectra:
                 if rs.size != spec_arr.shape[0]:
                     raise TypeError('rs array not the same shape as first axis of spec_arr.')
                 self._rs = rs
-            self._N_underflow = np.zeros_like(rs)
-            self._eng_underflow = np.zeros_like(rs)
+            self._N_underflow = np.zeros_like(self._rs)
+            self._eng_underflow = np.zeros_like(self._rs)
 
             if rebin_eng is not None:
                 self.rebin(rebin_eng)

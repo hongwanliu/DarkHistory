@@ -186,15 +186,29 @@ def get_elec_cooling_tf_fast(
     )
     
     # Construct the spectra. 
-    elec_spec_ion_HI = np.array(
-        [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HI') for rate,in_eng in zip(rate_vec_ion_HI,eleceng)]
+    # elec_spec_ion_HI = np.array(
+    #     [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HI') for rate,in_eng in zip(rate_vec_ion_HI,eleceng)]
+    # )
+    # elec_spec_ion_HeI = np.array(
+    #     [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeI') for rate,in_eng in zip(rate_vec_ion_HeI,eleceng)]
+    # )
+    # elec_spec_ion_HeII = np.array(
+    #     [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeII') for rate,in_eng in zip(rate_vec_ion_HeII,eleceng)]
+    # )
+
+    # transpose to force multiplication along first axis.
+    elec_spec_ion_HI   = (
+        rate_vec_ion_HI[:,np.newaxis]
+        * phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HI')
     )
-    elec_spec_ion_HeI = np.array(
-        [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeI') for rate,in_eng in zip(rate_vec_ion_HeI,eleceng)]
+    elec_spec_ion_HeI  = (
+        rate_vec_ion_HeI[:,np.newaxis]  
+        * phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeI')
     )
-    elec_spec_ion_HeII = np.array(
-        [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeII') for rate,in_eng in zip(rate_vec_ion_HeII,eleceng)]
-    )   
+    elec_spec_ion_HeII = (
+        rate_vec_ion_HeII[:,np.newaxis]  
+        * phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeII')
+    )
     
     # Construct the TransFuncAtRedshift objects.
     # Electrons scatter from in_eng to in_eng - excitation energy.
@@ -222,6 +236,31 @@ def get_elec_cooling_tf_fast(
     dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs)
     
     deposited_heat_vec = np.zeros_like(eleceng)
+
+    # new_eleceng = eleceng - dE_heat_dt
+
+    # if not np.all(new_eleceng[1:] > eleceng[:-1]):
+    #     utils.compare_arr([new_eleceng, eleceng])
+    #     raise ValueError('heating loss is too large: smaller time step required.')
+
+    # # After the check above, we can define the spectra by
+    # # manually assigning slightly less than 1 particle along
+    # # diagonal, and a small amount in the bin below. 
+
+    # # N_n-1 E_n-1 + N_n E_n = E_n - dE_dt
+    # # N_n-1 + N_n = 1
+    # # therefore, (1 - N_n) E_n-1 - (1 - N_n) E_n = - dE_dt
+    # # i.e. N_n = 1 + dE_dt/(E_n-1 - E_n)
+
+    elec_heat_spec_grid = np.identity(eleceng.size)
+    elec_heat_spec_grid[0,0] -= dE_heat_dt[0]/eleceng[0]
+    elec_heat_spec_grid[1:, 1:] += np.diag(
+        dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
+    )
+    elec_heat_spec_grid[1:, :-1] -= np.diag(
+        dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
+    )
+
     
     
     #############################################
@@ -278,10 +317,12 @@ def get_elec_cooling_tf_fast(
         elec_ion_HeI_N  = elec_ion_HeI_tf.grid_vals[i]
         elec_ion_HeII_N = elec_ion_HeII_tf.grid_vals[i]
                 
-        elec_heat_spec = spectools.rebin_N_arr(np.array([1]), np.array([eng]), eleceng)
-        elec_heat_spec.eng -= dE_heat_dt[i]
-        elec_heat_spec.rebin(eleceng)
-        elec_heat_N = elec_heat_spec.N
+        # elec_heat_spec = spectools.rebin_N_arr(np.array([1]), np.array([eng]), eleceng)
+        # elec_heat_spec.eng -= dE_heat_dt[i]
+        # elec_heat_spec.rebin(eleceng)
+        # elec_heat_N = elec_heat_spec.N
+
+        elec_heat_N = elec_heat_spec_grid[i]        
         
         sec_elec_spec_N = (
             elec_ICS_N 
