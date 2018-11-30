@@ -445,27 +445,26 @@ class TransferFuncInterp:
             def func(obj):
                 return obj
 
-        if divisions > 0:
-            if xe_arr is not None:
-                for i in np.arange(divisions+1):
-                    self.interp_func[i] = RegularGridInterpolator(
-                        (func(self.xe), func(self.rs)), func(self._grid_vals[i])
-                    )
-            else:
-                for i in np.arange(divisions+1):
-                    self.interp_func[i] = interp1d(
-                        func(self.rs), func(self._grid_vals[i])
-                    )
-
-        else:
+        if divisions == 0:
             if xe_arr is not None:
                 self.interp_func = RegularGridInterpolator(
                     (func(self.xe), func(self.rs)), func(self._grid_vals)
                 )
             else:
                 self.interp_func = interp1d(
-                    func(self.rs), func(_grid_vals)
+                    func(self.rs), func(self._grid_vals[0]), axis=0
                 )
+
+        else:
+            for i in np.arange(divisions+1):
+                if xe_arr is not None:
+                    self.interp_func[i] = RegularGridInterpolator(
+                        (func(self.xe), func(self.rs)), func(self._grid_vals[i])
+                    )
+                else:
+                    self.interp_func[i] = interp1d(
+                        func(self.rs), func(self._grid_vals[i][0]), axis=0
+                    )
 
     def get_tf(self, rs, xe):
 
