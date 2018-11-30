@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.linalg import matrix_power
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 from darkhistory.utilities import arrays_equal
 from darkhistory.spec.spectrum import Spectrum
@@ -351,54 +352,120 @@ class TransferFuncInterp:
 
     """
 
-    def __init__(self, xe_arr, tflist_arr, log_interp=True):
+    def __init__(self, xe_arr, tflist_arr, log_interp=True, divisions = 0):
 
-        if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
-            raise TypeError('all TransferFuncList must have the same tftype.')
+        if divisions == 0:
+            if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
+                raise TypeError('all TransferFuncList must have the same tftype.')
 
-        tftype = tflist_arr[0].tftype
-        grid_vals = np.array(
-            np.stack(
-                [tflist.grid_vals for tflist in tflist_arr]
-            ),
-            ndmin = 4
-        )
+            grid_vals = np.array(
+                np.stack(
+                    [tflist.grid_vals for tflist in tflist_arr]
+                ),
+                ndmin = 4
+            )
+
+            tflist_arr0 = tflist_arr[0]
+            self.rs = tflist_arr0.rs
+
+        else:
+            if (len(tflist_arr) != divisions+1) or (len(xe_arr) != divisions+1):
+                raise TypeError('you must provide divisions+1 number of tflist arrays and/or xe arrays')
+            if len(set(
+                np.array([[tflist.tftype for tflist in tflist_ar] for tflist_ar in tflist_arr]).flatten()
+            )) > 1:
+                raise TypeError('all TransferFuncList must have the same tftype.')
+
+            # a list of grid values and redshifts, one for each tflist array
+            grid_vals = [None for i in np.arange(divisions+1)]
+            self.rs = [None for i in np.arange(divisions+1)]
+
+            # rs values at which interpolation set changes
+            self.rs_nodes = np.zeros(divisions)
+            tflist_arr0 = tflist_arr[0][0]
+
+            for i, tflist_ar in enumerate(tflist_arr):
+
+                if np.any(np.diff(tflist_ar.rs)>0):
+                    raise TypeError('redshifts in tflist_arr[%d] should be descending' % i+1)
+                self.rs[i] = tflist_ar.rs
+
+                if i != divisions+1:
+                    if tflist_ar.rs[-1] >= tflist_arr[i+1].rs[0]:
+                        raise TypeError('The smallest redshift in tflist_arr[%d] is larger than the largest redshift in tflist_arr[%d]' % (i,i+1))
+                    self.rs_nodes[i] = tflist_ar.rs[-1]
+
+                grid_vals[i] = np.array(
+                    np.stack(
+                        [tflist.grid_vals for tflist in tflist_ar]
+                    ),
+                    ndmin = 4
+                )
+
+            # a list of interpolation functions
+            self.interp_func = [None for i in np.arange(divisions+1)]
+
+        tftype = tflist_arr0.tftype
         if tftype == 'eng':
             # grid_vals should have indices corresponding to
             # (xe, rs, in_eng, eng).
-            grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
+            if divisions > 0:
+                for i in np.arange(len(tflist_arr)):
+                    grid_vals[i] = np.transpose(grid_vals[i], (0,2,1,3))
+            else:
+                grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
 
         # grid_vals is (xe, rs, in_eng, eng).
 
-        self.rs     = tflist_arr[0].rs
         self.xe     = xe_arr
-        self.in_eng = tflist_arr[0].in_eng
-        self.eng    = tflist_arr[0].eng
-        self.dlnz   = tflist_arr[0].dlnz
-        self.spec_type = tflist_arr[0].spec_type
+        self.in_eng = tflist_arr0.in_eng
+        self.eng    = tflist_arr0.eng
+        self.dlnz   = tflist_arr0.dlnz
+        self.spec_type = tflist_arr0.spec_type
         self._grid_vals = grid_vals
         self._log_interp = log_interp
+        self.divisions = divisions
 
-        if self.rs[0] - self.rs[1] > 0:
-            # data points have been stored in decreasing rs.
-            self.rs = np.flipud(self.rs)
-            self._grid_vals = np.flip(self._grid_vals, 1)
+        if divisions == 0:
+            if self.rs[0] - self.rs[1] > 0:
+                # data points have been stored in decreasing rs.
+                self.rs = np.flipud(self.rs)
+                self._grid_vals = np.flip(self._grid_vals, 1)
 
-        # Now, data is stored in *increasing* rs.
+            # Now, data is stored in *increasing* rs.
 
         # The ordering should be correct...
         # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
 
         if self._log_interp:
             self._grid_vals[self._grid_vals<=0] = 1e-200
-            self.interp_func = RegularGridInterpolator(
-                (np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals)
-            )
+            func = np.log
         else:
             print('noninterp')
-            self.interp_func = RegularGridInterpolator(
-                (self.xe, np.log(self.rs)), self._grid_vals
-            )
+            def func(obj):
+                return obj
+
+        if divisions > 0:
+            if xe_arr is not None:
+                for i in np.arange(divisions+1):
+                    self.interp_func[i] = RegularGridInterpolator(
+                        (func(self.xe), func(self.rs)), func(self._grid_vals[i])
+                    )
+            else:
+                for i in np.arange(divisions+1):
+                    self.interp_func[i] = interp1d(
+                        func(self.rs), func(self._grid_vals[i])
+                    )
+
+        else:
+            if xe_arr is not None:
+                self.interp_func = RegularGridInterpolator(
+                    (func(self.xe), func(self.rs)), func(self._grid_vals)
+                )
+            else:
+                self.interp_func = interp1d(
+                    func(self.rs), func(_grid_vals)
+                )
 
     def get_tf(self, rs, xe):
 
@@ -408,23 +475,49 @@ class TransferFuncInterp:
         # return tf.TransFuncAtRedshift(
         #     interp_vals_rs(rs), eng=self.eng,
         #     in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
-        # )
-
-        # xe must lie between these values.
-        if xe > self.xe[-1]:
-            xe = self.xe[-1]
-        if xe < self.xe[0]:
-            xe = self.xe[0]
+        #)
 
         if self._log_interp:
-            out_grid_vals = np.exp(
-                np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
-            )
+            func = np.log
+            invFunc = np.exp
         else:
-            out_grid_vals = np.squeeze(
-                self.interp_func([xe, np.log(rs)])
-            )
-            
+            def func(obj):
+                return obj
+            invFunc = func
+
+        if divisions==0:
+            # xe must lie between these values.
+            if self.xe is not None:
+                if xe > self.xe[-1]:
+                    xe = self.xe[-1]
+                elif xe < self.xe[0]:
+                    xe = self.xe[0]
+                out_grid_vals = invFunc(
+                    np.squeeze(self.interp_func([func(xe), func(rs)]))
+                )
+
+            else:
+                out_grid_vals = invFunc(self.interp_func(func(rs)))
+
+        else:
+
+            interpInd = divisions+1 - np.searchsorted(self.rs_nodes, rs)
+            xes = self.xe[interpInd]
+
+            if xes is not None:
+                if xe > xes[-1]:
+                    xe = xes[-1]
+                elif xe < xes[0]:
+                    xe = xes[0]
+                out_grid_vals = invFunc(
+                    np.squeeze(self.interp_func[interpInd]([func(xe), func(rs)]))
+                )
+
+            else:
+                out_grid_vals = invFunc(
+                    self.interp_func[interpInd](func(rs))
+                )
+
 
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,

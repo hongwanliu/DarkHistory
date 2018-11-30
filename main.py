@@ -34,123 +34,137 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc, xes):
+def load_trans_funcs(direc, xes, divisions=0):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
-    print('Loading transfer functions...')
-    highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete.raw", "rb"))
-    #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
-    print('Loaded high energy photons...')
 
-    lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete.raw", "rb"))
-    #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
-    print('Low energy photons...')
+    if divisions == 0:
+        string_arr = np.array([""])
+        arr = [None]
+    else:
+        string_arr = np.array(["", "_pre1700"])
+        arr = [None, None]
 
-    lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete.raw", "rb"))
-    #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
-    print('Low energy electrons...')
+    highengphot_tflist_arr = arr.copy()
+    lowengphot_tflist_arr =  arr.copy()
+    lowengelec_tflist_arr =  arr.copy()
+    highengdep_arr =         arr.copy()
+    CMB_engloss_arr =        arr.copy()
 
-    highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_complete.raw", "rb"))
-    #highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
-    highengdep_arr = np.swapaxes(highengdep_arr, 1, 2)
-    print('high energy deposition.\n')
+    for ii, string in enumerate(string_arr):
+        print('Loading transfer functions...')
+        highengphot_tflist_arr[ii] = pickle.load(open(direc+"tfunclist_photspec_60eV_complete"+string+".raw", "rb"))
+        #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+        print('Loaded high energy photons...')
 
-    CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete.raw", "rb"))
-    #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
-    CMB_engloss_arr = np.swapaxes(CMB_engloss_arr, 1, 2)
-    print('CMB losses.\n')
+        lowengphot_tflist_arr[ii]  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete"+string+".raw", "rb"))
+        #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+        print('Low energy photons...')
 
-    photeng = highengphot_tflist_arr[0].eng
-    eleceng = lowengelec_tflist_arr[0].eng
-    rs_list = highengphot_tflist_arr[0].rs
+        lowengelec_tflist_arr[ii]  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete"+string+".raw", "rb"))
+        #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+        print('Low energy electrons...')
 
-    #Split photeng into high and low energy.
-    photeng_high = photeng[photeng > 60]
-    photeng_low  = photeng[photeng <= 60]
+        highengdep_arr[ii] = pickle.load(open(direc+"highdeposited_60eV_complete"+string+".raw", "rb"))
+        #highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+        highengdep_arr[ii] = np.swapaxes(highengdep_arr[ii], 1, 2)
+        print('high energy deposition.\n')
 
-    # Split eleceng into high and low energy.
-    eleceng_high = eleceng[eleceng > 3000]
-    eleceng_low  = eleceng[eleceng <= 3000]
+        CMB_engloss_arr[ii] = pickle.load(open(direc+"CMB_engloss_60eV_complete"+string+".raw", "rb"))
+        #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
+        CMB_engloss_arr[ii] = np.swapaxes(CMB_engloss_arr[ii], 1, 2)
+        print('CMB losses.\n')
 
+        photeng = highengphot_tflist_arr[ii][0].eng
+        eleceng = lowengelec_tflist_arr[ii][0].eng
+        rs_list = highengphot_tflist_arr[ii][0].rs
 
-    print('Padding tflists with zeros...')
-    for highengphot_tflist in highengphot_tflist_arr:
-        for tf in highengphot_tflist:
-            # Pad with zeros so that it becomes photeng x photeng.
-            tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size, 0), (0, 0)), 'constant')
-            tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
-            tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
-            tf._in_eng = photeng
-            tf._eng = photeng
-            tf._rs = tf.rs[0]*np.ones_like(photeng)
+        #Split photeng into high and low energy.
+        photeng_high = photeng[photeng > 60]
+        photeng_low  = photeng[photeng <= 60]
 
-        highengphot_tflist._eng = photeng
-        highengphot_tflist._in_eng = photeng
-        highengphot_tflist._grid_vals = np.atleast_3d(
-            np.stack([tf.grid_vals for tf in highengphot_tflist._tflist])
-        )
-    print("high energy photons...")
+        # Split eleceng into high and low energy.
+        eleceng_high = eleceng[eleceng > 3000]
+        eleceng_low  = eleceng[eleceng <= 3000]
 
-    # lowengphot_tflist.in_eng set to photeng_high
-    for lowengphot_tflist in lowengphot_tflist_arr:
-        for tf in lowengphot_tflist:
-            # Pad with zeros so that it becomes photeng x photeng.
-            tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size,0), (0,0)), 'constant')
-            # Photons in the low energy bins should be immediately deposited.
-            tf._grid_vals[0:photeng_low.size, 0:photeng_low.size] = np.identity(photeng_low.size)
-            tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
-            tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
-            tf._in_eng = photeng
-            tf._eng = photeng
-            tf._rs = tf.rs[0]*np.ones_like(photeng)
+        print('Padding tflists with zeros...')
+        for highengphot_tflist in highengphot_tflist_arr[ii]:
+            for tf in highengphot_tflist:
+                # Pad with zeros so that it becomes photeng x photeng.
+                tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size, 0), (0, 0)), 'constant')
+                tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
+                tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
+                tf._in_eng = photeng
+                tf._eng = photeng
+                tf._rs = tf.rs[0]*np.ones_like(photeng)
 
-        lowengphot_tflist._eng = photeng
-        lowengphot_tflist._in_eng = photeng
-        lowengphot_tflist._grid_vals = np.atleast_3d(
-            np.stack([tf.grid_vals for tf in lowengphot_tflist._tflist])
-        )
-    print("low energy photons...")
+            highengphot_tflist._eng = photeng
+            highengphot_tflist._in_eng = photeng
+            highengphot_tflist._grid_vals = np.atleast_3d(
+                np.stack([tf.grid_vals for tf in highengphot_tflist._tflist])
+            )
+        print("high energy photons...")
 
-    # lowengelec_tflist.in_eng set to photeng_high
-    for lowengelec_tflist in lowengelec_tflist_arr:
-        for tf in lowengelec_tflist:
-            # Pad with zeros so that it becomes photeng x eleceng.
-            tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size,0), (0,0)), 'constant')
-            tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
-            tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
-            tf._in_eng = photeng
-            tf._eng = eleceng
-            tf._rs = tf.rs[0]*np.ones_like(photeng)
+        # lowengphot_tflist.in_eng set to photeng_high
+        for lowengphot_tflist in lowengphot_tflist_arr[ii]:
+            for tf in lowengphot_tflist:
+                # Pad with zeros so that it becomes photeng x photeng.
+                tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size,0), (0,0)), 'constant')
+                # Photons in the low energy bins should be immediately deposited.
+                tf._grid_vals[0:photeng_low.size, 0:photeng_low.size] = np.identity(photeng_low.size)
+                tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
+                tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
+                tf._in_eng = photeng
+                tf._eng = photeng
+                tf._rs = tf.rs[0]*np.ones_like(photeng)
 
-        lowengelec_tflist._eng = eleceng
-        lowengelec_tflist._in_eng = photeng
-        lowengelec_tflist._grid_vals = np.atleast_3d(
-            np.stack([tf.grid_vals for tf in lowengelec_tflist._tflist])
-        )
-    print("low energy electrons...\n")
+            lowengphot_tflist._eng = photeng
+            lowengphot_tflist._in_eng = photeng
+            lowengphot_tflist._grid_vals = np.atleast_3d(
+                np.stack([tf.grid_vals for tf in lowengphot_tflist._tflist])
+            )
+        print("low energy photons...")
 
-    tmp = np.zeros((len(xes),len(rs_list),len(photeng), 4))
-    for i, highdep in enumerate(highengdep_arr):
-        tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
-    highengdep_arr = tmp.copy()
-    print("high energy deposition.\n")
+        # lowengelec_tflist.in_eng set to photeng_high
+        for lowengelec_tflist in lowengelec_tflist_arr[ii]:
+            for tf in lowengelec_tflist:
+                # Pad with zeros so that it becomes photeng x eleceng.
+                tf._grid_vals = np.pad(tf.grid_vals, ((photeng_low.size,0), (0,0)), 'constant')
+                tf._N_underflow = np.pad(tf._N_underflow, (photeng_low.size, 0), 'constant')
+                tf._eng_underflow = np.pad(tf._eng_underflow, (photeng_low.size, 0), 'constant')
+                tf._in_eng = photeng
+                tf._eng = eleceng
+                tf._rs = tf.rs[0]*np.ones_like(photeng)
 
-    tmp = np.zeros((len(xes),len(rs_list),len(photeng)))
-    for i, engloss in enumerate(CMB_engloss_arr):
-        tmp[i] = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
-    CMB_engloss_arr = tmp.copy()
-    print("CMB losses.\n")
+            lowengelec_tflist._eng = eleceng
+            lowengelec_tflist._in_eng = photeng
+            lowengelec_tflist._grid_vals = np.atleast_3d(
+                np.stack([tf.grid_vals for tf in lowengelec_tflist._tflist])
+            )
+        print("low energy electrons...\n")
+
+        tmp = np.zeros((len(xes),len(rs_list),len(photeng), 4))
+        for i, highdep in enumerate(highengdep_arr[ii]):
+            tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
+        highengdep_arr = tmp.copy()
+        print("high energy deposition.\n")
+
+        tmp = np.zeros((len(xes),len(rs_list),len(photeng)))
+        for i, engloss in enumerate(CMB_engloss_arr[ii]):
+            tmp[i] = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
+        CMB_engloss_arr = tmp.copy()
+        print("CMB losses.\n")
 
     print("Generating TransferFuncInterp objects for each tflist...")
     # interpolate over xe
-    highengphot_tf_interp = tflist.TransferFuncInterp(xes, highengphot_tflist_arr, log_interp = False)
-    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False)
-    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False)
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=False)
-    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
+    highengphot_tf_interp = tflist.TransferFuncInterp(xes, np.squeeze(highengphot_tflist_arr), log_interp = False, divisions=divisions)
+    lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, np.squeeze(lowengphot_tflist_arr), log_interp = False, divisions=divisions)
+    lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, np.squeeze(lowengelec_tflist_arr), log_interp = False, divisions=divisions)
+    #highengdep_interp     = ht.IonRSInterp(xes, rs_list, np.squeeze(highengdep_arr), in_eng = photeng, logInterp=False, divisions=divisions)
+    #CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, np.squeeze(CMB_engloss_arr), in_eng = photeng, logInterp=True, divisions=divisions)
     print("Done.\n")
 
-    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
+    return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp#, highengdep_interp, CMB_engloss_interp
 
 def load_ics_data():
     Emax = 1e20
@@ -211,11 +225,11 @@ def evolve(
     highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
     ics_only=False, highengdep_switch = True, separate_higheng=False,
-    reion_switch=False, reion_rs = None, 
+    reion_switch=False, reion_rs = None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
     xe_init=None, Tm_init=None,
-    coarsen_factor=1, std_soln=False, xe_func=None, user=None, 
+    coarsen_factor=1, std_soln=False, xe_func=None, user=None,
     verbose=False, use_tqdm=False
 ):
     """
@@ -247,7 +261,7 @@ def evolve(
     CMB_engloss_interp : IonRSInterp
         energy losses to CMB, interpolation object
     ics_thomson_ref_tf : Transferfunction
-        ICS Thomson regime scattered photon transfer function. 
+        ICS Thomson regime scattered photon transfer function.
     ics_rel_ref_tf : Transferfunction
         ICS relativistic regime scattered photon transfer function.
     engloss_ref_tf : Transferfunction
@@ -306,7 +320,7 @@ def evolve(
         raise TypeError('Input spectra must have the same rs.')
 
     # Load the standard TLA solution and set xe/Tm initialize conditions if necessary.
-    if std_soln or xe_init == None or Tm_init == None: 
+    if std_soln or xe_init == None or Tm_init == None:
         xe_std, Tm_std, xe_init, Tm_init = load_std(
             xe_init, Tm_init, in_spec_phot.rs
         )
@@ -325,12 +339,12 @@ def evolve(
     rs = in_spec_phot.rs
     dt = dlnz * coarsen_factor / phys.hubble(rs)
 
-    # tqdm related stuff. 
+    # tqdm related stuff.
     if use_tqdm:
         from tqdm import tqdm_notebook as tqdm
         pbar = tqdm(total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor))
 
-    # Function that changes the normalization 
+    # Function that changes the normalization
     # from per annihilation to per baryon in the step.
     # rate_func_N converts from per annihilation per volume per time,
     # other factors do the rest of the conversion.
@@ -345,7 +359,7 @@ def evolve(
         elec_processes = True
 
         if (
-            ics_thomson_ref_tf is None or ics_rel_ref_tf is None 
+            ics_thomson_ref_tf is None or ics_rel_ref_tf is None
             or engloss_ref_tf is None
         ):
             raise TypeError('Must specify transfer functions for electron processes')
@@ -353,7 +367,7 @@ def evolve(
     if elec_processes:
         if ics_only:
             (
-                ics_sec_phot_tf, ics_sec_elec_tf, 
+                ics_sec_phot_tf, ics_sec_elec_tf,
                 continuum_loss, deposited_ICS_arr
             ) = get_ics_cooling_tf(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
@@ -361,7 +375,7 @@ def evolve(
                 )
         else:
             (
-                ics_sec_phot_tf, ics_sec_elec_tf, 
+                ics_sec_phot_tf, ics_sec_elec_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 continuum_loss, deposited_ICS_arr
             ) = get_elec_cooling_tf_fast(
@@ -369,7 +383,7 @@ def evolve(
                     eleceng, photeng, rs, xe_arr[-1], xHe=0
                 )
 
-        # Quantities are still per annihilation.            
+        # Quantities are still per annihilation.
         ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
         # NOTE: THIS NEEDS TO BE ADDED TO lowengelec!!
         ics_lowengelec_spec = ics_sec_elec_tf.sum_specs(in_spec_elec)
@@ -390,11 +404,11 @@ def evolve(
             deposited_ion  = 0.
             deposited_exc  = 0.
             deposited_heat = 0.
-            
+
         deposited_ICS  = np.dot(
             deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
         )
-        
+
         positronium_phot_spec = pos.weighted_photon_spec(photeng) * (
             in_spec_elec.totN()/2
         )
@@ -456,7 +470,7 @@ def evolve(
         if use_tqdm:
             pbar.update(1)
 
-        # dE/dVdt_inj without structure formation 
+        # dE/dVdt_inj without structure formation
         # should be passed into compute_fs
         if struct_boost is not None:
             if struct_boost(rs) == 1:
@@ -477,7 +491,7 @@ def evolve(
             if std_soln:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_std(rs), 0, 0]), 
+                    np.array([1-xe_std(rs), 0, 0]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                     separate_higheng=separate_higheng
@@ -485,7 +499,7 @@ def evolve(
             else:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xe_arr[-1], 0, 0]), 
+                    np.array([1-xe_arr[-1], 0, 0]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                     separate_higheng=separate_higheng
@@ -513,7 +527,7 @@ def evolve(
                 init_cond, f_H_ion, f_exc, f_heat,
                 rate_func_eng_unclustered, np.array([prev_rs, rs]),
                 reion_switch=reion_switch, reion_rs=reion_rs,
-                photoion_rate_func=photoion_rate_func, 
+                photoion_rate_func=photoion_rate_func,
                 photoheat_rate_func=photoheat_rate_func,
                 xe_reion_func=xe_reion_func
             )
@@ -573,7 +587,7 @@ def evolve(
         )
         if elec_processes:
             next_lowengelec_spec  = (
-                lowengelec_tf.sum_specs(out_highengphot_specs[-1]) 
+                lowengelec_tf.sum_specs(out_highengphot_specs[-1])
                 + ics_lowengelec_spec*norm_fac(rs)
             )
         else:
@@ -594,7 +608,7 @@ def evolve(
         if elec_processes:
             if ics_only:
                 (
-                    ics_sec_phot_tf, ics_sec_elec_tf, 
+                    ics_sec_phot_tf, ics_sec_elec_tf,
                     continuum_loss, deposited_ICS_arr
                 ) = get_ics_cooling_tf(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
@@ -606,7 +620,7 @@ def evolve(
                 else:
                     xe_elec_cooling = xe_arr[-1]
                 (
-                    ics_sec_phot_tf, ics_sec_elec_tf, 
+                    ics_sec_phot_tf, ics_sec_elec_tf,
                     deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                     continuum_loss, deposited_ICS_arr
                 ) = get_elec_cooling_tf_fast(
@@ -618,7 +632,7 @@ def evolve(
             ics_lowengelec_spec = ics_sec_elec_tf.sum_specs(in_spec_elec)
 
             if not ics_only:
-        
+
                 deposited_ion  = np.dot(
                     deposited_ion_arr,  in_spec_elec.N*norm_fac(rs)
                 )
@@ -634,7 +648,7 @@ def evolve(
                 deposited_ion  = 0
                 deposited_exc  = 0
                 deposited_heat = 0
-                
+
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
             )
