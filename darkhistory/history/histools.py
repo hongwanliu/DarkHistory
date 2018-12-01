@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 class IonRSInterp:
 
@@ -34,8 +35,9 @@ class IonRSInterp:
         if str(type(val_arr)) != "<class 'numpy.ndarray'>":
             raise TypeError('val_arr must be an ndarray')
 
-        if len(xe_arr) != np.size(val_arr, 0):
-            raise TypeError('0th dimension of val_arr must be the xe dimension')
+        if xe_arr is not None:
+            if len(xe_arr) != np.size(val_arr, 0):
+                raise TypeError('0th dimension of val_arr must be the xe dimension')
 
         if len(rs_arr) != np.size(val_arr, 1):
             raise TypeError('1st dimension of val_arr (val_arr[0,:,0,0,...]) must be the rs dimension')
@@ -45,7 +47,7 @@ class IonRSInterp:
         self.in_eng     = in_eng
         self.eng        = eng
         self._grid_vals = val_arr
-        self.logInterp  = logInterp
+        self._logInterp  = logInterp
 
         if self.rs[0] - self.rs[1] > 0:
             # data points have been stored in decreasing rs.
@@ -54,18 +56,27 @@ class IonRSInterp:
 
         # Now, data is stored in *increasing* rs.
 
-        if not logInterp:
+        if self._logInterp:
+            self._grid_vals[self._grid_vals<=0] = 1e-200
+            func = np.log
+        else:
+            print('noninterp')
+            def func(obj):
+                return obj
+
+        if xe_arr is not None:
             self.interp_func = RegularGridInterpolator(
-                (self.xes, self.rs), self._grid_vals
+                (func(self.xes), func(self.rs)), func(self._grid_vals)
             )
         else:
-            self._grid_vals[self._grid_vals <= 0] = 1e-200
-            self.interp_func = RegularGridInterpolator((np.log(self.xes), np.log(self.rs)), np.log(self._grid_vals))
+            self.interp_func = interp1d(
+                func(self.rs), func(self._grid_vals[0]), axis=0
+            )
 
 
     def get_val(self, xe, rs):
 
-        if self.logInterp:
+        if self._logInterp:
             func = np.log
             invFunc = np.exp
         else:
@@ -80,10 +91,10 @@ class IonRSInterp:
 
         if self.xes is not None:
             # xe must lie between these values.
-            if xe > self.xe[-1]:
-                xe = self.xe[-1]
-            if xe < self.xe[0]:
-                xe = self.xe[0]
+            if xe > self.xes[-1]:
+                xe = self.xes[-1]
+            if xe < self.xes[0]:
+                xe = self.xes[0]
 
             return invFunc(np.squeeze(self.interp_func([func(xe), func(rs)])))
         else:

@@ -42,6 +42,7 @@ def load_trans_funcs(direc, xes, num_rs_nodes=0, string_arr = [""]):
 
     if num_rs_nodes == 0:
         arr = np.array([None])
+        xes = np.array([xes])
     else:
         string_arr = ["", "_pre1700"]
         arr = np.array([None, None])
@@ -144,29 +145,33 @@ def load_trans_funcs(direc, xes, num_rs_nodes=0, string_arr = [""]):
             )
         print("low energy electrons...\n")
 
-        tmp = np.zeros((len(xes), len(rs_list), len(photeng), 4))
+        if xes[ii] is not None:
+            dim0 = len(xes[ii])
+        else:
+            dim0 = 1
+
+        tmp = np.zeros((dim0, len(rs_list), len(photeng), 4))
         for i, highdep in enumerate(highengdep_arr):
             tmp[i] = np.pad(highdep, ((0,0),(photeng_low.size, 0),(0,0)), 'constant')
         highengdep_arr = tmp.copy()
         print("high energy deposition.\n")
 
-        tmp = np.zeros((len(xes), len(rs_list), len(photeng)))
+        tmp = np.zeros((dim0, len(rs_list), len(photeng)))
         for i, engloss in enumerate(CMB_engloss_arr):
             tmp[i] = np.pad(engloss, ((0,0),(photeng_low.size, 0)), 'constant')
         CMB_engloss_arr = tmp.copy()
         print("CMB losses.\n")
 
         print("Generating TransferFuncInterp objects for each tflist...")
-        highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes, highengphot_tflist_arr.copy(), log_interp = False, divisions=divisions)
-        lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr.copy(), log_interp = False, divisions=divisions)
-        lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr.copy(), log_interp = False, divisions=divisions)
-        highengdep_interp[ii]     = ht.IonRSInterp(xes, rs_list, highengdep_arr.copy(), logInterp=True)
-        CMB_engloss_interp[ii]    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr.copy(), logInterp=True)
+        highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes[ii], highengphot_tflist_arr.copy(), log_interp = False)
+        lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengphot_tflist_arr.copy(), log_interp = False)
+        lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengelec_tflist_arr.copy(), log_interp = False)
+        highengdep_interp[ii]     = ht.IonRSInterp(xes[ii], rs_list, highengdep_arr.copy(), logInterp=True)
+        CMB_engloss_interp[ii]    = ht.IonRSInterp(xes[ii], rs_list, CMB_engloss_arr.copy(), logInterp=True)
 
     print("Done.\n")
 
-    # If there are no divisions, we have a bunch of 1-element arrays
-    if divisions == 0:
+    if num_rs_nodes == 0:
         highengphot_tf_interp = highengphot_tf_interp[0]
         lowengphot_tf_interp  = lowengphot_tf_interp[0]
         lowengelec_tf_interp  = lowengelec_tf_interp[0]

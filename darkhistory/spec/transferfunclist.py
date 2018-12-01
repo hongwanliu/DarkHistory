@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.linalg import matrix_power
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 from darkhistory.utilities import arrays_equal
 from darkhistory.spec.spectrum import Spectrum
@@ -400,7 +401,7 @@ class TransferFuncInterp:
             )
         else:
             self.interp_func = interp1d(
-                func(self.rs), func(grid_vals), axis=0
+                func(self.rs), func(grid_vals[0]), axis=0
             )
 
     def get_tf(self, xe, rs):
