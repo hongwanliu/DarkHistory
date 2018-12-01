@@ -40,12 +40,12 @@ class IonRSInterp:
         if len(rs_arr) != np.size(val_arr, 1):
             raise TypeError('1st dimension of val_arr (val_arr[0,:,0,0,...]) must be the rs dimension')
 
-        self.rs     = rs_arr
-        self.xe     = xe_arr
-        self.in_eng = in_eng
-        self.eng    = eng
+        self.rs         = rs_arr
+        self.xes        = xe_arr
+        self.in_eng     = in_eng
+        self.eng        = eng
         self._grid_vals = val_arr
-        self.logInterp = logInterp
+        self.logInterp  = logInterp
 
         if self.rs[0] - self.rs[1] > 0:
             # data points have been stored in decreasing rs.
@@ -55,30 +55,77 @@ class IonRSInterp:
         # Now, data is stored in *increasing* rs.
 
         if not logInterp:
-            # self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), self._grid_vals)
             self.interp_func = RegularGridInterpolator(
-                (self.xe, self.rs), self._grid_vals
+                (self.xes, self.rs), self._grid_vals
             )
         else:
             self._grid_vals[self._grid_vals <= 0] = 1e-200
-            self.interp_func = RegularGridInterpolator((np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals))
+            self.interp_func = RegularGridInterpolator((np.log(self.xes), np.log(self.rs)), np.log(self._grid_vals))
 
 
     def get_val(self, xe, rs):
 
-        # xe must lie between these values.
-        if xe > self.xe[-1]:
-            xe = self.xe[-1]
-        if xe < self.xe[0]:
-            xe = self.xe[0]
+        if self.logInterp:
+            func = np.log
+            invFunc = np.exp
+        else:
+            def func(obj):
+                return obj
+            invFunc = func
 
         if rs > self.rs[-1]:
             rs = self.rs[-1]
         if rs < self.rs[0]:
             rs = self.rs[0]
 
-        if not self.logInterp:
-            # return np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
-            return np.squeeze(self.interp_func([xe, rs]))
+        if self.xes is not None:
+            # xe must lie between these values.
+            if xe > self.xe[-1]:
+                xe = self.xe[-1]
+            if xe < self.xe[0]:
+                xe = self.xe[0]
+
+            return invFunc(np.squeeze(self.interp_func([func(xe), func(rs)])))
         else:
-            return np.exp(np.squeeze(self.interp_func([np.log(xe), np.log(rs)])))
+            return invFunc(self.interp_func(func(rs)))
+
+
+class IonRSInterps:
+    """Interpolation function over multiple list of objects
+
+    Parameters
+    ----------
+    ...
+
+    Attributes
+    ----------
+
+    """
+
+    def __init__(self, ionRSinterps):
+
+        length = len(ionRSinterps)
+
+        self.rs = np.array([None for i in np.arange(length)])
+        self.rs_nodes = np.zeros(length-1)
+
+        for i, ionRSinterp in enumerate(ionRSinterp):
+
+            if np.any(np.diff(ionRSinterp.rs)<0):
+                raise TypeError('redshifts in ionRSinterp[%d] should be increasing' % i+1)
+                self.rs[i] = ionRSinterp.rs
+
+                if i != length:
+                    if ionRSinterps[i].rs[-1] < ionRSinterps[i+1].rs[0]:
+                        raise TypeError(
+                            'The largest redshift in ionRSinterps[%d] is smaller '
+                            +'than the largest redshift in ionRSinterps[%d] (i.e. there\'s a missing interpolation window)' % (i,i+1)
+                        )
+                    self.rs_nodes[i] = ionRSinterp[i].rs[-1]
+
+        self.ionRSinterps = ionRSinterps
+
+
+    def get_val(self, xe, rs):
+        interpInd = len(self.ionRSinterps)+1 - np.searchsorted(self.rs_nodes, rs)
+        return self.ionRSinterp[interpInd].get_val(xe,rs)

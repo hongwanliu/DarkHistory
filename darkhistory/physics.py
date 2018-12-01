@@ -586,38 +586,70 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
     else:
         raise TypeError('invalid species.')
 
-    # if in_eng < ion_pot:
-    #     return np.zeros_like(eng)
+    if np.isscalar(in_eng):
+        low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
+        # This spectrum describes the lower energy electron only.
+        low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+        # Normalize the spectrum to one electron.
 
-    dNdE_1 = 1/(1 + (eng/eps_i)**2.1)
-    # This spectrum describes the lower energy electron only.
-    dNdE_1[eng >= (in_eng - ion_pot)/2] = 0
-    # Normalize the spectrum to one electron.
+        low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
+        if np.sum(low_eng_elec_dNdE) == 0:
+            # Either in_eng < in_pot, or the lowest bin lies 
+            # above the halfway point, (in_eng - ion_pot)/2.
+            # Add to the lowest bin. 
+            return np.zeros_like(eng)
 
-    dNdE_1_spec = Spectrum(eng, dNdE_1)
-    if np.sum(dNdE_1) == 0:
-        # Either in_eng < in_pot, or the lowest bin lies 
-        # above the halfway point, (in_eng - ion_pot)/2.
-        # Add to the lowest bin. 
-        return np.zeros_like(eng)
+        low_eng_elec_spec /= low_eng_elec_spec.totN()
+        
+        in_eng = np.array([in_eng])
 
-    dNdE_1_spec /= dNdE_1_spec.totN()
+        low_eng_elec_N = np.outer(
+            np.ones_like(in_eng), low_eng_elec_spec.N)
 
-    in_eng = np.array([in_eng])
+        high_eng_elec_N = spectools.engloss_rebin_fast(
+            in_eng, eng + ion_pot, low_eng_elec_N, eng
+        )
 
-    dNdE_1_grid_vals = np.outer(np.ones_like(in_eng), dNdE_1_spec.N)
+        return np.squeeze(low_eng_elec_N + high_eng_elec_N)
 
-    dNdE_2_grid_vals = spectools.engloss_rebin_fast(
-        in_eng, eng + ion_pot, dNdE_1_grid_vals, eng
-    )
+    else:
+
+        from darkhistory.spec.spectra import Spectra
+
+        in_eng_mask = np.outer(in_eng, np.ones_like(eng))
+        eng_mask    = np.outer(np.ones_like(in_eng), eng)
+
+        low_eng_elec_dNdE = np.outer(
+            np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
+        )
+
+        low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
+
+        # Normalize the spectrum to one electron.
+        low_eng_elec_spec = Spectra(
+            low_eng_elec_dNdE, eng=eng, in_eng=in_eng
+        )
+
+        totN_arr = low_eng_elec_spec.totN()
+        # Avoids divide by zero errors.
+        totN_arr[totN_arr == 0] = np.inf
+
+        low_eng_elec_spec /= totN_arr
+
+        if low_eng_elec_spec.spec_type == 'dNdE':
+            low_eng_elec_spec.switch_spec_type()
+
+        low_eng_elec_N = low_eng_elec_spec.grid_vals
+
+        high_eng_elec_N = spectools.engloss_rebin_fast(
+            in_eng, eng + ion_pot, low_eng_elec_N, eng
+        )
+
+        return low_eng_elec_N + high_eng_elec_N
 
 
-    # import darkhistory.utilities as utils
-    # utils.compare_arr([
-    #     eng, np.squeeze(dNdE_1_grid_vals), np.squeeze(dNdE_2_grid_vals)
-    # ])
 
-    return np.squeeze(dNdE_1_grid_vals + dNdE_2_grid_vals)
+        # This spectrum describes the lower energy electron only.
 
 def elec_heating_engloss_rate(eng, xe, rs):
     """Returns the electron energy loss rate due to heating of the gas.
@@ -659,7 +691,6 @@ def elec_heating_engloss_rate(eng, xe, rs):
 
     # must use the mass of the electron in eV m^2 s^-2. 
     return prefac*ne*coulomb_log/(me/c**2*w)
-
 
 
 def tau_sobolev(rs):

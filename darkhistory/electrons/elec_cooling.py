@@ -13,8 +13,9 @@ from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
 def get_elec_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
-    eleceng, photeng, rs, xe, xHe=0, check_conservation_eng = False, 
-    verbose=False
+    coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+    eleceng, photeng, rs, xe, xHe=0, ics_engloss_data=None, 
+    check_conservation_eng = False, verbose=False
 ):
 
     """Returns transfer function for complete electron cooling through ICS and atomic processes.
@@ -27,6 +28,10 @@ def get_elec_cooling_tf_fast(
         Raw relativistic primary electron ICS transfer function.
     engloss_tf_filename : string
         Raw primary electron ICS energy loss transfer function.
+    coll_ion_sec_elec_specs : tuple of ndarray
+        Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).
+    coll_exc_sec_elec_specs : tuple of ndarray
+        Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).
     eleceng : ndarray
         The electron *kinetic* energy abscissa.
     photeng : ndarray
@@ -37,6 +42,8 @@ def get_elec_cooling_tf_fast(
         Free electron fraction. 
     xHe : float, optional
         Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.
+    ics_engloss_data : EnglossRebinData
+        Stores rebinning information for speed. 
     check_conservation_eng : bool
         If true, checks for energy conservation.
     verbose : bool
@@ -107,9 +114,14 @@ def get_elec_cooling_tf_fast(
         dlnz = -1, spec_type = 'N'
     )
 
-    elec_ICS_tf._grid_vals = spectools.engloss_rebin_fast(
-        eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
-    )
+    if ics_engloss_data is not None:
+        elec_ICS_tf._grid_vals = ics_engloss_data.rebin(
+            engloss_ICS_tf.grid_vals
+        )
+    else:
+        elec_ICS_tf._grid_vals = spectools.engloss_rebin_fast(
+            eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
+        )
     
     # Total upscattered photon energy.
     cont_loss_ICS_vec = np.zeros_like(eleceng)
@@ -125,44 +137,74 @@ def get_elec_cooling_tf_fast(
     # with a per second rate given by n*sigma*c.
     
 
-    rate_matrix_exc_HI = np.diag(
-        (1 - xe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
-    )
+    # rate_matrix_exc_HI = np.diag(
+    #     (1 - xe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
+    # )
     
-    rate_matrix_exc_HeI = np.diag(
-        (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
-    )
+    # rate_matrix_exc_HeI = np.diag(
+    #     (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
+    # )
     
-    rate_matrix_exc_HeII = np.diag(
-        xHe*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
-    )
+    # rate_matrix_exc_HeII = np.diag(
+    #     xHe*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
+    # )
 
     # Construct the TransFuncAtRedshift objects.
     # Electrons scatter from in_eng to in_eng - excitation energy.
     # Remove all of the columns (eng) that have energies below the excitation energy, 
-    elec_exc_HI_tf = tf.TransFuncAtRedshift(
-        np.squeeze(rate_matrix_exc_HI[:, np.where(eleceng > phys.lya_eng)]), 
-        in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
-        eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
-        dlnz = -1, spec_type = 'N'
-    )
-    elec_exc_HeI_tf = tf.TransFuncAtRedshift(
-        np.squeeze(rate_matrix_exc_HeI[:, np.where(eleceng > phys.He_exc_eng)]), 
-        in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
-        eng = eleceng[eleceng > phys.He_exc_eng] - phys.He_exc_eng,
-        dlnz = -1, spec_type = 'N'
-    )
-    elec_exc_HeII_tf = tf.TransFuncAtRedshift(
-        np.squeeze(rate_matrix_exc_HeII[:, np.where(eleceng > 4*phys.lya_eng)]), 
-        in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
-        eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
-        dlnz = -1, spec_type = 'N'
-    )
+    # elec_exc_HI_tf = tf.TransFuncAtRedshift(
+    #     np.squeeze(rate_matrix_exc_HI[:, np.where(eleceng > phys.lya_eng)]), 
+    #     in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
+    #     eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
+    #     dlnz = -1, spec_type = 'N'
+    # )
+    # elec_exc_HeI_tf = tf.TransFuncAtRedshift(
+    #     np.squeeze(rate_matrix_exc_HeI[:, np.where(eleceng > phys.He_exc_eng)]), 
+    #     in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
+    #     eng = eleceng[eleceng > phys.He_exc_eng] - phys.He_exc_eng,
+    #     dlnz = -1, spec_type = 'N'
+    # )
+    # elec_exc_HeII_tf = tf.TransFuncAtRedshift(
+    #     np.squeeze(rate_matrix_exc_HeII[:, np.where(eleceng > 4*phys.lya_eng)]), 
+    #     in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
+    #     eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
+    #     dlnz = -1, spec_type = 'N'
+    # )
     
     # Rebin these transfer functions back to eleceng.
-    elec_exc_HI_tf.rebin(eleceng)
-    elec_exc_HeI_tf.rebin(eleceng)
-    elec_exc_HeII_tf.rebin(eleceng)
+    # elec_exc_HI_tf.rebin(eleceng)
+    # elec_exc_HeI_tf.rebin(eleceng)
+    # elec_exc_HeII_tf.rebin(eleceng)
+
+    rate_vec_exc_HI = (
+        (1 - xe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
+    )
+    
+    rate_vec_exc_HeI = (
+        (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
+    )
+    
+    rate_vec_exc_HeII = (
+        xHe*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
+    )
+
+    elec_exc_HI_tf = tf.TransFuncAtRedshift(
+        rate_vec_exc_HI[:, np.newaxis]*coll_exc_sec_elec_specs[0],
+        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
+        eng = eleceng, dlnz = -1, spec_type  = 'N'
+    )
+
+    elec_exc_HeI_tf = tf.TransFuncAtRedshift(
+        rate_vec_exc_HeI[:, np.newaxis]*coll_exc_sec_elec_specs[1],
+        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
+        eng = eleceng, dlnz = -1, spec_type  = 'N'
+    )
+
+    elec_exc_HeII_tf = tf.TransFuncAtRedshift(
+        rate_vec_exc_HeII[:, np.newaxis]*coll_exc_sec_elec_specs[2],
+        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
+        eng = eleceng, dlnz = -1, spec_type  = 'N'
+    )
    
     # Deposited energy for excitation.
     deposited_exc_vec = np.zeros_like(eleceng)
@@ -174,31 +216,49 @@ def get_elec_cooling_tf_fast(
     # Construct the rate vector first. Secondary electron spectrum is an electron at in_eng - excitation energy, 
     # with a per second rate given by n*sigma*c.
     rate_vec_ion_HI = (
-        (1 - xe)*phys.nH*rs**3 * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
+        (1 - xe)*phys.nH*rs**3 
+        * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_ion_HeI = (
-        (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 * phys.coll_ion_xsec(eleceng, species='HeI') * beta_ele * phys.c
+        (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 
+        * phys.coll_ion_xsec(eleceng, species='HeI') * beta_ele * phys.c
     )
     
     rate_vec_ion_HeII = (
-        xHe*phys.nH*rs**3 * phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
+        xHe*phys.nH*rs**3 * 
+        phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
     )
     
     # Construct the spectra. 
-    elec_spec_ion_HI = np.array(
-        [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HI') for rate,in_eng in zip(rate_vec_ion_HI,eleceng)]
+    # elec_spec_ion_HI = np.array(
+    #     [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HI') 
+    # for rate,in_eng in zip(rate_vec_ion_HI,eleceng)]
+    # )
+    # elec_spec_ion_HeI = np.array(
+    #     [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeI') 
+    # for rate,in_eng in zip(rate_vec_ion_HeI,eleceng)]
+    # )
+    # elec_spec_ion_HeII = np.array(
+    #     [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeII') 
+    # for rate,in_eng in zip(rate_vec_ion_HeII,eleceng)]
+    # )
+
+    # transpose to force multiplication along first axis.
+    elec_spec_ion_HI   = (
+        rate_vec_ion_HI[:,np.newaxis]   * coll_ion_sec_elec_specs[0]
     )
-    elec_spec_ion_HeI = np.array(
-        [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeI') for rate,in_eng in zip(rate_vec_ion_HeI,eleceng)]
+    elec_spec_ion_HeI  = (
+        rate_vec_ion_HeI[:,np.newaxis]  * coll_ion_sec_elec_specs[1]
     )
-    elec_spec_ion_HeII = np.array(
-        [rate*phys.coll_ion_sec_elec_spec(in_eng, eleceng, species='HeII') for rate,in_eng in zip(rate_vec_ion_HeII,eleceng)]
-    )   
+    elec_spec_ion_HeII = (
+        rate_vec_ion_HeII[:,np.newaxis] * coll_ion_sec_elec_specs[2]
+    )
     
     # Construct the TransFuncAtRedshift objects.
     # Electrons scatter from in_eng to in_eng - excitation energy.
-    # Remove all of the columns (eng) that have energies below the excitation energy, 
+    # Remove all of the columns (eng) that have energies below the 
+    # excitation energy, 
     elec_ion_HI_tf = tf.TransFuncAtRedshift(
         elec_spec_ion_HI, in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
         eng = eleceng, dlnz = -1, spec_type = 'N'
@@ -222,6 +282,31 @@ def get_elec_cooling_tf_fast(
     dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs)
     
     deposited_heat_vec = np.zeros_like(eleceng)
+
+    # new_eleceng = eleceng - dE_heat_dt
+
+    # if not np.all(new_eleceng[1:] > eleceng[:-1]):
+    #     utils.compare_arr([new_eleceng, eleceng])
+    #     raise ValueError('heating loss is too large: smaller time step required.')
+
+    # # After the check above, we can define the spectra by
+    # # manually assigning slightly less than 1 particle along
+    # # diagonal, and a small amount in the bin below. 
+
+    # # N_n-1 E_n-1 + N_n E_n = E_n - dE_dt
+    # # N_n-1 + N_n = 1
+    # # therefore, (1 - N_n) E_n-1 - (1 - N_n) E_n = - dE_dt
+    # # i.e. N_n = 1 + dE_dt/(E_n-1 - E_n)
+
+    elec_heat_spec_grid = np.identity(eleceng.size)
+    elec_heat_spec_grid[0,0] -= dE_heat_dt[0]/eleceng[0]
+    elec_heat_spec_grid[1:, 1:] += np.diag(
+        dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
+    )
+    elec_heat_spec_grid[1:, :-1] -= np.diag(
+        dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
+    )
+
     
     
     #############################################
@@ -278,10 +363,12 @@ def get_elec_cooling_tf_fast(
         elec_ion_HeI_N  = elec_ion_HeI_tf.grid_vals[i]
         elec_ion_HeII_N = elec_ion_HeII_tf.grid_vals[i]
                 
-        elec_heat_spec = spectools.rebin_N_arr(np.array([1]), np.array([eng]), eleceng)
-        elec_heat_spec.eng -= dE_heat_dt[i]
-        elec_heat_spec.rebin(eleceng)
-        elec_heat_N = elec_heat_spec.N
+        # elec_heat_spec = spectools.rebin_N_arr(np.array([1]), np.array([eng]), eleceng)
+        # elec_heat_spec.eng -= dE_heat_dt[i]
+        # elec_heat_spec.rebin(eleceng)
+        # elec_heat_N = elec_heat_spec.N
+
+        elec_heat_N = elec_heat_spec_grid[i]        
         
         sec_elec_spec_N = (
             elec_ICS_N 
