@@ -25,6 +25,8 @@ from darkhistory.electrons.ics.ics_spectrum import rel_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf_fast
+from darkhistory.electrons.elec_cooling import \
+    get_elec_cooling_tf_fast_linalg
 
 from darkhistory.electrons import positronium as pos
 
@@ -414,10 +416,10 @@ def evolve(
                 ics_sec_phot_tf, ics_sec_elec_tf, 
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 continuum_loss, deposited_ICS_arr
-            ) = get_elec_cooling_tf_fast(
+            ) = get_elec_cooling_tf_fast_linalg(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-                    eleceng, photeng, rs, xe_arr[-1], xHe=0, 
+                    eleceng, photeng, rs, xe_arr[-1], xHe=0,
                     ics_engloss_data=ics_engloss_data
                 )
 
@@ -568,7 +570,7 @@ def evolve(
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func, 
                 photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func
+                xe_reion_func=xe_reion_func, mxstep=1000
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
@@ -662,7 +664,7 @@ def evolve(
                     ics_sec_phot_tf, ics_sec_elec_tf, 
                     deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                     continuum_loss, deposited_ICS_arr
-                ) = get_elec_cooling_tf_fast(
+                ) = get_elec_cooling_tf_fast_linalg(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                         coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
                         eleceng, photeng, rs, xe_elec_cooling, xHe=0,
