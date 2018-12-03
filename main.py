@@ -155,8 +155,8 @@ def load_trans_funcs(direc):
     lowengphot_tf_interp  = tflist.TransferFuncInterp(xes, lowengphot_tflist_arr, log_interp = False)
     lowengelec_tf_interp  = tflist.TransferFuncInterp(xes, lowengelec_tflist_arr, log_interp = False)
     # highengdep_interp cannot be log interpolated, contains negative values.
-    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=True)
-    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=True)
+    highengdep_interp     = ht.IonRSInterp(xes, rs_list, highengdep_arr, in_eng = photeng, logInterp=False)
+    CMB_engloss_interp    = ht.IonRSInterp(xes, rs_list, CMB_engloss_arr, in_eng = photeng, logInterp=False)
     print("Done.\n")
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
@@ -455,6 +455,8 @@ def evolve(
         if positronium_phot_spec.spec_type != 'N':
             positronium_phot_spec.switch_spec_type()
 
+        positronium_phot_spec.rs = rs
+
         # The initial input dN/dE per annihilation to per baryon per dlnz,
         # based on the specified rate.
         # dN/(dN_B d lnz dE) = dN/dE * (dN_ann/(dV dt)) * dV/dN_B * dt/dlogz
@@ -462,6 +464,7 @@ def evolve(
             (in_spec_phot + ics_phot_spec + positronium_phot_spec)
             * norm_fac(rs)
         )
+        
     else:
         init_inj_spec = in_spec_phot * norm_fac(rs)
 
@@ -570,7 +573,7 @@ def evolve(
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func, 
                 photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func, mxstep=1000
+                xe_reion_func=xe_reion_func, mxstep=0
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
@@ -664,10 +667,10 @@ def evolve(
                     ics_sec_phot_tf, ics_sec_elec_tf, 
                     deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                     continuum_loss, deposited_ICS_arr
-                ) = get_elec_cooling_tf_fast_linalg(
+                ) = get_elec_cooling_tf_fast(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                         coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-                        eleceng, photeng, rs, xe_elec_cooling, xHe=0,
+                        eleceng, photeng, rs, xe_elec_cooling, xHe=0, linalg=True,
                         ics_engloss_data=ics_engloss_data
                     )
 
@@ -711,6 +714,26 @@ def evolve(
             )
         else:
             next_inj_spec = in_spec_phot * norm_fac(rs)
+
+        # if rs < 2756:
+        #     (
+        #         ics_sec_phot_tf_linalg, ics_sec_elec_tf_linalg, 
+        #         deposited_ion_arr_linalg, deposited_exc_arr_linalg, 
+        #         deposited_heat_arr_linalg,
+        #         continuum_loss_linalg, deposited_ICS_arr_linalg
+        #     ) = get_elec_cooling_tf_fast(
+        #             ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
+        #             coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+        #             eleceng, photeng, rs, xe_elec_cooling, xHe=0, 
+        #             linalg=True,
+        #             ics_engloss_data=ics_engloss_data
+        #         )
+        #     print('rs: ', rs, 'xe: ', xe_elec_cooling)
+        #     to_print = ics_sec_phot_tf_linalg.sum_specs(in_spec_elec)
+        #     utils.compare_arr([
+        #         ics_phot_spec.N, 
+        #         to_print.N
+        #     ])
 
         # This keeps the redshift.
         next_highengphot_spec.N += next_inj_spec.N

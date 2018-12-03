@@ -10,6 +10,7 @@ import darkhistory.spec.spectools as spectools
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
+from scipy.linalg import solve_triangular
 
 def get_elec_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
@@ -917,38 +918,38 @@ def get_elec_cooling_tf_fast_linalg(
     sec_highengelec_N_arr[:, eleceng_high_ind[0]:] = sec_elec_spec_N_arr[:, eleceng_high_ind[0]:]
     
     # T = E.T + Prompt
-    deposited_ICS_vec  = np.linalg.solve(
+    deposited_ICS_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr,
-        deposited_ICS_eng_arr
+        deposited_ICS_eng_arr, lower=True
     )
-    deposited_exc_vec  = np.linalg.solve(
+    deposited_exc_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_exc_eng_arr
+        deposited_exc_eng_arr, lower=True
     )
-    deposited_ion_vec  = np.linalg.solve(
+    deposited_ion_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_ion_eng_arr
+        deposited_ion_eng_arr, lower=True
     )
-    deposited_heat_vec = np.linalg.solve(
+    deposited_heat_vec = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_heat_eng_arr
-    )
-    
-    cont_loss_ICS_vec = np.linalg.solve(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        continuum_engloss_arr
+        deposited_heat_eng_arr, lower=True
     )
     
-    sec_phot_specs = np.linalg.solve(
+    cont_loss_ICS_vec = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        sec_phot_spec_N_arr
+        continuum_engloss_arr, lower=True
+    )
+    
+    sec_phot_specs = solve_triangular(
+        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+        sec_phot_spec_N_arr, lower=True
     )
     
     # Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
     # T : high energy e produced (sec_highengelec_N_arr). 
-    sec_lowengelec_specs = np.linalg.solve(
+    sec_lowengelec_specs = solve_triangular(
         np.identity(eleceng.size) - sec_highengelec_N_arr,
-        sec_lowengelec_N_arr
+        sec_lowengelec_N_arr, lower=True
     )
     
     sec_phot_tf._grid_vals = sec_phot_specs
