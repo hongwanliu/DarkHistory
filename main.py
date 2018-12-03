@@ -36,16 +36,19 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc, xes, num_rs_nodes=0, string_arr = [""]):
+def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
 
+    #If only a string is specified, make it a list of strings
+    if isinstance(direc_arr, str):
+        direc_arr = [direc_arr]
+
+    num_rs_nodes = len(string_arr)-1
     if num_rs_nodes == 0:
-        arr = np.array([None])
         xes = np.array([xes])
-    else:
-        string_arr = ["", "_pre1700"]
-        arr = np.array([None, None])
+
+    arr = np.array([None for i in np.arange(num_rs_nodes+1)])
 
     highengphot_tf_interp = arr.copy()
     lowengphot_tf_interp  = arr.copy()
@@ -55,24 +58,24 @@ def load_trans_funcs(direc, xes, num_rs_nodes=0, string_arr = [""]):
 
     for ii, string in enumerate(string_arr):
         print('Loading transfer functions...')
-        highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_complete"+string+".raw", "rb"))
+        highengphot_tflist_arr = pickle.load(open(direc_arr[ii]+"tfunclist_photspec_60eV_complete"+string+".raw", "rb"))
         #highengphot_tflist_arr = pickle.load(open(direc+"tfunclist_photspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
         print('Loaded high energy photons...')
 
-        lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_complete"+string+".raw", "rb"))
+        lowengphot_tflist_arr  = pickle.load(open(direc_arr[ii]+"tfunclist_lowengphotspec_60eV_complete"+string+".raw", "rb"))
         #lowengphot_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengphotspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
         print('Low energy photons...')
 
-        lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_complete"+string+".raw", "rb"))
+        lowengelec_tflist_arr  = pickle.load(open(direc_arr[ii]+"tfunclist_lowengelecspec_60eV_complete"+string+".raw", "rb"))
         #lowengelec_tflist_arr  = pickle.load(open(direc+"tfunclist_lowengelecspec_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
         print('Low energy electrons...')
 
-        highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_complete"+string+".raw", "rb"))
+        highengdep_arr = pickle.load(open(direc_arr[ii]+"highdeposited_60eV_complete"+string+".raw", "rb"))
         #highengdep_arr = pickle.load(open(direc+"highdeposited_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
         highengdep_arr = np.swapaxes(highengdep_arr, 1, 2)
         print('high energy deposition.\n')
 
-        CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_complete"+string+".raw", "rb"))
+        CMB_engloss_arr = pickle.load(open(direc_arr[ii]+"CMB_engloss_60eV_complete"+string+".raw", "rb"))
         #CMB_engloss_arr = pickle.load(open(direc+"CMB_engloss_60eV_injE_complete_rs_30_xe_2pts.raw", "rb"))
         CMB_engloss_arr = np.swapaxes(CMB_engloss_arr, 1, 2)
         print('CMB losses.\n')
@@ -178,11 +181,11 @@ def load_trans_funcs(direc, xes, num_rs_nodes=0, string_arr = [""]):
         highengdep_interp     = highengdep_interp[0]
         CMB_engloss_interp    = CMB_engloss_interp[0]
     else:
-        highengphot_tf_interp = tflist.TransferFuncInterps(highengphot_tf_interp)
-        lowengphot_tf_interp = tflist.TransferFuncInterps(lowengphot_tf_interp)
-        lowengelec_tf_interp = tflist.TransferFuncInterps(lowengelec_tf_interp)
-        highengdep_interp = ht.IonRSInterps(highengdep_interp)
-        CMB_engloss_interp = ht.IonRSInterps(CMB_engloss_interp)
+        highengphot_tf_interp = tflist.TransferFuncInterps(highengphot_tf_interp, xes, inverted=inverted)
+        lowengphot_tf_interp = tflist.TransferFuncInterps(lowengphot_tf_interp, xes, inverted=inverted)
+        lowengelec_tf_interp = tflist.TransferFuncInterps(lowengelec_tf_interp, xes, inverted=inverted)
+        highengdep_interp = ht.IonRSInterps(highengdep_interp, xes, inverted=inverted)
+        CMB_engloss_interp = ht.IonRSInterps(CMB_engloss_interp, xes, inverted=inverted)
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
 
@@ -446,7 +449,7 @@ def evolve(
             ) = get_elec_cooling_tf_fast(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-                    eleceng, photeng, rs, xe_arr[-1], xHe=0, 
+                    eleceng, photeng, rs, xe_arr[-1], xHe=0,
                     ics_engloss_data=ics_engloss_data
                 )
 
