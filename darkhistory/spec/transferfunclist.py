@@ -414,6 +414,10 @@ class TransferFuncInterp:
                 return obj
             invFunc = func
 
+        if rs > self.rs[-1]:
+            rs = self.rs[-1]
+        if rs < self.rs[0]:
+            rs = self.rs[0]
         # xe must lie between these values.
         if self.xe is not None:
             if xe > self.xe[-1]:
@@ -453,27 +457,46 @@ class TransferFuncInterps:
 
     """
 
-    def __init__(self, tfInterps):
+    def __init__(self, tfInterps, xe_arr, inverted=False):
 
         length = len(tfInterps)
         self.rs = np.array([None for i in np.arange(length)])
         self.rs_nodes = np.zeros(length-1)
+        self.xe_arr = xe_arr
+        self.eng = tfInterps[0].eng
+        self.in_eng = tfInterps[0].in_eng
+        self.dlnz = tfInterps[0].dlnz
 
         for i, tfInterp in enumerate(tfInterps):
             if np.any(np.diff(tfInterp.rs)<0):
                 raise TypeError('redshifts in tfInterp[%d] should be increasing' % i+1)
             self.rs[i] = tfInterp.rs
 
-            if i != length:
+
+            if i != length-1:
+                if np.all(self.eng != tfInterps[i+1].eng):
+                    raise TypeError('All TransferFuncInterp objects must have same eng')
+                if np.all(self.in_eng != tfInterps[i+1].in_eng):
+                    raise TypeError('All TransferFuncInterp objects must have same in_eng')
+                if self.dlnz != tfInterps[i+1].dlnz:
+                    raise TypeError('All TransferFuncInterp objects must have same dlnz')
+
+                if tfInterps[i].rs[0] > tfInterps[i+1].rs[0]:
+                    raise TypeError(
+                        'TransferFuncInterp object number %d should have redshifts smaller than object number %d (we demand ascending order of redshifts between objects)' % (i,i+1)
+                    )
                 if tfInterps[i].rs[-1] < tfInterps[i+1].rs[0]:
                     raise TypeError(
                         'The largest redshift in ionRSinterp_list[%d] is smaller '
                         +'than the largest redshift in ionRSinterp_list[%d] (i.e. there\'s a missing interpolation window)' % (i,i+1)
                     )
-                self.rs_nodes[i] = ionRSinterp[i].rs[-1]
+                if not inverted:
+                    self.rs_nodes[i] = tfInterps[i].rs[-1]
+                else:
+                    self.rs_nodes[i] = tfInterps[i+1].rs[0]
 
-        self.ionRSinterps = ionRSinterps
+        self.tfInterps = tfInterps
 
-    def get_tf(self, rs, xe):
-        interpInd = len(self.tfInterps)+1 - np.searchsorted(self.rs_nodes, rs)
-        return self.tfInterps[interpInd].get_val(xe,rs)
+    def get_tf(self, xe, rs):
+        interpInd = np.searchsorted(self.rs_nodes, rs)
+        return self.tfInterps[interpInd].get_tf(xe,rs)

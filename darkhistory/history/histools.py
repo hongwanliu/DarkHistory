@@ -113,30 +113,39 @@ class IonRSInterps:
 
     """
 
-    def __init__(self, ionRSinterps):
+    def __init__(self, ionRSinterps, xe_arr, inverted=False):
 
         length = len(ionRSinterps)
 
         self.rs = np.array([None for i in np.arange(length)])
         self.rs_nodes = np.zeros(length-1)
+        self.xe_arr = xe_arr
 
-        for i, ionRSinterp in enumerate(ionRSinterp):
+        for i, ionRSinterp in enumerate(ionRSinterps):
 
             if np.any(np.diff(ionRSinterp.rs)<0):
                 raise TypeError('redshifts in ionRSinterp[%d] should be increasing' % i+1)
-                self.rs[i] = ionRSinterp.rs
 
-                if i != length:
-                    if ionRSinterps[i].rs[-1] < ionRSinterps[i+1].rs[0]:
-                        raise TypeError(
-                            'The largest redshift in ionRSinterps[%d] is smaller '
-                            +'than the largest redshift in ionRSinterps[%d] (i.e. there\'s a missing interpolation window)' % (i,i+1)
-                        )
-                    self.rs_nodes[i] = ionRSinterp[i].rs[-1]
+            self.rs[i] = ionRSinterp.rs
+
+            if i != length-1:
+                if ionRSinterps[i].rs[0] > ionRSinterps[i+1].rs[0]:
+                    raise TypeError(
+                        'IonRSInterp object number %d should have redshifts smaller than object number %d (we demand ascending order of redshifts between objects)' % (i,i+1)
+                    )
+                if ionRSinterps[i].rs[-1] < ionRSinterps[i+1].rs[0]:
+                    raise TypeError(
+                        'The largest redshift in ionRSinterps[%d] is smaller '
+                        +'than the largest redshift in ionRSinterps[%d] (i.e. there\'s a missing interpolation window)' % (i,i+1)
+                    )
+                if not inverted:
+                    self.rs_nodes[i] = ionRSinterps[i].rs[-1]
+                else:
+                    self.rs_nodes[i] = ionRSinterps[i+1].rs[0]
 
         self.ionRSinterps = ionRSinterps
 
 
     def get_val(self, xe, rs):
-        interpInd = len(self.ionRSinterps)+1 - np.searchsorted(self.rs_nodes, rs)
-        return self.ionRSinterp[interpInd].get_val(xe,rs)
+        interpInd = np.searchsorted(self.rs_nodes, rs)
+        return self.ionRSinterps[interpInd].get_val(xe,rs)
