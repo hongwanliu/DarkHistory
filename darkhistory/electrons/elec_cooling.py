@@ -15,7 +15,7 @@ from scipy.linalg import solve_triangular
 def get_elec_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-    eleceng, photeng, rs, xe, xHe=0, linalg=True, ics_engloss_data=None, 
+    eleceng, photeng, rs, xH, xHe=0, linalg=True, ics_engloss_data=None, 
     check_conservation_eng = False, verbose=False
 ):
 
@@ -39,10 +39,10 @@ def get_elec_cooling_tf_fast(
         The photon energy abscissa.
     rs : float
         The redshift.
-    xe : float
-        Free electron fraction. 
+    xH : float
+        The ionized hydrogen fraction, nHII/nH. 
     xHe : float, optional
-        Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.
+        Singly-ionized helium fraction, nHe+/nH.
     linalg : bool
         If true, uses a linear algebra method.
     ics_engloss_data : EnglossRebinData
@@ -71,13 +71,13 @@ def get_elec_cooling_tf_fast(
         return get_elec_cooling_tf_fast_linalg(
             raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
             coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-            eleceng, photeng, rs, xe, xHe=0, 
+            eleceng, photeng, rs, xH, xHe=xHe, 
             ics_engloss_data=ics_engloss_data, 
             check_conservation_eng = check_conservation_eng, verbose=verbose
         )
 
-    if xHe is None:
-        xHe = xe*phys.nHe/phys.nH
+    # Set the electron fraction. 
+    xe = xH + xHe
         
     # v/c of electrons, important subsequently.
     beta_ele = np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
@@ -189,7 +189,7 @@ def get_elec_cooling_tf_fast(
     # elec_exc_HeII_tf.rebin(eleceng)
 
     rate_vec_exc_HI = (
-        (1 - xe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
+        (1 - xH)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_exc_HeI = (
@@ -228,7 +228,7 @@ def get_elec_cooling_tf_fast(
     # Construct the rate vector first. Secondary electron spectrum is an electron at in_eng - excitation energy, 
     # with a per second rate given by n*sigma*c.
     rate_vec_ion_HI = (
-        (1 - xe)*phys.nH*rs**3 
+        (1 - xH)*phys.nH*rs**3 
         * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
@@ -558,7 +558,7 @@ def get_elec_cooling_tf_fast(
 def get_elec_cooling_tf_fast_linalg(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-    eleceng, photeng, rs, xe, xHe=0, ics_engloss_data=None, 
+    eleceng, photeng, rs, xH, xHe=0, ics_engloss_data=None, 
     check_conservation_eng = False, verbose=False
 ):
 
@@ -582,8 +582,8 @@ def get_elec_cooling_tf_fast_linalg(
         The photon energy abscissa.
     rs : float
         The redshift.
-    xe : float
-        Free electron fraction. 
+    xH : float
+        Ionized hydrogen fraction, nHII/nH. 
     xHe : float, optional
         Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.
     ics_engloss_data : EnglossRebinData
@@ -608,9 +608,9 @@ def get_elec_cooling_tf_fast_linalg(
 
     """
 
-    if xHe is None:
-        xHe = xe*phys.nHe/phys.nH
-
+    # Set the electron fraction. 
+    xe = xH + xHe
+    
     # v/c of electrons
     beta_ele = np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
 
@@ -679,7 +679,7 @@ def get_elec_cooling_tf_fast_linalg(
 
     # Collisional excitation rates.
     rate_vec_exc_HI = (
-        (1 - xe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
+        (1 - xH)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_exc_HeI = (
@@ -719,7 +719,7 @@ def get_elec_cooling_tf_fast_linalg(
 
     # Collisional ionization rates.
     rate_vec_ion_HI = (
-        (1 - xe)*phys.nH*rs**3 
+        (1 - xH)*phys.nH*rs**3 
         * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
