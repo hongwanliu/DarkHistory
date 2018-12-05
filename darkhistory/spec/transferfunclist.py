@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.linalg import matrix_power
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 from darkhistory.utilities import arrays_equal
 from darkhistory.spec.spectrum import Spectrum
@@ -386,48 +387,116 @@ class TransferFuncInterp:
 
         # Now, data is stored in *increasing* rs.
 
-        # The ordering should be correct...
-        # self.interp_func_xe = interp1d(self.xe, grid_vals, axis=0)
-
         if self._log_interp:
             self._grid_vals[self._grid_vals<=0] = 1e-200
-            self.interp_func = RegularGridInterpolator(
-                (np.log(self.xe), np.log(self.rs)), np.log(self._grid_vals)
-            )
+            func = np.log
         else:
             print('noninterp')
+            def func(obj):
+                return obj
+
+        if xe_arr is not None:
             self.interp_func = RegularGridInterpolator(
-                (self.xe, np.log(self.rs)), self._grid_vals
-            )
-
-    def get_tf(self, rs, xe):
-
-        # interp_vals_xe = self.interp_func_xe(xe)
-        # interp_vals_rs = interp1d(self.rs, interp_vals_xe, axis=0)
-
-        # return tf.TransFuncAtRedshift(
-        #     interp_vals_rs(rs), eng=self.eng,
-        #     in_eng=self.in_eng, rs=self.rs, dlnz=self.dlnz
-        # )
-
-        # xe must lie between these values.
-        if xe > self.xe[-1]:
-            xe = self.xe[-1]
-        if xe < self.xe[0]:
-            xe = self.xe[0]
-
-        if self._log_interp:
-            out_grid_vals = np.exp(
-                np.squeeze(self.interp_func([np.log(xe), np.log(rs)]))
+                (func(self.xe), func(self.rs)), func(self._grid_vals)
             )
         else:
-            out_grid_vals = np.squeeze(
-                self.interp_func([xe, np.log(rs)])
+            self.interp_func = interp1d(
+                func(self.rs), func(grid_vals[0]), axis=0
             )
-            
+
+    def get_tf(self, xe, rs):
+
+        if self._log_interp:
+            func = np.log
+            invFunc = np.exp
+        else:
+            def func(obj):
+                return obj
+            invFunc = func
+
+        if rs > self.rs[-1]:
+            rs = self.rs[-1]
+        if rs < self.rs[0]:
+            rs = self.rs[0]
+        # xe must lie between these values.
+        if self.xe is not None:
+            if xe > self.xe[-1]:
+                xe = self.xe[-1]
+            if xe < self.xe[0]:
+                xe = self.xe[0]
+
+            out_grid_vals = invFunc(
+                np.squeeze(self.interp_func([func(xe), func(rs)]))
+            )
+        else:
+            out_grid_vals = invFunc(self.interp_func(func(rs)))
 
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
             rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
             spec_type = self.spec_type
         )
+
+class TransferFuncInterps:
+
+    """Interpolation function over list of TransferFuncList objects.
+
+    Parameters
+    ----------
+    TransferFuncInterps : list of TransferFuncInterp objects
+        List of TransferFuncInterp objects to consolidate.
+
+    Attributes
+    ----------
+    rs : ndarray
+        Redshift abscissa of the transfer functions.
+    dlnz : float
+        The d ln(1+z) step for the transfer functions.
+    interp_func : function
+        A 2D interpolation function over xe and rs that piece-wise connects the interp_funcs of each member TransferFuncInterp objects
+
+    """
+
+    def __init__(self, tfInterps, xe_arr, inverted=False):
+
+        length = len(tfInterps)
+        self.rs = np.array([None for i in np.arange(length)])
+        self.rs_nodes = np.zeros(length-1)
+        self.xe_arr = xe_arr
+        self.eng = tfInterps[0].eng
+        self.in_eng = tfInterps[0].in_eng
+        self.dlnz = tfInterps[0].dlnz
+
+        for i, tfInterp in enumerate(tfInterps):
+            if np.any(np.diff(tfInterp.rs)<0):
+                raise TypeError('redshifts in tfInterp[%d] should be increasing' % i+1)
+            self.rs[i] = tfInterp.rs
+
+
+            if i != length-1:
+                if np.all(self.eng != tfInterps[i+1].eng):
+                    raise TypeError('All TransferFuncInterp objects must have same eng')
+                if np.all(self.in_eng != tfInterps[i+1].in_eng):
+                    raise TypeError('All TransferFuncInterp objects must have same in_eng')
+                if self.dlnz != tfInterps[i+1].dlnz:
+                    raise TypeError('All TransferFuncInterp objects must have same dlnz')
+
+                if tfInterps[i].rs[0] > tfInterps[i+1].rs[0]:
+                    raise TypeError(
+                        'TransferFuncInterp object number %d should have redshifts smaller than object number %d (we demand ascending order of redshifts between objects)' % (i,i+1)
+                    )
+                if tfInterps[i].rs[-1] < tfInterps[i+1].rs[0]:
+                    raise TypeError(
+                        'The largest redshift in ionRSinterp_list[%d] is smaller '
+                        +'than the largest redshift in ionRSinterp_list[%d] (i.e. there\'s a missing interpolation window)' % (i,i+1)
+                    )
+                if not inverted:
+                    self.rs_nodes[i] = tfInterps[i].rs[-1]
+                else:
+                    self.rs_nodes[i] = tfInterps[i+1].rs[0]
+
+        self.tfInterps = tfInterps
+
+    def get_tf(self, xe, rs):
+        interpInd = np.searchsorted(self.rs_nodes, rs)
+        return self.tfInterps[interpInd].get_tf(xe,rs)

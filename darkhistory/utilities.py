@@ -400,3 +400,94 @@ class Interpolator2D:
         else:
             points = np.transpose([val0 * np.ones_like(vals1), vals1])
             return np.exp(self.interp_func(np.log(points)))
+
+
+
+class InterpolatorND:
+
+    """Interpolation function over list of objects
+
+    Parameters
+    ----------
+    val_arr : list of objects
+        List of objects, ndim = (arr0.size, arr1.size, ...)
+    arr0 : ndarray
+        list of values along 0th dimension
+    arr1 : ndarray
+        list of values along 1st dimension
+
+    Attributes
+    ----------
+    interp_func : function
+        A 2D interpolation function over xe and rs.
+    _grid_vals : ndarray
+        a nD array of input data
+    """
+
+    def __init__(self, arr0, name0, arr1, name1, val_arr, logInterp=False):
+
+        if str(type(val_arr)) != "<class 'numpy.ndarray'>":
+            raise TypeError('val_arr must be an ndarray')
+
+        if len(arr0) != np.size(val_arr, 0):
+            raise TypeError('0th dimension of val_arr must be the arr0')
+
+        if len(arr1) != np.size(val_arr, 1):
+            raise TypeError('1st dimension of val_arr (val_arr[0,:,0,0,...]) must be the arr1 dimension')
+
+        self.arr0 = arr0
+        setattr(self, name0, self.arr0)
+        self.arr1 = arr1
+        setattr(self, name1, self.arr1)
+        self._grid_vals = val_arr
+
+        self.logInterp = logInterp
+
+        if not logInterp:
+            # self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), self._grid_vals)
+            self.interp_func = RegularGridInterpolator((arr0, arr1), self._grid_vals)
+        else:
+            self._grid_vals[self._grid_vals <= 0] = 1e-200
+            self.interp_func = RegularGridInterpolator((np.log(arr0), np.log(arr1)), np.log(self._grid_vals))
+
+
+    def get_val(self, val0, val1):
+
+        # xe must lie between these values.
+        if val0 > self.arr0[-1]:
+            val0 = self.arr0[-1]
+        if val0 < self.arr0[0]:
+            val0 = self.arr0[0]
+
+        if val1 > self.arr1[-1]:
+            val1 = self.arr1[-1]
+        if val1 < self.arr1[0]:
+            val1 = self.arr1[0]
+
+        if not self.logInterp:
+            return np.squeeze(self.interp_func([val0, val1]))
+        else:
+            return np.exp(np.squeeze(self.interp_func([np.log(val0), np.log(val1)])))
+
+    def get_vals(self, val0, vals1):
+
+        # xe must lie between these values.
+        if val0 > self.arr0[-1]:
+            val0 = self.arr0[-1]
+        if val0 < self.arr0[0]:
+            val0 = self.arr0[0]
+
+        vals1 = np.array(vals1)
+        vals1[vals1 > self.arr1[-1]] = self.arr1[-1]
+        vals1[vals1 < self.arr1[0]] = self.arr1[0]
+
+        # points = np.transpose([val0 * np.ones_like(vals1), vals1])
+
+        if not self.logInterp:
+            points = np.transpose(
+                [val0 * np.ones_like(vals1), vals1]
+            )
+            return self.interp_func(points)
+        else:
+            points = np.transpose([val0 * np.ones_like(vals1), vals1])
+            return np.exp(self.interp_func(np.log(points)))
