@@ -46,7 +46,7 @@ def get_history(
     init_cond, f_H_ion_in, f_H_exc_in, f_heating_in,
     dm_injection_rate_in, rs_vec, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, mxstep = 1000
+    xe_reion_func=None, mxstep = 0
 ):
     """Returns the ionization and thermal history of the IGM.
 
