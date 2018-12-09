@@ -170,8 +170,8 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True):
         highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes[ii], highengphot_tflist_arr.copy(), log_interp = False)
         lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengphot_tflist_arr.copy(), log_interp = False)
         lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengelec_tflist_arr.copy(), log_interp = False)
-        highengdep_interp[ii]     = ht.IonRSInterp(xes[ii], rs_list, highengdep_arr.copy(), logInterp=True)
-        CMB_engloss_interp[ii]    = ht.IonRSInterp(xes[ii], rs_list, CMB_engloss_arr.copy(), logInterp=True)
+        highengdep_interp[ii]     = ht.IonRSInterp(xes[ii], rs_list, highengdep_arr.copy(), logInterp=False)
+        CMB_engloss_interp[ii]    = ht.IonRSInterp(xes[ii], rs_list, CMB_engloss_arr.copy(), logInterp=False)
 
     print("Done.\n")
 
@@ -666,15 +666,15 @@ def evolve(
         #    print('Back Reaction f_ionH, f_ionHe, f_exc, f_heat, f_cont: ', f_raw)
 
         if std_soln:
-            highengphot_tf = highengphot_tf_interp.get_tf(rs, xH_std(rs))
-            lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xH_std(rs))
-            lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xH_std(rs))
+            highengphot_tf = highengphot_tf_interp.get_tf(xH_std(rs), rs)
+            lowengphot_tf  = lowengphot_tf_interp.get_tf(xH_std(rs), rs)
+            lowengelec_tf  = lowengelec_tf_interp.get_tf(xH_std(rs), rs)
             cmbloss_arr    = CMB_engloss_interp.get_val(xH_std(rs), rs)
             highengdep_arr = highengdep_interp.get_val(xH_std(rs), rs)
         else:
-            highengphot_tf = highengphot_tf_interp.get_tf(rs, xH_arr[-1])
-            lowengphot_tf  = lowengphot_tf_interp.get_tf(rs, xH_arr[-1])
-            lowengelec_tf  = lowengelec_tf_interp.get_tf(rs, xH_arr[-1])
+            highengphot_tf = highengphot_tf_interp.get_tf(xH_arr[-1], rs)
+            lowengphot_tf  = lowengphot_tf_interp.get_tf(xH_arr[-1], rs)
+            lowengelec_tf  = lowengelec_tf_interp.get_tf(xH_arr[-1], rs)
             cmbloss_arr    = CMB_engloss_interp.get_val(xH_arr[-1], rs)
             highengdep_arr = highengdep_interp.get_val(xH_arr[-1], rs)
 
