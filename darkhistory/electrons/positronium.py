@@ -52,7 +52,18 @@ def ortho_photon_spec(eng):
         else:
             return 0
 
-    return discretize(eng, norm_spec)
+    # ONLY FOR COMPARISON WITH TRACY. REMOVE!
+    dNdE= np.array(
+        [norm_spec(en) for en in eng]
+    )
+
+    from darkhistory.spec.spectools import get_log_bin_width
+
+    bin_width = eng*get_log_bin_width(eng)
+
+    return Spectrum(eng, dNdE*2*phys.me/np.dot(dNdE, eng*bin_width))
+
+    # return discretize(eng, norm_spec)
 
 def para_photon_spec(eng):
     """ Returns the photon spectrum from parapositronium annihilation. 
