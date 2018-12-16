@@ -198,13 +198,13 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     Parameters
     ----------
     inj_type : {'swave', 'decay'}
-        Type of injection. 
+        Type of injection.
     rs : float
         The redshift of injection.
     mDM : float, optional
-        DM mass in eV. 
+        DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm^3 s^-1. 
+        Annihilation cross section in cm^3 s^-1.
     tau : float, optional
         Decay lifetime in s.
 
@@ -418,14 +418,14 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         return sum([ion_rate[atom] for atom in atoms])
 
 def coll_exc_xsec(eng, species=None):
-    """ Returns the collisional excitation rate. See 0906.1197. 
+    """ Returns the collisional excitation rate. See 0906.1197.
 
     Parameters
     ----------
     eng : float or ndarray
-        Abscissa of *kinetic* energies. 
+        Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
-        Species of interest. 
+        Species of interest.
 
     Returns
     -------
@@ -433,7 +433,7 @@ def coll_exc_xsec(eng, species=None):
         Collisional excitation cross section in cm^2.
     """
     if species == 'HI' or species == 'HeI':
-        
+
         if species == 'HI':
             A_coeff = 0.5555
             B_coeff = 0.2718
@@ -441,7 +441,7 @@ def coll_exc_xsec(eng, species=None):
             E_bind = rydberg
             E_exc = lya_eng
         elif species == 'HeI':
-            A_coeff = 0.1771 
+            A_coeff = 0.1771
             B_coeff = -0.0822
             C_coeff = 0.0356
             E_bind = He_ion_eng
@@ -462,7 +462,7 @@ def coll_exc_xsec(eng, species=None):
         return xsec
 
     elif species == 'HeII':
-        
+
         alpha = 3.22
         beta = 0.357
         gamma = 0.00157
@@ -471,7 +471,7 @@ def coll_exc_xsec(eng, species=None):
         E_exc = 4*lya_eng
 
         x = eng/E_exc
-    
+
         prefac = np.pi*bohr_rad**2/(16*x)
         xsec = prefac*(
             alpha*np.log(x) + beta*np.log(x)/x
@@ -490,14 +490,14 @@ def coll_exc_xsec(eng, species=None):
         raise TypeError('invalid species.')
 
 def coll_ion_xsec(eng, species=None):
-    """ Returns the collisional ionization rate. See 0906.1197. 
+    """ Returns the collisional ionization rate. See 0906.1197.
 
     Parameters
     ----------
     eng : float or ndarray
-        Abscissa of *kinetic* energies. 
+        Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
-        Species of interest. 
+        Species of interest.
 
     Returns
     -------
@@ -506,7 +506,7 @@ def coll_ion_xsec(eng, species=None):
 
     Note
     ----
-    Returns the Arnaud and Rothenflug rate. 
+    Returns the Arnaud and Rothenflug rate.
 
     """
     if species == 'HI':
@@ -535,7 +535,7 @@ def coll_ion_xsec(eng, species=None):
     prefac = 1e-14/(u*ion_pot**2)
 
     xsec = prefac*(
-        A_coeff*(1 - 1/u) + B_coeff*(1 - 1/u)**2 
+        A_coeff*(1 - 1/u) + B_coeff*(1 - 1/u)**2
         + C_coeff*np.log(u) + D_coeff*np.log(u)/u
     )
 
@@ -548,16 +548,16 @@ def coll_ion_xsec(eng, species=None):
     return xsec
 
 def coll_ion_sec_elec_spec(in_eng, eng, species=None):
-    """ Returns the secondary electron spectrum after collisional ionization. See 0910.4410. 
+    """ Returns the secondary electron spectrum after collisional ionization. See 0910.4410.
 
     Parameters
     ----------
     in_eng : float
         The incoming electron energy.
     eng : ndarray
-        Abscissa of *kinetic* energies. 
+        Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
-        Species of interest. 
+        Species of interest.
 
     Returns
     -------
@@ -594,13 +594,13 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
 
         low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
         if np.sum(low_eng_elec_dNdE) == 0:
-            # Either in_eng < in_pot, or the lowest bin lies 
+            # Either in_eng < in_pot, or the lowest bin lies
             # above the halfway point, (in_eng - ion_pot)/2.
-            # Add to the lowest bin. 
+            # Add to the lowest bin.
             return np.zeros_like(eng)
 
         low_eng_elec_spec /= low_eng_elec_spec.totN()
-        
+
         in_eng = np.array([in_eng])
 
         low_eng_elec_N = np.outer(
@@ -653,20 +653,20 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
 
 def elec_heating_engloss_rate(eng, xe, rs):
     """Returns the electron energy loss rate due to heating of the gas.
-    
+
     Parameters
     ----------
     eng : ndarray
         Abscissa of electron *kinetic* energy.
     xe : float
-        The free electron fraction. 
+        The free electron fraction.
     rs : float
         The redshift.
 
     Returns
     -------
     ndarray
-        The energy loss rate due to heating (positive). 
+        The energy loss rate due to heating (positive).
 
     Note
     -------
@@ -675,21 +675,21 @@ def elec_heating_engloss_rate(eng, xe, rs):
 
     w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
     ne = xe*nH*rs**3
-    
+
     eps_0 = 8.85418782e-12 # in SI units
 
     prefac = 4*np.pi*ele**4/(4*np.pi*eps_0)**2
-    # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2). 
+    # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2).
     prefac *= 100**2/ele**2
 
-    # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c 
-    # Because she factored out beta, and left m_e c in numfac. 
+    # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c
+    # Because she factored out beta, and left m_e c in numfac.
 
     # zeta_e = 7.40e-11*nB*rs**3
     zeta_e = 7.40e-11*ne
     coulomb_log = np.log(4*eng/zeta_e)
 
-    # must use the mass of the electron in eV m^2 s^-2. 
+    # must use the mass of the electron in eV m^2 s^-2.
     return prefac*ne*coulomb_log/(me/c**2*w)
 
 

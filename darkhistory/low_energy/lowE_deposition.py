@@ -92,7 +92,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     ])
 
     f_high = np.array([
-        highengdep[0], 0, highengdep[1], 
+        highengdep[0], 0, highengdep[1],
         highengdep[2], highengdep[3]
     ]) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
 
