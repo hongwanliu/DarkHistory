@@ -595,7 +595,7 @@ class Spectra:
         Returns
         -------
         ndarray
-            Total number of particles in the spectrum.
+            Total number of particles in the spectrum, indexed by spectrum x specified boundaries. 
 
         """
         log_bin_width = get_log_bin_width(self.eng)
@@ -682,7 +682,7 @@ class Spectra:
                 eng_bin_ind = np.interp(
                     np.log(bound_arr),
                     np.log(bin_boundary), np.arange(bin_boundary.size),
-                    left = -1, right = self.eng.size + 1
+                    left = 0, right = self.eng.size + 1
                 )
 
                 return self.totN('bin', eng_bin_ind)
@@ -708,7 +708,7 @@ class Spectra:
         Returns
         -------
         ndarray
-            Total energy of particles in the spectrum.
+            Total energy of particles in the spectrum, indexed by spectrum x specified boundaries.
 
         """
         log_bin_width = get_log_bin_width(self.eng)
@@ -736,9 +736,10 @@ class Spectra:
                 if bound_arr[0] > self.eng.size or bound_arr[-1] < 0:
                     return eng_in_bin
 
-                for low,upp,i in zip(
-                    bound_arr[:-1], bound_arr[1:], np.arange(eng_in_bin.shape[0])
+                for i, (low,upp) in enumerate(
+                    zip(bound_arr[:-1], bound_arr[1:])
                 ):
+
 
                     # Set the lower and upper bounds, including case where
                     # low and upp are outside of the bins.
@@ -749,6 +750,7 @@ class Spectra:
                     low_floor = int(np.floor(low))
                     upp_ceil  = int(np.ceil(upp))
                     upp_floor = int(np.floor(upp))
+
 
                     # Sum the bins that are completely between the bounds.
 
@@ -797,7 +799,7 @@ class Spectra:
                 eng_bin_ind = np.interp(
                     np.log(bound_arr),
                     np.log(bin_boundary), np.arange(bin_boundary.size),
-                    left = -1, right = self.eng.size + 1
+                    left = 0, right = self.eng.size + 1
                 )
 
                 return self.toteng('bin', eng_bin_ind)
