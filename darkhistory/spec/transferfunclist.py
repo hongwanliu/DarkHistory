@@ -466,6 +466,7 @@ class TransferFuncInterps:
         self.eng = tfInterps[0].eng
         self.in_eng = tfInterps[0].in_eng
         self.dlnz = tfInterps[0].dlnz
+        self._log_interp = [tf._log_interp for tf in tfInterps]
 
         for i, tfInterp in enumerate(tfInterps):
             if np.any(np.diff(tfInterp.rs)<0):
