@@ -38,7 +38,7 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True):
+def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtraction=False):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     #If only a string is specified, make it a list of strings
@@ -166,7 +166,23 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True):
         CMB_engloss_arr = tmp.copy()
         print("CMB losses.\n")
 
+        if CMB_subtraction:
+            print("Subtracting CMB component from lowengphot")
+            for i, CMB_engloss in enumerate(CMB_engloss_arr):
+                for j, (rs, CMB_at_rs) in enumerate(zip(rs_list, CMB_engloss)):
+                    T_at_rs = phys.TCMB(rs)
+                    for k, CMB_at_ineng in enumerate(CMB_at_rs):
+                        CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng,T_at_rs))/phys.CMB_eng_density(T_at_rs)*(
+                            CMB_at_ineng*.001/phys.hubble(rs)
+                        )
+                        highengphot_tflist_arr[i]._grid_vals[j,k] = highengphot_tflist_arr[i]._grid_vals[j,k] - CMB_spec.N
+                        #if count%10000==0:
+                            #print(lowengphot_tflist_arr[i][j]._grid_vals[k])
+            print("Finished CMB subtraction")
+
+
         print("Generating TransferFuncInterp objects for each tflist...")
+        #print(lowengphot_tflist_arr[0][30]._grid_vals[300])
         highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes[ii], highengphot_tflist_arr.copy(), log_interp = False)
         lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengphot_tflist_arr.copy(), log_interp = False)
         lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengelec_tflist_arr.copy(), log_interp = False)
@@ -175,6 +191,7 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True):
 
     print("Done.\n")
 
+    #print(lowengphot_tflist_arr.copy()[0][30]._grid_vals[300])
     if num_rs_nodes == 0:
         highengphot_tf_interp = highengphot_tf_interp[0]
         lowengphot_tf_interp  = lowengphot_tf_interp[0]
@@ -250,7 +267,7 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
-    ics_only=False, highengdep_switch = True, separate_higheng=False,
+    ics_only=False, highengdep_switch = True, separate_higheng=False, CMB_subtracted=False,
     reion_switch=False, reion_rs = None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
@@ -346,6 +363,9 @@ def evolve(
 
     if in_spec_elec.rs != in_spec_phot.rs:
         raise TypeError('Input spectra must have the same rs.')
+
+    if CMB_subtracted and np.any(lowengphot_tf_interp._log_interp):
+        raise TypeError('Cannot log interp over negative numbers')
 
     # Load the standard TLA solution and initialize if necessary.
     if std_soln or xH_init == None or Tm_init == None:
@@ -596,6 +616,7 @@ def evolve(
     # Loop while we are still at a redshift above end_rs.
     ######################################################
 
+
     while rs > end_rs:
 
         if use_tqdm:
@@ -704,6 +725,9 @@ def evolve(
             )
 
         cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-1].N)
+        if CMB_subtracted:
+            tmp = cmbloss*1.0
+            cmbloss = 0
         highengdep = np.dot(
             np.swapaxes(highengdep_arr, 0, 1),
             out_highengphot_specs[-1].N
@@ -842,5 +866,3 @@ def evolve(
         out_highengphot_specs, out_lowengphot_specs, out_lowengelec_specs,
         cmbloss_grid, f_to_return
     )
-
-

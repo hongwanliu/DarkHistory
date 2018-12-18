@@ -6,6 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
+cross_check=True
 # Fundamental constants
 mp          = 0.938272081e9
 """Proton mass in eV."""
@@ -15,14 +16,20 @@ hbar        = 6.58211951e-16
 """hbar in eV s."""
 c           = 299792458e2
 """Speed of light in cm/s."""
-kB          = 8.6173324e-5
-"""Boltzmann constant in eV/K."""
+if not cross_check:
+    kB          = 8.6173324e-5
+    """Boltzmann constant in eV/K."""
+else:
+    kB = 8.6173423e-5
 alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in C."""
-G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
-"""Newton's constant in cm^5 s^-4 eV^-1"""
+if not cross_check:
+    G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
+    """Newton's constant in cm^5 s^-4 eV^-1"""
+else:
+    G = 6.6730e-8
 
 
 # Atomic and optical physics
@@ -54,34 +61,66 @@ ele_compton  = 2*np.pi*hbar*c/me
 
 h    = 0.6727
 """ h parameter."""
-H0   = 100*h*3.241e-20
+if not cross_check:
+    H0   = 100*h*3.241e-20
+else:
+    H0 = 1/(4.5979401e17)
 """ Hubble parameter today in s^-1."""
 
 # Omegas
 
-omega_m      = 0.3156
-""" Omega of all matter today."""
-omega_rad    = 8e-5
-""" Omega of radiation today."""
-omega_lambda = 0.6844
-""" Omega of dark energy today."""
-omega_baryon = 0.02225/(h**2)
-""" Omega of baryons today."""
-omega_DM      = 0.1198/(h**2)
-""" Omega of dark matter today."""
+if not cross_check:
+    omega_m      = 0.3156
+    """ Omega of all matter today."""
+    omega_rad    = 8e-5
+    """ Omega of radiation today."""
+    omega_lambda = 0.6844
+    """ Omega of dark energy today."""
+    omega_baryon = 0.02225/(h**2)
+    """ Omega of baryons today."""
+    omega_DM      = 0.1198/(h**2)
+    """ Omega of dark matter today."""
+else:
+    kmperMpc = 3.08568025e19
+    amuperg = 6.0221415e23
+    eVperg = 5.60958921e32
+    nh0 = 0.022068*(1e2/kmperMpc)**2*amuperg*3/(8*np.pi*G)
+
+    omega_m      = 0.3175
+    """ Omega of all matter today."""
+    omega_rad    = 8e-5
+    """ Omega of radiation today."""
+    omega_lambda = 0.6825
+    """ Omega of dark energy today."""
+    omega_baryon = 8*np.pi*G/(3*H0**2) * (nh0/amuperg)
+    """ Omega of baryons today."""
+    omega_DM      = omega_m-omega_baryon
+    #""" Omega of dark matter today."""
 
 # Densities
 
 rho_crit     = 1.05375e4*(h**2)
 """ Critical density of the universe in eV/cm^3."""
-rho_DM       = rho_crit*omega_DM
-""" DM density in eV/cm^3."""
-rho_baryon   = rho_crit*omega_baryon
-""" Baryon density in eV/cm^3."""
-nB          = rho_baryon/mp
-""" Baryon number density in cm^-3."""
-YHe         = 0.250
-"""Helium abundance by mass."""
+if not cross_check:
+    rho_DM       = rho_crit*omega_DM
+    """ DM density in eV/cm^3."""
+else:
+    #rho_DM = omega_DM/(8*np.pi*G/(3*H0**2))*eVperg
+    rho_DM=1274.4140
+if not cross_check:
+    rho_baryon   = rho_crit*omega_baryon
+    """ Baryon density in eV/cm^3."""
+    nB          = rho_baryon/mp
+    """ Baryon number density in cm^-3."""
+else:
+    nB = nh0
+    rho_baryon = nh0*mp
+
+if not cross_check:
+    YHe         = 0.250
+    """Helium abundance by mass."""
+else:
+    YHe = .24
 nH          = (1-YHe)*nB
 """ Atomic hydrogen number density in cm^-3."""
 nHe         = (YHe/4)*nB
@@ -757,7 +796,11 @@ def TCMB(rs):
     float
     """
 
-    return 2.7255 * kB * rs
+    if not cross_check:
+        fac = 2.7255
+    else:
+        fac = 2.725
+    return fac * kB * rs
 
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons/cm^3/eV.
