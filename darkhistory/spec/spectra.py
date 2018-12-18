@@ -628,8 +628,9 @@ class Spectra:
                     return N_in_bin
 
                 for i, (low,upp) in enumerate(
-                    (bound_arr[:-1], bound_arr[1:])
+                    zip(bound_arr[:-1], bound_arr[1:])
                 ):
+
                     # Set the lower and upper bounds, including case where
                     # low and upp are outside of the bins.
                     if low > self.eng.size or upp < 0:
