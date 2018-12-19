@@ -173,11 +173,9 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
                     T_at_rs = phys.TCMB(rs)
                     for k, CMB_at_ineng in enumerate(CMB_at_rs):
                         CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng,T_at_rs))/phys.CMB_eng_density(T_at_rs)*(
-                            CMB_at_ineng*.001/phys.hubble(rs)
+                            CMB_at_ineng*.001/phys.hubble(rs*np.exp(-.001)) #To put in IDL's off-by-one error
                         )
-                        highengphot_tflist_arr[i]._grid_vals[j,k] = highengphot_tflist_arr[i]._grid_vals[j,k] - CMB_spec.N
-                        #if count%10000==0:
-                            #print(lowengphot_tflist_arr[i][j]._grid_vals[k])
+                        lowengphot_tflist_arr[i]._grid_vals[j,k] = lowengphot_tflist_arr[i]._grid_vals[j,k] - CMB_spec.N
             print("Finished CMB subtraction")
 
 
@@ -726,7 +724,6 @@ def evolve(
 
         cmbloss = np.dot(cmbloss_arr, out_highengphot_specs[-1].N)
         if CMB_subtracted:
-            tmp = cmbloss*1.0
             cmbloss = 0
         highengdep = np.dot(
             np.swapaxes(highengdep_arr, 0, 1),
