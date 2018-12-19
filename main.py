@@ -38,7 +38,7 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtraction=False):
+def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtracted=False):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     #If only a string is specified, make it a list of strings
@@ -166,16 +166,16 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
         CMB_engloss_arr = tmp.copy()
         print("CMB losses.\n")
 
-        if CMB_subtraction:
+        if CMB_subtracted:
             print("Subtracting CMB component from lowengphot")
             for i, CMB_engloss in enumerate(CMB_engloss_arr):
                 for j, (rs, CMB_at_rs) in enumerate(zip(rs_list, CMB_engloss)):
                     T_at_rs = phys.TCMB(rs)
                     for k, CMB_at_ineng in enumerate(CMB_at_rs):
                         CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng,T_at_rs))/phys.CMB_eng_density(T_at_rs)*(
-                            CMB_at_ineng*.001/phys.hubble(rs*np.exp(-.001)) #To put in IDL's off-by-one error
+                            CMB_at_ineng*.001/phys.hubble(rs*np.exp(-.001*0)) #To put in IDL's off-by-one error
                         )
-                        lowengphot_tflist_arr[i]._grid_vals[j,k] = lowengphot_tflist_arr[i]._grid_vals[j,k] - CMB_spec.N
+                        highengphot_tflist_arr[i]._grid_vals[j,k] = highengphot_tflist_arr[i]._grid_vals[j,k] - CMB_spec.N
             print("Finished CMB subtraction")
 
 
