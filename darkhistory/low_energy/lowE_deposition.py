@@ -74,7 +74,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     f_phot = lowE_photons.compute_fs(
         phot_spec, x, dE_dVdt_inj, dt, method
     )
-    print(phot_spec.rs, f_phot[0], phot_spec.toteng(), dE_dVdt_inj)
+    #print(phot_spec.rs, f_phot[0], phot_spec.toteng(), cmbloss, dE_dVdt_inj)
 
     f_elec = lowE_electrons.compute_fs(
         MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
