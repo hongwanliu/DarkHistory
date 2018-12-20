@@ -350,13 +350,13 @@ def peebles_C(xe, rs):
     float
         The Peebles C factor.
     """
-    # Net rate for 2s to 1s transition.
+    # Net rate for 2s to 1s transition, times x1s.
     rate_2s1s = width_2s1s
 
     rate_exc = (3*rate_2p1s_times_x1s(xe, rs)/4 + (1-xe) * rate_2s1s/4)
 
-    # Net rate for ionization.
-    rate_ion = beta_ion(TCMB(rs))
+    # Net rate for ionization, times x1s. 
+    rate_ion = (1-xe) * beta_ion(TCMB(rs))
 
     return rate_exc/(rate_exc + rate_ion)
 

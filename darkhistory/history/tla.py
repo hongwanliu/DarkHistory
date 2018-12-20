@@ -438,7 +438,7 @@ def get_history(
 
             return (
                 adiabatic_cooling_rate
-                + entropy_cooling_rate
+                + 0*entropy_cooling_rate
                 + (
                     - phys.dtdz(rs)*(
                         compton_cooling_rate(
