@@ -226,7 +226,7 @@ def get_history(
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+            if chi - xHeII(yHeII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -238,7 +238,7 @@ def get_history(
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+            if chi - xHeIII(yHeIII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -363,7 +363,7 @@ def get_history(
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHeII(yHeII) < 1e-6 and rs < 100:
+            if chi - xHeII(yHeII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -388,7 +388,7 @@ def get_history(
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHeIII(yHeIII) < 1e-6 and rs < 100:
+            if chi - xHeIII(yHeIII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -406,6 +406,8 @@ def get_history(
 
         T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
+        # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
+        
         return [
             dT_dz(yHII, yHeII, yHeIII, T_m, rs),
             dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
