@@ -340,8 +340,6 @@ def peebles_C(xe, rs):
     ----------
     xe : float
         The ionization fraction ne/nH.
-    Tm : float
-        The matter temperature.
     rs : float
         The redshift in 1+z.
 
@@ -357,6 +355,9 @@ def peebles_C(xe, rs):
 
     rate_ion = (1-xe) * beta_ion(TCMB(rs))
     
+    # if rate_exc/(rate_exc + rate_ion) < 0.1:
+    #     print(rate_exc/(rate_exc + rate_ion), xe, rs)
+
     return rate_exc/(rate_exc + rate_ion)
 
 
