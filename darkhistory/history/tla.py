@@ -483,7 +483,8 @@ def get_history(
                 mxstep = mxstep, tfirst=True
             )
         # soln = solve_ivp(
-        #     tla_
+        #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
+        #     init_cond
         # )
     elif xe_reion_func is not None:
         # Fixed xe reionization model implemented. 
@@ -550,12 +551,21 @@ def get_history(
                 tla_before_reion, init_cond, 
                 rs_before_reion_vec, mxstep = mxstep, tfirst=True
             )
+            # soln = solve_ivp(
+            #     tla_before_reion, 
+            #     (rs_before_reion_vec[0], rs_before_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_before_reion_vec
+            # )
         # Conversely, solving before reionization may be unnecessary.
         elif rs_before_reion_vec.size == 0:
             soln = odeint(
                 tla_reion, init_cond, rs_reion_vec, 
                 mxstep = mxstep, tfirst=True
             )
+            # soln = solve_ivp(
+            #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_reion_vec
+            # )
         # Remaining case straddles both before and after reionization.
         else:
             # First, solve without reionization up to rs = reion_rs.
@@ -564,6 +574,11 @@ def get_history(
                 tla_before_reion, init_cond, 
                 rs_before_reion_vec, mxstep = mxstep, tfirst=True
             )
+            # soln_before_reion = solve_ivp(
+            #     tla_before_reion, 
+            #     (rs_before_reion_vec[0], rs_before_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_before_reion_vec
+            # )
             # Next, solve with reionization starting from reion_rs.
             rs_reion_vec = np.insert(rs_reion_vec, 0, reion_rs)
             # Initial conditions taken from last step before reionization.
@@ -577,6 +592,10 @@ def get_history(
                 tla_reion, init_cond_reion, 
                 rs_reion_vec, mxstep = mxstep, tfirst=True
             )
+            # soln_reion = solve_ivp(
+            #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_reion_vec
+            # )
             # Stack the solutions. Remove the solution at 16.1.
             soln = np.vstack((soln_before_reion[:-1,:], soln_reion[1:,:]))
 
