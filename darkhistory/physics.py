@@ -322,7 +322,7 @@ def rate_2p1s_times_x1s(xe, rs):
     Returns
     -------
     float
-        R_Ly\alpha * (1-xe)
+        R_Ly_alpha * (1-xe)
     """
     num = (
         8 * np.pi * hubble(rs)/
@@ -340,8 +340,6 @@ def peebles_C(xe, rs):
     ----------
     xe : float
         The ionization fraction ne/nH.
-    Tm : float
-        The matter temperature.
     rs : float
         The redshift in 1+z.
 
@@ -355,8 +353,10 @@ def peebles_C(xe, rs):
 
     rate_exc = (3*rate_2p1s_times_x1s(xe, rs)/4 + (1-xe) * rate_2s1s/4)
 
-    # Net rate for ionization, times x1s. 
     rate_ion = (1-xe) * beta_ion(TCMB(rs))
+    
+    # if rate_exc/(rate_exc + rate_ion) < 0.1:
+    #     print(rate_exc/(rate_exc + rate_ion), xe, rs)
 
     return rate_exc/(rate_exc + rate_ion)
 
