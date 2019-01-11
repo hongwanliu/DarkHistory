@@ -6,7 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
-cross_check=True
+cross_check = True
 # Fundamental constants
 mp          = 0.938272081e9
 """Proton mass in eV."""
