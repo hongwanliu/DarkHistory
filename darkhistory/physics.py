@@ -6,6 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
+cross_check = True
 # Fundamental constants
 mp          = 0.938272081e9
 """Proton mass in eV."""
@@ -15,14 +16,20 @@ hbar        = 6.58211951e-16
 """hbar in eV s."""
 c           = 299792458e2
 """Speed of light in cm/s."""
-kB          = 8.6173324e-5
-"""Boltzmann constant in eV/K."""
+if not cross_check:
+    kB          = 8.6173324e-5
+    """Boltzmann constant in eV/K."""
+else:
+    kB = 8.6173423e-5
 alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in C."""
-G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
-"""Newton's constant in cm^5 s^-4 eV^-1"""
+if not cross_check:
+    G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
+    """Newton's constant in cm^5 s^-4 eV^-1"""
+else:
+    G = 6.6730e-8
 
 
 # Atomic and optical physics
@@ -33,8 +40,10 @@ stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
 rydberg      = 13.60569253
 """Ionization potential of ground state hydrogen in eV."""
-He_ion_eng      = 24.6
+He_ion_eng   = 24.5873891
 """Energy needed to singly ionize neutral He in eV."""
+He_exc_eng   = 19.8196147
+"""First excitation energy of ground state neutral He in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
@@ -52,34 +61,66 @@ ele_compton  = 2*np.pi*hbar*c/me
 
 h    = 0.6727
 """ h parameter."""
-H0   = 100*h*3.241e-20
+if not cross_check:
+    H0   = 100*h*3.241e-20
+else:
+    H0 = 1/(4.5979401e17)
 """ Hubble parameter today in s^-1."""
 
 # Omegas
 
-omega_m      = 0.3156
-""" Omega of all matter today."""
-omega_rad    = 8e-5
-""" Omega of radiation today."""
-omega_lambda = 0.6844
-""" Omega of dark energy today."""
-omega_baryon = 0.02225/(h**2)
-""" Omega of baryons today."""
-omega_DM      = 0.1198/(h**2)
-""" Omega of dark matter today."""
+if not cross_check:
+    omega_m      = 0.3156
+    """ Omega of all matter today."""
+    omega_rad    = 8e-5
+    """ Omega of radiation today."""
+    omega_lambda = 0.6844
+    """ Omega of dark energy today."""
+    omega_baryon = 0.02225/(h**2)
+    """ Omega of baryons today."""
+    omega_DM      = 0.1198/(h**2)
+    """ Omega of dark matter today."""
+else:
+    kmperMpc = 3.08568025e19
+    amuperg = 6.0221415e23
+    eVperg = 5.60958921e32
+    nh0 = 0.022068*(1e2/kmperMpc)**2*amuperg*3/(8*np.pi*G)
+
+    omega_m      = 0.3175
+    """ Omega of all matter today."""
+    omega_rad    = 8e-5
+    """ Omega of radiation today."""
+    omega_lambda = 0.6825
+    """ Omega of dark energy today."""
+    omega_baryon = 8*np.pi*G/(3*H0**2) * (nh0/amuperg)
+    """ Omega of baryons today."""
+    omega_DM      = omega_m-omega_baryon
+    #""" Omega of dark matter today."""
 
 # Densities
 
 rho_crit     = 1.05375e4*(h**2)
 """ Critical density of the universe in eV/cm^3."""
-rho_DM       = rho_crit*omega_DM
-""" DM density in eV/cm^3."""
-rho_baryon   = rho_crit*omega_baryon
-""" Baryon density in eV/cm^3."""
-nB          = rho_baryon/mp
-""" Baryon number density in cm^-3."""
-YHe         = 0.250
-"""Helium abundance by mass."""
+if not cross_check:
+    rho_DM       = rho_crit*omega_DM
+    """ DM density in eV/cm^3."""
+else:
+    #rho_DM = omega_DM/(8*np.pi*G/(3*H0**2))*eVperg
+    rho_DM=1274.4140
+if not cross_check:
+    rho_baryon   = rho_crit*omega_baryon
+    """ Baryon density in eV/cm^3."""
+    nB          = rho_baryon/mp
+    """ Baryon number density in cm^-3."""
+else:
+    nB = nh0
+    rho_baryon = nh0*mp
+
+if not cross_check:
+    YHe         = 0.250
+    """Helium abundance by mass."""
+else:
+    YHe = .24
 nH          = (1-YHe)*nB
 """ Atomic hydrogen number density in cm^-3."""
 nHe         = (YHe/4)*nB
@@ -196,13 +237,13 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     Parameters
     ----------
     inj_type : {'swave', 'decay'}
-        Type of injection. 
+        Type of injection.
     rs : float
         The redshift of injection.
     mDM : float, optional
-        DM mass in eV. 
+        DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm^3 s^-1. 
+        Annihilation cross section in cm^3 s^-1.
     tau : float, optional
         Decay lifetime in s.
 
@@ -281,7 +322,7 @@ def rate_2p1s_times_x1s(xe, rs):
     Returns
     -------
     float
-        R_Ly\alpha * (1-xe)
+        R_Ly_alpha * (1-xe)
     """
     num = (
         8 * np.pi * hubble(rs)/
@@ -299,8 +340,6 @@ def peebles_C(xe, rs):
     ----------
     xe : float
         The ionization fraction ne/nH.
-    Tm : float
-        The matter temperature.
     rs : float
         The redshift in 1+z.
 
@@ -309,13 +348,15 @@ def peebles_C(xe, rs):
     float
         The Peebles C factor.
     """
-    # Net rate for 2s to 1s transition.
+    # Net rate for 2s to 1s transition, times x1s.
     rate_2s1s = width_2s1s
 
     rate_exc = (3*rate_2p1s_times_x1s(xe, rs)/4 + (1-xe) * rate_2s1s/4)
 
-    # Net rate for ionization.
-    rate_ion = beta_ion(TCMB(rs))
+    rate_ion = (1-xe) * beta_ion(TCMB(rs))
+    
+    # if rate_exc/(rate_exc + rate_ion) < 0.1:
+    #     print(rate_exc/(rate_exc + rate_ion), xe, rs)
 
     return rate_exc/(rate_exc + rate_ion)
 
@@ -332,7 +373,7 @@ def photo_ion_xsec(eng, species):
     ----------
     eng : ndarray
         Energy to evaluate the cross section at.
-    species : {'H0', 'He0', 'He1'}
+    species : {'HI', 'HeI', 'HeII'}
         Species of interest.
 
     Returns
@@ -341,12 +382,12 @@ def photo_ion_xsec(eng, species):
         Cross section in cm^2.
     """
 
-    eng_thres = {'H0':rydberg, 'He0':He_ion_eng, 'He1':4*rydberg}
+    eng_thres = {'HI':rydberg, 'HeI':He_ion_eng, 'HeII':4*rydberg}
 
     ind_above = np.where(eng > eng_thres[species])
     xsec = np.zeros(eng.size)
 
-    if species == 'H0' or species =='He1':
+    if species == 'HI' or species =='HeII':
         eta = np.zeros(eng.size)
         eta[ind_above] = 1./np.sqrt(eng[ind_above]/eng_thres[species] - 1.)
         xsec[ind_above] = (2.**9*np.pi**2*ele_rad**2/(3.*alpha**3)
@@ -354,7 +395,7 @@ def photo_ion_xsec(eng, species):
             * np.exp(-4*eta[ind_above]*np.arctan(1./eta[ind_above]))
             / (1.-np.exp(-2*np.pi*eta[ind_above]))
             )
-    elif species == 'He0':
+    elif species == 'HeI':
         x = np.zeros(eng.size)
         y = np.zeros(eng.size)
 
@@ -388,7 +429,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         Ionization fraction nH+/nH.
     xe : float
         Ionization fraction ne/nH = nH+/nH + nHe+/nH.
-    atom : {None,'H0','He0','He1'}, optional
+    atom : {None,'HI','HeI','HeII'}, optional
         Determines which photoionization rate is returned. The default value is ``None``, which returns the total rate.
 
     Returns
@@ -397,19 +438,299 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         The ionization rate of the particular species or the total ionization rate.
 
     """
-    atoms = ['H0', 'He0', 'He1']
+    atoms = ['HI', 'HeI', 'HeII']
 
     xHe = xe - xH
-    atom_densities = {'H0':nH*(1-xH)*rs**3, 'He0':(nHe - xHe*nH)*rs**3,
-        'He1':xHe*nH*rs**3}
+    atom_densities = {
+        'HI':nH*(1-xH)*rs**3, 'HeI':(nHe - xHe*nH)*rs**3,
+        'HeII':xHe*nH*rs**3
+    }
 
-    ion_rate = {atom: photo_ion_xsec(eng,atom) * atom_densities[atom] * c
-        for atom in atoms}
+    ion_rate = {
+        atom: photo_ion_xsec(eng,atom) * atom_densities[atom] * c
+        for atom in atoms
+    }
 
     if atom is not None:
         return ion_rate[atom]
     else:
         return sum([ion_rate[atom] for atom in atoms])
+
+def coll_exc_xsec(eng, species=None):
+    """ Returns the collisional excitation rate. See 0906.1197.
+
+    Parameters
+    ----------
+    eng : float or ndarray
+        Abscissa of *kinetic* energies.
+    species : {'HI', 'HeI', 'HeII'}
+        Species of interest.
+
+    Returns
+    -------
+    float or ndarray
+        Collisional excitation cross section in cm^2.
+    """
+    if species == 'HI' or species == 'HeI':
+
+        if species == 'HI':
+            A_coeff = 0.5555
+            B_coeff = 0.2718
+            C_coeff = 0.0001
+            E_bind = rydberg
+            E_exc = lya_eng
+        elif species == 'HeI':
+            A_coeff = 0.1771
+            B_coeff = -0.0822
+            C_coeff = 0.0356
+            E_bind = He_ion_eng
+            E_exc  = He_exc_eng
+
+        prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
+
+        xsec = prefac*(
+            A_coeff*np.log(eng/rydberg) + B_coeff + C_coeff*rydberg/eng
+        )
+
+        try:
+            xsec[eng <= E_exc] *= 0
+        except:
+            if eng <= E_exc:
+                return 0
+
+        return xsec
+
+    elif species == 'HeII':
+
+        alpha = 3.22
+        beta = 0.357
+        gamma = 0.00157
+        delta = 1.59
+        eta = 0.764
+        E_exc = 4*lya_eng
+
+        x = eng/E_exc
+
+        prefac = np.pi*bohr_rad**2/(16*x)
+        xsec = prefac*(
+            alpha*np.log(x) + beta*np.log(x)/x
+            + gamma + delta/x + eta/x**2
+        )
+
+        try:
+            xsec[eng <= E_exc] *= 0
+        except:
+            if eng <= E_exc:
+                return 0
+
+        return xsec
+
+    else:
+        raise TypeError('invalid species.')
+
+def coll_ion_xsec(eng, species=None):
+    """ Returns the collisional ionization rate. See 0906.1197.
+
+    Parameters
+    ----------
+    eng : float or ndarray
+        Abscissa of *kinetic* energies.
+    species : {'HI', 'HeI', 'HeII'}
+        Species of interest.
+
+    Returns
+    -------
+    float or ndarray
+        Collisional ionization cross section in cm^2.
+
+    Note
+    ----
+    Returns the Arnaud and Rothenflug rate.
+
+    """
+    if species == 'HI':
+        A_coeff = 22.8
+        B_coeff = -12.0
+        C_coeff = 1.9
+        D_coeff = -22.6
+        ion_pot = rydberg
+    elif species == 'HeI':
+        A_coeff = 17.8
+        B_coeff = -11.0
+        C_coeff = 7.0
+        D_coeff = -23.2
+        ion_pot = He_ion_eng
+    elif species == 'HeII':
+        A_coeff = 14.4
+        B_coeff = -5.6
+        C_coeff = 1.9
+        D_coeff = -13.3
+        ion_pot = 4*rydberg
+    else:
+        raise TypeError('invalid species.')
+
+    u = eng/ion_pot
+
+    prefac = 1e-14/(u*ion_pot**2)
+
+    xsec = prefac*(
+        A_coeff*(1 - 1/u) + B_coeff*(1 - 1/u)**2
+        + C_coeff*np.log(u) + D_coeff*np.log(u)/u
+    )
+
+    try:
+        xsec[eng <= ion_pot] *= 0
+    except:
+        if eng <= ion_pot:
+            return 0
+
+    return xsec
+
+def coll_ion_sec_elec_spec(in_eng, eng, species=None):
+    """ Returns the secondary electron spectrum after collisional ionization. See 0910.4410.
+
+    Parameters
+    ----------
+    in_eng : float
+        The incoming electron energy.
+    eng : ndarray
+        Abscissa of *kinetic* energies.
+    species : {'HI', 'HeI', 'HeII'}
+        Species of interest.
+
+    Returns
+    -------
+    ndarray
+        Secondary electron spectrum. Total number of electrons = 2.
+
+    Note
+    ----
+    Includes both the freed and initial electrons. Conservation of energy
+    is not enforced, but number of electrons is.
+
+    """
+
+    from darkhistory.spec.spectrum import Spectrum
+    from darkhistory.spec import spectools
+
+    if species == 'HI':
+        eps_i = 8.
+        ion_pot = rydberg
+    elif species == 'HeI':
+        eps_i = 15.8
+        ion_pot = He_ion_eng
+    elif species == 'HeII':
+        eps_i = 32.6
+        ion_pot = 4*rydberg
+    else:
+        raise TypeError('invalid species.')
+
+    if np.isscalar(in_eng):
+        low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
+        # This spectrum describes the lower energy electron only.
+        low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+        # Normalize the spectrum to one electron.
+
+        low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
+        if np.sum(low_eng_elec_dNdE) == 0:
+            # Either in_eng < in_pot, or the lowest bin lies
+            # above the halfway point, (in_eng - ion_pot)/2.
+            # Add to the lowest bin.
+            return np.zeros_like(eng)
+
+        low_eng_elec_spec /= low_eng_elec_spec.totN()
+
+        in_eng = np.array([in_eng])
+
+        low_eng_elec_N = np.outer(
+            np.ones_like(in_eng), low_eng_elec_spec.N)
+
+        high_eng_elec_N = spectools.engloss_rebin_fast(
+            in_eng, eng + ion_pot, low_eng_elec_N, eng
+        )
+
+        return np.squeeze(low_eng_elec_N + high_eng_elec_N)
+
+    else:
+
+        from darkhistory.spec.spectra import Spectra
+
+        in_eng_mask = np.outer(in_eng, np.ones_like(eng))
+        eng_mask    = np.outer(np.ones_like(in_eng), eng)
+
+        low_eng_elec_dNdE = np.outer(
+            np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
+        )
+
+        low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
+
+        # Normalize the spectrum to one electron.
+        low_eng_elec_spec = Spectra(
+            low_eng_elec_dNdE, eng=eng, in_eng=in_eng
+        )
+
+        totN_arr = low_eng_elec_spec.totN()
+        # Avoids divide by zero errors.
+        totN_arr[totN_arr == 0] = np.inf
+
+        low_eng_elec_spec /= totN_arr
+
+        if low_eng_elec_spec.spec_type == 'dNdE':
+            low_eng_elec_spec.switch_spec_type()
+
+        low_eng_elec_N = low_eng_elec_spec.grid_vals
+
+        high_eng_elec_N = spectools.engloss_rebin_fast(
+            in_eng, eng + ion_pot, low_eng_elec_N, eng
+        )
+
+        return low_eng_elec_N + high_eng_elec_N
+
+
+
+        # This spectrum describes the lower energy electron only.
+
+def elec_heating_engloss_rate(eng, xe, rs):
+    """Returns the electron energy loss rate due to heating of the gas.
+
+    Parameters
+    ----------
+    eng : ndarray
+        Abscissa of electron *kinetic* energy.
+    xe : float
+        The free electron fraction.
+    rs : float
+        The redshift.
+
+    Returns
+    -------
+    ndarray
+        The energy loss rate due to heating (positive).
+
+    Note
+    -------
+    See 0910.4410 for the expression. The units have e^2/r being in units of energy, so to convert to SI, we insert 1/(4*pi*eps_0)^2.
+    """
+
+    w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
+    ne = xe*nH*rs**3
+
+    eps_0 = 8.85418782e-12 # in SI units
+
+    prefac = 4*np.pi*ele**4/(4*np.pi*eps_0)**2
+    # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2).
+    prefac *= 100**2/ele**2
+
+    # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c
+    # Because she factored out beta, and left m_e c in numfac.
+
+    # zeta_e = 7.40e-11*nB*rs**3
+    zeta_e = 7.40e-11*ne
+    coulomb_log = np.log(4*eng/zeta_e)
+
+    # must use the mass of the electron in eV m^2 s^-2.
+    return prefac*ne*coulomb_log/(me/c**2*w)
+
 
 def tau_sobolev(rs):
     """Sobolev optical depth.
@@ -475,7 +796,11 @@ def TCMB(rs):
     float
     """
 
-    return 2.7255 * 8.61733e-5 * rs
+    if not cross_check:
+        fac = 2.7255
+    else:
+        fac = 2.725
+    return fac * kB * rs
 
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons/cm^3/eV.

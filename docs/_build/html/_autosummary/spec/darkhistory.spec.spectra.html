@@ -24,28 +24,19 @@
 
   
 
-  
-  
-    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="../../genindex.html"/>
-        <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="DarkHistory  documentation" href="../../index.html"/>
-        <link rel="up" title="spec" href="../darkhistory.spec.html"/>
-        <link rel="next" title="transferfunction" href="darkhistory.spec.transferfunction.html"/>
-        <link rel="prev" title="spectrum" href="darkhistory.spec.spectrum.html"/> 
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="transferfunction" href="darkhistory.spec.transferfunction.html" />
+    <link rel="prev" title="spectrum" href="darkhistory.spec.spectrum.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
@@ -90,7 +81,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html">main</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.spec.html">spec</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectools.html">spectools</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.spec.spectrum.html">spectrum</a></li>
@@ -116,7 +107,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">DarkHistory</a>
@@ -124,9 +115,10 @@
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -180,7 +172,7 @@
 <dl class="class">
 <dt id="darkhistory.spec.spectra.Spectra">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.spectra.</code><code class="descname">Spectra</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>eng=None</em>, <em>in_eng=None</em>, <em>rs=None</em>, <em>spec_type='dNdE'</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Structure for a collection of <cite>Spectrum</cite> objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -229,34 +221,34 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.append" title="darkhistory.spec.spectra.Spectra.append"><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code></a>(spec)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.append" title="darkhistory.spec.spectra.Spectra.append"><code class="xref py py-obj docutils literal"><span class="pre">append</span></code></a>(spec)</td>
 <td>Appends a new Spectrum.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.at_rs" title="darkhistory.spec.spectra.Spectra.at_rs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_err,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.at_rs" title="darkhistory.spec.spectra.Spectra.at_rs"><code class="xref py py-obj docutils literal"><span class="pre">at_rs</span></code></a>(new_rs[,&nbsp;interp_type,&nbsp;bounds_err,&nbsp;…])</td>
 <td>Interpolates the transfer function at a new redshift.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.integrate_each_spec" title="darkhistory.spec.spectra.Spectra.integrate_each_spec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.integrate_each_spec" title="darkhistory.spec.spectra.Spectra.integrate_each_spec"><code class="xref py py-obj docutils literal"><span class="pre">integrate_each_spec</span></code></a>([weight])</td>
 <td>Sums over each individual spectrum with some weight.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.plot" title="darkhistory.spec.spectra.Spectra.plot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.plot" title="darkhistory.spec.spectra.Spectra.plot"><code class="xref py py-obj docutils literal"><span class="pre">plot</span></code></a>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
 <td>Plots the contained <cite>Spectrum</cite> objects.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.rebin" title="darkhistory.spec.spectra.Spectra.rebin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin</span></code></a>(out_eng)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.rebin" title="darkhistory.spec.spectra.Spectra.rebin"><code class="xref py py-obj docutils literal"><span class="pre">rebin</span></code></a>(out_eng)</td>
 <td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.redshift" title="darkhistory.spec.spectra.Spectra.redshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">redshift</span></code></a>(rs_arr)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.redshift" title="darkhistory.spec.spectra.Spectra.redshift"><code class="xref py py-obj docutils literal"><span class="pre">redshift</span></code></a>(rs_arr)</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.sum_specs" title="darkhistory.spec.spectra.Spectra.sum_specs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum_specs</span></code></a>([weight])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.sum_specs" title="darkhistory.spec.spectra.Spectra.sum_specs"><code class="xref py py-obj docutils literal"><span class="pre">sum_specs</span></code></a>([weight])</td>
 <td>Sums all of spectra with some weight.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.switch_spec_type" title="darkhistory.spec.spectra.Spectra.switch_spec_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch_spec_type</span></code></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.switch_spec_type" title="darkhistory.spec.spectra.Spectra.switch_spec_type"><code class="xref py py-obj docutils literal"><span class="pre">switch_spec_type</span></code></a>()</td>
 <td></td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.totN" title="darkhistory.spec.spectra.Spectra.totN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.totN" title="darkhistory.spec.spectra.Spectra.totN"><code class="xref py py-obj docutils literal"><span class="pre">totN</span></code></a>([bound_type,&nbsp;bound_arr])</td>
 <td>Returns the total number of particles in part of the spectra.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.toteng" title="darkhistory.spec.spectra.Spectra.toteng"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.toteng" title="darkhistory.spec.spectra.Spectra.toteng"><code class="xref py py-obj docutils literal"><span class="pre">toteng</span></code></a>([bound_type,&nbsp;bound_arr])</td>
 <td>Returns the total energy of particles in part of the spectra.</td>
 </tr>
 </tbody>
@@ -286,7 +278,7 @@
 <p>This special function, together with <cite>Spectra.__radd__</cite>, allows the use of the symbol + to add arrays of spectra together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__radd__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -346,7 +338,7 @@
 <p>This special function, together with <cite>Spectra.__add__</cite>, allows the use of the symbol + to add two arrays of spectra together.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectra.Spectra.__add__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectra.Spectra.__add__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -390,7 +382,7 @@
 <p>This special function, together with <cite>Spectra.__rsub__</cite>, allows the use of the symbol - to subtract or subtract from <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__sub__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__sub__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -411,10 +403,10 @@
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
+<p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use of the symbol / to divide <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__truediv__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -438,7 +430,7 @@
 <p>This special function, together with <cite>Spectra.__rsub__</cite>, allows the use of the symbol - to subtract or subtract from <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__rsub__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rsub__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -462,7 +454,7 @@
 <p>This special function, together with <cite>Spectra.__rtruediv__</cite>, allows the use fo the symbol / to divide <cite>Spectra</cite> objects.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spectrum.Spectra.__rtruediv__()</span></code></p>
 </div>
 </dd></dl>
 
@@ -587,7 +579,7 @@
 </table>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last"><code class="xref py py-meth docutils literal notranslate"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
+<p class="last"><code class="xref py py-meth docutils literal"><span class="pre">spec.spectools.rebin_N_2D_arr()</span></code></p>
 </div>
 </dd></dl>
 
@@ -687,9 +679,7 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
@@ -707,11 +697,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Hongwan Liu.
+        &copy; Copyright 2017, Hongwan Liu
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -726,35 +716,33 @@
 
   
 
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'../../',
-            VERSION:'',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="../../_static/jquery.js"></script>
-      <script type="text/javascript" src="../../_static/underscore.js"></script>
-      <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
 
   
 
-  
-  
-    <script type="text/javascript" src="../../_static/js/theme.js"></script>
-  
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-   
+  </script> 
 
 </body>
 </html>

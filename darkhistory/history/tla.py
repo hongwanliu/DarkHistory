@@ -6,6 +6,7 @@ import numpy as np
 import darkhistory.physics as phys
 import darkhistory.history.reionization as reion
 from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 from scipy.misc import derivative
 
 def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
@@ -46,7 +47,7 @@ def get_history(
     init_cond, f_H_ion_in, f_H_exc_in, f_heating_in,
     dm_injection_rate_in, rs_vec, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, mxstep = 1000
+    xe_reion_func=None, mxstep = 0
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -153,7 +154,7 @@ def get_history(
             photoheat_rate_HeI  = photoheat_rate_func[1]
             photoheat_rate_HeII = photoheat_rate_func[2]
 
-    def tla_before_reion(var, rs):
+    def tla_before_reion(rs, var):
         # Returns an array of values for [dT/dz, dyHII/dz,
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
@@ -187,7 +188,7 @@ def get_history(
 
 
             return adiabatic_cooling_rate + (
-                entropy_cooling_rate
+                0*entropy_cooling_rate
                 - phys.dtdz(rs)*(
                     compton_cooling_rate(
                         xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -226,7 +227,7 @@ def get_history(
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+            if chi - xHeII(yHeII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -238,7 +239,7 @@ def get_history(
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHII(yHII) < 1e-6 and rs < 100:
+            if chi - xHeIII(yHeIII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -249,6 +250,7 @@ def get_history(
 
         T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
+        # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
         return [
             dT_dz(yHII, yHeII, yHeIII, T_m, rs),
             dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
@@ -256,7 +258,7 @@ def get_history(
             dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
         ]
 
-    def tla_reion(var, rs):
+    def tla_reion(rs, var):
         # TLA with photoionization/photoheating reionization model.
         # Returns an array of values for [dT/dz, dyHII/dz,
         # dyHeII/dz, dyHeIII/dz].
@@ -301,7 +303,7 @@ def get_history(
 
             return (
                 adiabatic_cooling_rate
-                + entropy_cooling_rate
+                + 0*entropy_cooling_rate
                 + (
                     - phys.dtdz(rs)*(
                         compton_cooling_rate(
@@ -363,7 +365,7 @@ def get_history(
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHeII(yHeII) < 1e-6 and rs < 100:
+            if chi - xHeII(yHeII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -388,7 +390,7 @@ def get_history(
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if 1 - xHeIII(yHeIII) < 1e-6 and rs < 100:
+            if chi - xHeIII(yHeIII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
                 return 0
 
@@ -406,6 +408,8 @@ def get_history(
 
         T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
+        # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
+        
         return [
             dT_dz(yHII, yHeII, yHeIII, T_m, rs),
             dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
@@ -413,7 +417,7 @@ def get_history(
             dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
         ]
 
-    def tla_reion_fixed_xe(var, rs):
+    def tla_reion_fixed_xe(rs, var):
         # TLA with fixed ionization history. 
         # Returns an array of values for [dT/dz, dyHII/dz].]. 
         # var is the [temperature, xHII] input.
@@ -438,7 +442,7 @@ def get_history(
 
             return (
                 adiabatic_cooling_rate
-                + entropy_cooling_rate
+                + 0*entropy_cooling_rate
                 + (
                     - phys.dtdz(rs)*(
                         compton_cooling_rate(
@@ -461,6 +465,7 @@ def get_history(
     if init_cond[3] == 0:
         init_cond[3] = 1e-12
 
+
     init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
     init_cond[2] = np.arctanh(2/chi * (init_cond[2] - chi/2))
     init_cond[3] = np.arctanh(2/chi *(init_cond[3] - chi/2))
@@ -474,14 +479,27 @@ def get_history(
     if not reion_switch:
         # No reionization model implemented.
         soln = odeint(
-                tla_before_reion, init_cond, rs_vec, mxstep = mxstep
+                tla_before_reion, init_cond, rs_vec, 
+                mxstep = mxstep, tfirst=True
             )
+        # soln = solve_ivp(
+        #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
+        #     init_cond
+        # )
     elif xe_reion_func is not None:
         # Fixed xe reionization model implemented. 
         # First, solve without reionization.
+
+        # tfirst=True means that tla_before_reion accepts rs as 
+        # first argument.
         soln_no_reion = odeint(
-            tla_before_reion, init_cond, rs_vec, mxstep = mxstep
+            tla_before_reion, init_cond, rs_vec, 
+            mxstep = mxstep, tfirst=True
         )
+        # soln_no_reion = solve_ivp(
+        #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
+        #     init_cond, method='BDF', t_eval=rs_vec
+        # )
         # Check if reionization model is required in the first place.
         if rs_reion_vec.size == 0:
             soln = soln_no_reion
@@ -509,14 +527,13 @@ def get_history(
             soln[~where_new_soln, 1] = 0.5 + 0.5*np.tanh(
                 soln[~where_new_soln,1]
             )
-            
 
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:
                 init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
                 soln_with_reion = odeint(
                     tla_reion_fixed_xe, init_cond_fixed_xe, 
-                    rs_above_std_xe_vec, mxstep=mxstep
+                    rs_above_std_xe_vec, mxstep=mxstep, tfirst=True
                 )
                 # Remove the initial step, save to soln.
                 soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
@@ -532,21 +549,36 @@ def get_history(
         if rs_reion_vec.size == 0:
             soln = odeint(
                 tla_before_reion, init_cond, 
-                rs_before_reion_vec, mxstep = mxstep
+                rs_before_reion_vec, mxstep = mxstep, tfirst=True
             )
+            # soln = solve_ivp(
+            #     tla_before_reion, 
+            #     (rs_before_reion_vec[0], rs_before_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_before_reion_vec
+            # )
         # Conversely, solving before reionization may be unnecessary.
         elif rs_before_reion_vec.size == 0:
             soln = odeint(
-                tla_reion, init_cond, rs_reion_vec, mxstep = mxstep
+                tla_reion, init_cond, rs_reion_vec, 
+                mxstep = mxstep, tfirst=True
             )
+            # soln = solve_ivp(
+            #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_reion_vec
+            # )
         # Remaining case straddles both before and after reionization.
         else:
             # First, solve without reionization up to rs = reion_rs.
             rs_before_reion_vec = np.append(rs_before_reion_vec, reion_rs)
             soln_before_reion = odeint(
                 tla_before_reion, init_cond, 
-                rs_before_reion_vec, mxstep = mxstep
+                rs_before_reion_vec, mxstep = mxstep, tfirst=True
             )
+            # soln_before_reion = solve_ivp(
+            #     tla_before_reion, 
+            #     (rs_before_reion_vec[0], rs_before_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_before_reion_vec
+            # )
             # Next, solve with reionization starting from reion_rs.
             rs_reion_vec = np.insert(rs_reion_vec, 0, reion_rs)
             # Initial conditions taken from last step before reionization.
@@ -557,8 +589,13 @@ def get_history(
                 np.arctanh(2/(chi)*(1e-12 - chi/2))
             ]
             soln_reion = odeint(
-                tla_reion, init_cond_reion, rs_reion_vec, mxstep = mxstep,
+                tla_reion, init_cond_reion, 
+                rs_reion_vec, mxstep = mxstep, tfirst=True
             )
+            # soln_reion = solve_ivp(
+            #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),
+            #     init_cond, method='BDF', t_eval=rs_reion_vec
+            # )
             # Stack the solutions. Remove the solution at 16.1.
             soln = np.vstack((soln_before_reion[:-1,:], soln_reion[1:,:]))
 

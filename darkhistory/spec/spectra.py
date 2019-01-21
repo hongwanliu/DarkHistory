@@ -5,6 +5,7 @@ from darkhistory import utilities as utils
 from darkhistory.spec.spectools import get_log_bin_width
 from darkhistory.spec.spectools import rebin_N_arr
 from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.spectools import get_bin_bound
 
 import matplotlib.pyplot as plt
 import warnings
@@ -12,31 +13,31 @@ import warnings
 from scipy import interpolate
 
 class Spectra:
-    """Structure for a collection of `Spectrum` objects. 
+    """Structure for a collection of `Spectrum` objects.
 
     Parameters
     ----------
     spec_arr : list of Spectrum or ndarray
-        List of `Spectrum` or array to be stored together. 
+        List of `Spectrum` or array to be stored together.
     spec_type : {'N', 'dNdE'}, optional
         The type of entries. Default is 'dNdE'.
     in_eng : ndarray
-        Array of injection energies corresponding to each spectrum. 
+        Array of injection energies corresponding to each spectrum.
     eng : ndarray
-        Array of energy abscissa of each spectrum. 
+        Array of energy abscissa of each spectrum.
     rs : ndarray
-        Array of redshifts corresponding to each spectrum. 
+        Array of redshifts corresponding to each spectrum.
     rebin_eng : ndarray, optional
-        New abscissa to rebin all of the spectra into. 
+        New abscissa to rebin all of the spectra into.
 
     Attributes
     ----------
     in_eng : ndarray
-        Array of injection energies corresponding to each spectrum. 
+        Array of injection energies corresponding to each spectrum.
     eng : ndarray
-        Array of energy abscissa of each spectrum. 
+        Array of energy abscissa of each spectrum.
     rs : ndarray
-        Array of redshifts corresponding to each spectrum. 
+        Array of redshifts corresponding to each spectrum.
     spec_type : {'N', 'dNdE'}
         The type of values stored.
     """
@@ -48,7 +49,7 @@ class Spectra:
     __array_priority__ = 1
 
     def __init__(
-        self, spec_arr, eng=None, in_eng=None, rs=None, 
+        self, spec_arr, eng=None, in_eng=None, rs=None,
         spec_type='dNdE', rebin_eng=None
     ):
 
@@ -63,12 +64,10 @@ class Spectra:
             if eng.size != spec_arr.shape[-1]:
                 raise TypeError('eng array not the same shape as last axis of spec_arr.')
             self._eng = eng
-            
-            
 
             if in_eng is None:
                 self._in_eng = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if in_eng.size != spec_arr.shape[0]:
@@ -76,14 +75,14 @@ class Spectra:
                 self._in_eng = in_eng
             if rs is None:
                 self._rs = -1.*np.ones_like(
-                    self._grid_vals.shape[0]
+                    self._grid_vals[:,0]
                 )
             else:
                 if rs.size != spec_arr.shape[0]:
                     raise TypeError('rs array not the same shape as first axis of spec_arr.')
                 self._rs = rs
-            self._N_underflow = np.zeros_like(rs)
-            self._eng_underflow = np.zeros_like(rs)
+            self._N_underflow = np.zeros_like(self._rs)
+            self._eng_underflow = np.zeros_like(self._rs)
 
             if rebin_eng is not None:
                 self.rebin(rebin_eng)
@@ -125,6 +124,8 @@ class Spectra:
             self._N_underflow = np.array([])
             self._eng_underflow = np.array([])
 
+        self.n = 0
+
     @property
     def eng(self):
         return self._eng
@@ -154,13 +155,22 @@ class Spectra:
         return self._eng_underflow
 
     def __iter__(self):
-        return iter(self.grid_vals)
+        return iter([
+            Spectrum(
+                self.eng, spec, in_eng=in_eng, rs=rs, 
+                spec_type=self.spec_type
+            ) for spec, in_eng, rs in zip(
+                self.grid_vals, self.in_eng, self.rs
+            )
+        ])
+        # return iter(self.grid_vals)
 
     def __getitem__(self, key):
+
         if np.issubdtype(type(key), np.int64):
             out_spec = Spectrum(
-                self.eng, self._grid_vals[key], 
-                in_eng=self._in_eng[key], rs=self._rs[key], 
+                self.eng, self._grid_vals[key],
+                in_eng=self._in_eng[key], rs=self._rs[key],
                 spec_type=self.spec_type
             )
             if self.N_underflow.size > 0 and self.eng_underflow.size > 0:
@@ -169,12 +179,12 @@ class Spectra:
             return out_spec
         elif isinstance(key, slice):
             data_arr          = self._grid_vals[key]
-            in_eng_arr        = self._in_eng[key]
-            rs_arr            = self._rs[key]
+            in_eng_arr        = in_eng
+            rs_arr            = rs
             N_underflow_arr   = self._N_underflow[key]
             eng_underflow_arr = self._eng_underflow[key]
             out_spec_list = [
-                Spectrum(self.eng, data, in_eng, rs) for (spec, in_eng, rs) 
+                Spectrum(self.eng, data, in_eng, rs) for (spec, in_eng, rs)
                     in zip(data_arr, in_eng_arr, rs_arr)
             ]
             for (spec,N,eng) in zip(
@@ -185,6 +195,18 @@ class Spectra:
             return out_spec_list
         else:
             raise TypeError("indexing is invalid.")
+
+    #def __iter__(self):
+    #    return self
+
+    #def __next__(self):
+    #    self.n += 1
+    #    try:
+    #        return self[self.n-1]
+    #    except IndexError:
+    #        self.n = 0
+    #        raise StopIteration
+    #next = __next__
 
     def __setitem__(self, key, value):
         if np.issubdtype(type(key), int):
@@ -225,7 +247,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add arrays of spectra together. 
+        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add arrays of spectra together.
 
         See Also
         --------
@@ -242,7 +264,7 @@ class Spectra:
             out_spectra = Spectra([])
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals + other.grid_vals
-            out_spectra._eng = self.eng 
+            out_spectra._eng = self.eng
             if np.array_equal(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
             if np.array_equal(self.rs, other.rs):
@@ -271,7 +293,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__add__`, allows the use of the symbol + to add two arrays of spectra together. 
+        This special function, together with `Spectra.__add__`, allows the use of the symbol + to add two arrays of spectra together.
 
         See Also
         --------
@@ -290,7 +312,7 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals + other.grid_vals
             )
-            out_spectra._eng = self.eng 
+            out_spectra._eng = self.eng
             if np.array_equal(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
             if np.array_equal(self.rs, other.rs):
@@ -306,7 +328,7 @@ class Spectra:
             raise TypeError('adding an object that is not compatible.')
 
     def __sub__(self, other):
-        """Subtracts one array of spectra from another. 
+        """Subtracts one array of spectra from another.
 
         Parameters
         ----------
@@ -328,7 +350,7 @@ class Spectra:
         return self + -1*other
 
     def __rsub__(self, other):
-        """Subtracts one array of spectra from another. 
+        """Subtracts one array of spectra from another.
 
         Parameters
         ----------
@@ -350,7 +372,7 @@ class Spectra:
         return other + -1*self
 
     def __neg__(self):
-        """Negates the spectra values. 
+        """Negates the spectra values.
 
         Returns
         -------
@@ -360,7 +382,7 @@ class Spectra:
         return -1*self
 
     def __mul__(self, other):
-        """Takes a product with this `Spectra`. 
+        """Takes a product with this `Spectra`.
 
         Parameters
         ----------
@@ -372,11 +394,11 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object. 
+        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
         """
 
         if (
-            np.issubdtype(type(other), float) 
+            np.issubdtype(type(other), float)
             or np.issubdtype(type(other), int)
         ):
             out_spectra = Spectra([])
@@ -385,7 +407,7 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
-            
+
             return out_spectra
 
         elif isinstance(other, np.ndarray):
@@ -420,7 +442,7 @@ class Spectra:
             return out_spectra
 
     def __rmul__(self, other):
-        """Takes a product with this `Spectra`. 
+        """Takes a product with this `Spectra`.
 
         Parameters
         ----------
@@ -432,11 +454,11 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to multiply objects with a `Spectra` object. 
+        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
         """
 
         if (
-            np.issubdtype(type(other), float) 
+            np.issubdtype(type(other), float)
             or np.issubdtype(type(other), int)
             or isinstance(other, list)
             or isinstance(other, np.ndarray)
@@ -447,7 +469,7 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
-            
+
             return out_spectra
 
         elif np.issubclass_(type(other), Spectra):
@@ -470,7 +492,7 @@ class Spectra:
             return out_spectra
 
     def __truediv__(self, other):
-        """Divides Spectra by another object. 
+        """Divides Spectra by another object.
 
         Parameters
         ----------
@@ -482,7 +504,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects. 
+        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects.
 
         See Also
         --------
@@ -500,7 +522,7 @@ class Spectra:
             return self * (1/other)
 
     def __rtruediv__(self, other):
-        """Divides Spectra by another object. 
+        """Divides Spectra by another object.
 
         Parameters
         ----------
@@ -512,7 +534,7 @@ class Spectra:
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects. 
+        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects.
 
         See Also
         --------
@@ -538,16 +560,16 @@ class Spectra:
             self._spec_type = 'N'
 
     def redshift(self, rs_arr):
-        
+
         for i,(val, rs, new_rs, in_eng, N_uf, eng_uf) in enumerate(
             zip(
-                self, self.rs, rs_arr, self.in_eng, 
+                self, self.rs, rs_arr, self.in_eng,
                 self.N_underflow, self.eng_underflow
             )
         ):
             spec = Spectrum(
-                self.eng, val, 
-                rs=rs, in_eng=in_eng, 
+                self.eng, val,
+                rs=rs, in_eng=in_eng,
                 spec_type=self.spec_type
             )
             spec.redshift(new_rs)
@@ -560,7 +582,7 @@ class Spectra:
     def totN(self, bound_type=None, bound_arr=None):
         """Returns the total number of particles in part of the spectra.
 
-        The part of the `Spectrum` objects to find the total number of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`. 
+        The part of the `Spectrum` objects to find the total number of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`.
 
         Parameters
         ----------
@@ -573,12 +595,12 @@ class Spectra:
         Returns
         -------
         ndarray
-            Total number of particles in the spectrum. 
+            Total number of particles in the spectrum, indexed by spectrum x specified boundaries. 
 
         """
         log_bin_width = get_log_bin_width(self.eng)
 
-        # Using the broadcasting rules here. 
+        # Using the broadcasting rules here.
         if self.spec_type == 'dNdE':
             dNdlogE = np.einsum(
                 'ij,j->ij',self.grid_vals,self.eng
@@ -606,10 +628,11 @@ class Spectra:
                     return N_in_bin
 
                 for i, (low,upp) in enumerate(
-                    (bound_arr[:-1], bound_arr[1:])
+                    zip(bound_arr[:-1], bound_arr[1:])
                 ):
+
                     # Set the lower and upper bounds, including case where
-                    # low and upp are outside of the bins. 
+                    # low and upp are outside of the bins.
                     if low > self.eng.size or upp < 0:
                         continue
 
@@ -618,33 +641,33 @@ class Spectra:
                     upp_ceil  = int(np.ceil(upp))
                     upp_floor = int(np.floor(upp))
 
-                    # Sum the bins that are completely between the bounds. 
+                    # Sum the bins that are completely between the bounds.
 
                     N_full_bins = np.dot(
                         dNdlogE[:,low_ceil:upp_floor],
                         log_bin_width[low_ceil:upp_floor]
-                    ) 
+                    )
 
                     N_part_bins = np.zeros_like(self.in_eng)
 
                     if low_floor == upp_floor or low_ceil == upp_ceil:
-                        # Bin indices are within the same bin. 
+                        # Bin indices are within the same bin.
                         # The second requirement covers the case where
-                        # upp_ceil is eng.size. 
+                        # upp_ceil is eng.size.
                         N_part_bins += (
                             dNdlogE[:,low_floor] * (upp - low)
                             * log_bin_width[low_floor]
                         )
                     else:
                         # Add up part of the bin for the low partial bin
-                        # and the high partial bin. 
+                        # and the high partial bin.
                         N_part_bins += (
                             dNdlogE[:,low_floor] * (low_ceil - low)
                             * log_bin_width[low_floor]
                         )
                         if upp_floor < self.eng.size:
                             # If upp_floor is eng.size then there is
-                            # no partial bin for the upper index. 
+                            # no partial bin for the upper index.
                             N_part_bins += (
                                 dNdlogE[:,upp_floor] * (upp - upp_floor)
                                 * log_bin_width[upp_floor]
@@ -659,7 +682,7 @@ class Spectra:
                 eng_bin_ind = np.interp(
                     np.log(bound_arr),
                     np.log(bin_boundary), np.arange(bin_boundary.size),
-                    left = -1, right = self.eng.size + 1
+                    left = 0, right = self.eng.size + 1
                 )
 
                 return self.totN('bin', eng_bin_ind)
@@ -672,7 +695,7 @@ class Spectra:
     def toteng(self, bound_type=None, bound_arr=None):
         """Returns the total energy of particles in part of the spectra.
 
-        The part of the `Spectrum` objects to find the total energy of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`. 
+        The part of the `Spectrum` objects to find the total energy of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`.
 
         Parameters
         ----------
@@ -685,12 +708,12 @@ class Spectra:
         Returns
         -------
         ndarray
-            Total energy of particles in the spectrum. 
+            Total energy of particles in the spectrum, indexed by spectrum x specified boundaries.
 
         """
         log_bin_width = get_log_bin_width(self.eng)
 
-        # Using the broadcasting rules here. 
+        # Using the broadcasting rules here.
         if self.spec_type == 'dNdE':
             dNdlogE = self.grid_vals * self.eng
         elif self.spec_type == 'N':
@@ -707,18 +730,19 @@ class Spectra:
                 if not all(np.diff(bound_arr) >= 0):
                     raise TypeError('bound_arr must have increasing entries.')
 
-                # Size is number of totals requested x number of Spectrums. 
+                # Size is number of totals requested x number of Spectrums.
                 eng_in_bin = np.zeros((bound_arr.size - 1, self.in_eng.size))
 
                 if bound_arr[0] > self.eng.size or bound_arr[-1] < 0:
                     return eng_in_bin
 
                 for i, (low,upp) in enumerate(
-                    (bound_arr[:-1], bound_arr[1:])
+                    zip(bound_arr[:-1], bound_arr[1:])
                 ):
 
+
                     # Set the lower and upper bounds, including case where
-                    # low and upp are outside of the bins. 
+                    # low and upp are outside of the bins.
                     if low > self.eng.size or upp < 0:
                         continue
 
@@ -726,6 +750,7 @@ class Spectra:
                     low_floor = int(np.floor(low))
                     upp_ceil  = int(np.ceil(upp))
                     upp_floor = int(np.floor(upp))
+
 
                     # Sum the bins that are completely between the bounds.
 
@@ -741,7 +766,7 @@ class Spectra:
 
                         # Bin indices are within the same bin. The second
                         # requirement covers the case where upp_ceil is
-                        # eng.size. 
+                        # eng.size.
 
                         eng_part_bins += (
                             dNdlogE[:,low_floor] * (upp - low)
@@ -750,18 +775,18 @@ class Spectra:
 
                     else:
                         # Add up part of the bin for the low partial bin
-                        # and the high partial bin. 
+                        # and the high partial bin.
                         eng_part_bins += (
                             dNdlogE[:,low_floor] * (low_ceil - low)
                             * self.eng[low_floor] * log_bin_width[low_floor]
                         )
 
-                        if upp_floor < eng.size:
+                        if upp_floor < self.eng.size:
                             # If upp_floor is eng.size, then there is no
-                            # partial bin for the upper index. 
+                            # partial bin for the upper index.
                             eng_part_bins += (
                                 dNdlogE[:,upp_floor] * (upp - upp_floor)
-                                * self.eng[upp_floor] 
+                                * self.eng[upp_floor]
                                 * log_bin_width[upp_floor]
                             )
 
@@ -774,7 +799,7 @@ class Spectra:
                 eng_bin_ind = np.interp(
                     np.log(bound_arr),
                     np.log(bin_boundary), np.arange(bin_boundary.size),
-                    left = -1, right = self.eng.size + 1
+                    left = 0, right = self.eng.size + 1
                 )
 
                 return self.toteng('bin', eng_bin_ind)
@@ -786,14 +811,14 @@ class Spectra:
             )
 
     def integrate_each_spec(self, weight=None):
-        """Sums over each individual spectrum with some weight. 
+        """Sums over each individual spectrum with some weight.
 
-        The weight is over each energy bin, and has the same length as `self.eng`.   
+        The weight is over each energy bin, and has the same length as `self.eng`.
 
         Parameters
         ----------
         weight : ndarray, optional
-            The weight in each energy bin, with weight of 1 for every bin if not specified. 
+            The weight in each energy bin, with weight of 1 for every bin if not specified.
 
         Returns
         -------
@@ -814,9 +839,9 @@ class Spectra:
             raise TypeError('weight must be an ndarray of the correct dimensions.')
 
     def sum_specs(self, weight=None):
-        """Sums all of spectra with some weight. 
+        """Sums all of spectra with some weight.
 
-        The weight is over each spectrum, and has the same length as `self.in_eng` and `self.rs`. 
+        The weight is over each spectrum, and has the same length as `self.in_eng` and `self.rs`.
 
         Parameters
         ----------
@@ -826,7 +851,7 @@ class Spectra:
         Returns
         -------
         Spectrum
-            A `Spectrum` of the weighted sum of the spectra.  
+            A `Spectrum` of the weighted sum of the spectra.
 
         """
         if weight is None:
@@ -836,6 +861,9 @@ class Spectra:
             new_data = np.dot(weight, self.grid_vals)
             return Spectrum(self.eng, new_data, spec_type=self.spec_type)
         elif isinstance(weight, Spectrum):
+            if not np.array_equal(self.in_eng, weight.eng):
+                raise TypeError('spectra.in_eng must equal weight.eng')
+
             new_data = np.dot(weight._data, self.grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type
@@ -847,7 +875,7 @@ class Spectra:
         """ Re-bins all `Spectrum` objects according to a new abscissa.
 
         Rebinning conserves total number and total energy.
-        
+
         Parameters
         ----------
         out_eng : ndarray
@@ -865,29 +893,29 @@ class Spectra:
             raise TypeError('new abscissa must be ordered in increasing energy.')
 
         # Get the bin indices that the current abscissa (self.eng)
-        # corresponds to in the new abscissa (new_eng). Bin indices are 
-        # with respect to bin centers. 
+        # corresponds to in the new abscissa (new_eng). Bin indices are
+        # with respect to bin centers.
 
         # Add an additional bin at the lower end of out_eng so that
-        # underflow can be treated easily. 
+        # underflow can be treated easily.
 
         first_bin_eng = np.exp(
-            np.log(out_eng[0]) 
+            np.log(out_eng[0])
             - (np.log(out_eng[1]) - np.log(out_eng[0]))
         )
         new_eng = np.insert(out_eng, 0, first_bin_eng)
 
-        # Find the relative bin indices for self.eng. The first bin in 
+        # Find the relative bin indices for self.eng. The first bin in
         # new_eng has bin index -1. Underflow has index -2, overflow
         # corresponds to new_eng.size
 
         bin_ind = np.interp(
-            self.eng, new_eng, np.arange(new_eng.size)-1, 
+            self.eng, new_eng, np.arange(new_eng.size)-1,
             left = -2, right = new_eng.size
         )
 
-        # Locate where bin_ind is below 0, above self.length-1 
-        # or in between. 
+        # Locate where bin_ind is below 0, above self.length-1
+        # or in between.
 
         ind_low  = np.where(bin_ind < 0)[0]
         ind_high = np.where(bin_ind == new_eng.size)[0]
@@ -895,10 +923,10 @@ class Spectra:
             (bin_ind >= 0) & (bin_ind <= new_eng.size - 1)
         )[0]
 
-        if ind_high.size > 0: 
+        if ind_high.size > 0:
             warnings.warn("The new abscissa lies below the old one: only bins that lie within the new abscissa will be rebinned, bins above the abscissa will be discarded.", RuntimeWarning)
 
-        # These arrays are of size in_eng x eng. 
+        # These arrays are of size in_eng x eng.
         N_arr = self.totN('bin')
         toteng_arr = self.toteng('bin')
 
@@ -908,31 +936,31 @@ class Spectra:
 
         toteng_arr_low = toteng_arr[:,ind_low]
 
-        # Factor depends on the spec_type. 
+        # Factor depends on the spec_type.
         if self.spec_type == 'dNdE':
-            # E dlog E of the new array. 
+            # E dlog E of the new array.
             fac = new_eng * get_log_bin_width(new_eng)
         elif self.spec_type == 'N':
             fac = np.ones_like(new_eng)
 
 
-        # Regular bins first. 
+        # Regular bins first.
 
         # reg_bin_low is the array of the lower bins to be allocated the
         # particles in N_arr_reg, similarly reg_bin_upp. This should also
-        # take care of the case where bin_ind is an integer. 
+        # take care of the case where bin_ind is an integer.
 
         reg_bin_low = np.floor(bin_ind[ind_reg]).astype(int)
         reg_bin_upp = reg_bin_low + 1
 
         # Takes care of the case where eng[-1] = new_eng[-1], which falls
-        # under regular indices. Remember the extra bin on the left. 
+        # under regular indices. Remember the extra bin on the left.
         reg_bin_low[reg_bin_low == new_eng.size-2] = new_eng.size - 3
         reg_bin_upp[reg_bin_upp == new_eng.size-1] = new_eng.size - 2
 
-        # Split the particles up into the lower bin and upper bin. 
+        # Split the particles up into the lower bin and upper bin.
         # Remember there's an extra bin on the left when indexing into
-        # new_E_dlogE. 
+        # new_E_dlogE.
         reg_data_low = (
             (reg_bin_upp - bin_ind[ind_reg]) * N_arr_reg
             / fac[reg_bin_low+1]
@@ -942,7 +970,7 @@ class Spectra:
             / fac[reg_bin_upp+1]
         )
 
-        # Handle low bins. 
+        # Handle low bins.
         low_bin_low = np.floor(bin_ind[ind_low]).astype(int)
 
         N_above_underflow = np.sum(
@@ -956,13 +984,38 @@ class Spectra:
         )
         low_data = N_above_underflow/fac[1]
 
-        # Add up, obtain the new dN/dE. 
+        # Add up, obtain the new dN/dE.
 
         new_data = np.zeros((self.in_eng.size, new_eng.size))
         new_data[:,1] += low_data
 
-        np.add.at(new_data, (slice(None), reg_bin_low+1), reg_data_low)
-        np.add.at(new_data, (slice(None), reg_bin_upp+1), reg_data_upp)
+
+        # np.add.at(new_data, (slice(None), reg_bin_low+1), reg_data_low)
+        # np.add.at(new_data, (slice(None), reg_bin_upp+1), reg_data_upp)
+
+        # Replace with agg.aggregate
+        from darkhistory.numpy_groupies import aggregate as agg
+
+        # low_data = agg.aggregate(
+        #     reg_bin_low+1, reg_data_low, func='sum', fill_value=0, axis=1, size=new_eng.size
+        # )
+
+        # upp_data = agg.aggregate(
+        #     reg_bin_upp+1, reg_data_upp, func='sum', fill_value=0, axis=1, size=new_eng.size
+        # )
+        # new_data = (low_data + upp_data)
+
+        low_data = agg.aggregate(
+            reg_bin_low+1, np.transpose(reg_data_low), func='sum', 
+            fill_value=0, axis=0, size=new_eng.size
+        )
+
+        upp_data = agg.aggregate(
+            reg_bin_upp+1, np.transpose(reg_data_upp), func='sum', 
+            fill_value=0, axis=0, size=new_eng.size
+        )
+
+        new_data += np.transpose(low_data + upp_data)
 
         # new_data[:,reg_bin_low+1] += reg_data_low
         # new_data[:,reg_bin_upp+1] += reg_data_upp
@@ -973,7 +1026,7 @@ class Spectra:
         self._eng_underflow += eng_underflow
 
     def append(self, spec):
-        """Appends a new Spectrum. 
+        """Appends a new Spectrum.
 
         Parameters
         ----------
@@ -994,7 +1047,7 @@ class Spectra:
         self._eng_underflow = np.append(
             self._eng_underflow, spec.underflow['eng']
         )
-        
+
         if self.eng.size == 0:
             self._eng = spec.eng
             self._grid_vals = np.atleast_2d(spec._data)
@@ -1004,21 +1057,21 @@ class Spectra:
             )
 
     def at_rs(
-        self, new_rs, interp_type='val', 
+        self, new_rs, interp_type='val',
         bounds_err=None, fill_value=np.nan
     ):
-        """Interpolates the transfer function at a new redshift. 
+        """Interpolates the transfer function at a new redshift.
 
-        Interpolation is logarithmic. 
+        Interpolation is logarithmic.
 
         Parameters
         ----------
         new_rs : ndarray
-            The redshifts or redshift bin indices at which to interpolate. 
+            The redshifts or redshift bin indices at which to interpolate.
         interp_type : {'val', 'bin'}
-            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift. 
+            The type of interpolation. 'bin' uses bin index, while 'val' uses the actual redshift.
         bounds_err : bool, optional
-            Whether to return an error if outside of the bounds for the interpolation. 
+            Whether to return an error if outside of the bounds for the interpolation.
         """
         if (
             not np.all(np.diff(self.rs)) > 0
@@ -1053,9 +1106,9 @@ class Spectra:
         else:
             raise TypeError('invalid interp_type specified.')
 
-    def plot(self, ax, ind=None, step=1, indtype='ind', 
+    def plot(self, ax, ind=None, step=1, indtype='ind',
     fac=1, **kwargs):
-        """Plots the contained `Spectrum` objects. 
+        """Plots the contained `Spectrum` objects.
 
         Parameters
         ----------
@@ -1070,9 +1123,9 @@ class Spectra:
         abs_plot :  bool, optional
             Plots the absolute value if true.
         fac : ndarray, optional
-            Factor to multiply the array by. 
+            Factor to multiply the array by.
         **kwargs : optional
-            All additional keyword arguments to pass to matplotlib.plt.plot. 
+            All additional keyword arguments to pass to matplotlib.plt.plot.
 
         Returns
         -------
@@ -1094,7 +1147,7 @@ class Spectra:
             elif isinstance(ind, tuple):
                 spec_to_plot = np.stack(
                     [
-                        self.grid_vals[i]*fac 
+                        self.grid_vals[i]*fac
                         for i in np.arange(ind[0], ind[1], step)
                     ], axis = -1
                 )
@@ -1130,6 +1183,6 @@ class Spectra:
                     ax, fac=fac, **kwargs
                 )
 
-        else: 
+        else:
             raise TypeError('indtype must be either ind or rs.')
 
