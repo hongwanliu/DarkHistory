@@ -331,7 +331,7 @@ class TransferFuncListArray:
     tflist_arr : list of TransferFuncList
         TransferFuncList objects to add to the array. If 2D, should be indexed by (xH, xHe). 
     x_arr : ndarray
-        Array of xH or [xH, xHe] values corresponding to tflist_arr.
+        Array of xH or (xH, xHe) values corresponding to tflist_arr.
 
     Attributes
     ----------
@@ -402,10 +402,7 @@ class TransferFuncListArray:
 
             # Now, data is stored in *increasing* rs. 
 
-        elif ndim == 3:
-            # xH and xHe. ndim = 3, since two dimensions of xH and xHe,
-            # and each entry is an array of length two, [xH, xHe]. 
-            
+        elif ndim == 2:
             if not all(
                 arrays_equal([tflist.rs for tflist in tflist_xHe_arr]) 
                 for tflist_xHe_arr in tflist_arr
