@@ -38,7 +38,7 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc_arr, xes, string_arr = [""], CMB_subtracted=False):
+def load_trans_funcs(direc_arr, string_arr, xes, CMB_subtracted=False):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     #If only a string is specified, make it a list of strings
