@@ -457,7 +457,7 @@ class TransferFuncInterps:
 
     """
 
-    def __init__(self, tfInterps, xe_arr, inverted=False):
+    def __init__(self, tfInterps, xe_arr):
 
         length = len(tfInterps)
         self.rs = np.array([None for i in np.arange(length)])
@@ -491,10 +491,7 @@ class TransferFuncInterps:
                         'The largest redshift in ionRSinterp_list[%d] is smaller '
                         +'than the largest redshift in ionRSinterp_list[%d] (i.e. there\'s a missing interpolation window)' % (i,i+1)
                     )
-                if not inverted:
-                    self.rs_nodes[i] = tfInterps[i].rs[-1]
-                else:
-                    self.rs_nodes[i] = tfInterps[i+1].rs[0]
+                self.rs_nodes[i] = tfInterps[i+1].rs[0]
 
         self.tfInterps = tfInterps
 
