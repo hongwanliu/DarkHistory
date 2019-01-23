@@ -38,7 +38,7 @@ cwd = os.getcwd()
 abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
-def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtracted=False):
+def load_trans_funcs(direc_arr, string_arr, xes, CMB_subtracted=False):
     # Load in the transferfunctions
     #!!! Should be a directory internal to DarkHistory
     #If only a string is specified, make it a list of strings
@@ -166,7 +166,7 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
         CMB_engloss_arr = tmp.copy()
         print("CMB losses.\n")
 
-        ind = len(photeng[photeng < phys.lya_eng]) #To match IDL's f_exc and f_Hion computations
+        ind = len(photeng[photeng < phys.lya_eng])
         if CMB_subtracted:
             print("Subtracting CMB component from lowengphot")
             for i, CMB_engloss in enumerate(CMB_engloss_arr):
@@ -181,16 +181,14 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
 
 
         print("Generating TransferFuncInterp objects for each tflist...")
-        #print(lowengphot_tflist_arr[0][30]._grid_vals[300])
-        highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes[ii], highengphot_tflist_arr.copy(), log_interp = False)
-        lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengphot_tflist_arr.copy(), log_interp = False)
-        lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengelec_tflist_arr.copy(), log_interp = False)
+        highengphot_tf_interp[ii] = tflist.TransferFuncInterp(highengphot_tflist_arr.copy(), xes[ii], log_interp = False)
+        lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(lowengphot_tflist_arr.copy(), xes[ii], log_interp = False)
+        lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(lowengelec_tflist_arr.copy(), xes[ii], log_interp = False)
         highengdep_interp[ii]     = ht.IonRSInterp(xes[ii], rs_list, highengdep_arr.copy(), logInterp=False)
         CMB_engloss_interp[ii]    = ht.IonRSInterp(xes[ii], rs_list, CMB_engloss_arr.copy(), logInterp=False)
 
     print("Done.\n")
 
-    #print(lowengphot_tflist_arr.copy()[0][30]._grid_vals[300])
     if num_rs_nodes == 0:
         highengphot_tf_interp = highengphot_tf_interp[0]
         lowengphot_tf_interp  = lowengphot_tf_interp[0]
@@ -198,11 +196,11 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
         highengdep_interp     = highengdep_interp[0]
         CMB_engloss_interp    = CMB_engloss_interp[0]
     else:
-        highengphot_tf_interp = tflist.TransferFuncInterps(highengphot_tf_interp, xes, inverted=inverted)
-        lowengphot_tf_interp = tflist.TransferFuncInterps(lowengphot_tf_interp, xes, inverted=inverted)
-        lowengelec_tf_interp = tflist.TransferFuncInterps(lowengelec_tf_interp, xes, inverted=inverted)
-        highengdep_interp = ht.IonRSInterps(highengdep_interp, xes, inverted=inverted)
-        CMB_engloss_interp = ht.IonRSInterps(CMB_engloss_interp, xes, inverted=inverted)
+        highengphot_tf_interp = tflist.TransferFuncInterps(highengphot_tf_interp, xes)
+        lowengphot_tf_interp = tflist.TransferFuncInterps(lowengphot_tf_interp, xes)
+        lowengelec_tf_interp = tflist.TransferFuncInterps(lowengelec_tf_interp, xes)
+        highengdep_interp = ht.IonRSInterps(highengdep_interp, xes)
+        CMB_engloss_interp = ht.IonRSInterps(CMB_engloss_interp, xes)
 
     return highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp, CMB_engloss_interp
 
@@ -379,7 +377,9 @@ def evolve(
         else:
             xHe_init = xH_init
 
-    x_arr  = np.array([[xH_init, xHe_init]])
+    # A QUICK HACK TO MAKE EXAMPLE 14 WORK
+    #x_arr  = np.array([[xH_init, xHe_init]])
+    x_arr  = np.array([[xH_init, xH_init]])
     Tm_arr = np.array([Tm_init])
 
     # Redshift/timestep related quantities.
