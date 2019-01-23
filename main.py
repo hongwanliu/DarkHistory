@@ -181,16 +181,14 @@ def load_trans_funcs(direc_arr, string_arr, xes, CMB_subtracted=False):
 
 
         print("Generating TransferFuncInterp objects for each tflist...")
-        #print(lowengphot_tflist_arr[0][30]._grid_vals[300])
-        highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes[ii], highengphot_tflist_arr.copy(), log_interp = False)
-        lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengphot_tflist_arr.copy(), log_interp = False)
-        lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengelec_tflist_arr.copy(), log_interp = False)
+        highengphot_tf_interp[ii] = tflist.TransferFuncInterp(highengphot_tflist_arr.copy(), xes[ii], log_interp = False)
+        lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(lowengphot_tflist_arr.copy(), xes[ii], log_interp = False)
+        lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(lowengelec_tflist_arr.copy(), xes[ii], log_interp = False)
         highengdep_interp[ii]     = ht.IonRSInterp(xes[ii], rs_list, highengdep_arr.copy(), logInterp=False)
         CMB_engloss_interp[ii]    = ht.IonRSInterp(xes[ii], rs_list, CMB_engloss_arr.copy(), logInterp=False)
 
     print("Done.\n")
 
-    #print(lowengphot_tflist_arr.copy()[0][30]._grid_vals[300])
     if num_rs_nodes == 0:
         highengphot_tf_interp = highengphot_tf_interp[0]
         lowengphot_tf_interp  = lowengphot_tf_interp[0]
@@ -379,7 +377,9 @@ def evolve(
         else:
             xHe_init = xH_init
 
-    x_arr  = np.array([[xH_init, xHe_init]])
+    # A QUICK HACK TO MAKE EXAMPLE 14 WORK
+    #x_arr  = np.array([[xH_init, xHe_init]])
+    x_arr  = np.array([[xH_init, xH_init]])
     Tm_arr = np.array([Tm_init])
 
     # Redshift/timestep related quantities.

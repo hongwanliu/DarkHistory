@@ -506,7 +506,6 @@ class TransferFuncInterp:
     def __init__(
         self, tflist_arr, x_arr=None, rs_nodes=None, log_interp=True
     ):
-            
         if rs_nodes is None:
             # 1D tflist_arr, only indexed by xH. 
 
@@ -577,11 +576,11 @@ class TransferFuncInterp:
         if rs < self.rs[0]:
             rs = self.rs[0]
         # xe must lie between these values.
-        if self.xe is not None:
-            if xe > self.xe[-1]:
-                xe = self.xe[-1]
-            if xe < self.xe[0]:
-                xe = self.xe[0]
+        if self.x is not None:
+            if xe > self.x[-1]:
+                xe = self.x[-1]
+            if xe < self.x[0]:
+                xe = self.x[0]
 
             out_grid_vals = invFunc(
                 np.squeeze(self.interp_func([func(xe), func(rs)]))
