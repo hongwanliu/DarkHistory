@@ -181,6 +181,7 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
 
 
         print("Generating TransferFuncInterp objects for each tflist...")
+        # BEWARE THAT THE ORDER OF ARGUMENTS MAY HAVE CHANGED!!!!!!!
         #print(lowengphot_tflist_arr[0][30]._grid_vals[300])
         highengphot_tf_interp[ii] = tflist.TransferFuncInterp(xes[ii], highengphot_tflist_arr.copy(), log_interp = False)
         lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(xes[ii], lowengphot_tflist_arr.copy(), log_interp = False)
