@@ -166,6 +166,7 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
         CMB_engloss_arr = tmp.copy()
         print("CMB losses.\n")
 
+        ind = len(photeng[photeng < phys.lya_eng]) #To match IDL's f_exc and f_Hion computations
         if CMB_subtracted:
             print("Subtracting CMB component from lowengphot")
             for i, CMB_engloss in enumerate(CMB_engloss_arr):
@@ -173,9 +174,9 @@ def load_trans_funcs(direc_arr, xes, string_arr = [""], inverted=True, CMB_subtr
                     T_at_rs = phys.TCMB(rs)
                     for k, CMB_at_ineng in enumerate(CMB_at_rs):
                         CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng,T_at_rs))/phys.CMB_eng_density(T_at_rs)*(
-                            CMB_at_ineng*.001/phys.hubble(rs*np.exp(-.001*0)) #To put in IDL's off-by-one error
+                            CMB_at_ineng*.001/phys.hubble(rs*np.exp(-.001)) #To put in IDL's off-by-one error
                         )
-                        highengphot_tflist_arr[i]._grid_vals[j,k] = highengphot_tflist_arr[i]._grid_vals[j,k] - CMB_spec.N
+                        lowengphot_tflist_arr[i]._grid_vals[j,k][:ind] = lowengphot_tflist_arr[i]._grid_vals[j,k][:ind] - CMB_spec.N[:ind]
             print("Finished CMB subtraction")
 
 
