@@ -349,10 +349,33 @@ class TransferFuncListArray:
     """
 
     def __init__(self, tflist_arr, x_arr):
+        if x_arr is not None:
+            ndim = x_arr.ndim
+        else:
+            ndim = 0
 
-        ndim = x_arr.ndim
+        if ndim == 0:
+            self.rs     = tflist_arr[0].rs
+            self.in_eng = tflist_arr[0].in_eng
+            self.eng    = tflist_arr[0].eng
+            self.dlnz   = tflist_arr[0].dlnz
+            self.x      = x_arr
+            self.spec_type  = tflist_arr[0].spec_type
+            self.tflist_arr = tflist_arr 
 
-        if ndim == 1:
+            self._grid_vals = tflist_arr[0].grid_vals
+            if tflist_arr[0].tftype == 'eng':
+                # grid_vals should have indices corresponding to 
+                # (rs, in_eng, eng). 
+                grid_vals = np.transpose(grid_vals, (1, 0, 2))
+                # grid_vals are now (rs, in_eng, eng).
+
+            if self.rs[0] - self.rs[1] > 0:
+                # data points have been stored in decreasing rs. 
+                self.rs = np.flipud(self.rs)
+                self._grid_vals = np.flip(self._grid_vals, 1)
+
+        elif ndim == 1:
             if not arrays_equal(
                 [tflist.rs for tflist in tflist_arr]    
             ):
@@ -377,7 +400,8 @@ class TransferFuncListArray:
             self.eng    = tflist_arr[0].eng
             self.dlnz   = tflist_arr[0].dlnz
             self.x      = x_arr
-            self.spec_type = tflist_arr[0].spec_type
+            self.spec_type  = tflist_arr[0].spec_type
+            self.tflist_arr = tflist_arr 
 
 
             grid_vals = np.array(
@@ -439,7 +463,8 @@ class TransferFuncListArray:
             self.eng    = tflist_arr[0][0].eng
             self.dlnz   = tflist_arr[0][0].dlnz
             self.x      = x_arr
-            self.spec_type = tflist_arr[0][0].spec_type
+            self.spec_type  = tflist_arr[0][0].spec_type
+            self.tflist_arr = tflist_arr
 
             grid_vals = np.array(
                 np.stack(
@@ -468,6 +493,15 @@ class TransferFuncListArray:
 
         else:
             raise TypeError('x_arr dimensions is anomalous (and not in the good QFT way).')
+
+        def __iter__(self):
+            return iter(self.tflist_arr)
+
+        def __getitem__(self, key):
+            return self.tflist_arr[key]
+
+        def __setitem__(self, key, value):
+            self.tflist_arr[key] = value
 
 
 
@@ -504,7 +538,7 @@ class TransferFuncInterp:
     """
 
     def __init__(
-        self, tflistarrs, rs_nodes=None, log_interp = True
+        self, tflistarrs, rs_nodes=None, log_interp=False
     ):
 
         if not np.all(
@@ -568,12 +602,14 @@ class TransferFuncInterp:
             if grid.ndim == 3:
                 # No xe dependence.
                 self.interp_func.append(
-                    interp1d(func(z), func(grid), axis=0)
+                    interp1d(func(z), func(np.squeeze(grid)), axis=0)
                 )
             elif grid.ndim == 4:
                 # xH dependence. 
                 self.interp_func.append(
-                    RegularGridInterpolator((func(x_vals), func(z)), func(grid))
+                    RegularGridInterpolator(
+                        (func(x_vals), func(z)), func(grid)
+                    )
                 )
             elif grid.ndim == 5:
                 #xH, xHe dependence.
