@@ -678,17 +678,6 @@ class TransferFuncInterp:
                 )
             )
 
-        # xe must lie between these values.
-        if self.x is not None:
-            if xe > self.x[-1]:
-                xe = self.x[-1]
-            if xe < self.x[0]:
-                xe = self.x[0]
-
-            out_grid_vals = invFunc(
-                np.squeeze(self.interp_func([func(xe), func(rs)]))
-            )
-
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
             rs = rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
