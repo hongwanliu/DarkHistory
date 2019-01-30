@@ -43,6 +43,7 @@ def load_trans_funcs(
 ):
 
     # Load the transfer functions. 
+
     if isinstance(direc_arr, str):
         direc_arr = [direc_arr]
 
@@ -345,6 +346,13 @@ def load_trans_funcs(
             CMB_engloss_arr, xe, rs_list, in_eng=photeng
         )
 
+        # print("Generating TransferFuncInterp objects for each tflist...")
+        # highengphot_tf_interp[ii] = tflist.TransferFuncInterp(highengphot_tflist_arr.copy(), xes[ii], log_interp = False)
+        # lowengphot_tf_interp[ii]  = tflist.TransferFuncInterp(lowengphot_tflist_arr.copy(), xes[ii], log_interp = False)
+        # lowengelec_tf_interp[ii]  = tflist.TransferFuncInterp(lowengelec_tflist_arr.copy(), xes[ii], log_interp = False)
+        # highengdep_interp[ii]     = ht.IonRSInterp(xes[ii], rs_list, highengdep_arr.copy(), logInterp=False)
+        # CMB_engloss_interp[ii]    = ht.IonRSInterp(xes[ii], rs_list, CMB_engloss_arr.copy(), logInterp=False)
+
         print('Generating TransferFuncInterp object...')
 
         highengphot_tflistarrs.append(highengphot_tflistarr)
@@ -352,6 +360,20 @@ def load_trans_funcs(
         lowengelec_tflistarrs.append(lowengelec_tflistarr)
         highengdep_ionrsarrs.append(highengdep_ionrsarr)
         CMB_engloss_ionrsarrs.append(CMB_engloss_ionrsarr)
+
+    # if num_rs_nodes == 0:
+    #     highengphot_tf_interp = highengphot_tf_interp[0]
+    #     lowengphot_tf_interp  = lowengphot_tf_interp[0]
+    #     lowengelec_tf_interp  = lowengelec_tf_interp[0]
+    #     highengdep_interp     = highengdep_interp[0]
+    #     CMB_engloss_interp    = CMB_engloss_interp[0]
+    # else:
+    #     highengphot_tf_interp = tflist.TransferFuncInterps(highengphot_tf_interp, xes)
+    #     lowengphot_tf_interp = tflist.TransferFuncInterps(lowengphot_tf_interp, xes)
+    #     lowengelec_tf_interp = tflist.TransferFuncInterps(lowengelec_tf_interp, xes)
+    #     highengdep_interp = ht.IonRSInterps(highengdep_interp, xes)
+    #     CMB_engloss_interp = ht.IonRSInterps(CMB_engloss_interp, xes)
+
 
     highengphot_tf_interp = tflist.TransferFuncInterp(
         highengphot_tflistarrs, rs_nodes, log_interp = False
@@ -730,7 +752,9 @@ def evolve(
         else:
             xHe_init = xH_init
 
-    x_arr  = np.array([[xH_init, xHe_init]])
+    # A QUICK HACK TO MAKE EXAMPLE 14 WORK
+    #x_arr  = np.array([[xH_init, xHe_init]])
+    x_arr  = np.array([[xH_init, xH_init]])
     Tm_arr = np.array([Tm_init])
 
     # Redshift/timestep related quantities.
