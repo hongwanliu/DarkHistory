@@ -119,8 +119,6 @@ class IonRSInterp:
         self.interp_func = []
         for x_vals,z,grid in zip(self.x, self.rs, self.grid_vals):
             if x_vals is None:
-                print(z)
-                print(grid.shape)
                 self.interp_func.append(
                     interp1d(func(z), func(np.squeeze(grid)), axis=0)
                 )
@@ -142,6 +140,65 @@ class IonRSInterp:
                 )
             else:
                 raise TypeError('grid has anomalous dimensions (and not in a good QFT way).')
+
+    def get_val(self, xH, xHe, rs):
+
+        if self._log_interp:
+            func = np.log
+            inv_func = np.exp
+        else:
+            def func(obj):
+                return obj
+            inv_func = func
+
+        rs_regime_ind = np.searchsorted(self.rs_nodes, rs)
+        if rs > self.rs[rs_regime_ind][-1] or rs < self.rs[rs_regime_ind][0]:
+            raise TypeError('redshift lies outside of range.')
+
+        rs_regime_interp_func = self.interp_func[rs_regime_ind]
+
+        # Make sure xH, xHe and rs are within bounds.
+        if rs > self.rs[rs_regime_ind][-1]:
+            rs = self.rs[-1]
+        if rs < self.rs[rs_regime_ind][0]:
+            rs = self.rs[0]
+
+        if self.x[rs_regime_ind] is not None:
+            if self.x[rs_regime_ind].ndim == 1:
+                if xH > self.x[rs_regime_ind][-1]:
+                    xH = self.x[rs_regime_ind][-1]
+                if xH < self.x[rs_regime_ind][0]:
+                    xH = self.x[rs_regime_ind][0]
+            elif self.x[rs_regime_ind].ndim == 3:
+                xH_arr = self.x[rs_regime_ind][:,0,0]
+                xHe_arr = self.x[rs_regime_ind][0,:,1]
+                if xH > xH_arr[-1]:
+                    xH = xH_arr[-1]
+                if xH < xH_arr[0]:
+                    xH = xH_arr[0]
+                if xHe > xHe_arr[-1]:
+                    xHe = xHe_arr[-1]
+                if xHe < xHe_arr[0]:
+                    xHe = xHe_arr[0]
+
+        if self.x[rs_regime_ind] is None:
+            out_grid_vals = inv_func(
+                np.squeeze(rs_regime_interp_func(func(rs)))
+            )
+        elif self.x[rs_regime_ind].ndim == 1:
+            out_grid_vals = inv_func(
+                np.squeeze(rs_regime_interp_func([func(xH), func(rs)]))
+            )
+        elif self.x[rs_regime_ind].ndim == 3:
+            out_grid_vals = inv_func(
+                np.squeeze(
+                    rs_regime_interp_func([func(xH), func(xHe), func(rs)])
+                )
+            )
+        else:
+            raise TypeError('x has an anomalous dimension (and not in a good QFT way).')
+
+        return out_grid_vals
 
 
 # class IonRSInterp:

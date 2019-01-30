@@ -39,8 +39,7 @@ abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 
 def load_trans_funcs(
-    direc_arr, xes, rs_nodes, string_arr = [''], 
-    inverted=True, CMB_subtracted=False
+    direc_arr, xes, rs_nodes, string_arr = [''], CMB_subtracted=False
 ):
 
     # Load the transfer functions. 
@@ -204,36 +203,45 @@ def load_trans_funcs(
                 )
 
             print('High energy deposition...')
-            for highengdep in highengdep_arr:
-                highengdep = np.pad(
-                    highengdep, ((0,0), (photeng_low.size, 0), (0,0)),
-                    'constant'
-                )
+
+            highengdep_arr = np.pad(
+                highengdep_arr, ((0,0), (0,0), (photeng_low.size, 0), (0,0)),
+                'constant'
+            )
 
             ind_below_lya = len(photeng[photeng < phys.lya_eng])
-            print('CMB losses...')
-            for i,CMB_engloss_xe in enumerate(CMB_engloss_arr):
-                CMB_engloss_xe = np.pad(
-                    CMB_engloss_xe, ((0,0), (photeng_low.size, 0)), 
-                    'constant'
-                )
-                if CMB_subtracted:
-                    print('Subtracting CMB component from lowengphot...')
-                    for rs,CMB_engloss_rs in zip(rs_list, CMB_engloss_xe):
+            if CMB_subtracted:
+                print('CMB losses and subtracting CMB component...')
+            else:
+                print('CMB losses...')
+            CMB_engloss_arr = np.pad(
+                CMB_engloss_arr, ((0,0), (0,0), (photeng_low.size, 0)),
+                'constant'
+            )
+
+            if CMB_subtracted:
+                for i,CMB_engloss_xe in enumerate(CMB_engloss_arr):
+                    for j,(rs,CMB_engloss_rs) in (
+                        enumerate(zip(rs_list, CMB_engloss_xe))
+                    ):
                         T_at_rs = phys.TCMB(rs)
+                        norm_CMB_spec = ( 
+                            Spectrum(
+                                photeng, phys.CMB_spec(photeng, T_at_rs)
+                            ) / phys.CMB_eng_density(T_at_rs)
+                        )
+                        norm_CMB_spec = norm_CMB_spec.N
                         for CMB_engloss_in_eng in CMB_engloss_rs:
-                            CMB_spec = (
-                                Spectrum(
-                                    photeng, phys.CMB_spec(photeng, T_at_rs)
-                                ) 
-                                / phys.CMB_eng_density(T_at_rs)
-                                * (CMB_engloss_in_eng * 0.001)
-                                / phys.hubble(rs * np.exp(-0.001))
+                            CMB_specs = (
+                                np.outer(
+                                    CMB_engloss_in_eng, norm_CMB_spec
+                                )
+                                * 0.001 / phys.hubble(rs * np.exp(-0.001))
                             ) 
-                            lowengphot_tflist_arr[i]._grid_vals[:,:,:ind]-= (
-                                CMB_spec.N[:ind]
+                            tfl = lowengphot_tflist_arr[i]
+                            tfl._grid_vals[j,:,:ind_below_lya]-= (
+                                CMB_specs[:,:ind_below_lya]
                             )
-                    print('Finished CMB subtraction!')
 
         elif ndim == 2:
             # 2D array of TransferFuncList objects. 
@@ -283,41 +291,42 @@ def load_trans_funcs(
                     )
 
             print('High energy deposition...')
-            for highengdep_xHe in highengdep_arr:
-                for highengdep in highengdep_xHe:
-                    highengdep = np.pad(
-                        highengdep, ((0,0), (photeng_low.size, 0), (0,0)),
-                        'constant'
-                    )
+            highengdep_arr = np.pad(
+                highengdep_arr, 
+                ((0,0), (0,0), (0,0), (photeng_low.size, 0), (0,0)),
+                'constant'
+            )
 
             ind_below_lya = len(photeng[photeng < phys.lya_eng])
             if CMB_subtracted:
                 print('CMB losses and subtracting CMB component...')
             else:
                 print('CMB losses...')
-            for i,CMB_engloss_xHe in enumerate(CMB_engloss_arr):
-                for j,(rs,CMB_engloss_rs) in (
-                    enumerate(zip(rs_list, CMB_engloss_xHe))
-                ):
-                    CMB_engloss_rs = np.pad(
-                        CMB_engloss_rs, ((0,0), (photeng_low.size, 0)), 
-                        'constant'
-                    )
-                    if CMB_subtracted:
-                        T_at_rs = phys.TCMB(rs)
-                        for CMB_engloss_in_eng in CMB_engloss_rs:
-                            CMB_spec = (
+            CMB_engloss_arr = np.pad(
+                CMB_engloss_arr,
+                ((0,0), (0,0), (0,0), (photeng_low.size, 0)),
+                'constant'
+            )
+            if CMB_subtracted:
+                for i,CMB_engloss_xHe in enumerate(CMB_engloss_arr):
+                    for j,CMB_engloss_rs in enumerate(CMB_engloss_xHe):
+                        for k,(rs,CMB_engloss_in_eng) in (
+                            enumerate(zip(rs_list, CMB_engloss_rs))
+                        ):
+                            T_at_rs = phys.TCMB(rs)
+                            norm_CMB_spec = ( 
                                 Spectrum(
-                                    photeng, 
-                                    phys.CMB_spec(photeng, T_at_rs)
-                                ) 
-                                / phys.CMB_eng_density(T_at_rs)
-                                * (CMB_engloss_in_eng * 0.001)
-                                / phys.hubble(rs * np.exp(-0.001))
+                                    photeng, phys.CMB_spec(photeng, T_at_rs)
+                                ) / phys.CMB_eng_density(T_at_rs)
+                            )
+                            norm_CMB_spec = norm_CMB_spec.N
+                            CMB_specs = (
+                                np.outer(CMB_engloss_in_eng, norm_CMB_spec)
+                                * 0.001/phys.hubble(rs * np.exp(-0.001))
                             )
                             tfl = lowengphot_tflist_arr[i][j]
-                            tfl._grid_vals[:,:,:ind_below_lya] -= (
-                                CMB_spec.N[:ind_below_lya]
+                            tfl._grid_vals[k, :, :ind_below_lya] -= (
+                                CMB_specs[:, :ind_below_lya]
                             )
 
         print('Creating array objects...')
@@ -726,7 +735,7 @@ def evolve(
     Tm_arr = np.array([Tm_init])
 
     # Redshift/timestep related quantities.
-    dlnz = highengphot_tf_interp.dlnz
+    dlnz = highengphot_tf_interp.dlnz[-1]
     prev_rs = None
     rs = in_spec_phot.rs
     dt = dlnz * coarsen_factor / phys.hubble(rs)
@@ -734,7 +743,9 @@ def evolve(
     # tqdm related stuff.
     if use_tqdm:
         from tqdm import tqdm_notebook as tqdm
-        pbar = tqdm(total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor))
+        pbar = tqdm(
+            total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
+        )
 
     ################################
     # Subroutines
@@ -1065,10 +1076,10 @@ def evolve(
                 x_arr[-1,0], x_arr[-1,1], rs
             )
             cmbloss_arr    = CMB_engloss_interp.get_val(
-                x_arr[-1,0], x_arr[-1, 1], rs
+                x_arr[-1,0], x_arr[-1,1], rs
             )
             highengdep_arr = highengdep_interp.get_val(
-                x_arr[-1,0], x_arr[-1, 1], rs
+                x_arr[-1,0], x_arr[-1,1], rs
             )
 
         if coarsen_factor > 1:

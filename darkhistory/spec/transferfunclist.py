@@ -639,6 +639,30 @@ class TransferFuncInterp:
 
         rs_regime_interp_func = self.interp_func[rs_regime_ind]
 
+        # Make sure xH, xHe and rs are within bounds.
+        if rs > self.rs[rs_regime_ind][-1]:
+            rs = self.rs[-1]
+        if rs < self.rs[rs_regime_ind][0]:
+            rs = self.rs[0]
+
+        if self.x[rs_regime_ind] is not None:
+            if self.x[rs_regime_ind].ndim == 1:
+                if xH > self.x[rs_regime_ind][-1]:
+                    xH = self.x[rs_regime_ind][-1]
+                if xH < self.x[rs_regime_ind][0]:
+                    xH = self.x[rs_regime_ind][0]
+            elif self.x[rs_regime_ind].ndim == 3:
+                xH_arr = self.x[rs_regime_ind][:,0,0]
+                xHe_arr = self.x[rs_regime_ind][0,:,1]
+                if xH > xH_arr[-1]:
+                    xH = xH_arr[-1]
+                if xH < xH_arr[0]:
+                    xH = xH_arr[0]
+                if xHe > xHe_arr[-1]:
+                    xHe = xHe_arr[-1]
+                if xHe < xHe_arr[0]:
+                    xHe = xHe_arr[0]
+
         if self.grid_vals[rs_regime_ind].ndim == 3:
             out_grid_vals = inv_func(
                 np.squeeze(rs_regime_interp_func(func(rs)))
