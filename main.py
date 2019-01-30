@@ -220,9 +220,9 @@ def load_trans_funcs(
             )
 
             if CMB_subtracted:
-                for i,CMB_engloss_xe in enumerate(CMB_engloss_arr):
-                    for j,(rs,CMB_engloss_rs) in (
-                        enumerate(zip(rs_list, CMB_engloss_xe))
+                for i,CMB_engloss_rs in enumerate(CMB_engloss_arr):
+                    for j,(rs,CMB_engloss_in_eng) in (
+                        enumerate(zip(rs_list, CMB_engloss_rs))
                     ):
                         T_at_rs = phys.TCMB(rs)
                         norm_CMB_spec = ( 
@@ -231,17 +231,16 @@ def load_trans_funcs(
                             ) / phys.CMB_eng_density(T_at_rs)
                         )
                         norm_CMB_spec = norm_CMB_spec.N
-                        for CMB_engloss_in_eng in CMB_engloss_rs:
-                            CMB_specs = (
-                                np.outer(
-                                    CMB_engloss_in_eng, norm_CMB_spec
-                                )
-                                * 0.001 / phys.hubble(rs * np.exp(-0.001))
-                            ) 
-                            tfl = lowengphot_tflist_arr[i]
-                            tfl._grid_vals[j,:,:ind_below_lya]-= (
-                                CMB_specs[:,:ind_below_lya]
+                        CMB_specs = (
+                            np.outer(
+                                CMB_engloss_in_eng, norm_CMB_spec
                             )
+                            * 0.001 / phys.hubble(rs * np.exp(-0.001))
+                        ) 
+                        tfl = lowengphot_tflist_arr[i]
+                        tfl._grid_vals[j,:,:ind_below_lya]-= (
+                            CMB_specs[:,:ind_below_lya]
+                        )
 
         elif ndim == 2:
             # 2D array of TransferFuncList objects. 
