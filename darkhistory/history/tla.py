@@ -197,6 +197,9 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
+            if yHII > 14. or yHII < -14.:
+                return 0
+
             return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
                 # Recombination processes
                 - phys.peebles_C(xHII(yHII), rs) * (
@@ -237,6 +240,14 @@ def get_history(
             return 0
 
         T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
+
+        # print ([rs, 
+        #     dT_dz(yHII, yHeII, yHeIII, T_m, rs),
+        #     dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
+        #     dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
+        #     dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+        # ])
+        # print(rs, phys.peebles_C(xHII(yHII), rs))
 
         # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
         return [
@@ -449,12 +460,15 @@ def get_history(
         # No reionization model implemented.
         soln = odeint(
                 tla_before_reion, init_cond, rs_vec, 
-                mxstep = mxstep, tfirst=True
+                mxstep = mxstep, tfirst=True, rtol=1e-3
             )
+        # print(init_cond)
+        # print(rs_vec)
         # soln = solve_ivp(
-        #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
-        #     init_cond
+        #     tla_before_reion, [rs_vec[0], rs_vec[-1]],
+        #     init_cond, method='Radau'
         # )
+        # print(soln)
     elif xe_reion_func is not None:
         # Fixed xe reionization model implemented. 
         # First, solve without reionization.
