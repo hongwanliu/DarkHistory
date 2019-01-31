@@ -175,20 +175,8 @@ def get_history(
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
 
-            # This rate is *energy* loss per redshift, divided by
-            # 3/2 * phys.nH * rs**3 * (1 + chi + xe).
-            entropy_cooling_rate = - 3/2 * phys.nH * rs**3 * T_m * (
-                dyHII_dz(yHII, yHeII, yHeIII, T_m, rs)
-                    * 0.5/np.cosh(yHII)**2
-                + dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs)
-                    * (chi/2)/np.cosh(yHeII)**2
-                + dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
-                    * (chi/2)/np.cosh(yHeIII)**2
-            )
-
 
             return adiabatic_cooling_rate + (
-                0*entropy_cooling_rate
                 - phys.dtdz(rs)*(
                     compton_cooling_rate(
                         xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -280,17 +268,6 @@ def get_history(
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
 
-            # This rate is *energy* loss per redshift, divided by
-            # 3/2 * phys.nH * rs**3 * (1 + chi + xe).
-            entropy_cooling_rate = -T_m * (
-                dyHII_dz(yHII, yHeII, yHeIII, T_m, rs)
-                    * 0.5/np.cosh(yHII)**2
-                + dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs)
-                    * (chi/2)/np.cosh(yHeII)**2
-                + dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
-                    * (chi/2)/np.cosh(yHeIII)**2
-            )/(1 + chi + xe)
-
             # The reionization rates and the Compton rate
             # are expressed in *energy loss* *per second*.
 
@@ -303,7 +280,6 @@ def get_history(
 
             return (
                 adiabatic_cooling_rate
-                + 0*entropy_cooling_rate
                 + (
                     - phys.dtdz(rs)*(
                         compton_cooling_rate(
@@ -434,15 +410,8 @@ def get_history(
             # This is the temperature loss per redshift. 
             adiabatic_cooling_rate = 2 * T_m/rs
 
-            # This rate is *energy* loss per redshift, divided by
-            # 3/2 * phys.nH * rs**3 * (1 + chi + xe). 
-            entropy_cooling_rate = -T_m * (
-                dxe_dz(rs)
-            )/(1 + chi + xe)
-
             return (
                 adiabatic_cooling_rate
-                + 0*entropy_cooling_rate
                 + (
                     - phys.dtdz(rs)*(
                         compton_cooling_rate(
