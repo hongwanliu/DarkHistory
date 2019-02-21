@@ -47,7 +47,7 @@ lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
 """Lyman alpha transition frequency in Hz."""
-width_2s1s    = 8.22458
+width_2s1s_H = 8.22458
 """Hydrogen 2s to 1s decay width in s^-1."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
@@ -64,48 +64,21 @@ ele_compton  = 2*np.pi*hbar*c/me
 He_ion_eng   = 24.5873891
 """Energy needed to singly ionize neutral He in eV."""
 
+He_exc_lambda = {
+    '23s': 1./159855.9745,
+    '21s': 1./166277.4403,
+    '23p': 1./169087.,
+    '21p': 1./171134.8970
+}
+"""HeI n=1 to n=2 excitation wavelength."""
 
-def He_exc_lambda(level):
-    """n=2 excitation wavelength from ground state of neutral He.
-
-    Parameters
-    ----------
-    level : {'23s', '21s', '23p', '21p'}
-        The n = 2 levels of He. 
-
-    Returns
-    -------
-    float
-        Excitation wavelength in cm. 
-    """
-    # Taken from NIST Basic Atomic Spectroscopic Data
-    
-    # For 23p, there are J=0, 1, 2 states. Doesn't
-    # matter for our purposes which one we take.
-    exc_lambda_dict = {
-        '23s': 1./159855.9745,
-        '21s': 1./166277.4403,
-        '23p': 1./169087.,
-        '21p': 1./171134.8970
-    }
-
-    return exc_lambda_dict[level]
-
-def He_exc_eng(level):
-    """n=2 excitation energy from ground state of neutral He.
-
-    Parameters
-    ----------
-    level : {'23s', '21s', '23p', '21p'}
-        The n = 2 levels of He. 
-
-    Returns
-    -------
-    float
-        Excitation energy in eV. 
-    """
-
-    return 2*np.pi*hbar*c/He_exc_lambda(level)
+He_exc_eng = {
+    '23s': 2*np.pi*hbar*c*159855.9745,
+    '21s': 2*np.pi*hbar*c*166277.4403,
+    '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
+    '21p': 2*np.pi*hbar*c*171134.8970
+}
+"""HeI n=1 to n=2 excitation energies."""
 
 # Hubble
 
@@ -405,7 +378,7 @@ def beta_ion(T_rad, species):
         )/4
 
     elif species == 'HeI_21s':
-        E_21s_inf = He_ion_eng - He_exc_eng('21s')
+        E_21s_inf = He_ion_eng - He_exc_eng['21s']
         # print(E_21s_inf)
         # print(de_broglie_wavelength)
         return 4*(
@@ -414,7 +387,7 @@ def beta_ion(T_rad, species):
         )
 
     elif species == 'HeI_23s':
-        E_23s_inf = He_ion_eng - He_exc_eng('23s')
+        E_23s_inf = He_ion_eng - He_exc_eng['23s']
         return (4/3)*(
             (1/de_broglie_wavelength)**3
             * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s')
@@ -468,7 +441,7 @@ def peebles_C(xHII, rs):
         The Peebles C factor.
     """
     # Net rate for 2s to 1s transition.
-    rate_2s1s = width_2s1s
+    rate_2s1s = width_2s1s_H
 
     rate_exc = 3 * rate_2p1s_times_x1s(rs)/4 + (1-xHII) * rate_2s1s/4
 
@@ -614,7 +587,7 @@ def coll_exc_xsec(eng, species=None):
             B_coeff = -0.0822
             C_coeff = 0.0356
             E_bind = He_ion_eng
-            E_exc  = He_exc_eng('23s')
+            E_exc  = He_exc_eng['23s']
 
         prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
 
@@ -906,7 +879,7 @@ def get_dLam2s_dnu():
     # evaluation outside of interpolation window yields 0.
     f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
     def dLam2s_dnu(nu):
-        return coeff * f(nu/lya_freq) * width_2s1s/8.26548398114 / lya_freq
+        return coeff * f(nu/lya_freq) * width_2s1s_H/8.26548398114 / lya_freq
 
     return dLam2s_dnu
 
