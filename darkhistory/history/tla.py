@@ -204,8 +204,8 @@ def get_history(
                 # Recombination processes
                 - phys.peebles_C(xHII(yHII), rs) * (
                     phys.alpha_recomb(T_m) * xHII(yHII)*xe * phys.nH * rs**3
-                    - phys.beta_ion(phys.TCMB(rs)) * xHI
-                        * np.exp(-phys.lya_eng/T_m)
+                    - 4*phys.beta_ion(phys.TCMB(rs)) * xHI
+                        * np.exp(-phys.lya_eng/phys.TCMB(rs))
                 )
                 # DM injection. Note that C = 1 at late times.
                 + f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * dm_injection_rate(rs)

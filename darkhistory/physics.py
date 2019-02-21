@@ -6,7 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
-cross_check = False
+cross_check = True
 # Fundamental constants
 mp          = 0.938272081e9
 """Proton mass in eV."""
@@ -48,7 +48,7 @@ lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
 """Lyman alpha transition frequency in Hz."""
-width_2s1s    = 8.23
+width_2s1s    = 8.22458
 """Hydrogen 2s to 1s decay width in s^-1."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
@@ -274,10 +274,13 @@ def alpha_recomb(T_matter):
 
     # Fudge factor recommended in 1011.3758
     fudge_fac = 1.126
+    # fudge_fac = 1.14
+
+    conv_fac = 1.0e-4/kB
 
     return (
-        fudge_fac * 1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
-        / (1 + 0.6703 * (1.16405*T_matter)**0.5300)
+        fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_matter)**(-0.6166)
+        / (1 + 0.6703 * (conv_fac*T_matter)**0.5300)
     )
 
 def beta_ion(T_rad):
@@ -300,9 +303,9 @@ def beta_ion(T_rad):
         / np.sqrt(2 * np.pi * reduced_mass * T_rad)
     )
     return (
-        (1/de_broglie_wavelength)**3/4
+        (1/de_broglie_wavelength)**3
         * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad)
-    )
+    )/4
 
 # def betae(Tr):
 #   # Case-B photoionization coefficient
@@ -354,7 +357,7 @@ def peebles_C(xHII, rs):
     rate_exc = 3 * rate_2p1s_times_x1s(rs)/4 + (1-xHII) * rate_2s1s/4
 
     rate_ion = (1-xHII) * beta_ion(TCMB(rs))
-        # rate_ion = beta_ion(TCMB(rs))
+    # rate_ion = beta_ion(TCMB(rs))
     
     # if rate_exc/(rate_exc + rate_ion) < 0.1:
     #     print(rate_exc/(rate_exc + rate_ion), xe, rs)
@@ -385,7 +388,17 @@ def photo_ion_xsec(eng, species):
 
     eng_thres = {'HI':rydberg, 'HeI':He_ion_eng, 'HeII':4*rydberg}
 
+    if not isinstance(eng, np.ndarray):
+        if isinstance(eng, list):
+            return photo_ion_xsec(np.array(eng), species)
+        else:
+            if eng > eng_thres[species]:
+                return photo_ion_xsec(np.array([eng]), species)[0]
+            else:
+                return 0
+
     ind_above = np.where(eng > eng_thres[species])
+    
     xsec = np.zeros(eng.size)
 
     if species == 'HI' or species =='HeII':
