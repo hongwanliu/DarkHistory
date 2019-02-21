@@ -308,20 +308,25 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/tau
 
-def alpha_recomb(T_m, species='HI'):
+def alpha_recomb(T_m, species):
     """Case-B recombination coefficient.
 
     Parameters
     ----------
     T_m : float
         The matter temperature.
-    species : {'HI', 'HeI'}
+    species : {'HI', 'HeI_21s', 'HeI_23s'}
         The species of interest. 
 
     Returns
     -------
     float
         Case-B recombination coefficient in cm^3/s.
+
+    Note
+    ----
+    For HeI, returns beta with respect to the 2s state,
+    in agreement with convention in RECFAST.
     """
 
     if species == 'HI':
@@ -337,42 +342,86 @@ def alpha_recomb(T_m, species='HI'):
             / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
         )
 
-    elif species == 'HeI':
+    else:
 
-        q = 10**-16.744
-        p = 0.711
-        T_1 = 10**5.114 * kB # in eV
-        T_2 = 3. * kB # in eV
+        if species == 'HeI_21s':
+
+            q = 10**-16.744
+            p = 0.711
+            T_1 = 10**5.114
+            T_2 = 3.
+
+        elif species == 'HeI_23s':
+
+            q = 10**-16.306
+            p = 0.761
+            T_2 = 3 # in K
+            T_1 = 10**5.114
+
+        else:
+
+            raise TypeError('invalid species.')
+
+        T_in_K = T_m/kB
 
         return 1e6 * q / (
-            np.sqrt(T_m/T_2)
-            *(1. + np.sqrt(T_m/T_2))**(1.-p)
-            *(1. + np.sqrt(T_m/T_1))**(1.+p) 
+            np.sqrt(T_in_K/T_2) 
+            * (1 + T_in_K/T_2)**(1-p) 
+            * (1 + T_in_K/T_1)**(1+p)
         )
 
-def beta_ion(T_rad):
+    
+
+def beta_ion(T_rad, species):
     """Case-B photoionization coefficient.
 
     Parameters
     ----------
     T_rad : float
         The radiation temperature.
+    species : {'HI', 'HeI_21s', 'HeI_23s'}
+        The relevant species.
 
     Returns
     -------
     float
         Case-B photoionization coefficient in s^-1.
 
+    Note
+    ----
+    For HeI, returns beta with respect to the 2s state,
+    in agreement with convention in RECFAST.
+
     """
-    reduced_mass = mp*me/(mp + me)
     de_broglie_wavelength = (
         c * 2*np.pi*hbar
-        / np.sqrt(2 * np.pi * reduced_mass * T_rad)
+        / np.sqrt(2 * np.pi * phys.me * T_rad)
     )
-    return (
-        (1/de_broglie_wavelength)**3
-        * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad)
-    )/4
+    
+    if species == 'HI':
+        return (
+            (1/de_broglie_wavelength)**3
+            * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad, 'HI')
+        )/4
+
+    elif species == 'HeI_21s':
+        E_21s_inf = He_ion_eng - He_exc_eng('21s')
+        # print(E_21s_inf)
+        # print(de_broglie_wavelength)
+        return 4*(
+            (1/de_broglie_wavelength)**3
+            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s')
+        )
+
+    elif species == 'HeI_23s':
+        E_23s_inf = He_ion_eng - He_exc_eng('23s')
+        return (4/3)*(
+            (1/de_broglie_wavelength)**3
+            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s')
+        )
+
+
+
 
 # def betae(Tr):
 #   # Case-B photoionization coefficient
@@ -423,7 +472,7 @@ def peebles_C(xHII, rs):
 
     rate_exc = 3 * rate_2p1s_times_x1s(rs)/4 + (1-xHII) * rate_2s1s/4
 
-    rate_ion = (1-xHII) * beta_ion(TCMB(rs))
+    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
     # rate_ion = beta_ion(TCMB(rs))
     
     # if rate_exc/(rate_exc + rate_ion) < 0.1:
