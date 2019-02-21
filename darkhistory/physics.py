@@ -38,12 +38,11 @@ thomson_xsec = 6.652458734e-25
 """Thomson cross section in cm^2."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
+
+## Hydrogen Atomic Properties
+
 rydberg      = 13.60569253
 """Ionization potential of ground state hydrogen in eV."""
-He_ion_eng   = 24.5873891
-"""Energy needed to singly ionize neutral He in eV."""
-He_exc_eng   = 19.8196147
-"""First excitation energy of ground state neutral He in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
@@ -52,10 +51,61 @@ width_2s1s    = 8.22458
 """Hydrogen 2s to 1s decay width in s^-1."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
+
+## Electron
+
 ele_rad      = bohr_rad * (alpha**2)
 """Classical electron radius in cm."""
 ele_compton  = 2*np.pi*hbar*c/me
 """Electron Compton wavelength in cm."""
+
+## Helium Atomic Properties
+
+He_ion_eng   = 24.5873891
+"""Energy needed to singly ionize neutral He in eV."""
+
+
+def He_exc_lambda(level):
+    """n=2 excitation wavelength from ground state of neutral He.
+
+    Parameters
+    ----------
+    level : {'23s', '21s', '23p', '21p'}
+        The n = 2 levels of He. 
+
+    Returns
+    -------
+    float
+        Excitation wavelength in cm. 
+    """
+    # Taken from NIST Basic Atomic Spectroscopic Data
+    
+    # For 23p, there are J=0, 1, 2 states. Doesn't
+    # matter for our purposes which one we take.
+    exc_lambda_dict = {
+        '23s': 1./159855.9745,
+        '21s': 1./166277.4403,
+        '23p': 1./169087.,
+        '21p': 1./171134.8970
+    }
+
+    return exc_lambda_dict[level]
+
+def He_exc_eng(level):
+    """n=2 excitation energy from ground state of neutral He.
+
+    Parameters
+    ----------
+    level : {'23s', '21s', '23p', '21p'}
+        The n = 2 levels of He. 
+
+    Returns
+    -------
+    float
+        Excitation energy in eV. 
+    """
+
+    return 2*np.pi*hbar*c/He_exc_lambda(level)
 
 # Hubble
 
@@ -515,7 +565,7 @@ def coll_exc_xsec(eng, species=None):
             B_coeff = -0.0822
             C_coeff = 0.0356
             E_bind = He_ion_eng
-            E_exc  = He_exc_eng
+            E_exc  = He_exc_eng('23s')
 
         prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
 
