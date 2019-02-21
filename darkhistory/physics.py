@@ -258,13 +258,15 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/tau
 
-def alpha_recomb(T_matter):
+def alpha_recomb(T_m, species='HI'):
     """Case-B recombination coefficient.
 
     Parameters
     ----------
-    T_matter : float
+    T_m : float
         The matter temperature.
+    species : {'HI', 'HeI'}
+        The species of interest. 
 
     Returns
     -------
@@ -272,16 +274,31 @@ def alpha_recomb(T_matter):
         Case-B recombination coefficient in cm^3/s.
     """
 
-    # Fudge factor recommended in 1011.3758
-    fudge_fac = 1.126
-    # fudge_fac = 1.14
+    if species == 'HI':
 
-    conv_fac = 1.0e-4/kB
+        # Fudge factor recommended in 1011.3758
+        fudge_fac = 1.126
+        # fudge_fac = 1.14
 
-    return (
-        fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_matter)**(-0.6166)
-        / (1 + 0.6703 * (conv_fac*T_matter)**0.5300)
-    )
+        conv_fac = 1.0e-4/kB
+
+        return (
+            fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
+            / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
+        )
+
+    elif species == 'HeI':
+
+        q = 10**-16.744
+        p = 0.711
+        T_1 = 10**5.114 * kB # in eV
+        T_2 = 3. * kB # in eV
+
+        return 1e6 * q / (
+            np.sqrt(T_m/T_2)
+            *(1. + np.sqrt(T_m/T_2))**(1.-p)
+            *(1. + np.sqrt(T_m/T_1))**(1.+p) 
+        )
 
 def beta_ion(T_rad):
     """Case-B photoionization coefficient.
