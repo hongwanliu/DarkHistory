@@ -1053,7 +1053,7 @@ def evolve(
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func,
                 photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func, mxstep=0
+                xe_reion_func=xe_reion_func
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])

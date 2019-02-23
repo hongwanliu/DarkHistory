@@ -6,7 +6,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
-cross_check = False
+cross_check = True
 # Fundamental constants
 mp          = 0.938272081e9
 """Proton mass in eV."""
@@ -38,24 +38,55 @@ thomson_xsec = 6.652458734e-25
 """Thomson cross section in cm^2."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
+
+## Hydrogen Atomic Properties
+
 rydberg      = 13.60569253
 """Ionization potential of ground state hydrogen in eV."""
-He_ion_eng   = 24.5873891
-"""Energy needed to singly ionize neutral He in eV."""
-He_exc_eng   = 19.8196147
-"""First excitation energy of ground state neutral He in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
 lya_freq     = lya_eng / (2*np.pi*hbar)
 """Lyman alpha transition frequency in Hz."""
-width_2s1s    = 8.23
+width_2s1s_H = 8.22458
 """Hydrogen 2s to 1s decay width in s^-1."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
+
+## Electron
+
 ele_rad      = bohr_rad * (alpha**2)
 """Classical electron radius in cm."""
 ele_compton  = 2*np.pi*hbar*c/me
 """Electron Compton wavelength in cm."""
+
+## Helium Atomic Properties
+
+He_ion_eng   = 24.5873891
+"""Energy needed to singly ionize neutral He in eV."""
+
+He_exc_lambda = {
+    '23s': 1./159855.9745,
+    '21s': 1./166277.4403,
+    '23p': 1./169087.,                  # Approximate for J=0,1,2
+    '21p': 1./171134.8970
+}
+"""HeI n=1 to n=2 excitation wavelength in cm."""
+
+He_exc_eng = {
+    '23s': 2*np.pi*hbar*c*159855.9745,
+    '21s': 2*np.pi*hbar*c*166277.4403,
+    '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
+    '21p': 2*np.pi*hbar*c*171134.8970
+}
+"""HeI n=1 to n=2 excitation energies in eV."""
+
+A_He_21p = 1.798287e9    
+"""Einstein coefficient for 21p -> 1s decay in s^-1."""
+A_He_23p = 177.58        
+"""Einstein coefficient for 23p -> 1s decay in s^-1."""
+width_21s_1s_He = 51.3 
+"""Width of He 21s -> 1s decay in s^-1."""
+
 
 # Hubble
 
@@ -126,7 +157,9 @@ nH          = (1-YHe)*nB
 nHe         = (YHe/4)*nB
 """ Atomic helium number density in cm^-3."""
 nA          = nH + nHe
-""" Hydrogen and helium number density in cm^-3."""
+""" Hydrogen and helium number density in cm^-3.""" 
+chi         = nHe/nH
+"""Ratio of helium to hydrogen nuclei."""
 
 # Cosmology functions
 
@@ -207,30 +240,6 @@ def get_optical_depth(rs_vec, xe_vec):
     )
 
 
-# def get_inj_rate(inj_type, inj_fac):
-#     """Dark matter injection rate function.
-
-#     Parameters
-#     ----------
-#     inj_type : {'sWave', 'decay'}
-#         The type of injection.
-#     inj_fac : float
-#         The prefactor for the injection rate, consisting of everything other than the redshift dependence.
-
-#     Returns
-#     -------
-#     function
-#         The function takes redshift as an input, and outputs the injection rate.
-#     """
-
-#     def inj_rate(rs):
-#         if inj_type == 'sWave':
-#             return inj_fac*(rs**6)
-#         elif inj_type == 'decay':
-#             return inj_fac*(rs**3)
-
-#     return inj_rate
-
 def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     """ Dark matter annihilation/decay energy injection rate.
 
@@ -258,88 +267,133 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/tau
 
-def alpha_recomb(T_matter):
+# Atomic processes functions
+
+def alpha_recomb(T_m, species):
     """Case-B recombination coefficient.
 
     Parameters
     ----------
-    T_matter : float
+    T_m : float
         The matter temperature.
+    species : {'HI', 'HeI_21s', 'HeI_23s'}
+        The species of interest. 
 
     Returns
     -------
     float
         Case-B recombination coefficient in cm^3/s.
+
+    Note
+    ----
+    For HeI, returns beta with respect to the 2s state,
+    in agreement with convention in RECFAST.
     """
 
-    # Fudge factor recommended in 1011.3758
-    fudge_fac = 1.126
+    if species == 'HI':
 
-    return (
-        fudge_fac * 1e-13 * 4.309 * (1.16405*T_matter)**(-0.6166)
-        / (1 + 0.6703 * (1.16405*T_matter)**0.5300)
-    )
+        # Fudge factor recommended in 1011.3758
+        fudge_fac = 1.126
+        # fudge_fac = 1.14
 
-def beta_ion(T_rad):
+        conv_fac = 1.0e-4/kB
+
+        return (
+            fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
+            / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
+        )
+
+    else:
+
+        if species == 'HeI_21s':
+
+            q = 10**-16.744
+            p = 0.711
+            T_1 = 10**5.114
+            T_2 = 3.
+
+        elif species == 'HeI_23s':
+
+            q = 10**-16.306
+            p = 0.761
+            T_2 = 3 # in K
+            T_1 = 10**5.114
+
+        else:
+
+            raise TypeError('invalid species.')
+
+        T_in_K = T_m/kB
+
+        return 1e6 * q / (
+            np.sqrt(T_in_K/T_2) 
+            * (1 + T_in_K/T_2)**(1-p) 
+            * (1 + T_in_K/T_1)**(1+p)
+        )
+
+    
+
+def beta_ion(T_rad, species):
     """Case-B photoionization coefficient.
 
     Parameters
     ----------
     T_rad : float
         The radiation temperature.
+    species : {'HI', 'HeI_21s', 'HeI_23s'}
+        The relevant species.
 
     Returns
     -------
     float
         Case-B photoionization coefficient in s^-1.
 
+    Note
+    ----
+    For HeI, returns beta with respect to the 2s state,
+    in agreement with convention in RECFAST.
+
     """
-    reduced_mass = mp*me/(mp + me)
     de_broglie_wavelength = (
         c * 2*np.pi*hbar
-        / np.sqrt(2 * np.pi * reduced_mass * T_rad)
+        / np.sqrt(2 * np.pi * me * T_rad)
     )
-    return (
-        (1/de_broglie_wavelength)**3/4
-        * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad)
-    )
+    
+    if species == 'HI':
+        return (
+            (1/de_broglie_wavelength)**3
+            * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad, 'HI')
+        )/4
 
-# def betae(Tr):
-#   # Case-B photoionization coefficient
-#   thermlambda = c*(2*pi*hbar)/sqrt(2*pi*(mp*me/(me+mp))*Tr)
-#   return alphae(Tr) * exp(-(rydberg/4)/Tr)/(thermlambda**3)
+    elif species == 'HeI_21s':
+        E_21s_inf = He_ion_eng - He_exc_eng['21s']
+        # print(E_21s_inf)
+        # print(de_broglie_wavelength)
+        return 4*(
+            (1/de_broglie_wavelength)**3
+            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s')
+        )
 
-def rate_2p1s_times_x1s(xe, rs):
-    """returns the rate at which Ly_a photons are emitted without being immediately absorbed times (1-xe)
+    elif species == 'HeI_23s':
+        E_23s_inf = He_ion_eng - He_exc_eng['23s']
+        return (4/3)*(
+            (1/de_broglie_wavelength)**3
+            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s')
+        )
 
-    Parameters
-    ----------
-    xe : float
-        the ionization fraction ne/nH.
-    rs : float
-        the redshift in 1+z.
+    else:
 
-    Returns
-    -------
-    float
-        R_Ly_alpha * (1-xe)
-    """
-    num = (
-        8 * np.pi * hubble(rs)/
-        (3*(nH * rs**3 * (c/lya_freq)**3))
-    )
-    #print(xe, num)
-    return num
+        return TypeError('invalid species.')
 
-def peebles_C(xe, rs):
-    """Returns the Peebles C coefficient.
+def peebles_C(xHII, rs):
+    """Returns the hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
 
     Parameters
     ----------
-    xe : float
-        The ionization fraction ne/nH.
+    xHII : float
+        The ionization fraction nHII/nH.
     rs : float
         The redshift in 1+z.
 
@@ -348,18 +402,212 @@ def peebles_C(xe, rs):
     float
         The Peebles C factor.
     """
-    # Net rate for 2s to 1s transition, times x1s.
-    rate_2s1s = width_2s1s
+    # Rate 2s to 1s transition.
+    rate_2s1s = width_2s1s_H
 
-    rate_exc = (3*rate_2p1s_times_x1s(xe, rs)/4 + (1-xe) * rate_2s1s/4)
+    # Rate of 2p to 1s transition, times (1 - xHII). 
+    rate_2p1s_times_x1s = (
+        8 * np.pi * hubble(rs)/
+        (3*(nH * rs**3 * (c/lya_freq)**3))
+    )
 
-    rate_ion = (1-xe) * beta_ion(TCMB(rs))
-    
-    # if rate_exc/(rate_exc + rate_ion) < 0.1:
-    #     print(rate_exc/(rate_exc + rate_ion), xe, rs)
+    rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
+
+    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
 
     return rate_exc/(rate_exc + rate_ion)
 
+def C_He(xHII, xHeII, rs, species):
+    """Returns the helium C coefficients. 
+
+    These coefficients play a similar role to the Peebles C factor.
+
+    Parameters
+    ----------
+    xHII : float
+        The HI ionization fraction nHII/nH.
+    xHeII : float
+        The HeI ionization fraction nHeII/nH.
+    rs : float
+        The redshift in 1+z.
+    species : {'singlet', 'triplet'}
+        The relevant helium C coefficient to return.
+
+    Returns
+    -------
+    float
+        The C coefficient.
+    """
+
+    T = TCMB(rs)
+
+    if species == 'singlet':
+
+        # Energy difference between 21p and 21s states 
+        E_ps = He_exc_eng['21p'] - He_exc_eng['21s']
+
+        # Sobolev optical depth
+        tau = (
+            3 * A_He_21p * nH*rs**3 * (chi - xHeII)
+            * He_exc_lambda['21p']**3
+            / (8 * np.pi * hubble(rs))
+        )
+
+        # Escape probability
+        p_He = (1 - np.exp(-tau))/tau
+
+        # Taking into account hydrogen. The probability
+        # of interaction is 1/(1 + a*gamma**b)
+        a = 0.36
+        b = 0.86
+
+        sigma_H_photo_ion = photo_ion_xsec(He_exc_eng['21p'], 'HI')
+        Delta_nu = (c/He_exc_lambda['21p'])*np.sqrt(2 * T / (3.9715 * mp))
+
+        gamma_numer = 3*A_He_21p*(chi - xHeII)*He_exc_lambda['21p']**2
+        gamma_denom = 8*np.pi**(3/2)*sigma_H_photo_ion*Delta_nu*(1 - xHII)
+
+        if xHII >= 1:
+            # Avoid dividing by zero.
+            gamma = np.inf
+        else:
+            gamma = gamma_numer/gamma_denom
+
+        p_H = 1/(1 + a*gamma**b)
+
+        # rate for excitation to 21p
+        K = (1/3)/(A_He_21p * (p_He + p_H) * (nH*rs**3) * (chi - xHeII))
+
+        numer = (
+            1 + K * width_21s_1s_He 
+            * (nH*rs**3) * (chi - xHeII) * np.exp(E_ps/T)
+        )
+        denom = (
+            1 + K * (width_21s_1s_He + beta_ion(T, 'HeI_21s')) 
+            * (nH*rs**3) * (chi - xHeII) * np.exp(E_ps/T)
+        )
+
+        return numer/denom
+
+    elif species == 'triplet':
+
+        E_ps = He_exc_eng['23p'] - He_exc_eng['23s']
+
+        tau = 3 * A_He_23p * nH*rs**3 * (chi - xHeII) * (
+            He_exc_lambda['23p']**3/(8* np.pi *hubble(rs))
+        )
+
+        p_He = (1 - np.exp(-tau))/tau
+
+        C_He_triplet = A_He_23p*p_He*np.exp(-E_ps/T)
+        C_He_triplet /= beta_ion(TCMB(rs), 'HeI_23s') + C_He_triplet
+
+        return C_He_triplet
+
+    else:
+
+        return TypeError('invalid species.')
+
+def xe_Saha(rs, species):
+    """Returns the Saha equilibrium ionization value for H/He. 
+
+    Parameters
+    ----------
+    rs : float
+        The redshift in 1+z.
+    species : {'HI', 'HeI'}
+        The relevant species.
+
+    Returns
+    -------
+    float
+        The Saha equilibrium xe.
+
+    Note
+    -----
+    See astro-ph/9909275 and 1011.3758 for details.
+    """
+
+    T = TCMB(rs)
+
+    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * me * T)
+
+    if species == 'HI':
+
+        rhs = (1/de_broglie_wavelength)**3 / (nH*rs**3) * np.exp(-rydberg/T)
+        a  = 1. 
+        b  = rhs
+        q  = -rhs
+
+        # print('in phys.xe_Saha')
+        # print(rhs)
+        # print((-b + np.sqrt(b**2 - 4*a*q))/(2*a))
+        # print(1. - a/rhs)
+        # print('out!')
+
+        if rhs < 1e9:
+            
+            xe = (-b + np.sqrt(b**2 - 4*a*q))/(2*a)
+
+        else:
+
+            xe = 1. - a/rhs
+
+    elif species == 'HeI':
+        rhs = (
+            4 * (1/de_broglie_wavelength)**3 
+            / (nH*rs**3) * np.exp(-He_ion_eng/T)
+        )
+
+        if rhs < 1e9:
+            a   = 1. 
+            b   = rhs - 1. 
+            q   = -(1. + chi)*rhs
+
+            xe = (-b + np.sqrt(b**2 - 4*a*q))/(2*a)
+        else:
+            xe = (1 + chi)*(1 - (1 + chi)/rhs)
+    else:
+        raise TypeError('invalid species.')
+
+    return xe
+
+def d_xe_Saha_dz(rs, species):
+    """Returns the z derivative of the Saha equilibrium ionization value.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift in 1+z.
+    species : {'singlet', 'triplet'}
+
+    Returns
+    -------
+    float
+        The derivative of the Saha equilibrium d xe/dz. 
+
+    Note
+    -----
+    See astro-ph/9909275 and 1011.3758 for details.
+    """
+    
+    xe    = xe_Saha(rs, species)
+
+    if species == 'HI':
+
+        numer = (rydberg/TCMB(rs) - 3/2)*xe**2*(1-xe)
+        denom = rs*(2*xe*(1-xe) + xe**2)
+
+    elif species == 'HeI':
+
+        numer = (He_ion_eng/TCMB(rs) - 3/2) * (xe - 1) * xe * (1 + chi - xe)
+        denom = rs * (chi * (2*xe - 1) - (xe - 1)**2)
+
+    else:
+
+        return TypeError('invalid species.')
+
+    return numer/denom
 
 
 # Atomic Cross-Sections
@@ -384,7 +632,17 @@ def photo_ion_xsec(eng, species):
 
     eng_thres = {'HI':rydberg, 'HeI':He_ion_eng, 'HeII':4*rydberg}
 
+    if not isinstance(eng, np.ndarray):
+        if isinstance(eng, list):
+            return photo_ion_xsec(np.array(eng), species)
+        else:
+            if eng > eng_thres[species]:
+                return photo_ion_xsec(np.array([eng]), species)[0]
+            else:
+                return 0
+
     ind_above = np.where(eng > eng_thres[species])
+    
     xsec = np.zeros(eng.size)
 
     if species == 'HI' or species =='HeII':
@@ -484,7 +742,7 @@ def coll_exc_xsec(eng, species=None):
             B_coeff = -0.0822
             C_coeff = 0.0356
             E_bind = He_ion_eng
-            E_exc  = He_exc_eng
+            E_exc  = He_exc_eng['23s']
 
         prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
 
@@ -776,7 +1034,7 @@ def get_dLam2s_dnu():
     # evaluation outside of interpolation window yields 0.
     f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
     def dLam2s_dnu(nu):
-        return coeff * f(nu/lya_freq) * width_2s1s/8.26548398114 / lya_freq
+        return coeff * f(nu/lya_freq) * width_2s1s_H/8.26548398114 / lya_freq
 
     return dLam2s_dnu
 
