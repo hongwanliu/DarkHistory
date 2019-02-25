@@ -645,7 +645,7 @@ def evolve(
     struct_boost=None,
     xH_init=None, Tm_init=None,
     coarsen_factor=1, std_soln=False, xH_func=None, xHe_func=None, user=None,
-    verbose=False, use_tqdm=False
+    verbose=False, use_tqdm=False, compute_fs_method='old'
 ):
     """
     Main function that computes the temperature and ionization history.
@@ -968,7 +968,7 @@ def evolve(
                 np.array([1-xH_std(rs), 0, 0]),
                 rate_func_eng_unclustered(rs), dt,
                 highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                separate_higheng=separate_higheng
+                separate_higheng=separate_higheng, method=compute_fs_method
             )
         else:
             f_raw = compute_fs(
@@ -977,7 +977,7 @@ def evolve(
                 np.array([1-x_arr[-1,0], 0, 0]),
                 rate_func_eng_unclustered(rs), dt,
                 highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                separate_higheng=separate_higheng
+                separate_higheng=separate_higheng, method=compute_fs_method
             )
 
         if separate_higheng:
@@ -1017,7 +1017,8 @@ def evolve(
                     np.array([1-xH_std(rs), 0, 0]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                    separate_higheng=separate_higheng
+                    separate_higheng=separate_higheng, 
+                    method=compute_fs_method
                 )
             else:
                 f_raw = compute_fs(
@@ -1025,7 +1026,8 @@ def evolve(
                     np.array([1-x_arr[-1,0], 0, 0]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                    separate_higheng=separate_higheng
+                    separate_higheng=separate_higheng, 
+                    method=compute_fs_method
                 )
 
             if separate_higheng:

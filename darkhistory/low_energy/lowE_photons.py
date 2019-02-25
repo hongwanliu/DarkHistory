@@ -144,8 +144,14 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method):
         # Convenient variables
         kappa = kappa_DM(photspec, xe)
 
+        # Added this line since rate_2p1s_times_x1s function was removed.
+        rate_2p1s_times_x1s = (
+            8 * np.pi * phys.hubble(photspec.rs)/
+            (3*(phys.nH * photspec.rs**3 * (phys.c/phys.lya_freq)**3))
+        )
+
         f_excite_HI = (
-            kappa * (3*phys.rate_2p1s_times_x1s(xe,photspec.rs)*phys.nH + phys.width_2s1s*n[0]) *
+            kappa * (3*rate_2p1s_times_x1s*phys.nH + phys.width_2s1s*n[0]) *
             phys.lya_eng * (norm_fac / phys.nB / photspec.rs**3 * dt)
         )
     return f_excite_HI
@@ -187,6 +193,8 @@ def getf_ion(photspec, norm_fac, n, method):
                 where=(photspec.eng > phys.rydberg)
             ) for rate in rates
         ])
+
+        print(prob)
 
         ion_eng_H = phys.rydberg * np.sum(prob[0] * photspec.N)
 

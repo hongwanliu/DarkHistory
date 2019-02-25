@@ -31,9 +31,9 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         total amount of energy deposited by high energy particles into {H_ionization, H_excitation, heating, continuum} per baryon per time, in that order.
     cmbloss : float
         Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt
-    method : {'old','ion','new'}
+    method : {'old','helium','new'}
         'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
-        'ion': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
+        'helium': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
         'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
     separate_higheng : bool, optional
         If True, returns separate high energy deposition. 
@@ -51,53 +51,166 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     """
 
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
-    # constructor, instead of simply a reference. 
-    ion_bounds = spectools.get_bounds_between(phot_spec.eng, phys.rydberg)
-    ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
+    # constructor, instead of simply a reference.
 
-    ionized_elec = Spectrum(
-        ion_engs,
-        phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
-        rs=phot_spec.rs,
-        spec_type='N'
-    )
+    if method == 'old':
 
-    new_eng = ion_engs - phys.rydberg
-    ionized_elec.shift_eng(new_eng)
+        ion_bounds = spectools.get_bounds_between(
+            phot_spec.eng, phys.rydberg
+        )
+        ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
-    # rebin so that ionized_elec may be added to elec_spec
-    ionized_elec.rebin(elec_spec.eng)
+        ionized_elec = Spectrum(
+            ion_engs,
+            phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
+            rs=phot_spec.rs,
+            spec_type='N'
+        )
 
-    tmp_elec_spec = Spectrum(np.array(elec_spec.eng), np.array(elec_spec.N), rs=elec_spec.rs, spec_type='N')
-    tmp_elec_spec.N += ionized_elec.N
+        new_eng = ion_engs - phys.rydberg
+        ionized_elec.shift_eng(new_eng)
 
-    f_phot = lowE_photons.compute_fs(
-        phot_spec, x, dE_dVdt_inj, dt, method
-    )
-    #print(phot_spec.rs, f_phot[0], phot_spec.toteng(), cmbloss, dE_dVdt_inj)
+        # rebin so that ionized_elec may be added to elec_spec
+        ionized_elec.rebin(elec_spec.eng)
 
-    f_elec = lowE_electrons.compute_fs(
-        MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
-    )
+        tmp_elec_spec = Spectrum(
+            np.array(elec_spec.eng), np.array(elec_spec.N), 
+            rs=elec_spec.rs, spec_type='N'
+        )
+        tmp_elec_spec.N += ionized_elec.N
 
-    #print('photons:', f_phot[2], f_phot[3]+f_phot[4], f_phot[1], 0, f_phot[0])
-    #print('electrons:', f_elec[2], f_elec[3], f_elec[1], f_elec[4], f_elec[0])
+        f_phot = lowE_photons.compute_fs(
+            phot_spec, x, dE_dVdt_inj, dt, method
+        )
+        #print(phot_spec.rs, f_phot[0], phot_spec.toteng(), cmbloss, dE_dVdt_inj)
 
-    # f_low is {H ion, He ion, Lya Excitation, Heating, Continuum}
-    f_low = np.array([
-        f_phot[2]+f_elec[2],
-        f_phot[3]+f_phot[4]+f_elec[3],
-        f_phot[1]+f_elec[1],
-        f_elec[4],
-        f_phot[0]+f_elec[0] - cmbloss*phys.nB*phot_spec.rs**3 / dE_dVdt_inj
-    ])
+        f_elec = lowE_electrons.compute_fs(
+            MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
+        )
 
-    f_high = np.array([
-        highengdep[0], 0, highengdep[1],
-        highengdep[2], highengdep[3]
-    ]) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
+        #print('photons:', f_phot[2], f_phot[3]+f_phot[4], f_phot[1], 0, f_phot[0])
+        #print('electrons:', f_elec[2], f_elec[3], f_elec[1], f_elec[4], f_elec[0])
 
-    if separate_higheng:
-        return (f_low, f_high)
-    else:
-        return f_low + f_high
+        # f_low is {H ion, He ion, Lya Excitation, Heating, Continuum}
+        f_low = np.array([
+            f_phot[2]+f_elec[2],
+            f_phot[3]+f_phot[4]+f_elec[3],
+            f_phot[1]+f_elec[1],
+            f_elec[4],
+            f_phot[0]+f_elec[0] 
+                - cmbloss*phys.nB*phot_spec.rs**3 / dE_dVdt_inj
+        ])
+
+        f_high = np.array([
+            highengdep[0], 0, highengdep[1],
+            highengdep[2], highengdep[3]
+        ]) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
+
+        if separate_higheng:
+            return (f_low, f_high)
+        else:
+            return f_low + f_high
+
+    elif method == 'helium':
+
+        # Neglect HeII photoionization. Photoionization rates.
+        n = phys.nH*phot_spec.rs**3*x
+
+        rates = np.array([
+            n[i]*phys.photo_ion_xsec(phot_spec.eng, chan) 
+            for i,chan in enumerate(['HI', 'HeI'])
+        ])
+
+        norm_prob = np.sum(rates, axis=0)
+
+        # Probability of photoionizing HI vs. HeI.
+        prob = np.array([
+            np.divide(
+                rate, norm_prob, 
+                out = np.zeros_like(phot_spec.eng),
+                where=(phot_spec.eng > phys.rydberg)
+            ) for rate in rates
+        ])
+
+        # Spectra weighted by prob.
+        phot_spec_HI  = phot_spec*prob[0]
+        phot_spec_HeI = phot_spec*prob[1]
+
+        # Bin boundaries, including the lowest (13.6, 24.6) eV bin.
+        ion_bounds_HI = spectools.get_bounds_between(
+            phot_spec.eng, phys.rydberg
+        )
+        ion_bounds_HeI = spectools.get_bounds_between(
+            phot_spec.eng, phys.He_ion_eng
+        )
+
+        # Bin centers. 
+        ion_engs_HI = np.exp(
+            (np.log(ion_bounds_HI[1:]) + np.log(ion_bounds_HI[:-1]))/2
+        )
+        ion_engs_HeI = np.exp(
+            (np.log(ion_bounds_HeI[1:]) + np.log(ion_bounds_HeI[:-1]))/2
+        )
+
+        # Spectrum object containing secondary electron 
+        # from ionization. 
+        ionized_elec_HI = Spectrum(
+            ion_engs_HI,
+            phot_spec_HI.totN(bound_type='eng', bound_arr=ion_bounds_HI),
+            rs=phot_spec.rs, spec_type='N'
+        )
+
+        ionized_elec_HeI = Spectrum(
+            ion_engs_HeI,
+            phot_spec_HeI.totN(bound_type='eng', bound_arr=ion_bounds_HeI),
+            rs=phot_spec.rs, spec_type='N'
+        )
+
+        # electron energy (photon energy - ionizing potential).
+        new_eng_HI  = ion_engs_HI  - phys.rydberg
+        new_eng_HeI = ion_engs_HeI - phys.He_ion_eng 
+
+        # change the Spectrum abscissa to the correct electron energy.
+        ionized_elec_HI.shift_eng(new_eng_HI)
+        ionized_elec_HeI.shift_eng(new_eng_HeI)
+        # rebin so that ionized_elec may be added to elec_spec.
+        ionized_elec_HI.rebin(elec_spec.eng)
+        ionized_elec_HeI.rebin(elec_spec.eng)
+
+        tmp_elec_spec = Spectrum(
+            np.array(elec_spec.eng), np.array(elec_spec.N),
+            rs=elec_spec.rs, spec_type='N' 
+        )
+
+        tmp_elec_spec.N += (ionized_elec_HI.N + ionized_elec_HeI.N)
+
+        f_phot = lowE_photons.compute_fs(
+            phot_spec, x, dE_dVdt_inj, dt, 'helium'
+        )
+        f_elec = lowE_electrons.compute_fs(
+            MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
+        )
+
+        # f_low is {H ion, He ion, Lya Excitation, Heating, Continuum}
+        f_low = np.array([
+            f_phot[2]+f_elec[2],
+            f_phot[3]+f_phot[4]+f_elec[3],
+            f_phot[1]+f_elec[1],
+            f_elec[4],
+            f_phot[0]+f_elec[0] 
+                - cmbloss*phys.nB*phot_spec.rs**3 / dE_dVdt_inj
+        ])
+
+        f_high = np.array([
+            highengdep[0], 0, highengdep[1],
+            highengdep[2], highengdep[3]
+        ]) * phys.nB * phot_spec.rs**3 / dE_dVdt_inj
+
+        if separate_higheng:
+            return (f_low, f_high)
+        else:
+            return f_low + f_high
+
+    else: 
+
+        raise TypeError('invalid method.')
