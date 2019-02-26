@@ -47,7 +47,7 @@ def get_history(
     init_cond, f_H_ion_in, f_H_exc_in, f_heating_in,
     dm_injection_rate_in, rs_vec, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, He_before_reion=False, f_He_ion_in=None, mxstep = 0
+    xe_reion_func=None, helium_TLA=False, f_He_ion_in=None, mxstep = 0
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -75,7 +75,7 @@ def get_history(
         Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.  
-    He_before_reion : bool, optional
+    helium_TLA : bool, optional
         Specifies whether to track helium before reionization. 
     f_He_ion_in : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant if float. If None, treated as zero.
@@ -245,7 +245,7 @@ def get_history(
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if not He_before_reion: 
+            if not helium_TLA: 
 
                 return 0
 
