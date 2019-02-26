@@ -612,18 +612,12 @@ def load_ics_data():
     engloss_ref_tf = engloss_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400), nonrel=True)
     return ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
 
-def load_std(xH_init, xHe_init, Tm_init, rs):
+def load_std(rs):
     """
     Loads standard results for temperature and ionization.
 
     Parameters
     ----------
-    xH_init : float or None
-        The initial xH value. Initialized to standard if None.
-    xHe_init : float or None
-        The initial xHe = nHe/nH value. Initialized to standard if None.
-    Tm_init : float or None
-        The initial matter temperature. Initialized to standard if None.
     rs : float
         The redshift to initialize at. 
 
@@ -642,12 +636,16 @@ def load_std(xH_init, xHe_init, Tm_init, rs):
     Tm_std  = interp1d(soln[0,:], soln[1,:])
 
     os.chdir(cwd)
-    if xH_init is None:
-        xH_init = xH_std(rs)
-    if xHe_init is None:
-        xHe_init = xHe_std(rs)
-    if Tm_init is None:
-        Tm_init = Tm_std(rs)
+
+    xH_init  = xH_std(rs)
+    xHe_init = xHe_std(rs)
+    Tm_init  = Tm_std(rs)
+    # if xH_init is None:
+    #     xH_init = xH_std(rs)
+    # if xHe_init is None:
+    #     xHe_init = xHe_std(rs)
+    # if Tm_init is None:
+    #     Tm_init = Tm_std(rs)
 
     return xH_std, xHe_std, Tm_std, xH_init, xHe_init, Tm_init
 
@@ -661,7 +659,7 @@ def evolve(
     reion_switch=False, reion_rs = None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
-    xH_init=None, Tm_init=None,
+    init_cond=None,
     coarsen_factor=1, std_soln=False, xH_func=None, xHe_func=None, user=None,
     verbose=False, use_tqdm=False
 ):
@@ -721,10 +719,8 @@ def evolve(
         Specifies a fixed ionization history after reion_rs.
     struct_boost : function, optional
         Energy injection boost factor due to structure formation
-    xH_init : float
-        xH = nHII/nH at the initial redshift.
-    Tm_init : float
-        Matter temperature at the initial redshift.
+    init_cond : tuple of floats
+        Specifies the initial (xH, xHe, Tm). Defaults to RECFAST if None.
     coarsen_factor : int
         Coarsening to apply to the transfer function matrix.
     std_soln : bool
@@ -768,7 +764,7 @@ def evolve(
         raise TypeError('Cannot log interp over negative numbers')
 
     # Load the standard TLA and standard initializations.
-    xH_std, xHe_std, Tm_std, xH_init_std, xHe_init_std, Tm_init_std = (load_std(xH_init, Tm_init, in_spec_phot.rs)
+    xH_std, xHe_std, Tm_std, xH_init_std, xHe_init_std, Tm_init_std = (load_std(in_spec_phot.rs)
     )
 
     # Initialize if not specified for std_soln.
@@ -784,6 +780,11 @@ def evolve(
         xHe_init = xHe_init_std
     if Tm_init is None:
         Tm_init  = Tm_init_std 
+
+    if init_cond is not None:
+        xH_init  = init_cond[0]
+        xHe_init = init_cond[1]
+        Tm_init  = init_cond[2]
 
     if not std_soln and (xH_func is not None or xHe_func is not None):
         raise TypeError(
