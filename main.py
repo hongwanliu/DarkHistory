@@ -785,8 +785,6 @@ def evolve(
         xHe_init = init_cond[1]
         Tm_init  = init_cond[2]
 
-    print(xH_init, xHe_init, Tm_init)
-
     if not std_soln and (xH_func is not None or xHe_func is not None):
         raise TypeError(
             'std_soln must be True if xH_func or xHe_func is specified.'
