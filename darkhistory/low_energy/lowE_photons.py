@@ -129,7 +129,7 @@ def getf_continuum(photspec, norm_fac):
 
 #excitation
 def getf_excitation(photspec, norm_fac, dt, xe, n, method):
-    if((method == 'old') or (method == 'ion')):
+    if((method == 'old') or (method=='helium') or (method == 'ion')):
         # All photons between 10.2eV and 13.6eV are deposited into excitation
         # tot_excite_eng = (
         #     photspec.toteng(
@@ -200,9 +200,6 @@ def getf_ion(photspec, norm_fac, n, method):
                 where=(photspec.eng > phys.rydberg)
             ) for rate in rates
         ])
-        print('huh???')
-        print(prob)
-        print('what???')
 
         ion_eng_H = phys.rydberg * np.sum(prob[0] * photspec.N)
 

@@ -97,7 +97,7 @@ def get_history(
     # if the input fz's are floats. 
 
     def f_H_ion(rs, xHI, xHeI, xHeII):
-        if isinstance(f_H_ion_in, float):
+        if isinstance(f_H_ion_in, float) or isinstance(f_H_ion_in, int):
             return f_H_ion_in
         elif callable(f_H_ion_in):
             return f_H_ion_in(rs, xHI, xHeI, xHeII)
@@ -105,7 +105,7 @@ def get_history(
             raise TypeError('f_H_ion_in must be float or an appropriate function.')
 
     def f_H_exc(rs, xHI, xHeI, xHeII):
-        if isinstance(f_H_exc_in, float):
+        if isinstance(f_H_exc_in, float) or isinstance(f_H_exc_in, int):
             return f_H_exc_in
         elif callable(f_H_exc_in):
             return f_H_exc_in(rs, xHI, xHeI, xHeII)
@@ -113,7 +113,7 @@ def get_history(
             raise TypeError('f_H_exc_in must be float or an appropriate function.')
 
     def f_heating(rs, xHI, xHeI, xHeII):
-        if isinstance(f_heating_in, float):
+        if isinstance(f_heating_in, float) or isinstance(f_heating_in, int):
             return f_heating_in
         elif callable(f_heating_in):
             return f_heating_in(rs, xHI, xHeI, xHeII)
@@ -122,13 +122,14 @@ def get_history(
 
     def f_He_ion(rs, xHI, xHeI, xHeII):
         if f_He_ion_in is None:
-            return 0
-        if isinstance(f_He_ion_in, float):
+            return 0.
+        if isinstance(f_He_ion_in, float) or isinstance(f_He_ion_in, int):
             return f_He_ion_in
         elif callable(f_He_ion_in):
-            return f_heating_in(rs, xHI, xHeI, xHeII)
+            return f_He_ion_in(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_heating_in must be float or an appropriate function.')
+            print(f_He_ion_in.type)
+            raise TypeError('f_He_ion_in must be float or an appropriate function.')
 
     def dm_injection_rate(rs):
         if isinstance(dm_injection_rate_in, float):
@@ -267,6 +268,7 @@ def get_history(
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
+            xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             term_recomb_singlet = (
@@ -293,6 +295,8 @@ def get_history(
                 -phys.C_He(xHII(yHII), xHeII(yHeII), rs, 'triplet') * (
                     term_recomb_triplet - term_ion_triplet
                 )
+                + f_He_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    / (phys.He_ion_eng * nH)
             )
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -422,6 +426,7 @@ def get_history(
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
+            xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (
@@ -437,6 +442,9 @@ def get_history(
                 - xHeII(yHeII) * ne * reion.coll_ion_rate('HeII', T_m)
                 # Recombination of HeII into HeI.
                 - xHeII(yHeII) * ne * reion.alphaA_recomb('HeII', T_m)
+                # DM contribution
+                + f_He_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    / (phys.He_ion_eng * nH)
             )
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
