@@ -169,7 +169,36 @@ def getf_ion(photspec, norm_fac, n, method):
         f_HI = tot_ion_eng * norm_fac
         f_HeI = 0
         f_HeII = 0
+    
+    elif method == 'helium':
+
+        # Neglect HeII photoionization
+        rates = np.array([
+            n[i]*phys.photo_ion_xsec(photspec.eng, chan) 
+            for i,chan in enumerate(['HI', 'HeI'])
+        ])
+
+        norm_prob = np.sum(rates, axis=0)
+
+        prob = np.array([
+            np.divide(
+                rate, norm_prob, 
+                out = np.zeros_like(photspec.eng),
+                where=(photspec.eng > phys.rydberg)
+            ) for rate in rates
+        ])
+
+        ion_eng_H = phys.rydberg * np.sum(prob[0] * photspec.N)
+
+        ion_eng_He = phys.He_ion_eng * np.sum(prob[1] * photspec.N)
+
+        f_HI   = ion_eng_H  * norm_fac
+        f_HeI  = ion_eng_He * norm_fac
+        f_HeII = 0
+
     else:
+        # HL: Not sure if this code is right.......
+
         # Photons may also deposit their energy into HeI and HeII single ionization
 
         # Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
@@ -177,8 +206,10 @@ def getf_ion(photspec, norm_fac, n, method):
         ion_Ns = photspec.totN(bound_type='eng', bound_arr=ion_bounds)
 
         # Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
-        ionHI, ionHeI, ionHeII = [phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i]
-                                  for i,channel in enumerate(['H0','He0','He1'])]
+        ionHI, ionHeI, ionHeII = [
+            phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] 
+            for i,channel in enumerate(['HI','HeI','HeII'])
+        ]
 
         # The first energy might be less than 13.6, meaning no photo-ionization.
         # The photons in this box are hopefully all between 13.6 and 24.6, so they can only ionize H
@@ -187,11 +218,17 @@ def getf_ion(photspec, norm_fac, n, method):
 
         # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
         totList = ionHI + ionHeI + ionHeII + 1e-12
-        ionHI, ionHeI, ionHeII = [ llist/totList for llist in [ionHI, ionHeI, ionHeII] ]
+        ionHI, ionHeI, ionHeII = [ 
+            llist/totList for llist in [ionHI, ionHeI, ionHeII] 
+        ]
 
         f_HI, f_HeI, f_HeII = [
             np.sum(ion_Ns * llist * norm_fac)
-            for llist in [phys.rydberg*ionHI, phys.He_ion_eng*ionHeI, 4*phys.rydberg*ionHeII]
+            for llist in [
+                phys.rydberg*ionHI, 
+                phys.He_ion_eng*ionHeI, 
+                4*phys.rydberg*ionHeII
+            ]
         ]
     return (f_HI, f_HeI, f_HeII)
 

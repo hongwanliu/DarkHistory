@@ -445,11 +445,11 @@ class TransferFuncListArray:
             self.spec_type = tflist_arr[0][0].spec_type
 
             grid_vals = np.array(
-                np.stack(
+                np.stack([
                     np.stack(
                         tflist.grid_vals for tflist in tflist_xHe_arr
                     ) for tflist_xHe_arr in tflist_arr
-                ), 
+                ]), 
                 ndmin = 5
             )
 
