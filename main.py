@@ -629,7 +629,7 @@ def load_std(rs):
     """
 
     os.chdir(dir_path)
-    soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
+    soln = pickle.load(open("darkhistory/history/std_soln_He.p", "rb"))
     
     xH_std  = interp1d(soln[0,:], soln[2,:])
     xHe_std = interp1d(soln[0,:], soln[3,:])
@@ -655,7 +655,8 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
-    ics_only=False, compute_fs_method='old', highengdep_switch = True, separate_higheng=False, CMB_subtracted=False, helium_TLA=False,
+    ics_only=False, compute_fs_method='old', highengdep_switch = True, 
+    separate_higheng=False, CMB_subtracted=False, helium_TLA=False,
     reion_switch=False, reion_rs = None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
@@ -740,7 +741,7 @@ def evolve(
     ################################
     # Initialization
     ################################
-
+    
     # Electron and Photon abscissae
     eleceng = in_spec_elec.eng
     photeng = in_spec_phot.eng
@@ -764,7 +765,8 @@ def evolve(
         raise TypeError('Cannot log interp over negative numbers')
 
     # Load the standard TLA and standard initializations.
-    xH_std, xHe_std, Tm_std, xH_init_std, xHe_init_std, Tm_init_std = (load_std(in_spec_phot.rs)
+    xH_std, xHe_std, Tm_std, xH_init_std, xHe_init_std, Tm_init_std = (
+        load_std(in_spec_phot.rs)
     )
 
     # Initialize if not specified for std_soln.
@@ -774,17 +776,16 @@ def evolve(
         Tm_init  = Tm_init_std
 
     # Initialize to std_soln if unspecified.
-    if xH_init is None:
+    if init_cond is None:
         xH_init  = xH_init_std
-    if xHe_init is None:
         xHe_init = xHe_init_std
-    if Tm_init is None:
         Tm_init  = Tm_init_std 
-
-    if init_cond is not None:
+    else:
         xH_init  = init_cond[0]
         xHe_init = init_cond[1]
         Tm_init  = init_cond[2]
+
+    print(xH_init, xHe_init, Tm_init)
 
     if not std_soln and (xH_func is not None or xHe_func is not None):
         raise TypeError(
@@ -1097,10 +1098,12 @@ def evolve(
                 f_exc   = f_raw[2]
                 f_heat  = f_raw[3]
 
-            init_cond = np.array([Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0])
+            init_cond_new = np.array(
+                [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
+            )
 
             new_vals = tla.get_history(
-                init_cond, f_H_ion, f_exc, f_heat,
+                init_cond_new, f_H_ion, f_exc, f_heat,
                 rate_func_eng_unclustered, np.array([prev_rs, rs]),
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func,

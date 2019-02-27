@@ -228,11 +228,12 @@ def get_history(
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
-                # Recombination processes
+                # Recombination processes. 
+                # Boltzmann factor is T_m, coming from different H levels.
                 - phys.peebles_C(xHII(yHII), rs) * (
                     phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     - 4*phys.beta_ion(phys.TCMB(rs), 'HI') * xHI
-                        * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                        * np.exp(-phys.lya_eng/T_m)
                 )
                 # DM injection. Note that C = 1 at late times.
                 + f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
@@ -273,7 +274,7 @@ def get_history(
             )
             term_ion_singlet = (
                 phys.beta_ion(phys.TCMB(rs), 'HeI_21s')*(chi - xHeII(yHeII))
-                * np.exp(-phys.He_exc_eng['21s']/phys.TCMB(rs))
+                * np.exp(-phys.He_exc_eng['21s']/T_m)
             )
 
             term_recomb_triplet = (
@@ -282,7 +283,7 @@ def get_history(
             term_ion_triplet = (
                 3*phys.beta_ion(phys.TCMB(rs), 'HeI_23s') 
                 * (chi - xHeII(yHeII)) 
-                * np.exp(-phys.He_exc_eng['23s']/phys.TCMB(rs))
+                * np.exp(-phys.He_exc_eng['23s']/T_m)
             )
 
             return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (
