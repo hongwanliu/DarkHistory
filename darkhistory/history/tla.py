@@ -47,7 +47,7 @@ def get_history(
     init_cond, f_H_ion_in, f_H_exc_in, f_heating_in,
     dm_injection_rate_in, rs_vec, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, He_before_reion=False, f_He_ion_in=None, mxstep = 0
+    xe_reion_func=None, helium_TLA=False, f_He_ion_in=None, mxstep = 0
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -75,7 +75,7 @@ def get_history(
         Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.  
-    He_before_reion : bool, optional
+    helium_TLA : bool, optional
         Specifies whether to track helium before reionization. 
     f_He_ion_in : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant if float. If None, treated as zero.
@@ -228,11 +228,12 @@ def get_history(
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
-                # Recombination processes
+                # Recombination processes. 
+                # Boltzmann factor is T_m, coming from different H levels.
                 - phys.peebles_C(xHII(yHII), rs) * (
                     phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     - 4*phys.beta_ion(phys.TCMB(rs), 'HI') * xHI
-                        * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                        * np.exp(-phys.lya_eng/T_m)
                 )
                 # DM injection. Note that C = 1 at late times.
                 + f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
@@ -245,7 +246,7 @@ def get_history(
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if not He_before_reion: 
+            if not helium_TLA: 
 
                 return 0
 
@@ -273,7 +274,7 @@ def get_history(
             )
             term_ion_singlet = (
                 phys.beta_ion(phys.TCMB(rs), 'HeI_21s')*(chi - xHeII(yHeII))
-                * np.exp(-phys.He_exc_eng['21s']/phys.TCMB(rs))
+                * np.exp(-phys.He_exc_eng['21s']/T_m)
             )
 
             term_recomb_triplet = (
@@ -282,7 +283,7 @@ def get_history(
             term_ion_triplet = (
                 3*phys.beta_ion(phys.TCMB(rs), 'HeI_23s') 
                 * (chi - xHeII(yHeII)) 
-                * np.exp(-phys.He_exc_eng['23s']/phys.TCMB(rs))
+                * np.exp(-phys.He_exc_eng['23s']/T_m)
             )
 
             return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (

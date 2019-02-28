@@ -498,6 +498,12 @@ class TransferFuncInterp:
         The d ln(1+z) step for the transfer functions.
     spec_type : tuple of {'N', 'dNdE'}
         The type of spectra stored in the transfer functions.
+    rs_nodes : ndarray
+        List of redshifts to transition between redshift regimes.
+    grid_vals : tuple of ndarray
+        The grid values in each redshift regime.
+    x : tuple of ndarray
+        Array of xH or (xH, xHe) in each redshift regime.
     interp_func : function
         An interpolation function over xH (optionally xHe) and rs.
 
