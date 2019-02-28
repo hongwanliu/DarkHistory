@@ -861,7 +861,7 @@ def get_elec_cooling_tf_fast_linalg(
     # Deposited excitation array.
     deposited_exc_eng_arr = (
         phys.lya_eng*np.sum(elec_exc_HI_tf.grid_vals, axis=1)
-        + phys.He_exc_eng*np.sum(elec_exc_HeI_tf.grid_vals, axis=1)
+        + phys.He_exc_eng['23s']*np.sum(elec_exc_HeI_tf.grid_vals, axis=1)
         + 4*phys.lya_eng*np.sum(elec_exc_HeII_tf.grid_vals, axis=1)
     )
     

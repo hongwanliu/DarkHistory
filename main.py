@@ -444,9 +444,9 @@ def evolve(
             )
 
             coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
-                np.squeeze(id_mat[:, np.where(eleceng > phys.He_exc_eng)]),
+                np.squeeze(id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]),
                 in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-                eng = eleceng[eleceng > phys.He_exc_eng] - phys.He_exc_eng,
+                eng = eleceng[eleceng > phys.He_exc_eng['23s']] - phys.He_exc_eng['23s'],
                 dlnz = -1, spec_type = 'N'
             )
 
