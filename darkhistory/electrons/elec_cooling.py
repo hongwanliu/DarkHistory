@@ -12,6 +12,8 @@ from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
 from scipy.linalg import solve_triangular
 
+from numba import jit
+
 def get_elec_cooling_tf_fast(
     raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
@@ -920,36 +922,36 @@ def get_elec_cooling_tf_fast_linalg(
     # T = E.T + Prompt
     deposited_ICS_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr,
-        deposited_ICS_eng_arr, lower=True
+        deposited_ICS_eng_arr, lower=True, check_finite=False
     )
     deposited_exc_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_exc_eng_arr, lower=True
+        deposited_exc_eng_arr, lower=True, check_finite=False
     )
     deposited_ion_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_ion_eng_arr, lower=True
+        deposited_ion_eng_arr, lower=True, check_finite=False
     )
     deposited_heat_vec = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_heat_eng_arr, lower=True
+        deposited_heat_eng_arr, lower=True, check_finite=False
     )
     
     cont_loss_ICS_vec = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        continuum_engloss_arr, lower=True
+        continuum_engloss_arr, lower=True, check_finite=False
     )
     
     sec_phot_specs = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        sec_phot_spec_N_arr, lower=True
+        sec_phot_spec_N_arr, lower=True, check_finite=False
     )
     
     # Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
     # T : high energy e produced (sec_highengelec_N_arr). 
     sec_lowengelec_specs = solve_triangular(
         np.identity(eleceng.size) - sec_highengelec_N_arr,
-        sec_lowengelec_N_arr, lower=True
+        sec_lowengelec_N_arr, lower=True, check_finite=False
     )
     
     sec_phot_tf._grid_vals = sec_phot_specs
