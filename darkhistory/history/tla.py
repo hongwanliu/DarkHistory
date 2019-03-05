@@ -532,7 +532,7 @@ def get_history(
         # No reionization model implemented.
         soln = odeint(
                 tla_before_reion, init_cond, rs_vec, 
-                mxstep = mxstep, tfirst=True, rtol=1e-3
+                mxstep = mxstep, tfirst=True, rtol=1e-4
             )
         # print(init_cond)
         # print(rs_vec)
