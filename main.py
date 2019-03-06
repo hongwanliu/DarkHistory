@@ -1122,7 +1122,7 @@ def evolve(
             )
 
             new_vals = tla.get_history(
-                np.array([prev_rs, rs]), init_cond_new, 
+                np.array([prev_rs, rs]), init_cond=init_cond_new, 
                 f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
                 dm_injection_rate=rate_func_eng_unclustered,
                 reion_switch=reion_switch, reion_rs=reion_rs,

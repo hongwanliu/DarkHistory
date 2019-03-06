@@ -45,7 +45,7 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 
 def get_history(
     rs_vec, init_cond=None, f_H_ion=None, f_H_exc=None, f_heating=None,
-    dm_injection_rate=None, reion_switch=True, reion_rs=None,
+    dm_injection_rate=None, reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, mxstep = 0
 ):
@@ -66,7 +66,7 @@ def get_history(
     rs_vec : ndarray
         Abscissa for the solution.
     reion_switch : bool
-        Reionization model included if true.
+        Reionization model included if True.
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
     photoion_rate_func : tuple of functions, optional
@@ -225,7 +225,7 @@ def get_history(
                 # Assume H completely ionized.
                 return 0
 
-            if xHII(yHII) > 0.99 and rs > 1000:
+            if xHII(yHII) > 0.999 and rs > 1000:
                 # Use the Saha value. 
                 return 2 * np.cosh(yHII)**2 * phys.d_xe_Saha_dz(rs, 'HI')
 
@@ -516,12 +516,20 @@ def get_history(
 
     if init_cond is None:
         rs_start = rs_vec[0]
-        _init_cond = [
-            phys.Tm_std(rs_start), 
-            phys.xH_std(rs_start), 
-            phys.xHe_std(rs_start), 
-            1e-12
-        ]
+        if helium_TLA:
+            _init_cond = [
+                phys.Tm_std(rs_start), 
+                phys.xH_std(rs_start), 
+                phys.xHe_std(rs_start), 
+                1e-12
+            ]
+        else:
+            _init_cond = [
+                phys.Tm_std(rs_start), 
+                phys.xH_std(rs_start), 
+                1e-12, 
+                1e-12
+            ]
     else:
         _init_cond = np.array(init_cond)
 
@@ -539,8 +547,14 @@ def get_history(
     _init_cond[2] = np.arctanh(2/chi * (_init_cond[2] - chi/2))
     _init_cond[3] = np.arctanh(2/chi *(_init_cond[3] - chi/2))
 
-    if reion_rs is None:
+    if reion_rs is None and (
+        photoion_rate_func is None and xe_reion_func is None
+    ):
+        # Default Puchwein model value.
         reion_rs = 16.1
+    else:
+        raise TypeError('must specify reion_rs if not using default.')
+
 
     rs_before_reion_vec = rs_vec[rs_vec > reion_rs]
     rs_reion_vec = rs_vec[rs_vec <= reion_rs]
@@ -660,13 +674,10 @@ def get_history(
                 soln_before_reion[-1,2],
                 soln_before_reion[-1,3]
             ]
-            print(soln_before_reion)
-            print(init_cond_reion)
             soln_reion = odeint(
                 tla_reion, init_cond_reion, 
                 rs_reion_vec, mxstep = mxstep, tfirst=True, rtol=1e-4
             )
-            print(soln_reion)
             # soln_reion = solve_ivp(
             #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),
             #     init_cond, method='BDF', t_eval=rs_reion_vec
