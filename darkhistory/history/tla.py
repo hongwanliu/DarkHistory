@@ -47,7 +47,7 @@ def get_history(
     rs_vec, init_cond, f_H_ion=None, f_H_exc=None, f_heating=None,
     dm_injection_rate=None, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, helium_TLA=False, f_He_ion_in=None, mxstep = 0
+    xe_reion_func=None, helium_TLA=False, f_He_ion=None, mxstep = 0
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -137,7 +137,9 @@ def get_history(
             raise TypeError('f_He_ion must be float or an appropriate function.')
 
     def _dm_injection_rate(rs):
-        if isinstance(dm_injection_rate, float):
+        if dm_injection_rate is None:
+            return 0.
+        elif isinstance(dm_injection_rate, float):
             return dm_injection_rate
         elif callable(dm_injection_rate):
             return dm_injection_rate(rs)
@@ -512,8 +514,7 @@ def get_history(
 
         return dT_dz(T_m, rs)
 
-    _init_cond = np.zeros_like(init_cond)
-
+    _init_cond = np.array(init_cond)
     if init_cond[1] == 1:
         _init_cond[1] = 1 - 1e-12
     if init_cond[2] == 0:

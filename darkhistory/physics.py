@@ -642,6 +642,32 @@ def d_xe_Saha_dz(rs, species):
 
     return numer/denom
 
+# Standard ionization and thermal histories
+import os
+import pickle
+cwd = os.getcwd()
+abspath = os.path.abspath(__file__)
+dir_path = os.path.dirname(abspath)
+os.chdir(dir_path)
+soln = pickle.load(open("history/std_soln_He.p", "rb"))
+os.chdir(cwd)
+
+_xH_std  = interp1d(soln[0,:], soln[2,:])
+_xHe_std = interp1d(soln[0,:], soln[3,:])
+_Tm_std  = interp1d(soln[0,:], soln[1,:])
+
+def xH_std(rs):
+
+    return _xH_std(rs)
+
+def xHe_std(rs):
+
+    return _xHe_std(rs)
+
+def Tm_std(rs):
+
+    return _Tm_std(rs)
+
 
 # Atomic Cross-Sections
 
