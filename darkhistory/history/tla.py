@@ -44,7 +44,7 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond, f_H_ion=None, f_H_exc=None, f_heating=None,
+    rs_vec, init_cond=None, f_H_ion=None, f_H_exc=None, f_heating=None,
     dm_injection_rate=None, reion_switch=True, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, mxstep = 0
@@ -53,8 +53,8 @@ def get_history(
 
     Parameters
     ----------
-    init_cond : array
-        Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII].
+    init_cond : array, optional
+        Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
     f_H_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
     f_H_exc : function or float, optional
@@ -514,15 +514,25 @@ def get_history(
 
         return dT_dz(T_m, rs)
 
-    _init_cond = np.array(init_cond)
-    if init_cond[1] == 1:
-        _init_cond[1] = 1 - 1e-12
-    if init_cond[2] == 0:
-        _init_cond[2] = 1e-12
-    elif init_cond[2] == phys.chi:
-        _init_cond[2] = (1. - 1e-12)*phys.chi
-    if init_cond[3] == 0:
-        _init_cond[3] = 1e-12
+    if init_cond is None:
+        rs_start = rs_vec[0]
+        _init_cond = [
+            phys.Tm_std(rs_start), 
+            phys.xH_std(rs_start), 
+            phys.xHe_std(rs_start), 
+            1e-12
+        ]
+    else:
+        _init_cond = np.array(init_cond)
+
+        if init_cond[1] == 1:
+            _init_cond[1] = 1 - 1e-12
+        if init_cond[2] == 0:
+            _init_cond[2] = 1e-12
+        elif init_cond[2] == phys.chi:
+            _init_cond[2] = (1. - 1e-12)*phys.chi
+        if init_cond[3] == 0:
+            _init_cond[3] = 1e-12
 
 
     _init_cond[1] = np.arctanh(2*(_init_cond[1] - 0.5))
