@@ -1129,7 +1129,7 @@ def evolve(
                 photoion_rate_func=photoion_rate_func,
                 photoheat_rate_func=photoheat_rate_func,
                 xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-                f_He_ion_in=f_He_ion
+                f_He_ion=f_He_ion
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
