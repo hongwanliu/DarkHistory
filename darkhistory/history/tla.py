@@ -512,18 +512,21 @@ def get_history(
 
         return dT_dz(T_m, rs)
 
+    _init_cond = np.zeros_like(init_cond)
 
     if init_cond[1] == 1:
-        init_cond[1] = 1 - 1e-12
+        _init_cond[1] = 1 - 1e-12
     if init_cond[2] == 0:
-        init_cond[2] = 1e-12
+        _init_cond[2] = 1e-12
+    elif init_cond[2] == phys.chi:
+        _init_cond[2] = (1. - 1e-12)*phys.chi
     if init_cond[3] == 0:
-        init_cond[3] = 1e-12
+        _init_cond[3] = 1e-12
 
 
-    init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
-    init_cond[2] = np.arctanh(2/chi * (init_cond[2] - chi/2))
-    init_cond[3] = np.arctanh(2/chi *(init_cond[3] - chi/2))
+    _init_cond[1] = np.arctanh(2*(_init_cond[1] - 0.5))
+    _init_cond[2] = np.arctanh(2/chi * (_init_cond[2] - chi/2))
+    _init_cond[3] = np.arctanh(2/chi *(_init_cond[3] - chi/2))
 
     if reion_rs is None:
         reion_rs = 16.1
@@ -534,7 +537,7 @@ def get_history(
     if not reion_switch:
         # No reionization model implemented.
         soln = odeint(
-                tla_before_reion, init_cond, rs_vec, 
+                tla_before_reion, _init_cond, rs_vec, 
                 mxstep = mxstep, tfirst=True, rtol=1e-4
             )
         # print(init_cond)
@@ -551,7 +554,7 @@ def get_history(
         # tfirst=True means that tla_before_reion accepts rs as 
         # first argument.
         soln_no_reion = odeint(
-            tla_before_reion, init_cond, rs_vec, 
+            tla_before_reion, _init_cond, rs_vec, 
             mxstep = mxstep, tfirst=True
         )
         # soln_no_reion = solve_ivp(
@@ -606,7 +609,7 @@ def get_history(
         # First, check if required in the first place. 
         if rs_reion_vec.size == 0:
             soln = odeint(
-                tla_before_reion, init_cond, 
+                tla_before_reion, _init_cond, 
                 rs_before_reion_vec, mxstep = mxstep, tfirst=True
             )
             # soln = solve_ivp(
@@ -617,7 +620,7 @@ def get_history(
         # Conversely, solving before reionization may be unnecessary.
         elif rs_before_reion_vec.size == 0:
             soln = odeint(
-                tla_reion, init_cond, rs_reion_vec, 
+                tla_reion, _init_cond, rs_reion_vec, 
                 mxstep = mxstep, tfirst=True
             )
             # soln = solve_ivp(
@@ -629,7 +632,7 @@ def get_history(
             # First, solve without reionization up to rs = reion_rs.
             rs_before_reion_vec = np.append(rs_before_reion_vec, reion_rs)
             soln_before_reion = odeint(
-                tla_before_reion, init_cond, 
+                tla_before_reion, _init_cond, 
                 rs_before_reion_vec, mxstep = mxstep, tfirst=True, rtol=1e-4
             )
             # soln_before_reion = solve_ivp(
