@@ -649,6 +649,7 @@ def load_std(rs):
 
     return xH_std, xHe_std, Tm_std, xH_init, xHe_init, Tm_init
 
+
 def evolve(
     in_spec_elec, in_spec_phot,
     rate_func_N, rate_func_eng, end_rs,
@@ -1016,7 +1017,10 @@ def evolve(
             f_raw = compute_fs(
                 MEDEA_interp, out_lowengelec_specs[0],
                 out_lowengphot_specs[0],
-                np.array([1-xH_std(rs), 0, 0]),
+                np.array([
+                    1.-xH_std(rs), 
+                    phys.chi-xHe_std(rs), xHe_std(rs)
+                ]),
                 rate_func_eng_unclustered(rs), dt,
                 highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                 separate_higheng=separate_higheng, method=compute_fs_method
@@ -1025,7 +1029,10 @@ def evolve(
             f_raw = compute_fs(
                 MEDEA_interp, out_lowengelec_specs[0],
                 out_lowengphot_specs[0],
-                np.array([1-x_arr[-1,0], 0, 0]),
+                np.array([
+                    1.-x_arr[-1,0], 
+                    phys.chi-x_arr[-1,1], x_arr[-1,1]
+                ]),
                 rate_func_eng_unclustered(rs), dt,
                 highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                 separate_higheng=separate_higheng, method=compute_fs_method
@@ -1065,7 +1072,10 @@ def evolve(
             if std_soln:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xH_std(rs), 0, 0]),
+                    np.array([
+                        1.-xH_std(rs), 
+                        phys.chi-xHe_std(rs), xHe_std(rs)
+                    ]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                     separate_higheng=separate_higheng, 
@@ -1074,7 +1084,10 @@ def evolve(
             else:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-x_arr[-1,0], 0, 0]),
+                    np.array([
+                        1.-x_arr[-1,0], 
+                        phys.chi-x_arr[-1,1], x_arr[-1,1]
+                    ]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
                     separate_higheng=separate_higheng, 
@@ -1086,27 +1099,37 @@ def evolve(
                 f_high = np.append(f_high, [f_raw[1]], axis=0)
 
                 # Compute the f's for the TLA: sum low and high.
-                f_H_ion = f_raw[0][0] + f_raw[1][0]
-                f_exc   = f_raw[0][2] + f_raw[1][2]
-                f_heat  = f_raw[0][3] + f_raw[1][3]
+                f_H_ion  = f_raw[0][0] + f_raw[1][0]
+                if compute_fs_method == 'old':
+                    f_He_ion = 0.
+                else:
+                    f_He_ion = f_raw[0][1] + f_raw[1][1]
+                f_exc    = f_raw[0][2] + f_raw[1][2]
+                f_heat   = f_raw[0][3] + f_raw[1][3]
             else:
                 f_arr = np.append(f_arr, [f_raw], axis=0)
                 # Compute the f's for the TLA.
-                f_H_ion = f_raw[0]
-                f_exc   = f_raw[2]
-                f_heat  = f_raw[3]
+                f_H_ion  = f_raw[0]
+                if compute_fs_method == 'old':
+                    f_He_ion = 0.
+                else:
+                    f_He_ion = f_raw[1]
+                f_exc    = f_raw[2]
+                f_heat   = f_raw[3]
 
             init_cond_new = np.array(
                 [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
             )
 
             new_vals = tla.get_history(
-                init_cond_new, f_H_ion, f_exc, f_heat,
-                rate_func_eng_unclustered, np.array([prev_rs, rs]),
+                np.array([prev_rs, rs]), init_cond=init_cond_new, 
+                f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
+                dm_injection_rate=rate_func_eng_unclustered,
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func,
                 photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func, helium_TLA=helium_TLA
+                xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+                f_He_ion=f_He_ion
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
