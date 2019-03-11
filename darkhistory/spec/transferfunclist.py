@@ -331,7 +331,7 @@ class TransferFuncListArray:
     tflist_arr : list of TransferFuncList
         TransferFuncList objects to add to the array. If 2D, should be indexed by (xH, xHe). 
     x_arr : ndarray
-        Array of xH or [xH, xHe] values corresponding to tflist_arr.
+        Array of xH or (xH, xHe) values corresponding to tflist_arr.
 
     Attributes
     ----------
@@ -349,10 +349,33 @@ class TransferFuncListArray:
     """
 
     def __init__(self, tflist_arr, x_arr):
+        if x_arr is not None:
+            ndim = x_arr.ndim
+        else:
+            ndim = 0
 
-        ndim = x_arr.ndim
+        if ndim == 0:
+            self.rs     = tflist_arr[0].rs
+            self.in_eng = tflist_arr[0].in_eng
+            self.eng    = tflist_arr[0].eng
+            self.dlnz   = tflist_arr[0].dlnz
+            self.x      = x_arr
+            self.spec_type  = tflist_arr[0].spec_type
+            self.tflist_arr = tflist_arr 
 
-        if ndim == 1:
+            self._grid_vals = tflist_arr[0].grid_vals
+            if tflist_arr[0].tftype == 'eng':
+                # grid_vals should have indices corresponding to 
+                # (rs, in_eng, eng). 
+                grid_vals = np.transpose(grid_vals, (1, 0, 2))
+                # grid_vals are now (rs, in_eng, eng).
+
+            if self.rs[0] - self.rs[1] > 0:
+                # data points have been stored in decreasing rs. 
+                self.rs = np.flipud(self.rs)
+                self._grid_vals = np.flip(self._grid_vals, 1)
+
+        elif ndim == 1:
             if not arrays_equal(
                 [tflist.rs for tflist in tflist_arr]    
             ):
@@ -365,11 +388,11 @@ class TransferFuncListArray:
                 [tflist.eng for tflist in tflist_arr]
             ):
                 raise TypeError('All eng bins must be identical.')
-            if len(set(tflist.dlnz for tflist in tflist_arr)) != 1:
+            if len(set([tflist.dlnz for tflist in tflist_arr])) != 1:
                 raise TypeError('All dlnz steps must be identical.')
-            if len(set(tflist.spec_type for tflist in tflist_arr)) != 1:
+            if len(set([tflist.spec_type for tflist in tflist_arr])) != 1:
                 raise TypeError('All spec_type must be identical.')
-            if len(set(tflist.tftype for tflist in tflist_arr)):
+            if len(set([tflist.tftype for tflist in tflist_arr])) != 1:
                 raise TypeError('All tftype must be the same.')
 
             self.rs     = tflist_arr[0].rs
@@ -377,7 +400,8 @@ class TransferFuncListArray:
             self.eng    = tflist_arr[0].eng
             self.dlnz   = tflist_arr[0].dlnz
             self.x      = x_arr
-            self.spec_type = tflist_arr[0].spec_type
+            self.spec_type  = tflist_arr[0].spec_type
+            self.tflist_arr = tflist_arr 
 
 
             grid_vals = np.array(
@@ -403,9 +427,6 @@ class TransferFuncListArray:
             # Now, data is stored in *increasing* rs. 
 
         elif ndim == 3:
-            # xH and xHe. ndim = 3, since two dimensions of xH and xHe,
-            # and each entry is an array of length two, [xH, xHe]. 
-            
             if not all(
                 arrays_equal([tflist.rs for tflist in tflist_xHe_arr]) 
                 for tflist_xHe_arr in tflist_arr
@@ -442,7 +463,8 @@ class TransferFuncListArray:
             self.eng    = tflist_arr[0][0].eng
             self.dlnz   = tflist_arr[0][0].dlnz
             self.x      = x_arr
-            self.spec_type = tflist_arr[0][0].spec_type
+            self.spec_type  = tflist_arr[0][0].spec_type
+            self.tflist_arr = tflist_arr
 
             grid_vals = np.array(
                 np.stack([
@@ -468,6 +490,18 @@ class TransferFuncListArray:
                 self._grid_vals = np.flip(self._grid_vals, 2)
 
             # Now, data is stored in *increasing* rs. 
+
+        else:
+            raise TypeError('x_arr dimensions is anomalous (and not in the good QFT way).')
+
+        def __iter__(self):
+            return iter(self.tflist_arr)
+
+        def __getitem__(self, key):
+            return self.tflist_arr[key]
+
+        def __setitem__(self, key, value):
+            self.tflist_arr[key] = value
 
 
 
@@ -510,95 +544,244 @@ class TransferFuncInterp:
     """
 
     def __init__(
-        self, tflist_arr, x_arr=None, rs_nodes=None, log_interp=True
+        self, tflistarrs, rs_nodes=None, log_interp=False
     ):
-        if rs_nodes is None:
-            # 1D tflist_arr, only indexed by xH. 
 
-            if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
-                raise TypeError(
-                    'all TransferFuncList must have the same tftype.'
+        if not np.all(
+            arrays_equal([tfla.in_eng for tfla in tflistarrs])
+        ):
+            raise TypeError('All in_eng bins must be identical.')
+
+        if not np.all(
+            arrays_equal([tfla.eng for tfla in tflistarrs])
+        ):
+            raise TypeError('All eng bins must be identical.')
+
+        # rs_nodes must have 1 less entry than tflistarrs.
+        if (
+            (rs_nodes is not None and len(rs_nodes) != len(tflistarrs)-1)
+            or (rs_nodes is None and len(tflistarrs) > 1)
+        ):
+            raise TypeError('rs_nodes incompatible with given tflistarrs.')
+
+        # rs_nodes must be in *increasing* redshift
+        if rs_nodes is not None and len(rs_nodes) > 1:
+            if not np.all(np.diff(rs_nodes) > 0):
+                raise TypeError('rs_nodes must be in increasing order.')
+
+        # check all the same spec_type
+        if len(set([tfla.spec_type for tfla in tflistarrs])) != 1:
+            raise TypeError('all spec_type must be the same.')
+
+        self.rs       = [tfla.rs for tfla in tflistarrs]
+        self.in_eng   = tflistarrs[0].in_eng
+        self.eng      = tflistarrs[0].eng
+        self.dlnz     = [tfla.dlnz for tfla in tflistarrs]
+        self.rs_nodes = rs_nodes
+        self.spec_type = tflistarrs[0].spec_type
+
+        self.grid_vals = [tfla._grid_vals for tfla in tflistarrs]
+        self.x  = []
+
+        from darkhistory.spec.transferfunclist import TransferFuncList
+        
+        for tfla in tflistarrs:
+
+            try:
+                self.x.append(tfla.x)
+            except:
+                self.x.append(None)
+
+        self._log_interp = log_interp
+
+        if self._log_interp:
+            for grid in self.grid_vals:
+                grid[grid <= 0] = 1e-200
+            func = np.log
+        else:
+            print('noninterp')
+            def func(obj):
+                return obj
+
+        self.interp_func = []
+        for x_vals,z,grid in zip(self.x, self.rs, self.grid_vals):
+            if grid.ndim == 3:
+                # No xe dependence.
+                self.interp_func.append(
+                    interp1d(func(z), func(np.squeeze(grid)), axis=0)
                 )
-
-            tftype = tflist_arr[0].tftype
-            grid_vals = np.array(
-                np.stack(
-                    [tflist.grid_vals for tflist in tflist_arr]
-                ),
-                ndmin = 4
-            )
-            if tftype == 'eng':
-                # grid_vals should have indices corresponding to
-                # (xe, rs, in_eng, eng).
-                grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
-
-            # grid_vals is (xe, rs, in_eng, eng).
-
-            self.rs     = tflist_arr[0].rs
-            self.x      = x_arr
-            self.in_eng = tflist_arr[0].in_eng
-            self.eng    = tflist_arr[0].eng
-            self.dlnz   = tflist_arr[0].dlnz
-            self.spec_type = tflist_arr[0].spec_type
-            self._grid_vals = grid_vals
-            self._log_interp = log_interp
-
-            if self.rs[0] - self.rs[1] > 0:
-                # data points have been stored in decreasing rs.
-                self.rs = np.flipud(self.rs)
-                self._grid_vals = np.flip(self._grid_vals, 1)
-
-            # Now, data is stored in *increasing* rs.
-
-            if self._log_interp:
-                self._grid_vals[self._grid_vals<=0] = 1e-200
-                func = np.log
+            elif grid.ndim == 4:
+                # xH dependence. 
+                self.interp_func.append(
+                    RegularGridInterpolator(
+                        (func(x_vals), func(z)), func(grid)
+                    )
+                )
+            elif grid.ndim == 5:
+                #xH, xHe dependence.
+                xH_arr = x_vals[:,0,0]
+                xHe_arr = x_vals[0,:,1]
+                self.interp_func.append(
+                    RegularGridInterpolator(
+                        (func(xH_arr), func(xHe_arr), func(z)), func(grid)
+                    )
+                )
             else:
-                print('noninterp')
-                def func(obj):
-                    return obj
+                raise TypeError('grid has anomalous dimensions (and not in a good QFT way).')
 
-            if x_arr is not None:
-                self.interp_func = RegularGridInterpolator(
-                    (func(self.x), func(self.rs)), func(self._grid_vals)
-                )
-            else:
-                self.interp_func = interp1d(
-                    func(self.rs), func(grid_vals[0]), axis=0
-                )
-
-    def get_tf(self, xe, rs):
+    def get_tf(self, xH, xHe, rs):
 
         if self._log_interp:
             func = np.log
-            invFunc = np.exp
+            inv_func = np.exp
         else:
             def func(obj):
                 return obj
-            invFunc = func
+            inv_func = func
 
-        if rs > self.rs[-1]:
+        rs_regime_ind = np.searchsorted(self.rs_nodes, rs)
+        if rs > self.rs[rs_regime_ind][-1] or rs < self.rs[rs_regime_ind][0]:
+            raise TypeError('redshift lies outside of range.')
+
+        rs_regime_interp_func = self.interp_func[rs_regime_ind]
+
+        # Make sure xH, xHe and rs are within bounds.
+        if rs > self.rs[rs_regime_ind][-1]:
             rs = self.rs[-1]
-        if rs < self.rs[0]:
+        if rs < self.rs[rs_regime_ind][0]:
             rs = self.rs[0]
-        # xe must lie between these values.
-        if self.x is not None:
-            if xe > self.x[-1]:
-                xe = self.x[-1]
-            if xe < self.x[0]:
-                xe = self.x[0]
 
-            out_grid_vals = invFunc(
-                np.squeeze(self.interp_func([func(xe), func(rs)]))
+        if self.x[rs_regime_ind] is not None:
+            if self.x[rs_regime_ind].ndim == 1:
+                if xH > self.x[rs_regime_ind][-1]:
+                    xH = self.x[rs_regime_ind][-1]
+                if xH < self.x[rs_regime_ind][0]:
+                    xH = self.x[rs_regime_ind][0]
+            elif self.x[rs_regime_ind].ndim == 3:
+                xH_arr = self.x[rs_regime_ind][:,0,0]
+                xHe_arr = self.x[rs_regime_ind][0,:,1]
+                if xH > xH_arr[-1]:
+                    xH = xH_arr[-1]
+                if xH < xH_arr[0]:
+                    xH = xH_arr[0]
+                if xHe > xHe_arr[-1]:
+                    xHe = xHe_arr[-1]
+                if xHe < xHe_arr[0]:
+                    xHe = xHe_arr[0]
+
+        if self.grid_vals[rs_regime_ind].ndim == 3:
+            out_grid_vals = inv_func(
+                np.squeeze(rs_regime_interp_func(func(rs)))
             )
-        else:
-            out_grid_vals = invFunc(self.interp_func(func(rs)))
+        elif self.grid_vals[rs_regime_ind].ndim == 4:
+            out_grid_vals = inv_func(
+                np.squeeze(rs_regime_interp_func([func(xH), func(rs)]))
+            )
+        elif self.grid_vals[rs_regime_ind].ndim == 5:
+            out_grid_vals = inv_func(
+                np.squeeze(
+                    rs_regime_interp_func([func(xH), func(xHe), func(rs)])
+                )
+            )
 
         return tf.TransFuncAtRedshift(
             out_grid_vals, eng=self.eng, in_eng=self.in_eng,
-            rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
+            rs = rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
             spec_type = self.spec_type
         )
+
+
+    # def __init__(
+    #     self, tflist_arr, x_arr=None, rs_nodes=None, log_interp=True
+    # ):
+            
+    #     if rs_nodes is None:
+    #         # 1D tflist_arr, only indexed by xH. 
+
+    #         if len(set([tflist.tftype for tflist in tflist_arr])) > 1:
+    #             raise TypeError(
+    #                 'all TransferFuncList must have the same tftype.'
+    #             )
+
+    #         tftype = tflist_arr[0].tftype
+    #         grid_vals = np.array(
+    #             np.stack(
+    #                 [tflist.grid_vals for tflist in tflist_arr]
+    #             ),
+    #             ndmin = 4
+    #         )
+    #         if tftype == 'eng':
+    #             # grid_vals should have indices corresponding to
+    #             # (xe, rs, in_eng, eng).
+    #             grid_vals = np.transpose(grid_vals, (0, 2, 1, 3))
+
+    #         # grid_vals is (xe, rs, in_eng, eng).
+
+    #         self.rs     = tflist_arr[0].rs
+    #         self.x      = x_arr
+    #         self.in_eng = tflist_arr[0].in_eng
+    #         self.eng    = tflist_arr[0].eng
+    #         self.dlnz   = tflist_arr[0].dlnz
+    #         self.spec_type = tflist_arr[0].spec_type
+    #         self._grid_vals = grid_vals
+    #         self._log_interp = log_interp
+
+    #         if self.rs[0] - self.rs[1] > 0:
+    #             # data points have been stored in decreasing rs.
+    #             self.rs = np.flipud(self.rs)
+    #             self._grid_vals = np.flip(self._grid_vals, 1)
+
+    #         # Now, data is stored in *increasing* rs.
+
+    #         if self._log_interp:
+    #             self._grid_vals[self._grid_vals<=0] = 1e-200
+    #             func = np.log
+    #         else:
+    #             print('noninterp')
+    #             def func(obj):
+    #                 return obj
+
+    #         if x_arr is not None:
+    #             self.interp_func = RegularGridInterpolator(
+    #                 (func(self.x), func(self.rs)), func(self._grid_vals)
+    #             )
+    #         else:
+    #             self.interp_func = interp1d(
+    #                 func(self.rs), func(grid_vals[0]), axis=0
+    #             )
+
+    # def get_tf(self, xe, rs):
+
+    #     if self._log_interp:
+    #         func = np.log
+    #         invFunc = np.exp
+    #     else:
+    #         def func(obj):
+    #             return obj
+    #         invFunc = func
+
+    #     if rs > self.rs[-1]:
+    #         rs = self.rs[-1]
+    #     if rs < self.rs[0]:
+    #         rs = self.rs[0]
+    #     # xe must lie between these values.
+    #     if self.xe is not None:
+    #         if xe > self.xe[-1]:
+    #             xe = self.xe[-1]
+    #         if xe < self.xe[0]:
+    #             xe = self.xe[0]
+
+    #         out_grid_vals = invFunc(
+    #             np.squeeze(self.interp_func([func(xe), func(rs)]))
+    #         )
+    #     else:
+    #         out_grid_vals = invFunc(self.interp_func(func(rs)))
+
+    #     return tf.TransFuncAtRedshift(
+    #         out_grid_vals, eng=self.eng, in_eng=self.in_eng,
+    #         rs=rs*np.ones_like(out_grid_vals[:,0]), dlnz=self.dlnz,
+    #         spec_type = self.spec_type
+    #     )
 
 class TransferFuncInterps:
 
