@@ -44,29 +44,29 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    init_cond, f_H_ion_in, f_H_exc_in, f_heating_in,
-    dm_injection_rate_in, rs_vec, reion_switch=True, reion_rs=None,
+    rs_vec, init_cond=None, f_H_ion=None, f_H_exc=None, f_heating=None,
+    dm_injection_rate=None, reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, He_before_reion=False, f_He_ion_in=None, mxstep = 0
+    xe_reion_func=None, helium_TLA=False, f_He_ion=None, mxstep = 0
 ):
     """Returns the ionization and thermal history of the IGM.
 
     Parameters
     ----------
-    init_cond : array
-        Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII].
-    f_H_ion_in : function or float
+    init_cond : array, optional
+        Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
+    f_H_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
-    f_H_exc_in : function
+    f_H_exc : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation. Treated as constant if float.
-    f_heating_in : function
+    f_heating : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
-    dm_injection_rate_in : function or float
+    dm_injection_rate : function or float, optional
         Injection rate of DM as a function of redshift. Treated as constant if float.
     rs_vec : ndarray
         Abscissa for the solution.
     reion_switch : bool
-        Reionization model included if true.
+        Reionization model included if True.
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
     photoion_rate_func : tuple of functions, optional
@@ -75,9 +75,9 @@ def get_history(
         Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.  
-    He_before_reion : bool, optional
+    helium_TLA : bool, optional
         Specifies whether to track helium before reionization. 
-    f_He_ion_in : function or float, optional
+    f_He_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant if float. If None, treated as zero.
     mxstep : int, optional
         Maximum number of (internally defined) steps allowed for each integration point in t. See scipy.integrate.odeint
@@ -96,47 +96,55 @@ def get_history(
     # Defines the f(z) functions, which return a constant, 
     # if the input fz's are floats. 
 
-    def f_H_ion(rs, xHI, xHeI, xHeII):
-        if isinstance(f_H_ion_in, float):
-            return f_H_ion_in
-        elif callable(f_H_ion_in):
-            return f_H_ion_in(rs, xHI, xHeI, xHeII)
+    def _f_H_ion(rs, xHI, xHeI, xHeII):
+        if f_H_ion is None:
+            return 0.
+        elif isinstance(f_H_ion, float) or isinstance(f_H_ion, int):
+            return f_H_ion
+        elif callable(f_H_ion):
+            return f_H_ion(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_H_ion_in must be float or an appropriate function.')
+            raise TypeError('f_H_ion must be float or an appropriate function.')
 
-    def f_H_exc(rs, xHI, xHeI, xHeII):
-        if isinstance(f_H_exc_in, float):
-            return f_H_exc_in
-        elif callable(f_H_exc_in):
-            return f_H_exc_in(rs, xHI, xHeI, xHeII)
-        else:
-            raise TypeError('f_H_exc_in must be float or an appropriate function.')
-
-    def f_heating(rs, xHI, xHeI, xHeII):
-        if isinstance(f_heating_in, float):
-            return f_heating_in
-        elif callable(f_heating_in):
-            return f_heating_in(rs, xHI, xHeI, xHeII)
-        else:
-            raise TypeError('f_heating_in must be float or an appropriate function.')
-
-    def f_He_ion(rs, xHI, xHeI, xHeII):
-        if f_He_ion_in is None:
+    def _f_H_exc(rs, xHI, xHeI, xHeII):
+        if f_H_exc is None:
             return 0
-        if isinstance(f_He_ion_in, float):
-            return f_He_ion_in
-        elif callable(f_He_ion_in):
-            return f_heating_in(rs, xHI, xHeI, xHeII)
+        elif isinstance(f_H_exc, float) or isinstance(f_H_exc, int):
+            return f_H_exc
+        elif callable(f_H_exc):
+            return f_H_exc(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_heating_in must be float or an appropriate function.')
+            raise TypeError('f_H_exc must be float or an appropriate function.')
 
-    def dm_injection_rate(rs):
-        if isinstance(dm_injection_rate_in, float):
-            return dm_injection_rate_in
-        elif callable(dm_injection_rate_in):
-            return dm_injection_rate_in(rs)
+    def _f_heating(rs, xHI, xHeI, xHeII):
+        if f_heating is None:
+            return 0
+        elif isinstance(f_heating, float) or isinstance(f_heating, int):
+            return f_heating
+        elif callable(f_heating):
+            return f_heating(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('dm_injection_rate_in must be a float or an appropriate function.')
+            raise TypeError('f_heating must be float or an appropriate function.')
+
+    def _f_He_ion(rs, xHI, xHeI, xHeII):
+        if f_He_ion is None:
+            return 0.
+        if isinstance(f_He_ion, float) or isinstance(f_He_ion, int):
+            return f_He_ion
+        elif callable(f_He_ion):
+            return f_He_ion(rs, xHI, xHeI, xHeII)
+        else:
+            raise TypeError('f_He_ion must be float or an appropriate function.')
+
+    def _dm_injection_rate(rs):
+        if dm_injection_rate is None:
+            return 0.
+        elif isinstance(dm_injection_rate, float):
+            return dm_injection_rate
+        elif callable(dm_injection_rate):
+            return dm_injection_rate(rs)
+        else:
+            raise TypeError('dm_injection_rate must be a float or an appropriate function.')
 
     chi = phys.chi
 
@@ -181,7 +189,7 @@ def get_history(
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = dm_injection_rate(rs)
+        inj_rate = _dm_injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -199,7 +207,7 @@ def get_history(
                     compton_cooling_rate(
                         xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
                     )
-                    + f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    + _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                 )
             )/ (3/2 * nH * (1 + chi + xe))
 
@@ -212,12 +220,16 @@ def get_history(
             # if yHII > 14. or yHII < -14.:
             #     # Stops the solver from wandering too far.
             #     return 0    
-            if xHeII(yHeII) > 0.99*chi:
+            if xHeII(yHeII) > 0.99*chi and rs > 1500:
                 # This is prior to helium recombination.
                 # Assume H completely ionized.
                 return 0
 
-            if xHII(yHII) > 0.99 and rs > 1000:
+            if helium_TLA and xHII(yHII) > 0.999 and rs > 1500:
+                # Use the Saha value. 
+                return 2 * np.cosh(yHII)**2 * phys.d_xe_Saha_dz(rs, 'HI')
+
+            if not helium_TLA and xHII(yHII) > 0.99 and rs > 1500:
                 # Use the Saha value. 
                 return 2 * np.cosh(yHII)**2 * phys.d_xe_Saha_dz(rs, 'HI')
 
@@ -228,24 +240,25 @@ def get_history(
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
-                # Recombination processes
+                # Recombination processes. 
+                # Boltzmann factor is T_r, agrees with HyREC paper.
                 - phys.peebles_C(xHII(yHII), rs) * (
                     phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     - 4*phys.beta_ion(phys.TCMB(rs), 'HI') * xHI
                         * np.exp(-phys.lya_eng/phys.TCMB(rs))
                 )
                 # DM injection. Note that C = 1 at late times.
-                + f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.rydberg * nH)
                 + (1 - phys.peebles_C(xHII(yHII), rs)) * (
-                    f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.lya_eng * nH)
                 )
             )
 
         def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
 
-            if not He_before_reion: 
+            if not helium_TLA: 
 
                 return 0
 
@@ -266,6 +279,7 @@ def get_history(
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
+            xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             term_recomb_singlet = (
@@ -292,6 +306,8 @@ def get_history(
                 -phys.C_He(xHII(yHII), xHeII(yHeII), rs, 'triplet') * (
                     term_recomb_triplet - term_ion_triplet
                 )
+                + _f_He_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    / (phys.He_ion_eng * nH)
             )
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -329,7 +345,7 @@ def get_history(
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = dm_injection_rate(rs)
+        inj_rate = _dm_injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -357,7 +373,7 @@ def get_history(
             ) / (3/2 * nH * (1 + chi + xe))
 
             dm_heating_rate = - phys.dtdz(rs)*(
-                f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
             ) / (3/2 * nH * (1 + chi + xe))
 
             reion_rate = - phys.dtdz(rs) * (
@@ -395,11 +411,11 @@ def get_history(
 
             return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
                 # DM injection. Note that C = 1 at late times.
-                + f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * (
+                + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * (
                     inj_rate / (phys.rydberg * nH)
                 )
                 + (1 - phys.peebles_C(xHII(yHII), rs)) * (
-                    f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) 
+                    _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) 
                     * inj_rate / (phys.lya_eng * nH)
                 )
                 # Reionization rates.
@@ -421,6 +437,7 @@ def get_history(
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
+            xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (
@@ -436,6 +453,9 @@ def get_history(
                 - xHeII(yHeII) * ne * reion.coll_ion_rate('HeII', T_m)
                 # Recombination of HeII into HeI.
                 - xHeII(yHeII) * ne * reion.alphaA_recomb('HeII', T_m)
+                # DM contribution
+                + _f_He_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    / (phys.He_ion_eng * nH)
             )
 
         def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -478,8 +498,12 @@ def get_history(
 
         def dT_dz(T_m, rs):
 
-            xe  = xe_reion_func(rs)
-            xHI = 1 - xe_reion_func(rs)
+            xe    = xe_reion_func(rs)
+            xHII  = xe * (1. / (1. + chi))
+            xHeII = xe * (chi / (1. + chi)) 
+            xHI   = 1. - xHII
+            xHeI  = chi - xHeII
+
 
             # This is the temperature loss per redshift. 
             adiabatic_cooling_rate = 2 * T_m/rs
@@ -488,10 +512,8 @@ def get_history(
                 adiabatic_cooling_rate
                 + (
                     - phys.dtdz(rs)*(
-                        compton_cooling_rate(
-                            xe, 0, 0, T_m, rs
-                        )
-                        + f_heating(rs, xHI, 0, 0) * dm_injection_rate(rs)
+                        compton_cooling_rate(xHII, xHeII, 0, T_m, rs)
+                        + _f_heating(rs, xHI, xHeI, 0) * _dm_injection_rate(rs)
                     )
                 ) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
             )
@@ -500,21 +522,46 @@ def get_history(
 
         return dT_dz(T_m, rs)
 
+    if init_cond is None:
+        rs_start = rs_vec[0]
+        if helium_TLA:
+            _init_cond = [
+                phys.Tm_std(rs_start), 
+                phys.xH_std(rs_start), 
+                phys.xHe_std(rs_start), 
+                1e-12
+            ]
+        else:
+            _init_cond = [
+                phys.Tm_std(rs_start), 
+                phys.xH_std(rs_start), 
+                1e-12, 
+                1e-12
+            ]
+    else:
+        _init_cond = np.array(init_cond)
 
-    if init_cond[1] == 1:
-        init_cond[1] = 1 - 1e-12
-    if init_cond[2] == 0:
-        init_cond[2] = 1e-12
-    if init_cond[3] == 0:
-        init_cond[3] = 1e-12
+        if init_cond[1] == 1:
+            _init_cond[1] = 1 - 1e-12
+        if init_cond[2] == 0:
+            _init_cond[2] = 1e-12
+        elif init_cond[2] == chi:
+            _init_cond[2] = (1. - 1e-12) * chi
+        if init_cond[3] == 0:
+            _init_cond[3] = 1e-12
 
 
-    init_cond[1] = np.arctanh(2*(init_cond[1] - 0.5))
-    init_cond[2] = np.arctanh(2/chi * (init_cond[2] - chi/2))
-    init_cond[3] = np.arctanh(2/chi *(init_cond[3] - chi/2))
+    _init_cond[1] = np.arctanh(2*(_init_cond[1] - 0.5))
+    _init_cond[2] = np.arctanh(2/chi * (_init_cond[2] - chi/2))
+    _init_cond[3] = np.arctanh(2/chi *(_init_cond[3] - chi/2))
 
-    if reion_rs is None:
-        reion_rs = 16.1
+    if reion_rs is None: 
+        if photoion_rate_func is None and xe_reion_func is None:
+            # Default Puchwein model value.
+            reion_rs = 16.1
+        else:
+            raise TypeError('must specify reion_rs if not using default.')
+
 
     rs_before_reion_vec = rs_vec[rs_vec > reion_rs]
     rs_reion_vec = rs_vec[rs_vec <= reion_rs]
@@ -522,8 +569,8 @@ def get_history(
     if not reion_switch:
         # No reionization model implemented.
         soln = odeint(
-                tla_before_reion, init_cond, rs_vec, 
-                mxstep = mxstep, tfirst=True, rtol=1e-3
+                tla_before_reion, _init_cond, rs_vec, 
+                mxstep = mxstep, tfirst=True, rtol=1e-4
             )
         # print(init_cond)
         # print(rs_vec)
@@ -539,8 +586,8 @@ def get_history(
         # tfirst=True means that tla_before_reion accepts rs as 
         # first argument.
         soln_no_reion = odeint(
-            tla_before_reion, init_cond, rs_vec, 
-            mxstep = mxstep, tfirst=True
+            tla_before_reion, _init_cond, rs_vec, 
+            mxstep = mxstep, tfirst=True, rtol=1e-4
         )
         # soln_no_reion = solve_ivp(
         #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
@@ -551,12 +598,29 @@ def get_history(
             soln = soln_no_reion
             # Convert to xe
             soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
+            soln[:,2] = chi/2 + chi/2*np.tanh(soln[:,2])
+            soln[:,3] = chi/2 + chi/2*np.tanh(soln[:,2])
         else:
-            xe_no_reion = 0.5 + 0.5*np.tanh(soln_no_reion[:,1])
-            xe_reion = xe_reion_func(rs_vec)
+            xHII_no_reion   = 0.5 + 0.5*np.tanh(soln_no_reion[:,1])
+            xHeII_no_reion  = chi/2 + chi/2*np.tanh(soln_no_reion[:,2])
+            xHeIII_no_reion = chi/2 + chi/2*np.tanh(soln_no_reion[:,3])
+            
+            xe_no_reion = xHII_no_reion + xHeII_no_reion + xHeIII_no_reion
+
+            xe_reion    = xe_reion_func(rs_vec)
             # Find where to solve the TLA. Must lie below reion_rs and 
             # have xe_reion > xe_no_reion.
-            where_new_soln = (xe_reion > xe_no_reion) & (rs_vec < reion_rs)
+
+            # Earliest redshift index where xe_reion > xe_no_reion. 
+            # min because redshift is in decreasing order.
+            where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
+            # Redshift index where rs_vec < reion_rs. 
+            where_rs = np.min(np.argwhere(rs_vec < reion_rs))
+            # Start at the later redshift, i.e. the larger index. 
+            where_start = np.max([where_xe, where_rs])
+            # Define the boolean mask.
+            where_new_soln = (np.arange(rs_vec.size) >= where_start)
+
 
             # Find the respective redshift arrays. 
             rs_above_std_xe_vec = rs_vec[where_new_soln]
@@ -568,24 +632,37 @@ def get_history(
 
             # Define the solution array. Get the entries from soln_no_reion.
             soln = np.zeros_like(soln_no_reion)
-            soln[~where_new_soln, :] = soln_no_reion[~where_new_soln, :]
+            # Copy Tm, xHII, xHeII only before reionization.
+            soln[~where_new_soln, :3] = soln_no_reion[~where_new_soln, :3]
+            # Copy xHeIII entirely with no reionization for now.
+            soln[:, 3] = soln_no_reion[:, 3]
             # Convert to xe.
             soln[~where_new_soln, 1] = 0.5 + 0.5*np.tanh(
-                soln[~where_new_soln,1]
+                soln[~where_new_soln, 1]
             )
+            soln[~where_new_soln, 2] = chi/2 + chi/2*np.tanh(
+                soln[~where_new_soln, 2]
+            )
+            soln[:, 3] = chi/2 + chi/2*np.tanh(soln[:, 3])
+
 
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:
                 init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
                 soln_with_reion = odeint(
                     tla_reion_fixed_xe, init_cond_fixed_xe, 
-                    rs_above_std_xe_vec, mxstep=mxstep, tfirst=True
+                    rs_above_std_xe_vec, mxstep=mxstep, rtol=1e-4, 
+                    tfirst=True
                 )
                 # Remove the initial step, save to soln.
                 soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
+                # Put in the solutions for xHII and xHeII. 
                 soln[where_new_soln, 1] = xe_reion_func(
                     rs_vec[where_new_soln]
-                )
+                ) * (1. / (1. + phys.chi))
+                soln[where_new_soln, 2] = xe_reion_func(
+                    rs_vec[where_new_soln]
+                ) * (phys.chi / (1. + phys.chi))
 
             return soln
 
@@ -594,7 +671,7 @@ def get_history(
         # First, check if required in the first place. 
         if rs_reion_vec.size == 0:
             soln = odeint(
-                tla_before_reion, init_cond, 
+                tla_before_reion, _init_cond, 
                 rs_before_reion_vec, mxstep = mxstep, tfirst=True
             )
             # soln = solve_ivp(
@@ -605,7 +682,7 @@ def get_history(
         # Conversely, solving before reionization may be unnecessary.
         elif rs_before_reion_vec.size == 0:
             soln = odeint(
-                tla_reion, init_cond, rs_reion_vec, 
+                tla_reion, _init_cond, rs_reion_vec, 
                 mxstep = mxstep, tfirst=True
             )
             # soln = solve_ivp(
@@ -617,8 +694,8 @@ def get_history(
             # First, solve without reionization up to rs = reion_rs.
             rs_before_reion_vec = np.append(rs_before_reion_vec, reion_rs)
             soln_before_reion = odeint(
-                tla_before_reion, init_cond, 
-                rs_before_reion_vec, mxstep = mxstep, tfirst=True
+                tla_before_reion, _init_cond, 
+                rs_before_reion_vec, mxstep = mxstep, tfirst=True, rtol=1e-4
             )
             # soln_before_reion = solve_ivp(
             #     tla_before_reion, 
@@ -631,12 +708,12 @@ def get_history(
             init_cond_reion = [
                 soln_before_reion[-1,0],
                 soln_before_reion[-1,1],
-                np.arctanh(2/(chi)*(1e-12 - chi/2)),
-                np.arctanh(2/(chi)*(1e-12 - chi/2))
+                soln_before_reion[-1,2],
+                soln_before_reion[-1,3]
             ]
             soln_reion = odeint(
                 tla_reion, init_cond_reion, 
-                rs_reion_vec, mxstep = mxstep, tfirst=True
+                rs_reion_vec, mxstep = mxstep, tfirst=True, rtol=1e-4
             )
             # soln_reion = solve_ivp(
             #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),

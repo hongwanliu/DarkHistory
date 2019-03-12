@@ -612,26 +612,43 @@ def load_ics_data():
     engloss_ref_tf = engloss_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400), nonrel=True)
     return ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
 
-def load_std(xH_init, Tm_init, rs):
+def load_std(rs):
     """
-    Load the std free electron fraction (xe) and matter temperature (Tm) histories.
-    If xe_init and/or Tm_init aren't initialized, set them to their standard values.
+    Loads standard results for temperature and ionization.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift to initialize at. 
+
+    Returns
+    -------
+    tuple
+        Returns interpolating functions for xH, xHe, Tm and their initial
+        values.
     """
+
     os.chdir(dir_path)
-    soln = pickle.load(open("darkhistory/history/std_soln.p", "rb"))
+    soln = pickle.load(open("darkhistory/history/std_soln_He.p", "rb"))
+    
     xH_std  = interp1d(soln[0,:], soln[2,:])
-    Tm_std = interp1d(soln[0,:], soln[1,:])
-    # soln = np.loadtxt(open("darkhistory/history/recfast_standard.txt", "rb"))
-    # xe_std = interp1d(soln[:,0], soln[:,2])
-    # Tm_std = interp1d(soln[:,0], soln[:,1])
+    xHe_std = interp1d(soln[0,:], soln[3,:])
+    Tm_std  = interp1d(soln[0,:], soln[1,:])
+
     os.chdir(cwd)
-    #def xe_std(rs):
-    #    return 0.00027458
-    if xH_init is None:
-        xH_init = xH_std(rs)
-    if Tm_init is None:
-        Tm_init = Tm_std(rs)
-    return xH_std, Tm_std, xH_init, Tm_init
+
+    xH_init  = xH_std(rs)
+    xHe_init = xHe_std(rs)
+    Tm_init  = Tm_std(rs)
+    # if xH_init is None:
+    #     xH_init = xH_std(rs)
+    # if xHe_init is None:
+    #     xHe_init = xHe_std(rs)
+    # if Tm_init is None:
+    #     Tm_init = Tm_std(rs)
+
+    return xH_std, xHe_std, Tm_std, xH_init, xHe_init, Tm_init
+
 
 def evolve(
     in_spec_elec, in_spec_phot,
@@ -639,11 +656,12 @@ def evolve(
     highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
     highengdep_interp, CMB_engloss_interp,
     ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
-    ics_only=False, highengdep_switch = True, separate_higheng=False, CMB_subtracted=False,
+    ics_only=False, compute_fs_method='old', highengdep_switch = True, 
+    separate_higheng=False, CMB_subtracted=False, helium_TLA=False,
     reion_switch=False, reion_rs = None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     struct_boost=None,
-    xH_init=None, Tm_init=None,
+    init_cond=None,
     coarsen_factor=1, std_soln=False, xH_func=None, xHe_func=None, user=None,
     verbose=False, use_tqdm=False
 ):
@@ -683,10 +701,16 @@ def evolve(
         ICS energy loss scattered photon transfer function.
     ics_only : bool, optional
         If True, turns off atomic cooling for input electrons.
+    compute_fs_method : {'old', 'helium'}
+        The method to compute f's. 'helium' includes helium photoionization.
     highengdep_switch: bool, optional
         If False, turns off high energy deposition estimate.
     separate_higheng : bool, optional
         If True, reports the high and low f(z) separately.
+    CMB_subtracted : bool
+        ???
+    helium_TLA : bool
+        If True, the TLA is solved with helium.
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
     photoion_rate_func : tuple of functions, optional
@@ -697,16 +721,18 @@ def evolve(
         Specifies a fixed ionization history after reion_rs.
     struct_boost : function, optional
         Energy injection boost factor due to structure formation
-    xH_init : float
-        xH = nHII/nH at the initial redshift.
-    Tm_init : float
-        Matter temperature at the initial redshift.
+    init_cond : tuple of floats
+        Specifies the initial (xH, xHe, Tm). Defaults to RECFAST if None.
     coarsen_factor : int
         Coarsening to apply to the transfer function matrix.
     std_soln : bool
         If true, uses the standard TLA solution for f(z).
     xH_func : function, optional
-        If provided, fixes the ionization history to the output of this function (which takes redshift as its sole argument). Superceded by xe_reion_func past reion_rs. std_soln must be true.
+        If provided, fixes xH to the output of this function (which takes redshift as its sole argument). Superceded by xe_reion_func past reion_rs. std_soln must be True.
+    xHe_func : function, optional
+        If provided, fixes xHe to the output of this function (which takes
+        redshift as its sole argument). Superceded by xe_reion_func past
+        reion_rs. std_soln must be True.
     user : str
         specify which user is accessing the code, so that the standard solution can be downloaded.  Must be changed!!!
     use_tqdm : bool, optional
@@ -716,7 +742,7 @@ def evolve(
     ################################
     # Initialization
     ################################
-
+    
     # Electron and Photon abscissae
     eleceng = in_spec_elec.eng
     photeng = in_spec_phot.eng
@@ -739,22 +765,43 @@ def evolve(
     if CMB_subtracted and np.any(lowengphot_tf_interp._log_interp):
         raise TypeError('Cannot log interp over negative numbers')
 
-    # Load the standard TLA solution and initialize if necessary.
-    if std_soln or xH_init == None or Tm_init == None:
-        xH_std, Tm_std, xH_init, Tm_init = load_std(
-            xH_init, Tm_init, in_spec_phot.rs
+    # Load the standard TLA and standard initializations.
+    xH_std, xHe_std, Tm_std, xH_init_std, xHe_init_std, Tm_init_std = (
+        load_std(in_spec_phot.rs)
+    )
+
+    # Initialize if not specified for std_soln.
+    if std_soln:
+        xH_init  = xH_init_std
+        xHe_init = xHe_init_std
+        Tm_init  = Tm_init_std
+
+    # Initialize to std_soln if unspecified.
+    if init_cond is None:
+        xH_init  = xH_init_std
+        xHe_init = xHe_init_std
+        Tm_init  = Tm_init_std 
+    else:
+        xH_init  = init_cond[0]
+        xHe_init = init_cond[1]
+        Tm_init  = init_cond[2]
+
+    if not std_soln and (xH_func is not None or xHe_func is not None):
+        raise TypeError(
+            'std_soln must be True if xH_func or xHe_func is specified.'
         )
-    if std_soln and xH_func is not None:
+
+    # If functions are specified, initialize according to the functions.
+    # xH_std and xHe_std are reassigned to the functions, if they exist.
+    if xH_func is not None:
         xH_std = xH_func
         xH_init = xH_std(in_spec_phot.rs)
-        if xHe_func is not None:
-            xHe_init = xHe_func(in_spec_phot.rs)
-        else:
-            xHe_init = xH_init
+    if xHe_func is not None:
+        xHe_std  = xHe_func
+        xHe_init = xHe_std(in_spec_phot.rs)
 
-    # A QUICK HACK TO MAKE EXAMPLE 14 WORK
-    #x_arr  = np.array([[xH_init, xHe_init]])
-    x_arr  = np.array([[xH_init, xH_init]])
+
+    x_arr  = np.array([[xH_init, xHe_init]])
     Tm_arr = np.array([Tm_init])
 
     # Redshift/timestep related quantities.
@@ -821,9 +868,14 @@ def evolve(
             )
 
             coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
-                np.squeeze(id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]),
+                np.squeeze(
+                    id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]
+                ),
                 in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-                eng = eleceng[eleceng > phys.He_exc_eng['23s']] - phys.He_exc_eng['23s'],
+                eng = (
+                    eleceng[eleceng > phys.He_exc_eng['23s']] 
+                    - phys.He_exc_eng['23s']
+                ), 
                 dlnz = -1, spec_type = 'N'
             )
 
@@ -856,7 +908,7 @@ def evolve(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
                     eleceng, photeng, rs,
-                    x_arr[-1,0], xHe=x_arr[-1,1]*phys.nHe/phys.nH,
+                    x_arr[-1,0], xHe=x_arr[-1,1],
                     linalg=True, ics_engloss_data=ics_engloss_data
                 )
 
@@ -965,19 +1017,25 @@ def evolve(
             f_raw = compute_fs(
                 MEDEA_interp, out_lowengelec_specs[0],
                 out_lowengphot_specs[0],
-                np.array([1-xH_std(rs), 0, 0]),
+                np.array([
+                    1.-xH_std(rs), 
+                    phys.chi-xHe_std(rs), xHe_std(rs)
+                ]),
                 rate_func_eng_unclustered(rs), dt,
                 highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                separate_higheng=separate_higheng
+                separate_higheng=separate_higheng, method=compute_fs_method
             )
         else:
             f_raw = compute_fs(
                 MEDEA_interp, out_lowengelec_specs[0],
                 out_lowengphot_specs[0],
-                np.array([1-x_arr[-1,0], 0, 0]),
+                np.array([
+                    1.-x_arr[-1,0], 
+                    phys.chi-x_arr[-1,1], x_arr[-1,1]
+                ]),
                 rate_func_eng_unclustered(rs), dt,
                 highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                separate_higheng=separate_higheng
+                separate_higheng=separate_higheng, method=compute_fs_method
             )
 
         if separate_higheng:
@@ -1014,18 +1072,26 @@ def evolve(
             if std_soln:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-xH_std(rs), 0, 0]),
+                    np.array([
+                        1.-xH_std(rs), 
+                        phys.chi-xHe_std(rs), xHe_std(rs)
+                    ]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                    separate_higheng=separate_higheng
+                    separate_higheng=separate_higheng, 
+                    method=compute_fs_method
                 )
             else:
                 f_raw = compute_fs(
                     MEDEA_interp, next_lowengelec_spec, next_lowengphot_spec,
-                    np.array([1-x_arr[-1,0], 0, 0]),
+                    np.array([
+                        1.-x_arr[-1,0], 
+                        phys.chi-x_arr[-1,1], x_arr[-1,1]
+                    ]),
                     rate_func_eng_unclustered(rs), dt,
                     highengdep_fac*highengdep_grid[-1], cmbloss_grid[-1],
-                    separate_higheng=separate_higheng
+                    separate_higheng=separate_higheng, 
+                    method=compute_fs_method
                 )
 
             if separate_higheng:
@@ -1033,34 +1099,51 @@ def evolve(
                 f_high = np.append(f_high, [f_raw[1]], axis=0)
 
                 # Compute the f's for the TLA: sum low and high.
-                f_H_ion = f_raw[0][0] + f_raw[1][0]
-                f_exc   = f_raw[0][2] + f_raw[1][2]
-                f_heat  = f_raw[0][3] + f_raw[1][3]
+                f_H_ion  = f_raw[0][0] + f_raw[1][0]
+                if compute_fs_method == 'old':
+                    f_He_ion = 0.
+                else:
+                    f_He_ion = f_raw[0][1] + f_raw[1][1]
+                f_exc    = f_raw[0][2] + f_raw[1][2]
+                f_heat   = f_raw[0][3] + f_raw[1][3]
             else:
                 f_arr = np.append(f_arr, [f_raw], axis=0)
                 # Compute the f's for the TLA.
-                f_H_ion = f_raw[0]
-                f_exc   = f_raw[2]
-                f_heat  = f_raw[3]
+                f_H_ion  = f_raw[0]
+                if compute_fs_method == 'old':
+                    f_He_ion = 0.
+                else:
+                    f_He_ion = f_raw[1]
+                f_exc    = f_raw[2]
+                f_heat   = f_raw[3]
 
-            init_cond = np.array([Tm_arr[-1], x_arr[-1,0], 0, 0])
-
-
+            init_cond_new = np.array(
+                [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
+            )
 
             new_vals = tla.get_history(
-                init_cond, f_H_ion, f_exc, f_heat,
-                rate_func_eng_unclustered, np.array([prev_rs, rs]),
+                np.array([prev_rs, rs]), init_cond=init_cond_new, 
+                f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
+                dm_injection_rate=rate_func_eng_unclustered,
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 photoion_rate_func=photoion_rate_func,
                 photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func
+                xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+                f_He_ion=f_He_ion
             )
 
             Tm_arr = np.append(Tm_arr, new_vals[-1,0])
-            if xHe_func is not None:
-                x_arr  = np.append(x_arr,  [[new_vals[-1,1], xHe_func(rs)]], axis=0)
+
+            if helium_TLA:
+                # Append the output of xHe to the array.
+                x_arr  = np.append(
+                    x_arr,  [[new_vals[-1,1], new_vals[-1,2]]], axis=0
+                )
             else:
-                x_arr  = np.append(x_arr,  [[ new_vals[-1,1], new_vals[-1,1] ]], axis=0)
+                # Append the standard solution value. 
+                x_arr  = np.append(
+                    x_arr,  [[ new_vals[-1,1], xHe_std(rs) ]], axis=0
+                )
 
         #print('x_e at '+str(rs)+': '+ str(xe_arr[-1]))
         #print('Standard x_e at '+str(rs)+': '+str(xe_std(rs)))
@@ -1083,11 +1166,20 @@ def evolve(
         #     highengdep_arr = highengdep_interp.get_val(x_arr[-1,0], rs)
 
         if std_soln:
-            highengphot_tf = highengphot_tf_interp.get_tf(xH_std(rs), 0, rs)
-            lowengphot_tf  = lowengphot_tf_interp.get_tf( xH_std(rs), 0, rs)
-            lowengelec_tf  = lowengelec_tf_interp.get_tf( xH_std(rs), 0, rs)
-            cmbloss_arr    = CMB_engloss_interp.get_val(  xH_std(rs), 0, rs)
-            highengdep_arr = highengdep_interp.get_val(   xH_std(rs), 0, rs)
+            highengphot_tf = highengphot_tf_interp.get_tf(
+                xH_std(rs), xHe_std(rs), rs
+            )
+            lowengphot_tf  = lowengphot_tf_interp.get_tf(
+                xH_std(rs), xHe_std(rs), rs
+            )
+            lowengelec_tf  = lowengelec_tf_interp.get_tf(
+                xH_std(rs), xHe_std(rs), rs
+            )
+            cmbloss_arr    = CMB_engloss_interp.get_val(
+                xH_std(rs), xHe_std(rs), rs
+            )
+            highengdep_arr = highengdep_interp.get_val(
+                xH_std(rs), xHe_std(rs), rs)
         else:
             highengphot_tf = highengphot_tf_interp.get_tf(
                 x_arr[-1,0], x_arr[-1,1], rs
@@ -1166,10 +1258,10 @@ def evolve(
                 else:
                     xH_elec_cooling = x_arr[-1,0]
 
-                if xHe_func is not None:
-                    xHe_elec_cooling = xHe_func(rs)
+                if std_soln:
+                    xHe_elec_cooling = xHe_std(rs)
                 else:
-                    xHe_elec_cooling = xH_elec_cooling
+                    xHe_elec_cooling = x_arr[-1, 1]
                 # NOTE TO GREG: ics_sec_phot_tf -= continuum_loss in the correct treatment
                 # for the Tracy-consistent treatment, subtract dE/dt * 1/V / dE/dV/dt from f_cont, where dE/dt is derived from continuum loss
                 (
@@ -1179,9 +1271,8 @@ def evolve(
                 ) = get_elec_cooling_tf_fast(
                         ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                         coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-                        eleceng, photeng, rs,
-                        xH_elec_cooling,
-                        xHe=xHe_elec_cooling*phys.nHe/phys.nH,
+                        eleceng, photeng, rs, 
+                        xH_elec_cooling, xHe=xHe_elec_cooling,
                         linalg=True, ics_engloss_data=ics_engloss_data
                     )
 

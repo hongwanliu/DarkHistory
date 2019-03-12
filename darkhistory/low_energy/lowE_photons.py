@@ -22,7 +22,7 @@ def get_kappa_2s(photspec):
     # Convenient Variables
     eng = photspec.eng
     rs = photspec.rs
-    Lambda = phys.width_2s1s
+    Lambda = phys.width_2s1s_H
     Tcmb = phys.TCMB(rs)
     lya_eng = phys.lya_eng
 
@@ -65,7 +65,7 @@ def get_kappa_2s(photspec):
     # The Numerical Integral
     kappa_2s = np.sum(
         diffs * rates * (f_nu[:mid] + boltz) * (f_nu_p + boltz_p)
-    )/phys.width_2s1s - Boltz(lya_eng)
+    )/phys.width_2s1s_H - Boltz(lya_eng)
 
     return kappa_2s
 
@@ -84,8 +84,13 @@ def kappa_DM(photspec, xe):
     """
     eng = photspec.eng
     rs = photspec.rs
-    x1s_times_R_Lya = phys.rate_2p1s_times_x1s(xe,rs)
-    Lambda = phys.width_2s1s
+    
+    rate_2p1s_times_x1s = (
+        8 * np.pi * phys.hubble(rs)/
+        (3*(phys.nH * rs**3 * (phys.c/phys.lya_freq)**3))
+    )
+    x1s_times_R_Lya = rate_2p1s_times_x1s
+    Lambda = phys.width_2s1s_H
 
     # The bin number containing 10.2eV
     lya_index = spectools.get_indx(eng, phys.lya_eng)
@@ -124,7 +129,7 @@ def getf_continuum(photspec, norm_fac):
 
 #excitation
 def getf_excitation(photspec, norm_fac, dt, xe, n, method):
-    if((method == 'old') or (method == 'ion')):
+    if((method == 'old') or (method=='helium') or (method == 'ion')):
         # All photons between 10.2eV and 13.6eV are deposited into excitation
         # tot_excite_eng = (
         #     photspec.toteng(
@@ -144,8 +149,16 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method):
         # Convenient variables
         kappa = kappa_DM(photspec, xe)
 
+        # Added this line since rate_2p1s_times_x1s function was removed.
+        rate_2p1s_times_x1s = (
+            8 * np.pi * phys.hubble(photspec.rs)/
+            (3*(phys.nH * photspec.rs**3 * (phys.c/phys.lya_freq)**3))
+        )
+
         f_excite_HI = (
-            kappa * (3*phys.rate_2p1s_times_x1s(xe,photspec.rs)*phys.nH + phys.width_2s1s*n[0]) *
+            kappa * (
+                3*rate_2p1s_times_x1s*phys.nH + phys.width_2s1s_H*n[0]
+            ) *
             phys.lya_eng * (norm_fac / phys.nB / photspec.rs**3 * dt)
         )
     return f_excite_HI

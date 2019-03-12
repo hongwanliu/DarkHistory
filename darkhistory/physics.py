@@ -12,6 +12,8 @@ mp          = 0.938272081e9
 """Proton mass in eV."""
 me          = 510998.9461
 """Electron mass in eV."""
+mHe         = 3.97107*mp
+"""Helium nucleus mass in eV."""
 hbar        = 6.58211951e-16
 """hbar in eV s."""
 c           = 299792458e2
@@ -82,8 +84,8 @@ He_exc_eng = {
 
 A_He_21p = 1.798287e9    
 """Einstein coefficient for 21p -> 1s decay in s^-1."""
-A_He_23p = 177.58        
-"""Einstein coefficient for 23p -> 1s decay in s^-1."""
+A_He_23P1 = 177.58        
+"""Einstein coefficient for 2^3P_1 -> 1s decay in s^-1."""
 width_21s_1s_He = 51.3 
 """Width of He 21s -> 1s decay in s^-1."""
 
@@ -293,10 +295,13 @@ def alpha_recomb(T_m, species):
     if species == 'HI':
 
         # Fudge factor recommended in 1011.3758
-        fudge_fac = 1.126
+        fudge_fac = 1.125
         # fudge_fac = 1.14
 
         conv_fac = 1.0e-4/kB
+
+        if T_m <= 0:
+            print(T_m)
 
         return (
             fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
@@ -411,6 +416,12 @@ def peebles_C(xHII, rs):
         (3*(nH * rs**3 * (c/lya_freq)**3))
     )
 
+    # Gaussian corrections. 
+    gauss_corr_1 = -0.14*np.exp(-((np.log(rs) - 7.28)/0.18)**2)
+    gauss_corr_2 = 0.079*np.exp(-((np.log(rs) - 6.73)/0.33)**2)
+
+    rate_2p1s_times_x1s /= (1 + gauss_corr_1 + gauss_corr_2)
+
     rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
 
     rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
@@ -462,7 +473,7 @@ def C_He(xHII, xHeII, rs, species):
         b = 0.86
 
         sigma_H_photo_ion = photo_ion_xsec(He_exc_eng['21p'], 'HI')
-        Delta_nu = (c/He_exc_lambda['21p'])*np.sqrt(2 * T / (3.9715 * mp))
+        Delta_nu = (c/He_exc_lambda['21p'])*np.sqrt(2 * T / mHe)
 
         gamma_numer = 3*A_He_21p*(chi - xHeII)*He_exc_lambda['21p']**2
         gamma_denom = 8*np.pi**(3/2)*sigma_H_photo_ion*Delta_nu*(1 - xHII)
@@ -493,13 +504,35 @@ def C_He(xHII, xHeII, rs, species):
 
         E_ps = He_exc_eng['23p'] - He_exc_eng['23s']
 
-        tau = 3 * A_He_23p * nH*rs**3 * (chi - xHeII) * (
+        tau = 3 * A_He_23P1 * nH*rs**3 * (chi - xHeII) * (
             He_exc_lambda['23p']**3/(8* np.pi *hubble(rs))
         )
 
+        # Escape probability
         p_He = (1 - np.exp(-tau))/tau
 
-        C_He_triplet = A_He_23p*p_He*np.exp(-E_ps/T)
+        # Taking into account hydrogen. The probability of
+        # interaction is 1/(1 + a*gamma**b)
+
+        a = 0.66
+        b = 0.9
+
+        sigma_H_photo_ion = photo_ion_xsec(He_exc_eng['23p'], 'HI')
+        Delta_nu = (c/He_exc_lambda['23p'])*np.sqrt(2 * T / mHe)
+
+        gamma_numer = 3*A_He_23P1*(chi - xHeII)*He_exc_lambda['23p']**2
+        gamma_denom = 8*np.pi**(3/2)*sigma_H_photo_ion*Delta_nu*(1 - xHII)
+
+        if xHII >= 1:
+            # Avoid dividing by zero. 
+            gamma = np.inf
+        else:
+            gamma = gamma_numer/gamma_denom
+
+        p_H = 1/(1 + a*gamma**b)
+
+        # Numerator agrees with astro-ph/0703438, but not RECFAST.
+        C_He_triplet = A_He_23P1*(p_He + p_H)*np.exp(-E_ps/T)
         C_He_triplet /= beta_ion(TCMB(rs), 'HeI_23s') + C_He_triplet
 
         return C_He_triplet
@@ -608,6 +641,32 @@ def d_xe_Saha_dz(rs, species):
         return TypeError('invalid species.')
 
     return numer/denom
+
+# Standard ionization and thermal histories
+import os
+import pickle
+cwd = os.getcwd()
+abspath = os.path.abspath(__file__)
+dir_path = os.path.dirname(abspath)
+os.chdir(dir_path)
+soln = pickle.load(open("history/std_soln_He.p", "rb"))
+os.chdir(cwd)
+
+_xH_std  = interp1d(soln[0,:], soln[2,:])
+_xHe_std = interp1d(soln[0,:], soln[3,:])
+_Tm_std  = interp1d(soln[0,:], soln[1,:])
+
+def xH_std(rs):
+
+    return _xH_std(rs)
+
+def xHe_std(rs):
+
+    return _xHe_std(rs)
+
+def Tm_std(rs):
+
+    return _Tm_std(rs)
 
 
 # Atomic Cross-Sections
