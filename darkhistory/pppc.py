@@ -210,13 +210,15 @@ def get_pppc_spec(mDM, eng, pri, sec):
     
     log10x = np.log10(eng/mDM)
 
-    # For electron final states, there is a mandatory binning into 
-    # very fine bins, in order to capture the peaky distribution.
-    if sec == 'elec' and (
-        pri == 'e_L' or pri == 'e_R' 
-        or pri == 'e' or pri == 'VV_to_4e'
+    # Refine the binning so that the spectrum is accurate. 
+    # Do this by checking that in the relevant range, there are at
+    # least 50,000 bins. If not, double. 
+    
+    if (
+        log10x[(log10x < 1) & (log10x > 1e-9)].size > 0
+        and log10x.size < 500000
     ):
-        while log10x.size < 500000:
+        while log10x[(log10x < 1) & (log10x > 1e-9)].size < 50000:
             log10x = np.interp(
                 np.arange(0, log10x.size-0.5, 0.5), 
                 np.arange(log10x.size), 
@@ -236,12 +238,8 @@ def get_pppc_spec(mDM, eng, pri, sec):
     x = 10**log10x
     spec = Spectrum(x*mDM, dN_dlog10x/(x*mDM*np.log(10)), spec_type='dNdE')
     
-    # Rebin down to the original binning if necessary. 
-    if sec == 'elec' and (
-        pri == 'e_L' or pri == 'e_R' 
-        or pri == 'e' or pri == 'VV_to_4e'
-    ):
-        spec.rebin(eng)
+    # Rebin down to the original binning. 
+    spec.rebin(eng)
         
     return spec
 
