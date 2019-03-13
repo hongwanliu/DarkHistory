@@ -206,9 +206,41 @@ for pri in chan_list:
     dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(pri, 'elec')
     dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(pri, 'phot')
 
-def get_pppc_spec(mDM, eng, pri, sec):
+def get_pppc_spec(mDM, eng, pri, sec, decay=False):
+
+    """ Returns the PPPC4DMID spectrum. 
+
+    Parameters
+    ----------
+    mDM : float
+        The mass of the annihilating dark matter particle (in eV). 
+    eng : ndarray
+        The energy abscissa for the output spectrum (in eV). 
+    pri : string
+        One of the channels in `chan_list` above. 
+    sec : {'elec', 'phot'}
+        The secondary spectrum to obtain. 
+    decay : bool, optional
+        If `True`, returns the result for decays.
+
+    Returns
+    -------
+    Spectrum
+        The `Spectrum` object containing the spectrum. 
+
+    Notes
+    -----
+    This returns the PPPC4DMID output spectrum, which is the secondary spectrum to e+e-/photons normalized to one annihilation event to the species specified in `pri`. 
+
+    """
+
+    if decay:
+        # Primary energies is for 1 GeV decay = 0.5 GeV annihilation.
+        _mDM = mDM/2.
+    else:
+        _mDM = mDM
     
-    log10x = np.log10(eng/mDM)
+    log10x = np.log10(eng/_mDM)
 
     # Refine the binning so that the spectrum is accurate. 
     # Do this by checking that in the relevant range, there are at
@@ -224,19 +256,18 @@ def get_pppc_spec(mDM, eng, pri, sec):
                 np.arange(log10x.size), 
                 log10x
             )
-    
-    # Get the reference spectrum, interpolating over mDM only. 
-    # Abscissa is log10x_arr. These spectra take mDM in GeV.
-    if mDM < mass_threshold[pri]:
+     
+    if _mDM < mass_threshold[pri]:
         # This avoids the absurd situation where mDM is less than the 
         # threshold but we get a nonzero spectrum due to interpolation.
         return Spectrum(eng, np.zeros_like(eng), spec_type='dNdE')
     
-    dN_dlog10x = 10**dlNdlxIEW_interp[sec][pri].get_val(mDM/1e9, log10x)
+    # Get the spectrum for the interpolator.
+    dN_dlog10x = 10**dlNdlxIEW_interp[sec][pri].get_val(_mDM/1e9, log10x)
     
     # Recall that dN/dE = dN/dlog10x * dlog10x/dE
     x = 10**log10x
-    spec = Spectrum(x*mDM, dN_dlog10x/(x*mDM*np.log(10)), spec_type='dNdE')
+    spec = Spectrum(x*_mDM, dN_dlog10x/(x*_mDM*np.log(10)), spec_type='dNdE')
     
     # Rebin down to the original binning. 
     spec.rebin(eng)
