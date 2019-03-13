@@ -290,8 +290,9 @@ def discretize(eng, func_dNdE, *args):
     N = np.zeros(eng.size)
     eng_mean = np.zeros(eng.size)
 
-    for low, upp, i in zip(eng[:-1], eng[1:],
-        np.arange(eng.size-1)):
+    for low, upp, i in zip(
+        eng[:-1], eng[1:], np.arange(eng.size-1)
+    ):
     # Perform an integral over the spectrum for each bin.
         N[i] = integrate.quad(func_dNdE, low, upp, args= args)[0]
     # Get the total energy stored in each bin.
