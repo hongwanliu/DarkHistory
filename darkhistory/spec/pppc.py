@@ -271,6 +271,11 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     
     # Rebin down to the original binning.
 
+    # The highest bin of spec.eng should be the same as eng[-1], based on
+    # the interpolation strategy above. However, sometimes a floating point
+    # error is picked up. We'll get rid of this so that rebin doesn't
+    # complain.
+    spec.eng[-1] = eng[-1]
     spec.rebin(eng)
         
     return spec
