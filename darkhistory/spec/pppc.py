@@ -8,13 +8,19 @@ import json
 from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 
+from config import data_path
+
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 
 # Import data.  
 
-coords_file_name = '/Users/hongwan/Desktop/dlNdlxIEW_coords_table.txt'
-values_file_name = '/Users/hongwan/Desktop/dlNdlxIEW_values_table.txt'
+coords_file_name = (
+    data_path+'/dlNdlxIEW_coords_table.txt'
+)
+values_file_name = (
+    data_path+'/dlNdlxIEW_values_table.txt'
+)
 
 with open(coords_file_name) as data_file:    
     coords_data = np.array(json.load(data_file))
@@ -28,7 +34,7 @@ with open(values_file_name) as data_file:
 # the secondary. 
 # Each element is a 1D array.
 
-# values_data is a (2, 23) array.
+# values_data is a (2, 23) array, storing d log_10 N / d log_10 (K/mDM). 
 # axis 0: stable SM secondaries, {'elec', 'phot'}
 # axis 1: annihilation primary channel, given by chan_list_data below. 
 # Each element is a 2D array, indexed by {mDM in GeV, np.log10(K/mDM)}
@@ -244,7 +250,8 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
     # Refine the binning so that the spectrum is accurate. 
     # Do this by checking that in the relevant range, there are at
-    # least 50,000 bins. If not, double. 
+    # least 50,000 bins. If not, double (unless an absurd number
+    # of bins already). 
 
     if (
         log10x[(log10x < 1) & (log10x > 1e-9)].size > 0

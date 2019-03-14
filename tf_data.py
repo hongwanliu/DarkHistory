@@ -4,17 +4,12 @@
 
 import pickle
 
-data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+from config import data_path
 
-if data_path == '':
-    print('NOTE: enter data directory in data.py to avoid this step.')
-    data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
 # Load transfer functions for high-energy photons, low-energy photons, 
 # low-energy electrons, high-energy deposition, and CMB upscattered energy.
 
 print('****** Loading transfer functions... ******')
-
-CMB_subtracted=True
 
 try:
     highengphot_tf_interp

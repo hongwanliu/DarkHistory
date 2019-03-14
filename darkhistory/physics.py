@@ -2,14 +2,19 @@
 
 """
 
+import pickle
+
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
+from config import data_path
+
 cross_check = True
 
 #############################################################################
-############################################################################## Fundamental constants                                                     #
+#############################################################################
+# Fundamental Particles and Constants                                       #
 #############################################################################
 #############################################################################
 
@@ -44,65 +49,14 @@ mass = {
     'W': 80.379e9  , 'Z' :  91.1876e9,      'h': 125.18e9
 }
 
-#############################################################################
-#############################################################################
-# Atomic and Optical Physics                                                #
-#############################################################################
-#############################################################################
-
 thomson_xsec = 6.652458734e-25
 """Thomson cross section in cm^2."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
 """Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
-
-## Hydrogen Atomic Properties
-
-rydberg      = 13.60569253
-"""Ionization potential of ground state hydrogen in eV."""
-lya_eng      = rydberg*3/4
-"""Lyman alpha transition energy in eV."""
-lya_freq     = lya_eng / (2*np.pi*hbar)
-"""Lyman alpha transition frequency in Hz."""
-width_2s1s_H = 8.22458
-"""Hydrogen 2s to 1s decay width in s^-1."""
-bohr_rad     = (hbar*c) / (me*alpha)
-"""Bohr radius in cm."""
-
-## Electron
-
-ele_rad      = bohr_rad * (alpha**2)
+ele_rad      = hbar * c * alpha / me
 """Classical electron radius in cm."""
-ele_compton  = 2*np.pi*hbar*c/me
+ele_compton  = 2*np.pi*hbar * c / me
 """Electron Compton wavelength in cm."""
-
-## Helium Atomic Properties
-
-He_ion_eng   = 24.5873891
-"""Energy needed to singly ionize neutral He in eV."""
-
-He_exc_lambda = {
-    '23s': 1./159855.9745,
-    '21s': 1./166277.4403,
-    '23p': 1./169087.,                  # Approximate for J=0,1,2
-    '21p': 1./171134.8970
-}
-"""HeI n=1 to n=2 excitation wavelength in cm."""
-
-He_exc_eng = {
-    '23s': 2*np.pi*hbar*c*159855.9745,
-    '21s': 2*np.pi*hbar*c*166277.4403,
-    '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
-    '21p': 2*np.pi*hbar*c*171134.8970
-}
-"""HeI n=1 to n=2 excitation energies in eV."""
-
-A_He_21p = 1.798287e9    
-"""Einstein coefficient for 21p -> 1s decay in s^-1."""
-A_He_23P1 = 177.58        
-"""Einstein coefficient for 2^3P_1 -> 1s decay in s^-1."""
-width_21s_1s_He = 51.3 
-"""Width of He 21s -> 1s decay in s^-1."""
-
 
 #############################################################################
 #############################################################################
@@ -110,7 +64,9 @@ width_21s_1s_He = 51.3
 #############################################################################
 #############################################################################
 
-# Hubble
+#########################################
+# Densities and Hubble                  #
+#########################################
 
 h    = 0.6727
 """ h parameter."""
@@ -119,8 +75,6 @@ if not cross_check:
 else:
     H0 = 1/(4.5979401e17)
 """ Hubble parameter today in s^-1."""
-
-# Omegas
 
 if not cross_check:
     omega_m      = 0.3156
@@ -149,8 +103,6 @@ else:
     """ Omega of baryons today."""
     omega_DM      = omega_m-omega_baryon
     #""" Omega of dark matter today."""
-
-# Densities
 
 rho_crit     = 1.05375e4*(h**2)
 """ Critical density of the universe in eV/cm^3."""
@@ -183,7 +135,6 @@ nA          = nH + nHe
 chi         = nHe/nH
 """Ratio of helium to hydrogen nuclei."""
 
-# Cosmology functions
 
 def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
     """ Hubble parameter in s^-1.
@@ -212,7 +163,7 @@ def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_l
     return H0*np.sqrt(omega_rad*rs**4 + omega_m*rs**3 + omega_lambda)
 
 def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ dt/dz in s.
+    """ |dt/dz| in s.
 
     Assumes a flat universe.
 
@@ -236,31 +187,109 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
 
     return 1/(rs*hubble(rs, H0, omega_m, omega_rad, omega_lambda))
 
-def get_optical_depth(rs_vec, xe_vec):
-    """Computes the optical depth given an ionization history.
+#########################################
+# CMB                                   #
+#########################################
+
+def TCMB(rs):
+    """ CMB temperature in eV.
 
     Parameters
     ----------
-    rs_vec : ndarray
+    rs : float
         Redshift (1+z).
-    xe_vec : ndarray
-        Free electron fraction xe = ne/nH.
 
     Returns
     -------
     float
-        The optical depth.
     """
-    from darkhistory.spec.spectools import get_log_bin_width
 
-    rs_log_bin_width = get_log_bin_width(rs_vec)
-    dtdz_vec = dtdz(rs_vec)
+    if not cross_check:
+        fac = 2.7255
+    else:
+        fac = 2.725
+    return fac * kB * rs
 
-    return np.dot(
-        xe_vec*nH*thomson_xsec*c*dtdz_vec,
-        rs_vec**4*rs_log_bin_width
-    )
+def CMB_spec(eng, temp):
+    """CMB spectrum in number of photons/cm^3/eV.
 
+    Returns zero if the energy exceeds 500 times the temperature.
+
+    Parameters
+    ----------
+    temp : float
+        Temperature of the CMB in eV.
+    eng : float or ndarray
+        Energy of the photon in eV.
+
+    Returns
+    -------
+    phot_spec_density : ndarray
+        Returns the number of photons/cm^3/eV.
+
+    """
+    prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
+    if isinstance(eng, (list, np.ndarray)):
+        small = eng/temp < 1e-10
+        expr = np.zeros_like(eng)
+        if np.any(small):
+            expr[small] = prefactor[small]*1/(
+                eng[small]/temp + (1/2)*(eng[small]/temp)**2
+                + (1/6)*(eng[small]/temp)**3
+            )
+        if np.any(~small):
+            expr[~small] = (
+                prefactor[~small]*np.exp(-eng[~small]/temp)
+                /(1 - np.exp(-eng[~small]/temp))
+            )
+    else:
+        expr = 0
+        if eng/temp < 1e-10:
+            expr = prefactor*1/(
+                eng/temp + (1/2)*(eng/temp)**2 + (1/6)*(eng/temp)**3
+            )
+        else:
+            expr = prefactor*np.exp(-eng/temp)/(1 - np.exp(-eng/temp))
+
+    return expr
+
+def CMB_N_density(T):
+    """ CMB number density in cm^-3.
+
+    Parameters
+    ----------
+    T : float or ndarray
+        CMB temperature.
+
+    Returns
+    -------
+    float or ndarray
+        The number density of the CMB.
+
+    """
+    zeta_4 = np.pi**4/90
+
+    return 4*stefboltz/c*T**3*(zeta(3)/(3*zeta_4))
+
+def CMB_eng_density(T):
+    """CMB energy density in eV/cm^3.
+
+    Parameters
+    ----------
+    T : float or ndarray
+        CMB temperature.
+
+    Returns
+    -------
+    float or ndarray
+        The energy density of the CMB.
+    """
+
+    return 4*stefboltz/c*T**4
+
+#########################################
+# Dark Matter                           #
+#########################################
 
 def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     """ Dark matter annihilation/decay energy injection rate.
@@ -289,7 +318,147 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/tau
 
-# Atomic processes functions
+# Import structure formation data. 
+struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
+
+log_struct_interp = interp1d(
+    np.log(struct_data[:,0]), np.log(struct_data[:,1]),
+    bounds_error=False, fill_value=(np.nan, 1.)
+)
+
+def struct_boost_func(model='einasto_with_subs', model_params=None):
+    """Structure formation boost factor 1+B(z)
+
+    Parameters
+    ----------
+    model : {'einasto_with_subs', 'erfc'}
+        Model to use. See 1604.02457. 
+    model_params : tuple of floats
+        Model parameters (b_h, delta, z_h) for 'erfc' option. 
+
+    Returns
+    -------
+    float or ndarray
+        Boost factor. 
+
+    Note
+    ----
+    Refer to 1408.1109 for erfc model, 1604.02457 for all other model
+    descriptions and parameters.
+
+    """
+
+    if model == 'erfc':
+
+        from scipy.special import erfc
+
+        if model_params is None:
+            # Smallest boost in 1408.1109. 
+            b_h   = 1.6e5
+            delta = 1.54
+            z_h   = 19.5
+        else:
+            b_h   = model_params[0]
+            delta = model_params[1]
+            z_h   = model_params[2]
+
+        def func(rs):
+
+            return 1. + b_h / rs**delta * erfc( rs/(1+z_h) )
+
+    else:
+
+        def func(rs):
+
+            return np.exp(log_struct_interp(np.log(rs)))
+
+    return func
+
+
+
+#########################################
+# Other Cosmology Functions             #
+#########################################
+
+def get_optical_depth(rs_vec, xe_vec):
+    """Computes the optical depth given an ionization history.
+
+    Parameters
+    ----------
+    rs_vec : ndarray
+        Redshift (1+z).
+    xe_vec : ndarray
+        Free electron fraction xe = ne/nH.
+
+    Returns
+    -------
+    float
+        The optical depth.
+    """
+    from darkhistory.spec.spectools import get_log_bin_width
+
+    rs_log_bin_width = get_log_bin_width(rs_vec)
+    dtdz_vec = dtdz(rs_vec)
+
+    return np.dot(
+        xe_vec*nH*thomson_xsec*c*dtdz_vec,
+        rs_vec**4*rs_log_bin_width
+    )
+
+#############################################################################
+#############################################################################
+# Atomic and Optical Physics                                                #
+#############################################################################
+#############################################################################
+
+#########################################
+# Hydrogen                              #
+#########################################
+
+rydberg      = 13.60569253
+"""Ionization potential of ground state hydrogen in eV."""
+lya_eng      = rydberg*3/4
+"""Lyman alpha transition energy in eV."""
+lya_freq     = lya_eng / (2*np.pi*hbar)
+"""Lyman alpha transition frequency in Hz."""
+width_2s1s_H = 8.22458
+"""Hydrogen 2s to 1s decay width in s^-1."""
+bohr_rad     = (hbar*c) / (me*alpha)
+"""Bohr radius in cm."""
+
+#########################################
+# Helium                                #
+#########################################
+
+He_ion_eng   = 24.5873891
+"""Energy needed to singly ionize neutral He in eV."""
+
+He_exc_lambda = {
+    '23s': 1./159855.9745,
+    '21s': 1./166277.4403,
+    '23p': 1./169087.,                  # Approximate for J=0,1,2
+    '21p': 1./171134.8970
+}
+"""HeI n=1 to n=2 excitation wavelength in cm."""
+
+He_exc_eng = {
+    '23s': 2*np.pi*hbar*c*159855.9745,
+    '21s': 2*np.pi*hbar*c*166277.4403,
+    '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
+    '21p': 2*np.pi*hbar*c*171134.8970
+}
+"""HeI n=1 to n=2 excitation energies in eV."""
+
+A_He_21p = 1.798287e9    
+"""Einstein coefficient for 21p -> 1s decay in s^-1."""
+A_He_23P1 = 177.58        
+"""Einstein coefficient for 2^3P_1 -> 1s decay in s^-1."""
+width_21s_1s_He = 51.3 
+"""Width of He 21s -> 1s decay in s^-1."""
+
+#########################################
+# Recombination/Ionization              #
+#########################################
 
 def alpha_recomb(T_m, species):
     """Case-B recombination coefficient.
@@ -663,14 +832,7 @@ def d_xe_Saha_dz(rs, species):
     return numer/denom
 
 # Standard ionization and thermal histories
-import os
-import pickle
-cwd = os.getcwd()
-abspath = os.path.abspath(__file__)
-dir_path = os.path.dirname(abspath)
-os.chdir(dir_path)
-soln = pickle.load(open("history/std_soln_He.p", "rb"))
-os.chdir(cwd)
+soln = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
 _xH_std  = interp1d(soln[0,:], soln[2,:])
 _xHe_std = interp1d(soln[0,:], soln[3,:])
@@ -1024,9 +1186,6 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
         return low_eng_elec_N + high_eng_elec_N
 
 
-
-        # This spectrum describes the lower energy electron only.
-
 def elec_heating_engloss_rate(eng, xe, rs):
     """Returns the electron energy loss rate due to heating of the gas.
 
@@ -1069,170 +1228,82 @@ def elec_heating_engloss_rate(eng, xe, rs):
     return prefac*ne*coulomb_log/(me/c**2*w)
 
 
-def tau_sobolev(rs):
-    """Sobolev optical depth.
-
-    Parameters
-    ----------
-    rs : float
-        Redshift (1+z).
-    Returns
-    -------
-    float
-    """
-    xsec = 2 * np.pi * 0.416 * np.pi * alpha * hbar * c ** 2 / me
-    lya_omega = lya_eng / hbar
-
-    return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
-
-def get_dLam2s_dnu():
-    """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
-
-    nu is the frequency of the more energetic photon.
-    To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
-
-    Parameters
-    ----------
-
-    Returns
-    -------
-    Lam : ndarray
-        Decay rate per nu.
-    """
-    coeff = 9 * alpha**6 * rydberg /(
-        2**10 * 2 * np.pi * hbar
-    )
-    #print(coeff)
-
-    # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
-    # interpolating points come from Spitzer and Greenstein, 1951
-    y = np.arange(0, 1.05, .05)
-    psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
-                   4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
-
-    # evaluation outside of interpolation window yields 0.
-    f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
-    def dLam2s_dnu(nu):
-        return coeff * f(nu/lya_freq) * width_2s1s_H/8.26548398114 / lya_freq
-
-    return dLam2s_dnu
 
 
-# CMB
+# Unused for now.
 
-def TCMB(rs):
-    """ CMB temperature in eV.
 
-    Parameters
-    ----------
-    rs : float
-        Redshift (1+z).
 
-    Returns
-    -------
-    float
-    """
+# def tau_sobolev(rs):
+#     """Sobolev optical depth.
 
-    if not cross_check:
-        fac = 2.7255
-    else:
-        fac = 2.725
-    return fac * kB * rs
+#     Parameters
+#     ----------
+#     rs : float
+#         Redshift (1+z).
+#     Returns
+#     -------
+#     float
+#     """
+#     xsec = 2 * np.pi * 0.416 * np.pi * alpha * hbar * c ** 2 / me
+#     lya_omega = lya_eng / hbar
 
-def CMB_spec(eng, temp):
-    """CMB spectrum in number of photons/cm^3/eV.
+#     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
 
-    Returns zero if the energy exceeds 500 times the temperature.
+# def get_dLam2s_dnu():
+#     """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
 
-    Parameters
-    ----------
-    temp : float
-        Temperature of the CMB in eV.
-    eng : float or ndarray
-        Energy of the photon in eV.
+#     nu is the frequency of the more energetic photon.
+#     To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
 
-    Returns
-    -------
-    phot_spec_density : ndarray
-        Returns the number of photons/cm^3/eV.
+#     Parameters
+#     ----------
 
-    """
-    prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
-    if isinstance(eng, (list, np.ndarray)):
-        small = eng/temp < 1e-10
-        expr = np.zeros_like(eng)
-        if np.any(small):
-            expr[small] = prefactor[small]*1/(
-                eng[small]/temp + (1/2)*(eng[small]/temp)**2
-                + (1/6)*(eng[small]/temp)**3
-            )
-        if np.any(~small):
-            expr[~small] = (
-                prefactor[~small]*np.exp(-eng[~small]/temp)
-                /(1 - np.exp(-eng[~small]/temp))
-            )
-    else:
-        expr = 0
-        if eng/temp < 1e-10:
-            expr = prefactor*1/(
-                eng/temp + (1/2)*(eng/temp)**2 + (1/6)*(eng/temp)**3
-            )
-        else:
-            expr = prefactor*np.exp(-eng/temp)/(1 - np.exp(-eng/temp))
+#     Returns
+#     -------
+#     Lam : ndarray
+#         Decay rate per nu.
+#     """
+#     coeff = 9 * alpha**6 * rydberg /(
+#         2**10 * 2 * np.pi * hbar
+#     )
+#     #print(coeff)
 
-    return expr
+#     # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
+#     # interpolating points come from Spitzer and Greenstein, 1951
+#     y = np.arange(0, 1.05, .05)
+#     psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
+#                    4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
 
-def CMB_N_density(T):
-    """ CMB number density in cm^-3.
+#     # evaluation outside of interpolation window yields 0.
+#     f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
+#     def dLam2s_dnu(nu):
+#         return coeff * f(nu/lya_freq) * width_2s1s_H/8.26548398114 / lya_freq
 
-    Parameters
-    ----------
-    T : float or ndarray
-        CMB temperature.
+#     return dLam2s_dnu
 
-    Returns
-    -------
-    float or ndarray
-        The number density of the CMB.
 
-    """
-    zeta_4 = np.pi**4/90
+# # CMB
 
-    return 4*stefboltz/c*T**3*(zeta(3)/(3*zeta_4))
 
-def CMB_eng_density(T):
-    """CMB energy density in eV/cm^3.
 
-    Parameters
-    ----------
-    T : float or ndarray
-        CMB temperature.
+# def A_2s(y):
+#     """2s to 1s two-photon decay probability density.
 
-    Returns
-    -------
-    float or ndarray
-        The energy density of the CMB.
-    """
+#     A_2s(y) * dy = probability that a photon is emitted with a frequency in the range nu_lya * [y, y+dy)
+#     with the other photon constrained by h*nu_1 + h*nu_2 = 10.2 eV.
 
-    return 4*stefboltz/c*T**4
+#     Parameters
+#     ----------
+#     y : float
+#         nu / nu_lya, frequency of one of the photons divided by lyman-alpha frequency.
 
-def A_2s(y):
-    """2s to 1s two-photon decay probability density.
-
-    A_2s(y) * dy = probability that a photon is emitted with a frequency in the range nu_lya * [y, y+dy)
-    with the other photon constrained by h*nu_1 + h*nu_2 = 10.2 eV.
-
-    Parameters
-    ----------
-    y : float
-        nu / nu_lya, frequency of one of the photons divided by lyman-alpha frequency.
-
-    Returns
-    -------
-    float or ndarray
-        probability density of emitting those two photons.
-    """
-    return 0
+#     Returns
+#     -------
+#     float or ndarray
+#         probability density of emitting those two photons.
+#     """
+#     return 0
 
 
 

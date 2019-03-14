@@ -33,7 +33,8 @@ from darkhistory.electrons import positronium as pos
 from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
 
-from data import * 
+from config import data_path
+from tf_data import *
 
 def evolve(
     in_spec_elec, in_spec_phot,
