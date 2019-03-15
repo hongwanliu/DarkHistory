@@ -396,11 +396,8 @@ class Spectra:
         -----
         This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
         """
-
-        if (
-            np.issubdtype(type(other), (np.floating,float))
-            or np.issubdtype(type(other), (np.integer, int))
-        ):
+        if np.isscalar(other):
+            
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
             out_spectra._in_eng = self.in_eng
@@ -549,13 +546,19 @@ class Spectra:
 
         return other * inv_spectra
 
-    def switch_spec_type(self):
+    def switch_spec_type(self, *target):
+        """Switches between the type of values to be stored.
 
+        Parameters
+        ----------
+        target : {'N', 'dNdE'}
+            The target type to switch to. 
+        """
         log_bin_width = get_log_bin_width(self.eng)
-        if self.spec_type == 'N':
+        if self.spec_type == 'N' and not target == 'N':
             self._grid_vals = self.grid_vals/(self.eng * log_bin_width)
             self._spec_type = 'dNdE'
-        elif self.spec_type == 'dNdE':
+        elif self.spec_type == 'dNdE' and not target == 'dNdE':
             self._grid_vals = self.grid_vals*self.eng*log_bin_width
             self._spec_type = 'N'
 

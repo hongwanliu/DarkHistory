@@ -42,8 +42,8 @@ from tf_data import *
 def evolve(
     in_spec_elec=None, in_spec_phot=None,
     rate_func_N=None, rate_func_eng=None, 
-    DM_process=None, mDM=None, sigmav=None, lifetime=None,
-    primary=None, start_rs=3000, end_rs=4,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
+    start_rs=3000, end_rs=4,
     ics_only=False, compute_fs_method='old', highengdep_switch = True, 
     separate_higheng=False, CMB_subtracted=False, helium_TLA=False,
     reion_switch=False, reion_rs = None,
@@ -130,8 +130,15 @@ def evolve(
         if sigmav is None or primary is None:
             raise InputError('both sigmav and primary must be specified.')
         # Get input spectra from PPPC. 
-        # in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
-        # in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
+        in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
+        in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
+        # Initialize the input spectrum redshift. 
+        in_spec_elec.rs = start_rs
+        in_spec_phot.rs = start_rs
+        # Convert to type 'N'. 
+        in_spec_elec.switch_spec_type('N')
+        in_spec_elec.switch_spec_type('N')
+
         # Define the rate functions. 
         def rate_func_N(rs):
             return (
@@ -154,6 +161,13 @@ def evolve(
         in_spec_phot = pppc.get_pppc_spec(
             mDM, photeng, primary, 'phot', decay=True
         )
+        # Initialize the input spectrum redshift. 
+        in_spec_elec.rs = start_rs
+        in_spec_phot.rs = start_rs
+        # Convert to type 'N'. 
+        in_spec_elec.switch_spec_type('N')
+        in_spec_elec.switch_spec_type('N')
+        
         # Define the rate functions. 
         def rate_func_N(rs):
             return (
@@ -164,8 +178,11 @@ def evolve(
                 
     
     # Electron and Photon abscissae should be the default abscissae. 
-    if in_spec_elec.eng != eleceng or in_spec_elec.eng != photeng:
-        raise InputError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
+    if (
+        not np.array_equal(in_spec_elec.eng, eleceng) 
+        or not np.array_equal(in_spec_phot.eng, photeng)
+    ):
+        raise ValueError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None
