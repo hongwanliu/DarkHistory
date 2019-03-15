@@ -291,7 +291,7 @@ def CMB_eng_density(T):
 # Dark Matter                           #
 #########################################
 
-def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
+def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     """ Dark matter annihilation/decay energy injection rate.
 
     Parameters
@@ -304,7 +304,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
         DM mass in eV.
     sigmav : float, optional
         Annihilation cross section in cm^3 s^-1.
-    tau : float, optional
+    lifetime : float, optional
         Decay lifetime in s.
 
     Returns
@@ -316,7 +316,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, tau=None):
     if inj_type == 'swave':
         return rho_DM**2*rs**6*sigmav/mDM
     elif inj_type == 'decay':
-        return rho_DM*rs**3/tau
+        return rho_DM*rs**3/lifetime
 
 # Import structure formation data. 
 struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))

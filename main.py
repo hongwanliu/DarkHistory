@@ -10,12 +10,15 @@ from scipy.interpolate import interp1d
 
 import darkhistory.physics as phys
 import darkhistory.utilities as utils
+
 import darkhistory.spec.spectools as spectools
 from darkhistory.spec.spectools import EnglossRebinData
 import darkhistory.spec.transferfunclist as tflist
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
 from darkhistory.spec import transferfunction as tf
+from darkhistory.spec import pppc
+
 import darkhistory.history.histools as ht
 import darkhistory.history.tla as tla
 
@@ -33,15 +36,14 @@ from darkhistory.electrons import positronium as pos
 from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
 
-from config import data_path
+from config import data_path, photeng, eleceng
 from tf_data import *
 
 def evolve(
-    in_spec_elec, in_spec_phot,
-    rate_func_N, rate_func_eng, end_rs,
-    # highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp,
-    # highengdep_interp, CMB_engloss_interp,
-    # ics_thomson_ref_tf=None, ics_rel_ref_tf=None, engloss_ref_tf=None,
+    in_spec_elec=None, in_spec_phot=None,
+    rate_func_N=None, rate_func_eng=None, 
+    DM_process=None, mDM=None, sigmav=None, lifetime=None,
+    primary=None, start_rs=3000, end_rs=4,
     ics_only=False, compute_fs_method='old', highengdep_switch = True, 
     separate_higheng=False, CMB_subtracted=False, helium_TLA=False,
     reion_switch=False, reion_rs = None,
@@ -56,35 +58,29 @@ def evolve(
 
     Parameters
     ----------
-    in_spec_elec : Spectrum
+    in_spec_elec : Spectrum, optional
         Spectrum per annihilation/decay into electrons. rs of this spectrum is the rs of the initial conditions.
         if in_spec_elec.totN() == 0, turn off electron processes.
-    in_spec_phot : Spectrum
+    in_spec_phot : Spectrum, optional
         Spectrum per annihilation/decay into photons.
-    rate_func_N : function
+    rate_func_N : function, optional
         Function describing the rate of annihilation/decay, dN/(dV dt)
-    rate_func_eng : function
+    rate_func_eng : function, optional
         Function describing the rate of annihilation/decay, dE/(dV dt)
-    end_rs : float
-        Final redshift to evolve to.
+    DM_process : {'swave', 'decay'}, optional
+        The dark matter process to use. 
+    sigmav : float, optional
+        The thermally averaged cross section, if DM_process == 'swave'. 
+    lifetime : float, optional
+        The decay lifetime, if DM_process == 'decay'. 
+    primary : string, optional
+        The primary channel of annihilation/decay. Refer to darkhistory.spec.pppc.chan_list for complete list. 
+    start_rs : float, optional
+        Starting redshift (1+z) to evolve from. Default is 1+z = 3000. Specify only for use with dark matter variables, otherwise initialize in_spec_elec.rs and/or in_spec_phot.rs directly.
+    end_rs : float, optional
+        Final redshift (1+z) to evolve to. Default is 1+z = 4. 
     reion_switch : bool
         Reionization model included if true.
-    highengphot_tf_interp : TransFuncInterp
-        high energy photon transfer function interpolation object.
-    lowengphot_tf_interp : TransFuncInterp
-        low energy photon transfer function interpolation object.
-    lowengelec_tf_interp : TransFuncInterp
-        low energy electron transfer function interpolation object.
-    highengdep_interp : IonRSInterp
-        energy deposition from high energy particles, interpolation object
-    CMB_engloss_interp : IonRSInterp
-        energy losses to CMB, interpolation object
-    ics_thomson_ref_tf : TransFuncAtRedshift
-        ICS Thomson regime scattered photon transfer function.
-    ics_rel_ref_tf : TransFuncAtRedshift
-        ICS relativistic regime scattered photon transfer function.
-    engloss_ref_tf : TransFuncAtRedshift
-        ICS energy loss scattered photon transfer function.
     ics_only : bool, optional
         If True, turns off atomic cooling for input electrons.
     compute_fs_method : {'old', 'helium'}
@@ -128,10 +124,48 @@ def evolve(
     ################################
     # Initialization
     ################################
+
+    # Handle the case where a DM process is specified. 
+    if DM_process == 'swave':
+        if sigmav is None or primary is None:
+            raise InputError('both sigmav and primary must be specified.')
+        # Get input spectra from PPPC. 
+        # in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
+        # in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
+        # Define the rate functions. 
+        def rate_func_N(rs):
+            return (
+                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav)
+                * struct_boost(rs) / (2*mDM)
+            )
+        def rate_func_eng(rs):
+            return (
+                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                * struct_boost(rs)
+            )
+
+    if DM_process == 'decay':
+        if lifetime is None or primary is None:
+            raise InputError('both lifetime and primary must be specified.')
+        # Get spectra from PPPC.
+        in_spec_elec = pppc.get_pppc_spec(
+            mDM, eleceng, primary, 'elec', decay=True
+        )
+        in_spec_phot = pppc.get_pppc_spec(
+            mDM, photeng, primary, 'phot', decay=True
+        )
+        # Define the rate functions. 
+        def rate_func_N(rs):
+            return (
+                phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) / mDM
+            )
+        def rate_func_eng(rs):
+            return phys.inj_rate('swave', rs, mDM=mDM, lifetime=lifetime) 
+                
     
-    # Electron and Photon abscissae
-    eleceng = in_spec_elec.eng
-    photeng = in_spec_phot.eng
+    # Electron and Photon abscissae should be the default abscissae. 
+    if in_spec_elec.eng != eleceng or in_spec_elec.eng != photeng:
+        raise InputError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
 
     # Initialize the next spectrum as None.
     next_highengphot_spec = None

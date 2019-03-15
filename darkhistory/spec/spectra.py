@@ -398,8 +398,8 @@ class Spectra:
         """
 
         if (
-            np.issubdtype(type(other), float)
-            or np.issubdtype(type(other), int)
+            np.issubdtype(type(other), (np.floating,float))
+            or np.issubdtype(type(other), (np.integer, int))
         ):
             out_spectra = Spectra([])
             out_spectra._eng = self.eng

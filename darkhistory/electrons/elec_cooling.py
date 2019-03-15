@@ -731,8 +731,8 @@ def get_elec_cooling_tf_fast_linalg(
     )
     
     rate_vec_ion_HeII = (
-        xHe*phys.nH*rs**3 * 
-        phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
+        xHe*phys.nH*rs**3
+        * phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
     )
 
     # Normalized secondary electron spectra after ionization.
