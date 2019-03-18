@@ -1,0 +1,419 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>reionization &mdash; DarkHistory  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="tla" href="darkhistory.history.tla.html" />
+    <link rel="prev" title="histools" href="darkhistory.history.histools.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> DarkHistory
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../main.html">main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tf_data.html">tf_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.utilities.html">utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.electrons.html">electrons</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.history.html">history</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.history.histools.html">histools</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">reionization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.history.tla.html">tla</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.low_energy.html">low_energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.spec.html">spec</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DarkHistory</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../modules.html">darkhistory</a> &raquo;</li>
+        
+          <li><a href="../darkhistory.history.html">history</a> &raquo;</li>
+        
+      <li>reionization</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/_autosummary/history/darkhistory.history.reionization.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-darkhistory.history.reionization">
+<span id="reionization"></span><h1>reionization<a class="headerlink" href="#module-darkhistory.history.reionization" title="Permalink to this headline">¶</a></h1>
+<p>Reionization model.</p>
+<p class="rubric">Table of Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.history.reionization.photoion_rate" title="darkhistory.history.reionization.photoion_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">photoion_rate</span></code></a>(species)</td>
+<td>Photoionization rate.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">photoheat_rate</span></code>(species)</td>
+<td>Photoheating rate.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.history.reionization.alphaA_recomb" title="darkhistory.history.reionization.alphaA_recomb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alphaA_recomb</span></code></a>(species,&nbsp;T)</td>
+<td>Case-A recombination coefficient.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.history.reionization.coll_ion_rate" title="darkhistory.history.reionization.coll_ion_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coll_ion_rate</span></code></a>(species,&nbsp;T_m)</td>
+<td>Collisional ionization rate.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.history.reionization.recomb_cooling_rate" title="darkhistory.history.reionization.recomb_cooling_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">recomb_cooling_rate</span></code></a>(xHII,&nbsp;xHeII,&nbsp;xHeIII,&nbsp;T_m,&nbsp;rs)</td>
+<td>Recombination cooling rate.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.history.reionization.coll_ion_cooling_rate" title="darkhistory.history.reionization.coll_ion_cooling_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coll_ion_cooling_rate</span></code></a>(xHII,&nbsp;xHeII,&nbsp;xHeIII,&nbsp;…)</td>
+<td>Collisional ionization cooling rate.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">coll_exc_cooling_rate</span></code>(xHII,&nbsp;xHeII,&nbsp;xHeIII,&nbsp;…)</td>
+<td>Collisional excitation cooling rate.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.history.reionization.brem_cooling_rate" title="darkhistory.history.reionization.brem_cooling_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">brem_cooling_rate</span></code></a>(xHII,&nbsp;xHeII,&nbsp;xHeIII,&nbsp;T_m,&nbsp;rs)</td>
+<td>Bremsstrahlung cooling rate.</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="darkhistory.history.reionization.photoion_rate">
+<code class="descclassname">darkhistory.history.reionization.</code><code class="descname">photoion_rate</code><span class="sig-paren">(</span><em>species</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.reionization.photoion_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Photoionization rate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>species</strong> (<em>{'HI'</em><em>, </em><em>'HeI'</em><em>, </em><em>'HeII'}</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Interpolating function which takes redshift as an argument, and returns the photoionization rate of the species in s^-1. See 1801.04931.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.history.reionization.alphaA_recomb">
+<code class="descclassname">darkhistory.history.reionization.</code><code class="descname">alphaA_recomb</code><span class="sig-paren">(</span><em>species</em>, <em>T</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.reionization.alphaA_recomb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Case-A recombination coefficient.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>species</strong> (<em>{'HII'</em><em>, </em><em>'HeIIr'</em><em>, </em><em>'HeIId'</em><em>, </em><em>'HeIII'}</em>) – Species of interest.</li>
+<li><strong>T</strong> (<em>float</em>) – Matter temperature in eV.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Case-A recombination coefficient in cm^3/s. See astro-ph/0607331.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.history.reionization.coll_ion_rate">
+<code class="descclassname">darkhistory.history.reionization.</code><code class="descname">coll_ion_rate</code><span class="sig-paren">(</span><em>species</em>, <em>T_m</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.reionization.coll_ion_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collisional ionization rate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>species</strong> (<em>{'HI'</em><em>, </em><em>'HeI'</em><em>, </em><em>'HeII'}</em>) – Species of interest.</li>
+<li><strong>T_m</strong> (<em>float</em>) – Matter temperature in eV.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Collisional ionization rate in s^-1. See astro-ph/0607331.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.history.reionization.recomb_cooling_rate">
+<code class="descclassname">darkhistory.history.reionization.</code><code class="descname">recomb_cooling_rate</code><span class="sig-paren">(</span><em>xHII</em>, <em>xHeII</em>, <em>xHeIII</em>, <em>T_m</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.reionization.recomb_cooling_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recombination cooling rate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xHII</strong> (<em>float</em>) – n_HII/n_H.</li>
+<li><strong>xHeII</strong> (<em>float</em>) – n_HeII/n_H.</li>
+<li><strong>xHeIII</strong> (<em>float</em>) – n_HeIII/n_H.</li>
+<li><strong>T_m</strong> (<em>float</em>) – Matter temperature in eV.</li>
+<li><strong>rs</strong> (<em>float</em>) – Redshift (1+z).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Recombination cooling rate in eV s^-1. See astro-ph/0607331.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.history.reionization.coll_ion_cooling_rate">
+<code class="descclassname">darkhistory.history.reionization.</code><code class="descname">coll_ion_cooling_rate</code><span class="sig-paren">(</span><em>xHII</em>, <em>xHeII</em>, <em>xHeIII</em>, <em>T_m</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.reionization.coll_ion_cooling_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collisional ionization cooling rate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xHII</strong> (<em>float</em>) – n_HII/n_H.</li>
+<li><strong>xHeII</strong> (<em>float</em>) – n_HeII/n_H.</li>
+<li><strong>xHeIII</strong> (<em>float</em>) – n_HeIII/n_H.</li>
+<li><strong>T_m</strong> (<em>float</em>) – Matter temperature in eV.</li>
+<li><strong>rs</strong> (<em>float</em>) – Redshift (1+z).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Collisional ionization cooling rate in eV s^-1. See astro-ph/0607331.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.history.reionization.brem_cooling_rate">
+<code class="descclassname">darkhistory.history.reionization.</code><code class="descname">brem_cooling_rate</code><span class="sig-paren">(</span><em>xHII</em>, <em>xHeII</em>, <em>xHeIII</em>, <em>T_m</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.reionization.brem_cooling_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bremsstrahlung cooling rate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>xHII</strong> (<em>float</em>) – n_HII/n_H.</li>
+<li><strong>xHeII</strong> (<em>float</em>) – n_HeII/n_H.</li>
+<li><strong>xHeIII</strong> (<em>float</em>) – n_HeIII/n_H.</li>
+<li><strong>T_m</strong> (<em>float</em>) – Matter temperature in eV.</li>
+<li><strong>rs</strong> (<em>float</em>) – Redshift (1+z).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Bremsstrahlung cooling rate in eV s^-1. See astro-ph/0607331.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="darkhistory.history.tla.html" class="btn btn-neutral float-right" title="tla" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="darkhistory.history.histools.html" class="btn btn-neutral" title="histools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Hongwan Liu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

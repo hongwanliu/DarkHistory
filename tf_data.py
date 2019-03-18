@@ -9,6 +9,12 @@ from config import data_path
 # Load transfer functions for high-energy photons, low-energy photons, 
 # low-energy electrons, high-energy deposition, and CMB upscattered energy.
 
+import inspect
+
+frm = inspect.stack()[1]
+mod = inspect.getmodule(frm[0])
+print '[%s] %s' % (mod.__name__, msg)   
+
 print('****** Loading transfer functions... ******')
 
 try:

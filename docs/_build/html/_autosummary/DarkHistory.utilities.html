@@ -27,7 +27,9 @@
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="electrons" href="darkhistory.electrons.html" />
+    <link rel="prev" title="physics" href="darkhistory.physics.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -77,8 +79,23 @@
             
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../modules.html">darkhistory</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../modules.html">darkhistory</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="main.html">main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tf_data.html">tf_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">utilities</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.electrons.html">electrons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.history.html">history</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.low_energy.html">low_energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
+</ul>
+</li>
 </ul>
 
             
@@ -124,13 +141,15 @@
     
       <li><a href="../index.html">Docs</a> &raquo;</li>
         
+          <li><a href="../modules.html">darkhistory</a> &raquo;</li>
+        
       <li>utilities</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="../_sources/_autosummary/DarkHistory.utilities.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/_autosummary/darkhistory.utilities.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -146,6 +165,18 @@
   <div class="section" id="module-darkhistory.utilities">
 <span id="utilities"></span><h1>utilities<a class="headerlink" href="#module-darkhistory.utilities" title="Permalink to this headline">¶</a></h1>
 <p>Non-physics functions used in darkhistory.</p>
+<p class="rubric">Table of Classes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.Interpolator2D" title="darkhistory.utilities.Interpolator2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interpolator2D</span></code></a>(arr0,&nbsp;name0,&nbsp;arr1,&nbsp;name1,&nbsp;val_arr)</td>
+<td>Interpolation function over list of objects</td>
+</tr>
+</tbody>
+</table>
 <p class="rubric">Table of Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -153,32 +184,117 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.arrays_equal" title="darkhistory.utilities.arrays_equal"><code class="xref py py-obj docutils literal"><span class="pre">arrays_equal</span></code></a>(ndarray_list)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.arrays_equal" title="darkhistory.utilities.arrays_equal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">arrays_equal</span></code></a>(ndarray_list)</td>
 <td>Check if the arrays contained in <cite>ndarray_list</cite> are equal.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.compare_arr" title="darkhistory.utilities.compare_arr"><code class="xref py py-obj docutils literal"><span class="pre">compare_arr</span></code></a>(ndarray_list)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.compare_arr" title="darkhistory.utilities.compare_arr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compare_arr</span></code></a>(ndarray_list)</td>
 <td>Prints the arrays in a suitable format for comparison.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.is_log_spaced" title="darkhistory.utilities.is_log_spaced"><code class="xref py py-obj docutils literal"><span class="pre">is_log_spaced</span></code></a>(arr)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.is_log_spaced" title="darkhistory.utilities.is_log_spaced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_log_spaced</span></code></a>(arr)</td>
 <td>Checks if <cite>arr</cite> is a log-spaced array.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.log_1_plus_x" title="darkhistory.utilities.log_1_plus_x"><code class="xref py py-obj docutils literal"><span class="pre">log_1_plus_x</span></code></a>(x)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.log_1_plus_x" title="darkhistory.utilities.log_1_plus_x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_1_plus_x</span></code></a>(x)</td>
 <td>Computes log(1+x) with greater floating point accuracy.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.bernoulli" title="darkhistory.utilities.bernoulli"><code class="xref py py-obj docutils literal"><span class="pre">bernoulli</span></code></a>(k)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.bernoulli" title="darkhistory.utilities.bernoulli"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bernoulli</span></code></a>(k)</td>
 <td>Returns the kth Bernoulli number.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.log_series_diff" title="darkhistory.utilities.log_series_diff"><code class="xref py py-obj docutils literal"><span class="pre">log_series_diff</span></code></a>(b,&nbsp;a)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.log_series_diff" title="darkhistory.utilities.log_series_diff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_series_diff</span></code></a>(b,&nbsp;a)</td>
 <td>Returns the Taylor series for log(1+b) - log(1+a).</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.spence_series_diff" title="darkhistory.utilities.spence_series_diff"><code class="xref py py-obj docutils literal"><span class="pre">spence_series_diff</span></code></a>(b,&nbsp;a)</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.spence_series_diff" title="darkhistory.utilities.spence_series_diff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spence_series_diff</span></code></a>(b,&nbsp;a)</td>
 <td>Returns the Taylor series for Li2(b) - Li2(a).</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.check_err" title="darkhistory.utilities.check_err"><code class="xref py py-obj docutils literal"><span class="pre">check_err</span></code></a>(val,&nbsp;err,&nbsp;epsrel)</td>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.exp_expn" title="darkhistory.utilities.exp_expn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exp_expn</span></code></a>(n,&nbsp;x)</td>
+<td>Returns exp(x)*E_n(n, x).</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.hyp2f1_func_real" title="darkhistory.utilities.hyp2f1_func_real"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hyp2f1_func_real</span></code></a>(n,&nbsp;x)</td>
+<td>Returns the real part of 2F1(1, n+1, n+2, x).</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.get_grid" title="darkhistory.utilities.get_grid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_grid</span></code></a>(a,&nbsp;b)</td>
+<td>Returns a 2D grid of coordinates from 2 1D arrays.</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.check_err" title="darkhistory.utilities.check_err"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_err</span></code></a>(val,&nbsp;err,&nbsp;epsrel)</td>
 <td>Checks the relative error given a tolerance.</td>
 </tr>
 </tbody>
 </table>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="darkhistory.utilities.Interpolator2D">
+<em class="property">class </em><code class="descclassname">darkhistory.utilities.</code><code class="descname">Interpolator2D</code><span class="sig-paren">(</span><em>arr0</em>, <em>name0</em>, <em>arr1</em>, <em>name1</em>, <em>val_arr</em>, <em>logInterp=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.Interpolator2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Interpolation function over list of objects</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>val_arr</strong> (<em>list of objects</em>) – List of objects, ndim = (arr0.size, arr1.size, …)</li>
+<li><strong>arr0</strong> (<em>ndarray</em>) – list of values along 0th dimension</li>
+<li><strong>arr1</strong> (<em>ndarray</em>) – list of values along 1st dimension</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="darkhistory.utilities.Interpolator2D.interp_func">
+<code class="descname">interp_func</code><a class="headerlink" href="#darkhistory.utilities.Interpolator2D.interp_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>A 2D interpolation function over xe and rs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="darkhistory.utilities.Interpolator2D._grid_vals">
+<code class="descname">_grid_vals</code><a class="headerlink" href="#darkhistory.utilities.Interpolator2D._grid_vals" title="Permalink to this definition">¶</a></dt>
+<dd><p>a nD array of input data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.Interpolator2D.get_val" title="darkhistory.utilities.Interpolator2D.get_val"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_val</span></code></a>(val0,&nbsp;val1)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.utilities.Interpolator2D.get_vals" title="darkhistory.utilities.Interpolator2D.get_vals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_vals</span></code></a>(val0,&nbsp;vals1)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="darkhistory.utilities.Interpolator2D.get_val">
+<code class="descname">get_val</code><span class="sig-paren">(</span><em>val0</em>, <em>val1</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.Interpolator2D.get_val" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="darkhistory.utilities.Interpolator2D.get_vals">
+<code class="descname">get_vals</code><span class="sig-paren">(</span><em>val0</em>, <em>vals1</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.Interpolator2D.get_vals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="methods">
 <h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
 <blockquote>
@@ -319,6 +435,84 @@
 </dd></dl>
 
 <dl class="function">
+<dt id="darkhistory.utilities.exp_expn">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">exp_expn</code><span class="sig-paren">(</span><em>n</em>, <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.exp_expn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns exp(x)*E_n(n, x).</p>
+<p>Circumvents overflow error in np.exp by expanding the exponential integral in a series.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>n</strong> (<em>{1</em><em>,</em><em>2}</em>) – The order of the exponential integral.</li>
+<li><strong>x</strong> (<em>ndarray</em>) – The argument of the function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The result of exp(x)*E_n(n, x)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.hyp2f1_func_real">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">hyp2f1_func_real</code><span class="sig-paren">(</span><em>n</em>, <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.hyp2f1_func_real" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the real part of 2F1(1, n+1, n+2, x).</p>
+<p>Avoids the need for complex numbers in scipy.special.hyp2f1, which is very slow.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>n</strong> (<em>integer</em>) – The order of 2F1(1, n+1, n+2, x) to evaluate.</li>
+<li><strong>x</strong> (<em>ndarray</em>) – The main argument of the function.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The result of 2F1(1, n+1, n+2, x).</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.utilities.get_grid">
+<code class="descclassname">darkhistory.utilities.</code><code class="descname">get_grid</code><span class="sig-paren">(</span><em>a</em>, <em>b</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.get_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a 2D grid of coordinates from 2 1D arrays.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<em>ndarray</em>) – First array.</li>
+<li><strong>b</strong> (<em>ndarray</em>) – Second array.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">2D array with grid values from <cite>a</cite> and <cite>b</cite>.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This function returns an array that when passed to RegularGridInterpolator produces the same result as scipy.interpolate.interp2d(a, b).</p>
+</div>
+</dd></dl>
+
+<dl class="function">
 <dt id="darkhistory.utilities.check_err">
 <code class="descclassname">darkhistory.utilities.</code><code class="descname">check_err</code><span class="sig-paren">(</span><em>val</em>, <em>err</em>, <em>epsrel</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.check_err" title="Permalink to this definition">¶</a></dt>
 <dd><p>Checks the relative error given a tolerance.</p>
@@ -347,6 +541,15 @@
           </div>
           <footer>
   
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="darkhistory.electrons.html" class="btn btn-neutral float-right" title="electrons" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="darkhistory.physics.html" class="btn btn-neutral" title="physics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
 
   <hr/>
 
@@ -373,17 +576,7 @@
 
     
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>

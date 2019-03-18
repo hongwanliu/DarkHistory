@@ -28,7 +28,8 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="spec" href="darkhistory.spec.html" /> 
+    <link rel="next" title="config" href="config.html" />
+    <link rel="prev" title="darkhistory" href="../modules.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -80,9 +81,18 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../modules.html">darkhistory</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">main</a></li>
-<li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">main</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tf_data.html">tf_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.physics.html">physics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.utilities.html">utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="darkhistory.electrons.html">electrons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.history.html">history</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.low_energy.html">low_energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
 </ul>
 </li>
 </ul>
@@ -153,28 +163,65 @@
             
   <div class="section" id="module-main">
 <span id="main"></span><h1>main<a class="headerlink" href="#module-main" title="Permalink to this headline">¶</a></h1>
-<p>Module containing the main DarkHistory functions.</p>
-<p class="rubric">Functions</p>
+<p>Module containing the main DarkHistory function.</p>
+<p class="rubric">Table of Methods</p>
 <table border="1" class="longtable docutils">
 <colgroup>
 <col width="10%" />
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">evolve</span></code>(in_spec_elec,&nbsp;in_spec_phot,&nbsp;…[,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="#main.evolve" title="main.evolve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evolve</span></code></a>([in_spec_elec,&nbsp;in_spec_phot,&nbsp;…])</td>
 <td>Main function that computes the temperature and ionization history.</td>
-</tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">load_ics_data</span></code>()</td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal"><span class="pre">load_std</span></code>(xe_init,&nbsp;Tm_init,&nbsp;rs)</td>
-<td>Load the std free electron fraction (xe) and matter temperature (Tm) histories.</td>
-</tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal"><span class="pre">load_trans_funcs</span></code>(direc)</td>
-<td></td>
 </tr>
 </tbody>
 </table>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="main.evolve">
+<code class="descclassname">main.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>in_spec_elec=None</em>, <em>in_spec_phot=None</em>, <em>rate_func_N=None</em>, <em>rate_func_eng=None</em>, <em>DM_process=None</em>, <em>mDM=None</em>, <em>sigmav=None</em>, <em>lifetime=None</em>, <em>primary=None</em>, <em>struct_boost=None</em>, <em>start_rs=None</em>, <em>end_rs=4</em>, <em>helium_TLA=False</em>, <em>reion_switch=False</em>, <em>reion_rs=None</em>, <em>photoion_rate_func=None</em>, <em>photoheat_rate_func=None</em>, <em>xe_reion_func=None</em>, <em>init_cond=None</em>, <em>coarsen_factor=1</em>, <em>backreaction=True</em>, <em>compute_fs_method='old'</em>, <em>use_tqdm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#main.evolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Main function that computes the temperature and ionization history.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>in_spec_elec</strong> (<a class="reference internal" href="spec/darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a><em>, </em><em>optional</em>) – Spectrum per injection event into electrons. rs of the spectrum
+must be the initial condition.</li>
+<li><strong>in_spec_phot</strong> (<a class="reference internal" href="spec/darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a><em>, </em><em>optional</em>) – Spectrum per injection event into photons.</li>
+<li><strong>rate_func_N</strong> (<em>function</em><em>, </em><em>optional</em>) – Function returning number of injection events per volume per time.</li>
+<li><strong>rate_func_eng</strong> (<em>function</em><em>, </em><em>optional</em>) – Function returning energy injected per volume per time.</li>
+<li><strong>DM_process</strong> (<em>{'swave'</em><em>, </em><em>'decay'}</em><em>, </em><em>optional</em>) – Dark matter process to use.</li>
+<li><strong>sigmav</strong> (<em>float</em><em>, </em><em>optional</em>) – Thermally averaged cross section for <cite>DM_process == ‘swave’</cite>.</li>
+<li><strong>lifetime</strong> (<em>float</em><em>, </em><em>optional</em>) – Decay lifetime for <cite>DM_process == ‘decay’</cite>.</li>
+<li><strong>primary</strong> (<em>string</em><em>, </em><em>optional</em>) – Primary channel of annihilation/decay. Refer to
+<cite>darkhistory.spec.pppc.chan_list</cite> for complete list. Use <cite>‘elec_delta’</cite> or <cite>‘phot_delta’</cite> for delta function injections of a pair of photons/an electron-positron pair.</li>
+<li><strong>struct_boost</strong> (<em>function</em><em>, </em><em>optional</em>) – Energy injection boost factor due to structure formation.</li>
+<li><strong>start_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – Starting redshift (1+z) to evolve from. Default is 1+z = 3000.
+Specify only for use with <cite>DM_process</cite> initialize. Otherwise,
+initialize <cite>in_spec_elec.rs</cite> and/or <cite>in_spec_phot.rs</cite> directly.</li>
+<li><strong>end_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – Final redshift (1+z) to evolve to. Default is 1+z = 4.</li>
+<li><strong>reion_switch</strong> (<em>bool</em>) – Reionization model included if true.</li>
+<li><strong>helium_TLA</strong> (<em>bool</em>) – If <cite>True</cite>, the TLA is solved with helium.</li>
+<li><strong>reion_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – Redshift (1+z) at which reionization effects turn on.</li>
+<li><strong>photoion_rate_func</strong> (<em>tuple of functions</em><em>, </em><em>optional</em>) – Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to <cite>darkhistory.history.reionization.photoion_rate</cite>.</li>
+<li><strong>photoheat_rate_func</strong> (<em>tuple of functions</em><em>, </em><em>optional</em>) – Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to <cite>darkhistory.history.reionization.photoheat_rate</cite>.</li>
+<li><strong>xe_reion_func</strong> (<em>function</em><em>, </em><em>optional</em>) – Specifies a fixed ionization history after reion_rs.</li>
+<li><strong>init_cond</strong> (<em>tuple of floats</em>) – Specifies the initial (xH, xHe, Tm). Defaults to RECFAST if None.</li>
+<li><strong>coarsen_factor</strong> (<em>int</em>) – Coarsening to apply to the transfer function matrix.</li>
+<li><strong>backreaction</strong> (<em>bool</em>) – If <cite>False</cite>, uses the baseline TLA solution to calculate f_c(z).</li>
+<li><strong>use_tqdm</strong> (<em>bool</em><em>, </em><em>optional</em>) – Uses tqdm if true.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</div>
 </div>
 
 
@@ -185,8 +232,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="darkhistory.spec.html" class="btn btn-neutral float-right" title="spec" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="config.html" class="btn btn-neutral float-right" title="config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
+      
+        <a href="../modules.html" class="btn btn-neutral" title="darkhistory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -216,17 +265,7 @@
 
     
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>

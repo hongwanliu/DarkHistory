@@ -1,25 +1,17 @@
 main
-====
+======================
 
 .. automodule:: main
-
    
-   
-   .. rubric:: Functions
+   .. rubric:: Table of Methods
 
    .. autosummary::
    
       evolve
-      load_ics_data
-      load_std
-      load_trans_funcs
    
-   
+Methods
+-------
 
-   
-   
-   
-
-   
+   .. autofunction:: evolve
    
    
