@@ -1,7 +1,7 @@
-elec_cooling
+ics_cooling
 =====================================
 
-.. automodule:: darkhistory.electrons.elec_cooling
+.. automodule:: darkhistory.electrons.ics.ics_cooling
 
    
    
@@ -9,12 +9,12 @@ elec_cooling
 
    .. autosummary::
    
-      get_elec_cooling_tf
+      get_ics_cooling_tf
 
 Methods
 -------
 
-   .. autofunction:: get_elec_cooling_tf 
+   .. autofunction:: get_ics_cooling_tf 
    
 
    

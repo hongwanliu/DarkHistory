@@ -1,0 +1,23 @@
+electrons
+=================
+
+.. automodule:: darkhistory.history
+
+.. rubric:: Table of Sub-Modules
+
+.. autosummary::
+   :toctree: history
+   
+   darkhistory.history.histools
+   darkhistory.history.reionization
+   darkhistory.history.tla
+
+   
+
+   
+   
+   
+
+   
+   
+   

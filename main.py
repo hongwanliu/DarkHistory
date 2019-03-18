@@ -18,7 +18,7 @@ from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
 
 from darkhistory.electrons import positronium as pos
-from darkhistory.electrons.elec_cooling import get_elec_cooling_tf_fast
+from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
@@ -315,7 +315,7 @@ def evolve(
         # Get the data necessary to compute the electron cooling results. 
         # coll_ion_sec_elec_specs is \bar{N} for collisional ionization, 
         # and coll_exc_sec_elec_specs \bar{N} for collisional excitation. 
-        # Heating and others are evaluated in get_elec_cooling_tf_fast
+        # Heating and others are evaluated in get_elec_cooling_tf
         # itself.
 
         # Contains information that makes converting an energy loss spectrum 
@@ -399,12 +399,12 @@ def evolve(
                 ics_sec_phot_tf, elec_processes_lowengelec_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 continuum_loss, deposited_ICS_arr
-            ) = get_elec_cooling_tf_fast(
+            ) = get_elec_cooling_tf(
                     ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
                     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
                     eleceng, photeng, rs,
                     x_arr[-1,0], xHe=x_arr[-1,1],
-                    linalg=True, ics_engloss_data=ics_engloss_data
+                    ics_engloss_data=ics_engloss_data
                 )
 
             # Apply the transfer function to the input electron spectrum. 

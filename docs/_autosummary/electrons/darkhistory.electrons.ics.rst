@@ -13,6 +13,7 @@ ics
    darkhistory.electrons.ics.engloss_diff_terms
    darkhistory.electrons.ics.ics_spectrum
    darkhistory.electrons.ics.ics_engloss_spectrum
+   darkhistory.electrons.ics.ics_cooling
 
    
    
