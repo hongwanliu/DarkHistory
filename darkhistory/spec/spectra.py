@@ -397,7 +397,7 @@ class Spectra:
         This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
         """
         if np.isscalar(other):
-            
+
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
             out_spectra._in_eng = self.in_eng
@@ -872,7 +872,7 @@ class Spectra:
                 self.eng, new_data, spec_type=weight.spec_type
             )
         else:
-            raise TypeError('weight must be an ndarray or spectrum.')
+            raise TypeError('weight must be an ndarray or Spectrum.')
 
     def rebin(self, out_eng):
         """ Re-bins all `Spectrum` objects according to a new abscissa.

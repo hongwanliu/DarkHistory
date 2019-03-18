@@ -323,7 +323,7 @@ struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
 log_struct_interp = interp1d(
     np.log(struct_data[:,0]), np.log(struct_data[:,1]),
-    bounds_error=False, fill_value=(np.nan, 1.)
+    bounds_error=False, fill_value=(np.nan, 0.)
 )
 
 def struct_boost_func(model='einasto_with_subs', model_params=None):
