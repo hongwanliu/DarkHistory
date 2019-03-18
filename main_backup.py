@@ -203,12 +203,12 @@ def evolve(
         raise TypeError('Cannot log interp over negative numbers')
 
     # Load the standard TLA and standard initializations.
-    xH_std  = phys.xH_std
-    xHe_std = phys.xHe_std
+    xH_std  = phys.xHII_std
+    xHe_std = phys.xHeII_std
     Tm_std  = phys.Tm_std
 
-    xH_init_std  = phys.xH_std(start_rs)
-    xHe_init_std = phys.xHe_std(start_rs)
+    xH_init_std  = phys.xHII_std(start_rs)
+    xHe_init_std = phys.xHeII_std(start_rs)
     Tm_init_std  = phys.Tm_std(start_rs) 
 
     # Initialize if not specified for std_soln.
