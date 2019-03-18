@@ -446,8 +446,13 @@ class Spectrum:
         invSpec = Spectrum(self.eng, 1/self._data, self.rs, self.in_eng)
         return other*invSpec
 
-    def switch_spec_type(self):
+    def switch_spec_type(self, *target):
         """Switches between the type of values to be stored.
+
+        Parameters
+        ----------
+        target : {'N', 'dNdE'}, optional
+            The target type to switch to. If not specified, performs a switch regardless. 
 
         Although both N and dN/dE can be accessed regardless of which values
         are stored, performing a switch before repeated computations can
@@ -455,10 +460,10 @@ class Spectrum:
 
         """
         log_bin_width = get_log_bin_width(self.eng)
-        if self._spec_type == 'N':
+        if self._spec_type == 'N' and not target == 'N':
             self._data = self._data/(self.eng*log_bin_width)
             self._spec_type = 'dNdE'
-        elif self._spec_type == 'dNdE':
+        elif self._spec_type == 'dNdE' and not target == 'dNdE':
             self._data = self._data*self.eng*log_bin_width
             self._spec_type = 'N'
 

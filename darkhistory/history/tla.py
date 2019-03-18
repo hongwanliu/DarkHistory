@@ -1,4 +1,4 @@
-"""Three-level atom model.
+"""Three-level atom model and integrator.
 
 """
 
