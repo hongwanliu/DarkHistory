@@ -2,7 +2,7 @@
 
 """
 # import os
-# import numpy as np
+import numpy as np
 # import pickle
 
 # # Location of all data files. 
