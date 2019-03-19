@@ -99,7 +99,7 @@ def setup(app):
 # extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary',
 #     'sphinx.ext.doctest','sphinx.ext.napoleon']
 
-extensions = ['numpydoc']
+extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary','numpydoc']
 
 numpydoc_class_members_toctree = False
 
