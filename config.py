@@ -1,4 +1,4 @@
-""" Module for configuring DarkHistory.
+""" Configuration and defaults.
 
 """
 import os

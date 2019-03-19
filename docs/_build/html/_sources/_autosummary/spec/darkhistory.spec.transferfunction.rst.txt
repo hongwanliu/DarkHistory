@@ -10,11 +10,6 @@ transferfunction
    TransFuncAtEnergy
    TransFuncAtRedshift
 
-.. rubric:: Table of Methods
-
-.. autosummary::
-
-   process_raw_tf
 
 Classes
 -------
@@ -41,7 +36,3 @@ Classes
    .. autoautosummary:: darkhistory.spec.transferfunction.TransFuncAtRedshift
       :methods:
    
-Methods
--------
-
-.. autofunction:: process_raw_tf  

@@ -4,7 +4,7 @@ import numpy as np
 import scipy.special as sp
 
 from darkhistory.utilities import log_1_plus_x
-from darkhistory.electrons.ics import bose_einstein_integrals as BE_int
+from darkhistory.electrons.ics import BE_integrals as BE_int
 
 def F1_up_down(beta, delta, T, as_pairs=False):
     """ Computes the F1_upscatter - F1_downscatter term.

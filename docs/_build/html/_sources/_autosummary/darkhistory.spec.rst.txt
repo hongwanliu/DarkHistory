@@ -8,6 +8,7 @@ spec
 .. autosummary::
    :toctree: spec
    
+   darkhistory.spec.pppc
    darkhistory.spec.spectools
    darkhistory.spec.spectrum
    darkhistory.spec.spectra

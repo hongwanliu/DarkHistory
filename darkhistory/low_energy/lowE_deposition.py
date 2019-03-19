@@ -18,9 +18,9 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     Parameters
      ----------
     phot_spec : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_.
+        spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number *per baryon*.
     elec_spec : Spectrum object
-        spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number _per baryon_.
+        spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number *per baryon*.
     x : list of floats
         number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
     dE_dVdt_inj : float

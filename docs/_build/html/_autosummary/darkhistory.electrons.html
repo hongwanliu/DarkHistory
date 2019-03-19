@@ -28,8 +28,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="xsecs" href="electrons/darkhistory.electrons.xsecs.html" />
-    <link rel="prev" title="transferfunclist" href="spec/darkhistory.spec.transferfunclist.html" /> 
+    <link rel="next" title="elec_cooling" href="electrons/darkhistory.electrons.elec_cooling.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -81,13 +80,18 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../modules.html">darkhistory</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
+<li class="toctree-l2"><a class="reference internal" href="main.html">main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tf_data.html">tf_data</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">electrons</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="electrons/darkhistory.electrons.xsecs.html">xsecs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="electrons/darkhistory.electrons.elec_cooling.html">elec_cooling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="electrons/darkhistory.electrons.positronium.html">positronium</a></li>
 <li class="toctree-l3"><a class="reference internal" href="electrons/darkhistory.electrons.ics.html">ics</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.history.html">history</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.low_energy.html">low_energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="darkhistory.spec.html">spec</a></li>
 </ul>
 </li>
 </ul>
@@ -166,11 +170,11 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="electrons/darkhistory.electrons.xsecs.html#module-darkhistory.electrons.xsecs" title="darkhistory.electrons.xsecs"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.electrons.xsecs</span></code></a></td>
-<td>Atomic cooling cross sections.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="electrons/darkhistory.electrons.elec_cooling.html#module-darkhistory.electrons.elec_cooling" title="darkhistory.electrons.elec_cooling"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.electrons.elec_cooling</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="electrons/darkhistory.electrons.elec_cooling.html#module-darkhistory.electrons.elec_cooling" title="darkhistory.electrons.elec_cooling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">darkhistory.electrons.elec_cooling</span></code></a></td>
 <td>Functions for electron cooling.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="electrons/darkhistory.electrons.positronium.html#module-darkhistory.electrons.positronium" title="darkhistory.electrons.positronium"><code class="xref py py-obj docutils literal notranslate"><span class="pre">darkhistory.electrons.positronium</span></code></a></td>
+<td>Positronium annihilation functions.</td>
 </tr>
 </tbody>
 </table>
@@ -181,7 +185,7 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="electrons/darkhistory.electrons.ics.html#module-darkhistory.electrons.ics" title="darkhistory.electrons.ics"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.electrons.ics</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="electrons/darkhistory.electrons.ics.html#module-darkhistory.electrons.ics" title="darkhistory.electrons.ics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">darkhistory.electrons.ics</span></code></a></td>
 <td>Functions for computing ICS spectra integrated over the CMB.</td>
 </tr>
 </tbody>
@@ -196,10 +200,8 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="electrons/darkhistory.electrons.xsecs.html" class="btn btn-neutral float-right" title="xsecs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="electrons/darkhistory.electrons.elec_cooling.html" class="btn btn-neutral float-right" title="elec_cooling" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-      
-        <a href="spec/darkhistory.spec.transferfunclist.html" class="btn btn-neutral" title="transferfunclist" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -229,20 +231,11 @@
 
     
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
     
 
   

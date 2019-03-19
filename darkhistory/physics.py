@@ -163,7 +163,7 @@ def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_l
     return H0*np.sqrt(omega_rad*rs**4 + omega_m*rs**3 + omega_lambda)
 
 def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ |dt/dz| in s.
+    """ abs(dt/dz) in s.
 
     Assumes a flat universe.
 
@@ -213,7 +213,7 @@ def TCMB(rs):
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons/cm^3/eV.
 
-    Returns zero if the energy exceeds 500 times the temperature.
+    Returns zero if the energy exceeds 500 times the temperature. See `darkhistory.utilities.arrays_equal`. 
 
     Parameters
     ----------

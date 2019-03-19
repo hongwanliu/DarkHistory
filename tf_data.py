@@ -1,4 +1,4 @@
-""" Module for loading DarkHistory data.
+""" Loads the transfer function data.
 
 """
 
@@ -8,6 +8,7 @@ from config import data_path
 
 # Load transfer functions for high-energy photons, low-energy photons, 
 # low-energy electrons, high-energy deposition, and CMB upscattered energy.
+
 
 print('****** Loading transfer functions... ******')
 

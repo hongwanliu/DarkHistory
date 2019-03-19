@@ -8,8 +8,8 @@ electrons
 .. autosummary::
    :toctree: electrons
    
-   darkhistory.electrons.xsecs
    darkhistory.electrons.elec_cooling
+   darkhistory.electrons.positronium
 
 .. rubric:: Table of Packages
 

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>darkhistory &mdash; DarkHistory  documentation</title>
+  <title>DarkHistory &mdash; DarkHistory  documentation</title>
   
 
   
@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="main" href="_autosummary/main.html" />
     <link rel="prev" title="Welcome to DarkHistory’s documentation!" href="index.html" /> 
 
   
@@ -79,10 +80,11 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">darkhistory</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">DarkHistory</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="_autosummary/main.html">main</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_autosummary/darkhistory.spec.html">spec</a></li>
-<li class="toctree-l2"><a class="reference internal" href="_autosummary/darkhistory.electrons.html">electrons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/tf_data.html">tf_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="_autosummary/darkhistory.html">darkhistory</a></li>
 </ul>
 </li>
 </ul>
@@ -130,7 +132,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>darkhistory</li>
+      <li>DarkHistory</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -150,7 +152,7 @@
            <div itemprop="articleBody">
             
   <div class="section" id="darkhistory">
-<h1>darkhistory<a class="headerlink" href="#darkhistory" title="Permalink to this headline">¶</a></h1>
+<h1>DarkHistory<a class="headerlink" href="#darkhistory" title="Permalink to this headline">¶</a></h1>
 <p class="rubric">Table of Sub-Modules</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -158,14 +160,14 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="_autosummary/DarkHistory.physics.html#module-darkhistory.physics" title="darkhistory.physics"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.physics</span></code></a></td>
-<td>Physics functions as well as constants.</td>
+<tr class="row-odd"><td><a class="reference internal" href="_autosummary/main.html#module-main" title="main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a></td>
+<td></td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="_autosummary/DarkHistory.utilities.html#module-darkhistory.utilities" title="darkhistory.utilities"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.utilities</span></code></a></td>
-<td>Non-physics functions used in darkhistory.</td>
+<tr class="row-even"><td><a class="reference internal" href="_autosummary/config.html#module-config" title="config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">config</span></code></a></td>
+<td>Configuration and defaults.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="_autosummary/main.html#module-main" title="main"><code class="xref py py-obj docutils literal"><span class="pre">main</span></code></a></td>
-<td>Module containing the main DarkHistory functions.</td>
+<tr class="row-odd"><td><a class="reference internal" href="_autosummary/tf_data.html#module-tf_data" title="tf_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tf_data</span></code></a></td>
+<td>Loads the transfer function data.</td>
 </tr>
 </tbody>
 </table>
@@ -176,11 +178,8 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="_autosummary/darkhistory.spec.html#module-darkhistory.spec" title="darkhistory.spec"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.spec</span></code></a></td>
-<td>Classes and functions for manipulating spectra.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="_autosummary/darkhistory.electrons.html#module-darkhistory.electrons" title="darkhistory.electrons"><code class="xref py py-obj docutils literal"><span class="pre">darkhistory.electrons</span></code></a></td>
-<td>Electron cooling processes.</td>
+<tr class="row-odd"><td><a class="reference internal" href="_autosummary/darkhistory.html#module-darkhistory" title="darkhistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">darkhistory</span></code></a></td>
+<td>Main body of the code.</td>
 </tr>
 </tbody>
 </table>
@@ -194,6 +193,8 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="_autosummary/main.html" class="btn btn-neutral float-right" title="main" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
       
         <a href="index.html" class="btn btn-neutral" title="Welcome to DarkHistory’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
@@ -204,7 +205,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2017, Hongwan Liu
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer
 
     </p>
   </div>
@@ -225,20 +226,11 @@
 
     
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'./',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
         <script type="text/javascript" src="_static/jquery.js"></script>
         <script type="text/javascript" src="_static/underscore.js"></script>
         <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
     
 
   
