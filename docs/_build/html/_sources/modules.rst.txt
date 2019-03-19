@@ -1,4 +1,4 @@
-darkhistory
+DarkHistory
 ===================
 
 .. rubric:: Table of Sub-Modules
@@ -6,14 +6,13 @@ darkhistory
 .. autosummary::
    :toctree: _autosummary
    
-   darkhistory.physics
-   darkhistory.utilities
    main
+   config
+   tf_data
 
 .. rubric:: Table of Packages
 
 .. autosummary:: 
    :toctree: _autosummary
-   
-   darkhistory.spec
-   darkhistory.electrons
+
+   darkhistory

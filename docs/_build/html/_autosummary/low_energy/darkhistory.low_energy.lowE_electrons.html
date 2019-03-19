@@ -1,0 +1,299 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>lowE_electrons &mdash; DarkHistory  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="lowE_photons" href="darkhistory.low_energy.lowE_photons.html" />
+    <link rel="prev" title="lowE_deposition" href="darkhistory.low_energy.lowE_deposition.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> DarkHistory
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../main.html">main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tf_data.html">tf_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.electrons.html">electrons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.history.html">history</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.low_energy.html">low_energy</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.low_energy.lowE_deposition.html">lowE_deposition</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">lowE_electrons</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.low_energy.lowE_photons.html">lowE_photons</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.spec.html">spec</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DarkHistory</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../modules.html">darkhistory</a> &raquo;</li>
+        
+          <li><a href="../darkhistory.low_energy.html">low_energy</a> &raquo;</li>
+        
+      <li>lowE_electrons</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/_autosummary/low_energy/darkhistory.low_energy.lowE_electrons.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-darkhistory.low_energy.lowE_electrons">
+<span id="lowe-electrons"></span><h1>lowE_electrons<a class="headerlink" href="#module-darkhistory.low_energy.lowE_electrons" title="Permalink to this headline">¶</a></h1>
+<p class="rubric">Table of Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.low_energy.lowE_electrons.make_interpolator" title="darkhistory.low_energy.lowE_electrons.make_interpolator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_interpolator</span></code></a>([interp_type])</td>
+<td>Creates cubic splines that interpolate the Medea Data.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#darkhistory.low_energy.lowE_electrons.compute_fs" title="darkhistory.low_energy.lowE_electrons.compute_fs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_fs</span></code></a>(MEDEA_interp,&nbsp;spec_elec,&nbsp;xe,&nbsp;…)</td>
+<td>Given an electron energy spectrum, calculate how much of that energy splits into continuum photons, lyman_alpha transitions, H ionization, He ionization, and heating of the IGM.</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="darkhistory.low_energy.lowE_electrons.make_interpolator">
+<code class="descclassname">darkhistory.low_energy.lowE_electrons.</code><code class="descname">make_interpolator</code><span class="sig-paren">(</span><em>interp_type='2D'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.low_energy.lowE_electrons.make_interpolator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates cubic splines that interpolate the Medea Data.  Stores them in globally defined variables so that these functions are only computed once</p>
+<p>Assumes that the data files are in the same directory as this script.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>interp_type</strong> (<em>{'1D'</em><em>, </em><em>'2D'}</em><em>, </em><em>optional</em>) – Returns the type of interpolation over the MEDEA data.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The interpolating function (takes x_e and electron energy)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="../DarkHistory.utilities.html#darkhistory.utilities.Interpolator2D" title="darkhistory.utilities.Interpolator2D">Interpolator2D</a> or function</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="darkhistory.low_energy.lowE_electrons.compute_fs">
+<code class="descclassname">darkhistory.low_energy.lowE_electrons.</code><code class="descname">compute_fs</code><span class="sig-paren">(</span><em>MEDEA_interp</em>, <em>spec_elec</em>, <em>xe</em>, <em>dE_dVdt_inj</em>, <em>dt</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.low_energy.lowE_electrons.compute_fs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an electron energy spectrum, calculate how much of that energy splits into
+continuum photons, lyman_alpha transitions, H ionization, He ionization, and heating of the IGM.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>spec_elec</strong> (<em>Spectrum object</em>) – spectrum of low energy electrons. spec_elec.toteng() should return energy per baryon.</li>
+<li><strong>xe</strong> (<em>float</em>) – The ionization fraction ne/nH.</li>
+<li><strong>dE_dVdt_inj</strong> (<em>float</em>) – dE/dVdt, i.e. energy injection rate of DM per volume per time</li>
+<li><strong>dt</strong> (<em>float</em>) – time in seconds over which these electrons were deposited.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Ratio of deposited energy to a given channel over energy deposited by DM.
+The order of the channels is heat, lyman, ionH, ionHe, cont</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list of floats</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="darkhistory.low_energy.lowE_photons.html" class="btn btn-neutral float-right" title="lowE_photons" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="darkhistory.low_energy.lowE_deposition.html" class="btn btn-neutral" title="lowE_deposition" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, Hongwan Liu
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

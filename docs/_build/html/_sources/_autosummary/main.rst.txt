@@ -1,25 +1,15 @@
 main
-====
+======================
 
 .. automodule:: main
+   
+.. rubric:: Methods
 
-   
-   
-   .. rubric:: Functions
+.. autosummary::
+  :toctree: main
 
-   .. autosummary::
-   
-      evolve
-      load_ics_data
-      load_std
-      load_trans_funcs
-   
-   
-
-   
-   
-   
-
-   
+  evolve
+  get_elec_cooling_data
+  get_tf
    
    

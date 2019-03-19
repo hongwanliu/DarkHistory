@@ -119,8 +119,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DarkHistory'
-copyright = '2017, Hongwan Liu'
-author = 'Hongwan Liu'
+copyright = '2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer'
+author = 'Hongwan Liu, Gregory Ridgway and Tracy Slatyer'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

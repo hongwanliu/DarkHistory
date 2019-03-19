@@ -9,13 +9,12 @@ elec_cooling
 
    .. autosummary::
    
-      cool_elec
+      get_elec_cooling_tf
 
 Methods
 -------
 
-   .. autofunction:: cool_elec
-   
+   .. autofunction:: get_elec_cooling_tf 
    
 
    

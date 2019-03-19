@@ -10,22 +10,15 @@ physics
 
       mp
       me
+      mHe
       hbar
       c
       kB
       alpha
       ele
-
-   .. rubric:: Table of Constants - Atomic and Optical
-
-   .. autosummary::
+      mass
       thomson_xsec
       stefboltz
-      rydberg
-      lya_eng
-      lya_freq
-      width_2s1s
-      bohr_rad
       ele_rad
       ele_compton
 
@@ -47,19 +40,60 @@ physics
       nH
       nHe
       nA
+      chi
 
-   .. rubric:: Table of Methods
+   .. rubric:: Table of Constants - Atomic and Optical
+
+   .. autosummary::
+      
+      rydberg
+      lya_eng
+      lya_freq
+      width_2s1s
+      bohr_rad
+      He_ion_eng
+      He_exc_lambda
+      He_exc_eng
+      A_He_21p
+      A_He_23P1
+      width_21s_1s_He
+      
+
+   
+
+   .. rubric:: Table of Methods - Cosmology
 
    .. autosummary::
 
       hubble
       dtdz
       TCMB
-      get_inj_rate
-      photo_ion_rate
+      CMB_spec
+      CMB_N_density
+      CMB_eng_density
+      inj_rate
+      struct_boost_func
+      get_optical_depth
+
+   .. rubric:: Table of Methods - Atomic and Optical
+
+   .. autosummary::
+
+      alpha_recomb
+      beta_ion
+      peebles_C
+      C_He
+      xe_Saha
+      d_xe_Saha_dz
+      xHII_std
+      xHeII_std
+      Tm_std
       photo_ion_xsec
-      tau_sobolev
-      CMB_spec   
+      photo_ion_rate
+      coll_ion_xsec
+      coll_ion_sec_elec_spec
+      coll_exc_xsec   
+      elec_heating_engloss_rate
 
 Attributes
 ----------
@@ -68,21 +102,15 @@ Attributes
 
    .. autoattribute:: darkhistory.physics.mp
    .. autoattribute:: darkhistory.physics.me
+   .. autoattribute:: darkhistory.physics.mHe
    .. autoattribute:: darkhistory.physics.hbar
    .. autoattribute:: darkhistory.physics.c
    .. autoattribute:: darkhistory.physics.kB
    .. autoattribute:: darkhistory.physics.alpha
    .. autoattribute:: darkhistory.physics.ele
-
-   .. rubric:: Constants - Atomic and Optical
-
+   .. autoattribute:: darkhistory.physics.mass
    .. autoattribute:: darkhistory.physics.thomson_xsec
    .. autoattribute:: darkhistory.physics.stefboltz
-   .. autoattribute:: darkhistory.physics.rydberg
-   .. autoattribute:: darkhistory.physics.lya_eng
-   .. autoattribute:: darkhistory.physics.lya_freq
-   .. autoattribute:: darkhistory.physics.width_2s1s
-   .. autoattribute:: darkhistory.physics.bohr_rad
    .. autoattribute:: darkhistory.physics.ele_rad
    .. autoattribute:: darkhistory.physics.ele_compton
 
@@ -103,6 +131,23 @@ Attributes
    .. autoattribute:: darkhistory.physics.nH
    .. autoattribute:: darkhistory.physics.nHe
    .. autoattribute:: darkhistory.physics.nA
+   .. autoattribute:: darkhistory.physics.chi
+
+   .. rubric:: Constants - Atomic and Optical
+
+   .. autoattribute:: darkhistory.physics.rydberg
+   .. autoattribute:: darkhistory.physics.lya_eng
+   .. autoattribute:: darkhistory.physics.lya_freq
+   .. autoattribute:: darkhistory.physics.width_2s1s
+   .. autoattribute:: darkhistory.physics.bohr_rad
+   .. autoattribute:: darkhistory.physics.He_ion_eng
+   .. autoattribute:: darkhistory.physics.He_exc_lambda
+   .. autoattribute:: darkhistory.physics.He_exc_eng
+   .. autoattribute:: darkhistory.physics.A_He_21p
+   .. autoattribute:: darkhistory.physics.A_He_23P1
+   .. autoattribute:: darkhistory.physics.width_21s_1s_He
+
+   
 
 Methods
 -------
@@ -110,11 +155,27 @@ Methods
    .. autofunction:: hubble
    .. autofunction:: dtdz
    .. autofunction:: TCMB
-   .. autofunction:: get_inj_rate
-   .. autofunction:: photo_ion_rate
+   .. autofunction:: CMB_spec
+   .. autofunction:: CMB_N_density
+   .. autofunction:: CMB_eng_density
+   .. autofunction:: inj_rate
+   .. autofunction:: struct_boost_func
+   .. autofunction:: get_optical_depth
+   .. autofunction:: alpha_recomb
+   .. autofunction:: beta_ion
+   .. autofunction:: peebles_C
+   .. autofunction:: C_He
+   .. autofunction:: xe_Saha
+   .. autofunction:: d_xe_Saha_dz
+   .. autofunction:: xHII_std
+   .. autofunction:: xHeII_std
+   .. autofunction:: Tm_std
    .. autofunction:: photo_ion_xsec
-   .. autofunction:: tau_sobolev
-   .. autofunction:: CMB_spec   
+   .. autofunction:: photo_ion_rate
+   .. autofunction:: coll_ion_xsec
+   .. autofunction:: coll_ion_sec_elec_spec
+   .. autofunction:: coll_exc_xsec
+   .. autofunction:: elec_heating_engloss_rate
 
    
    

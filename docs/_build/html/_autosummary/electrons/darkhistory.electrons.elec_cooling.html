@@ -28,8 +28,8 @@
   <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="ics" href="darkhistory.electrons.ics.html" />
-    <link rel="prev" title="xsecs" href="darkhistory.electrons.xsecs.html" /> 
+    <link rel="next" title="positronium" href="darkhistory.electrons.positronium.html" />
+    <link rel="prev" title="electrons" href="../darkhistory.electrons.html" /> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
@@ -81,16 +81,21 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../../modules.html">darkhistory</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../darkhistory.spec.html">spec</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../main.html">main</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../config.html">config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tf_data.html">tf_data</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../darkhistory.electrons.html">electrons</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="darkhistory.electrons.xsecs.html">xsecs</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">elec_cooling</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#methods">Methods</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="darkhistory.electrons.positronium.html">positronium</a></li>
 <li class="toctree-l3"><a class="reference internal" href="darkhistory.electrons.ics.html">ics</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.history.html">history</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.low_energy.html">low_energy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../darkhistory.spec.html">spec</a></li>
 </ul>
 </li>
 </ul>
@@ -171,8 +176,8 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.elec_cooling.cool_elec" title="darkhistory.electrons.elec_cooling.cool_elec"><code class="xref py py-obj docutils literal"><span class="pre">cool_elec</span></code></a>(elec_spec,&nbsp;sec_phot_tf,&nbsp;sec_elec_tf)</td>
-<td>Generic function for electron cooling.</td>
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.electrons.elec_cooling.get_elec_cooling_tf" title="darkhistory.electrons.elec_cooling.get_elec_cooling_tf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_elec_cooling_tf</span></code></a>(raw_nonrel_tf,&nbsp;…[,&nbsp;…])</td>
+<td>Returns transfer function for complete electron cooling through ICS and atomic processes using a linear algebra method.</td>
 </tr>
 </tbody>
 </table>
@@ -180,29 +185,44 @@
 <h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="function">
-<dt id="darkhistory.electrons.elec_cooling.cool_elec">
-<code class="descclassname">darkhistory.electrons.elec_cooling.</code><code class="descname">cool_elec</code><span class="sig-paren">(</span><em>elec_spec</em>, <em>sec_phot_tf</em>, <em>sec_elec_tf</em>, <em>is_engloss_spec=True</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.elec_cooling.cool_elec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generic function for electron cooling.</p>
+<dt id="darkhistory.electrons.elec_cooling.get_elec_cooling_tf">
+<code class="descclassname">darkhistory.electrons.elec_cooling.</code><code class="descname">get_elec_cooling_tf</code><span class="sig-paren">(</span><em>raw_nonrel_tf</em>, <em>raw_rel_tf</em>, <em>raw_engloss_tf</em>, <em>coll_ion_sec_elec_specs</em>, <em>coll_exc_sec_elec_specs</em>, <em>eleceng</em>, <em>photeng</em>, <em>rs</em>, <em>xH</em>, <em>xHe=0</em>, <em>ics_engloss_data=None</em>, <em>check_conservation_eng=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.elec_cooling.get_elec_cooling_tf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns transfer function for complete electron cooling through ICS and atomic processes using a linear algebra method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>elec_spec</strong> (<a class="reference internal" href="../spec/darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><em>Spectrum</em></a>) – The electron spectrum to cool.</li>
-<li><strong>sec_phot_tf</strong> (<a class="reference internal" href="../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a>) – The transfer function to produce secondary photons, units dN/(dE dt), normalized to 1 primary electron and 1 second. The abscissa is identical to elec_spec.</li>
-<li><strong>sec_elec_tf</strong> (<a class="reference internal" href="../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a>) – The transfer function to produce secondary electrons. This is either the secondary electron spectrum itself (dN/(dE dt)) or the energy loss spectrum (dN /(d Delta dt)), where Delta is the energy loss. Normalized to 1 primary electron and 1 second.</li>
-<li><strong>is_engloss_spec</strong> (<em>bool</em><em>, </em><em>optional</em>) – If true, takes sec_elec_tf to be an energy loss spectrum.</li>
+<li><strong>nonrel_tf</strong> (<a class="reference internal" href="../spec/darkhistory.spec.transferfunction.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><em>TransFuncAtRedshift</em></a>) – Raw nonrelativistic primary electron ICS transfer function.</li>
+<li><strong>rel_tf</strong> (<em>string</em>) – Raw relativistic primary electron ICS transfer function.</li>
+<li><strong>engloss_tf_filename</strong> (<em>string</em>) – Raw primary electron ICS energy loss transfer function.</li>
+<li><strong>coll_ion_sec_elec_specs</strong> (<em>tuple of ndarray</em>) – Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).</li>
+<li><strong>coll_exc_sec_elec_specs</strong> (<em>tuple of ndarray</em>) – Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).</li>
+<li><strong>eleceng</strong> (<em>ndarray</em>) – The electron <em>kinetic</em> energy abscissa.</li>
+<li><strong>photeng</strong> (<em>ndarray</em>) – The photon energy abscissa.</li>
+<li><strong>rs</strong> (<em>float</em>) – The redshift.</li>
+<li><strong>xH</strong> (<em>float</em>) – Ionized hydrogen fraction, nHII/nH.</li>
+<li><strong>xHe</strong> (<em>float</em><em>, </em><em>optional</em>) – Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.</li>
+<li><strong>ics_engloss_data</strong> (<em>EnglossRebinData</em>) – Stores rebinning information for speed.</li>
+<li><strong>check_conservation_eng</strong> (<em>bool</em>) – If true, checks for energy conservation.</li>
+<li><strong>verbose</strong> (<em>bool</em>) – If true, prints energy conservation checks.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The final secondary photon spectrum, units dN/(dE dt).</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Transfer functions for photons and low energy electrons.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="../spec/darkhistory.spec.spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum">Spectrum</a></p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple of TransFuncAtRedshift</p>
 </td>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
+photon spectrum after scattering by one electron.</p>
+<p class="last">This version of the code uses a linear algebra method to solve for the spectra directly.</p>
+</div>
 </dd></dl>
 
 </div></blockquote>
@@ -217,10 +237,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="darkhistory.electrons.ics.html" class="btn btn-neutral float-right" title="ics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="darkhistory.electrons.positronium.html" class="btn btn-neutral float-right" title="positronium" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="darkhistory.electrons.xsecs.html" class="btn btn-neutral" title="xsecs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../darkhistory.electrons.html" class="btn btn-neutral" title="electrons" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -250,20 +270,11 @@
 
     
     
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'../../',
-              VERSION:'',
-              LANGUAGE:'None',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
     
 
   
