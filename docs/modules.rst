@@ -6,14 +6,18 @@ darkhistory
 .. autosummary::
    :toctree: _autosummary
    
+   main
+   config
+   tf_data
    darkhistory.physics
    darkhistory.utilities
-   main
 
 .. rubric:: Table of Packages
 
 .. autosummary:: 
    :toctree: _autosummary
    
-   darkhistory.spec
    darkhistory.electrons
+   darkhistory.history
+   darkhistory.low_energy
+   darkhistory.spec

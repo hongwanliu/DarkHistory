@@ -546,7 +546,7 @@ class Spectra:
 
         return other * inv_spectra
 
-    def switch_spec_type(self, *target):
+    def switch_spec_type(self, target=None):
         """Switches between the type of values to be stored.
 
         Parameters

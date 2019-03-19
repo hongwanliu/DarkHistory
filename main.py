@@ -10,10 +10,11 @@ from tf_data import *
 
 import darkhistory.physics as phys
 
-
 from   darkhistory.spec import pppc
+from   darkhistory.spec.spectrum import Spectrum
 from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
+from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
 
 from darkhistory.electrons import positronium as pos
@@ -58,7 +59,7 @@ def evolve(
         Decay lifetime for `DM_process == 'decay'`.
     primary : string, optional
         Primary channel of annihilation/decay. Refer to 
-        `darkhistory.spec.pppc.chan_list` for complete list. 
+        `darkhistory.spec.pppc.chan_list` for complete list. Use `'elec_delta'` or `'phot_delta'` for delta function injections of a pair of photons/an electron-positron pair. 
     struct_boost : function, optional
         Energy injection boost factor due to structure formation.
     start_rs : float, optional
@@ -106,20 +107,49 @@ def evolve(
             raise ValueError(
                 'sigmav and start_rs must be specified.'
             )
-        if in_spec_elec is None:
-            if primary is None:
-                raise ValueError(
-                    'primary must be specified'
-                )
+        if primary == 'elec_delta':
+            # Exact kinetic energy of each electron. 
+            eng_elec = mDM - phys.me
+            # Find the correct bin in eleceng.
+            eng_to_inj = eleceng[eleceng < eng_elec][-1]
+            # Place 2*eng_elec worth of electrons into that bin. Use
+            # rebinning to accomplish this.
+            in_spec_elec = rebin_N_arr(
+                np.array([2 * eng_elec / eng_to_inj]), 
+                np.array([eng_to_inj]), 
+                eleceng
+            )
+            # Empty photon spectrum.
+            in_spec_phot = Spectrum(
+                photeng, np.zeros_like(photeng), spec_type='N'
+            )
+
+        elif primary == 'phot_delta':
+            # Exact kinetic energy of each photon. 
+            eng_phot = mDM
+            # Find the correct bin in photeng.
+            eng_to_inj = photeng[photeng < eng_phot][-1]
+            # Place 2*eng_phot worth of electrons into that bin. Use
+            # rebinning to accomplish this.
+            in_spec_phot = rebin_N_arr(
+                np.array([2 * eng_phot / eng_to_inj]), 
+                np.array([eng_to_inj]), 
+                photeng
+            )
+            # Empty photon spectrum.
+            in_spec_elec = Spectrum(
+                eleceng, np.zeros_like(eleceng), spec_type='N'
+            )
+        else: 
             # Get input spectra from PPPC. 
             in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
             in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
-            # Initialize the input spectrum redshift. 
-            in_spec_elec.rs = start_rs
-            in_spec_phot.rs = start_rs
-            # Convert to type 'N'. 
-            in_spec_elec.switch_spec_type('N')
-            in_spec_phot.switch_spec_type('N')
+        # Initialize the input spectrum redshift. 
+        in_spec_elec.rs = start_rs
+        in_spec_phot.rs = start_rs
+        # Convert to type 'N'. 
+        in_spec_elec.switch_spec_type('N')
+        in_spec_phot.switch_spec_type('N')
 
         # Define the rate functions. 
         def rate_func_N(rs):
@@ -138,11 +168,41 @@ def evolve(
             raise ValueError(
                 'lifetime and start_rs must be specified.'
             )
-        if in_spec_elec is None:
-            if primary is None:
-                raise ValueError(
-                    'primary must be specified'
-                )
+        if primary == 'elec_delta':
+            # Exact kinetic energy of each electron. 
+            eng_elec = (mDM - 2*phys.me)/2
+            # Find the correct bin in eleceng.
+            eng_to_inj = eleceng[eleceng < eng_elec][-1]
+            # Place 2*eng_elec worth of electrons into that bin. Use
+            # rebinning to accomplish this.
+            in_spec_elec = rebin_N_arr(
+                np.array([2 * eng_elec / eng_to_inj]), 
+                np.array([eng_to_inj]), 
+                eleceng
+            )
+            # Empty photon spectrum.
+            in_spec_phot = Spectrum(
+                photeng, np.zeros_like(photeng), spec_type='N'
+            )
+
+        elif primary == 'phot_delta':
+            # Exact kinetic energy of each photon. 
+            eng_phot = mDM/2
+            # Find the correct bin in photeng.
+            eng_to_inj = photeng[photeng < eng_phot][-1]
+            # Place mDM worth of electrons into that bin. Use
+            # rebinning to accomplish this.
+            in_spec_phot = rebin_N_arr(
+                np.array([2 * eng_phot / eng_to_inj]), 
+                np.array([eng_to_inj]), 
+                photeng
+            )
+            # Empty photon spectrum.
+            in_spec_elec = Spectrum(
+                eleceng, np.zeros_like(eleceng), spec_type='N'
+            )
+
+        else:
             # Get spectra from PPPC.
             in_spec_elec = pppc.get_pppc_spec(
                 mDM, eleceng, primary, 'elec', decay=True
@@ -150,12 +210,13 @@ def evolve(
             in_spec_phot = pppc.get_pppc_spec(
                 mDM, photeng, primary, 'phot', decay=True
             )
-            # Initialize the input spectrum redshift. 
-            in_spec_elec.rs = start_rs
-            in_spec_phot.rs = start_rs
-            # Convert to type 'N'. 
-            in_spec_elec.switch_spec_type('N')
-            in_spec_phot.switch_spec_type('N')
+
+        # Initialize the input spectrum redshift. 
+        in_spec_elec.rs = start_rs
+        in_spec_phot.rs = start_rs
+        # Convert to type 'N'. 
+        in_spec_elec.switch_spec_type('N')
+        in_spec_phot.switch_spec_type('N')
 
         # Define the rate functions. 
         def rate_func_N(rs):
@@ -195,8 +256,8 @@ def evolve(
     # Initialize the initial x and Tm. 
     if init_cond is None:
         # Default to baseline
-        xH_init  = phys.xH_std(start_rs)
-        xHe_init = phys.xHe_std(start_rs)
+        xH_init  = phys.xHII_std(start_rs)
+        xHe_init = phys.xHeII_std(start_rs)
         Tm_init  = phys.Tm_std(start_rs)
     else:
         # User-specified.
@@ -443,19 +504,11 @@ def evolve(
         else:
             # Use baseline values if no backreaction. 
             x_vec_for_f = np.array([
-                    1. - phys.xH_std(rs), 
-                    phys.chi - phys.xHe_std(rs), 
-                    phys.xHe_std(rs)
+                    1. - phys.xHII_std(rs), 
+                    phys.chi - phys.xHeII_std(rs), 
+                    phys.xHeII_std(rs)
             ])
 
-        # print(x_vec_for_f)
-        # print(lowengelec_spec_at_rs.toteng())
-        # print(lowengphot_spec_at_rs.toteng())
-        # print(rate_func_eng_unclustered(rs))
-        # print(dt)
-        # print(highengdep_at_rs)
-        # print(cmbloss_at_rs)
-        # Compute f_c(z). 
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
@@ -527,8 +580,8 @@ def evolve(
         # Get the transfer functions for this step.
         if not backreaction:
             # Interpolate using the baseline solution.
-            xHII_to_interp  = phys.xH_std(rs)
-            xHeII_to_interp = phys.xHe_std(rs)
+            xHII_to_interp  = phys.xHII_std(rs)
+            xHeII_to_interp = phys.xHeII_std(rs)
         else:
             # Interpolate using the current xHII, xHeII values.
             xHII_to_interp  = x_arr[-1,0]
@@ -580,7 +633,7 @@ def evolve(
             else:
                 # Append the baseline solution value. 
                 x_arr  = np.append(
-                    x_arr,  [[new_vals[-1,1], phys.xHe_std(next_rs)]], axis=0
+                    x_arr,  [[new_vals[-1,1], phys.xHeII_std(next_rs)]], axis=0
                 )
 
         # Re-define existing variables. 
@@ -731,8 +784,8 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     """
 
     if coarsen_factor > 1:
-        rs_to_interpolate = rs
-        # rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+        # rs_to_interpolate = rs
+        rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
     else:
         rs_to_interpolate = rs
 
@@ -770,10 +823,10 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
             np.matmul(prop_tf, highengdep_arr)/coarsen_factor
         )
 
-        return(
-            highengphot_tf, lowengphot_tf,
-            lowengelec_tf, highengdep_arr
-        )
+    return(
+        highengphot_tf, lowengphot_tf,
+        lowengelec_tf, highengdep_arr
+    )
 
     # return (
     #     highengphot_tf, lowengphot_tf, lowengelec_tf, 

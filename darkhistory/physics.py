@@ -48,7 +48,7 @@ mass = {
     'c': 1.275e9  ,  'b' :   4.18e9,        't': 173.1e9,
     'W': 80.379e9  , 'Z' :  91.1876e9,      'h': 125.18e9
 }
-
+"""Masses of Standard Model particles."""
 thomson_xsec = 6.652458734e-25
 """Thomson cross section in cm^2."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
@@ -313,6 +313,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         The dE/dV_dt injection rate in eV cm^-3 s^-1.
 
     """
+
     if inj_type == 'swave':
         return rho_DM**2*rs**6*sigmav/mDM
     elif inj_type == 'decay':
@@ -834,19 +835,53 @@ def d_xe_Saha_dz(rs, species):
 # Standard ionization and thermal histories
 soln = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
-_xH_std  = interp1d(soln[0,:], soln[2,:])
-_xHe_std = interp1d(soln[0,:], soln[3,:])
+_xHII_std  = interp1d(soln[0,:], soln[2,:])
+_xHeII_std = interp1d(soln[0,:], soln[3,:])
 _Tm_std  = interp1d(soln[0,:], soln[1,:])
 
-def xH_std(rs):
+def xHII_std(rs):
+    """Returns the baseline nHII/nH value.
 
-    return _xH_std(rs)
+    Parameters
+    ----------
+    rs : float
+        The redshift (1+z). 
 
-def xHe_std(rs):
+    Returns
+    -------
+    float
+        nHII/nH. 
+    """
+    return _xHII_std(rs)
 
-    return _xHe_std(rs)
+def xHeII_std(rs):
+    """Returns the baseline nHeII/nH value.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift (1+z). 
+
+    Returns
+    -------
+    float
+        nHeII/nH. 
+    """
+    return _xHeII_std(rs)
 
 def Tm_std(rs):
+    """Returns the baseline Tm value.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift (1+z). 
+
+    Returns
+    -------
+    float
+        Tm in eV. 
+    """
 
     return _Tm_std(rs)
 
