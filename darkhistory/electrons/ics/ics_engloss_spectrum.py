@@ -7,7 +7,7 @@ from darkhistory import utilities as utils
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
-from darkhistory.electrons.ics.bose_einstein_integrals import *
+from darkhistory.electrons.ics.BE_integrals import *
 from darkhistory.electrons.ics.engloss_diff_terms import *
 import darkhistory.electrons.ics.ics_spectrum as ics_spectrum
 

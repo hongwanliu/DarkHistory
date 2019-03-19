@@ -8,7 +8,7 @@ darkhistory.electrons.ics
 .. autosummary::
    :toctree: ics
 
-   bose_einstein_integrals
+   BE_integrals
    engloss_diff_terms
    ics_cooling
    ics_engloss_spectrum

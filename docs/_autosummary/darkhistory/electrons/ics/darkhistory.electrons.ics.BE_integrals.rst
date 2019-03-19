@@ -1,14 +1,14 @@
-darkhistory.electrons.ics.bose\_einstein\_integrals
+darkhistory.electrons.ics.BE\_integrals
 ===================================================
 
-.. automodule:: darkhistory.electrons.ics.bose_einstein_integrals
+.. automodule:: darkhistory.electrons.ics.BE_integrals
 
    
    
    .. rubric:: Functions
 
    .. autosummary::
-      :toctree: bose_einstein_integrals
+      :toctree: BE_integrals
    
       F0
       F1
