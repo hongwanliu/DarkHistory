@@ -3,6 +3,7 @@
 """
 # import os
 # import numpy as np
+# import pickle
 
 # # Location of all data files. 
 
@@ -19,3 +20,10 @@ data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
 # photeng = binning[0]
 # eleceng = binning[1]
+
+# Structure formation data. 
+# struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
+
+# Baseline ionization and thermal histories. 
+# soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
+
