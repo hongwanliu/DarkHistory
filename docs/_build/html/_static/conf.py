@@ -19,10 +19,10 @@
 #
 import os
 import sys
-import sphinx_rtd_theme
+# import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath('./../'))
 sys.path.insert(0, '/Users/hongwan/Github/numpydoc/')
-import numpydoc
+# import numpydoc
 
 
 # -- Set up new stuff -----------------------------------------------------
@@ -99,7 +99,7 @@ def setup(app):
 # extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary',
 #     'sphinx.ext.doctest','sphinx.ext.napoleon']
 
-extensions = ['numpydoc']
+extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary', 'numpydoc']
 
 numpydoc_class_members_toctree = False
 
