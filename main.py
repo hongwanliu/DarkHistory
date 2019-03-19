@@ -102,19 +102,24 @@ def evolve(
 
     # Handle the case where a DM process is specified. 
     if DM_process == 'swave':
-        if sigmav is None or primary is None or start_rs is None:
+        if sigmav is None or start_rs is None:
             raise ValueError(
-                'sigmav, primary and start_rs must be specified.'
+                'sigmav and start_rs must be specified.'
             )
-        # Get input spectra from PPPC. 
-        in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
-        in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
-        # Initialize the input spectrum redshift. 
-        in_spec_elec.rs = start_rs
-        in_spec_phot.rs = start_rs
-        # Convert to type 'N'. 
-        in_spec_elec.switch_spec_type('N')
-        in_spec_phot.switch_spec_type('N')
+        if in_spec_elec is None:
+            if primary is None:
+                raise ValueError(
+                    'primary must be specified'
+                )
+            # Get input spectra from PPPC. 
+            in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
+            in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
+            # Initialize the input spectrum redshift. 
+            in_spec_elec.rs = start_rs
+            in_spec_phot.rs = start_rs
+            # Convert to type 'N'. 
+            in_spec_elec.switch_spec_type('N')
+            in_spec_phot.switch_spec_type('N')
 
         # Define the rate functions. 
         def rate_func_N(rs):
@@ -129,23 +134,28 @@ def evolve(
             )
 
     if DM_process == 'decay':
-        if lifetime is None or primary is None or start_rs is None:
+        if lifetime is None or start_rs is None:
             raise ValueError(
-                'lifetime, primary and start_rs must be specified.'
+                'lifetime and start_rs must be specified.'
             )
-        # Get spectra from PPPC.
-        in_spec_elec = pppc.get_pppc_spec(
-            mDM, eleceng, primary, 'elec', decay=True
-        )
-        in_spec_phot = pppc.get_pppc_spec(
-            mDM, photeng, primary, 'phot', decay=True
-        )
-        # Initialize the input spectrum redshift. 
-        in_spec_elec.rs = start_rs
-        in_spec_phot.rs = start_rs
-        # Convert to type 'N'. 
-        in_spec_elec.switch_spec_type('N')
-        in_spec_phot.switch_spec_type('N')
+        if in_spec_elec is None:
+            if primary is None:
+                raise ValueError(
+                    'primary must be specified'
+                )
+            # Get spectra from PPPC.
+            in_spec_elec = pppc.get_pppc_spec(
+                mDM, eleceng, primary, 'elec', decay=True
+            )
+            in_spec_phot = pppc.get_pppc_spec(
+                mDM, photeng, primary, 'phot', decay=True
+            )
+            # Initialize the input spectrum redshift. 
+            in_spec_elec.rs = start_rs
+            in_spec_phot.rs = start_rs
+            # Convert to type 'N'. 
+            in_spec_elec.switch_spec_type('N')
+            in_spec_phot.switch_spec_type('N')
 
         # Define the rate functions. 
         def rate_func_N(rs):
@@ -153,7 +163,7 @@ def evolve(
                 phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) / mDM
             )
         def rate_func_eng(rs):
-            return phys.inj_rate('swave', rs, mDM=mDM, lifetime=lifetime) 
+            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
     
     #####################################
     # Input Checks                      #
@@ -409,18 +419,19 @@ def evolve(
         # Compute f_c(z)                                                    #
         #####################################################################
         #####################################################################
-        # High-energy deposition from input electrons. 
-        highengdep_at_rs += np.array([
-            deposited_ion/dt,
-            deposited_exc/dt,
-            deposited_heat/dt,
-            deposited_ICS/dt
-        ])
+        if elec_processes:
+            # High-energy deposition from input electrons. 
+            highengdep_at_rs += np.array([
+                deposited_ion/dt,
+                deposited_exc/dt,
+                deposited_heat/dt,
+                deposited_ICS/dt
+            ])
         
-        # Upscattered CMB photon energy from input electrons. 
-        cmbloss_at_rs += np.dot(
-            continuum_loss/dt, in_spec_elec.N*norm_fac(rs)
-        )
+            # Upscattered CMB photon energy from input electrons. 
+            cmbloss_at_rs += np.dot(
+                continuum_loss/dt, in_spec_elec.N*norm_fac(rs)
+            )
         
 
         # Values of (xHI, xHeI, xHeII) to use for computing f.
