@@ -8,7 +8,7 @@ darkhistory.electrons.ics.ics\_engloss\_spectrum
    .. rubric:: Functions
 
    .. autosummary::
-      :toctree: ics_engloss_spectrum
+      :toctree: ics_engloss_spectrum 
    
       engloss_spec
       engloss_spec_diff
