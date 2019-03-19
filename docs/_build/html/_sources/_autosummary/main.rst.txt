@@ -3,15 +3,13 @@ main
 
 .. automodule:: main
    
-   .. rubric:: Table of Methods
+.. rubric:: Methods
 
-   .. autosummary::
-   
-      evolve
-   
-Methods
--------
+.. autosummary::
+  :toctree: main
 
-   .. autofunction:: evolve
+  evolve
+  get_elec_cooling_data
+  get_tf
    
    

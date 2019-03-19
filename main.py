@@ -1,4 +1,4 @@
-""" Module containing the main DarkHistory function.
+""" The main DarkHistory function.
 
 """
 import numpy as np
@@ -38,12 +38,12 @@ def evolve(
     use_tqdm=True
 ):
     """
-    Main function that computes the temperature and ionization history. 
+    Main function computing histories and spectra. 
 
     Parameters
     -----------
     in_spec_elec : Spectrum, optional
-        Spectrum per injection event into electrons. rs of the spectrum
+        Spectrum per injection event into electrons. `in_spec_elec.rs` of the spectrum
         must be the initial condition. 
     in_spec_phot : Spectrum, optional
         Spectrum per injection event into photons. 
@@ -678,7 +678,7 @@ def evolve(
 
 def get_elec_cooling_data(eleceng, photeng):
     """
-    Returns electron cooling scattered spectra for use in `evolve`.
+    Returns electron cooling data for use in `main.evolve`.
 
     Parameters
     ----------
