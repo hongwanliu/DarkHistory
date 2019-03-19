@@ -8,6 +8,7 @@ darkhistory.spec.spectools
    .. rubric:: Functions
 
    .. autosummary::
+      :toctree: spectools
    
       discretize
       engloss_rebin_fast
@@ -27,6 +28,7 @@ darkhistory.spec.spectools
    .. rubric:: Classes
 
    .. autosummary::
+      :toctree: spectools
    
       EnglossRebinData
    

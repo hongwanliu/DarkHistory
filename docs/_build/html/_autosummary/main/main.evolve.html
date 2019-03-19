@@ -1,42 +1,95 @@
+<!DOCTYPE html>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>main.evolve &#8212; DarkHistory  documentation</title>
-    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <meta charset="utf-8">
+    
+    <title>main.evolve &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
-    <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="main.get_elec_cooling_data" href="main.get_elec_cooling_data.html" />
-    <link rel="prev" title="main" href="../main.html" /> 
-  </head><body>
-      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
-          <span>DarkHistory  documentation</span></a></h1>
-        <h2 class="heading"><span>main.evolve</span></h2>
-      </div>
-      <div class="topnav" role="navigation" aria-label="top navigation">
-      
-        <p>
-        «&#160;&#160;<a href="../main.html">main</a>
-        &#160;&#160;::&#160;&#160;
-        <a class="uplink" href="../../index.html">Contents</a>
-        &#160;&#160;::&#160;&#160;
-        <a href="main.get_elec_cooling_data.html">main.get_elec_cooling_data</a>&#160;&#160;»
-        </p>
+    <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" >
+    <link rel="search" title="Search" href="../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../index.html" >
+    <link rel="up" title="main" href="../main.html" >
+    <link rel="next" title="main.get_elec_cooling_data" href="main.get_elec_cooling_data.html" >
+    <link rel="prev" title="main" href="../main.html" > 
+  </head>
+  <body>
 
-      </div>
-      <div class="content">
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
         
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../main.html" accesskey="U">main</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="main.get_elec_cooling_data.html" title="main.get_elec_cooling_data"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="../main.html" title="main"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
         
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
   <div class="section" id="main-evolve">
 <h1>main.evolve<a class="headerlink" href="#main-evolve" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
@@ -47,33 +100,75 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>in_spec_elec</strong> (<em>Spectrum</em><em>, </em><em>optional</em>) – Spectrum per injection event into electrons. <cite>in_spec_elec.rs</cite> of the spectrum
-must be the initial condition.</li>
-<li><strong>in_spec_phot</strong> (<em>Spectrum</em><em>, </em><em>optional</em>) – Spectrum per injection event into photons.</li>
-<li><strong>rate_func_N</strong> (<em>function</em><em>, </em><em>optional</em>) – Function returning number of injection events per volume per time.</li>
-<li><strong>rate_func_eng</strong> (<em>function</em><em>, </em><em>optional</em>) – Function returning energy injected per volume per time.</li>
-<li><strong>DM_process</strong> (<em>{'swave'</em><em>, </em><em>'decay'}</em><em>, </em><em>optional</em>) – Dark matter process to use.</li>
-<li><strong>sigmav</strong> (<em>float</em><em>, </em><em>optional</em>) – Thermally averaged cross section for <cite>DM_process == ‘swave’</cite>.</li>
-<li><strong>lifetime</strong> (<em>float</em><em>, </em><em>optional</em>) – Decay lifetime for <cite>DM_process == ‘decay’</cite>.</li>
-<li><strong>primary</strong> (<em>string</em><em>, </em><em>optional</em>) – Primary channel of annihilation/decay. Refer to
-<cite>darkhistory.spec.pppc.chan_list</cite> for complete list. Use <cite>‘elec_delta’</cite> or <cite>‘phot_delta’</cite> for delta function injections of a pair of photons/an electron-positron pair.</li>
-<li><strong>struct_boost</strong> (<em>function</em><em>, </em><em>optional</em>) – Energy injection boost factor due to structure formation.</li>
-<li><strong>start_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – Starting redshift (1+z) to evolve from. Default is 1+z = 3000.
-Specify only for use with <cite>DM_process</cite> initialize. Otherwise,
-initialize <cite>in_spec_elec.rs</cite> and/or <cite>in_spec_phot.rs</cite> directly.</li>
-<li><strong>end_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – Final redshift (1+z) to evolve to. Default is 1+z = 4.</li>
-<li><strong>reion_switch</strong> (<em>bool</em>) – Reionization model included if true.</li>
-<li><strong>helium_TLA</strong> (<em>bool</em>) – If <cite>True</cite>, the TLA is solved with helium.</li>
-<li><strong>reion_rs</strong> (<em>float</em><em>, </em><em>optional</em>) – Redshift (1+z) at which reionization effects turn on.</li>
-<li><strong>photoion_rate_func</strong> (<em>tuple of functions</em><em>, </em><em>optional</em>) – Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to <cite>darkhistory.history.reionization.photoion_rate</cite>.</li>
-<li><strong>photoheat_rate_func</strong> (<em>tuple of functions</em><em>, </em><em>optional</em>) – Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to <cite>darkhistory.history.reionization.photoheat_rate</cite>.</li>
-<li><strong>xe_reion_func</strong> (<em>function</em><em>, </em><em>optional</em>) – Specifies a fixed ionization history after reion_rs.</li>
-<li><strong>init_cond</strong> (<em>tuple of floats</em>) – Specifies the initial (xH, xHe, Tm). Defaults to RECFAST if None.</li>
-<li><strong>coarsen_factor</strong> (<em>int</em>) – Coarsening to apply to the transfer function matrix.</li>
-<li><strong>backreaction</strong> (<em>bool</em>) – If <cite>False</cite>, uses the baseline TLA solution to calculate f_c(z).</li>
-<li><strong>use_tqdm</strong> (<em>bool</em><em>, </em><em>optional</em>) – Uses tqdm if true.</li>
-</ul>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>in_spec_elec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum, optional</span></dt>
+<dd><p class="first last">Spectrum per injection event into electrons. <cite>in_spec_elec.rs</cite> of the spectrum
+must be the initial condition.</p>
+</dd>
+<dt><strong>in_spec_phot</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum, optional</span></dt>
+<dd><p class="first last">Spectrum per injection event into photons.</p>
+</dd>
+<dt><strong>rate_func_N</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function, optional</span></dt>
+<dd><p class="first last">Function returning number of injection events per volume per time.</p>
+</dd>
+<dt><strong>rate_func_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function, optional</span></dt>
+<dd><p class="first last">Function returning energy injected per volume per time.</p>
+</dd>
+<dt><strong>DM_process</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘swave’, ‘decay’}, optional</span></dt>
+<dd><p class="first last">Dark matter process to use.</p>
+</dd>
+<dt><strong>sigmav</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Thermally averaged cross section for <cite>DM_process == ‘swave’</cite>.</p>
+</dd>
+<dt><strong>lifetime</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Decay lifetime for <cite>DM_process == ‘decay’</cite>.</p>
+</dd>
+<dt><strong>primary</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
+<dd><p class="first last">Primary channel of annihilation/decay. Refer to 
+<cite>darkhistory.spec.pppc.chan_list</cite> for complete list. Use <cite>‘elec_delta’</cite> or <cite>‘phot_delta’</cite> for delta function injections of a pair of photons/an electron-positron pair.</p>
+</dd>
+<dt><strong>struct_boost</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function, optional</span></dt>
+<dd><p class="first last">Energy injection boost factor due to structure formation.</p>
+</dd>
+<dt><strong>start_rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Starting redshift (1+z) to evolve from. Default is 1+z = 3000. 
+Specify only for use with <cite>DM_process</cite> initialize. Otherwise, 
+initialize <cite>in_spec_elec.rs</cite> and/or <cite>in_spec_phot.rs</cite> directly.</p>
+</dd>
+<dt><strong>end_rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Final redshift (1+z) to evolve to. Default is 1+z = 4.</p>
+</dd>
+<dt><strong>reion_switch</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">Reionization model included if true.</p>
+</dd>
+<dt><strong>helium_TLA</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">If <cite>True</cite>, the TLA is solved with helium.</p>
+</dd>
+<dt><strong>reion_rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Redshift (1+z) at which reionization effects turn on.</p>
+</dd>
+<dt><strong>photoion_rate_func</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of functions, optional</span></dt>
+<dd><p class="first last">Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to <cite>darkhistory.history.reionization.photoion_rate</cite>.</p>
+</dd>
+<dt><strong>photoheat_rate_func</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of functions, optional</span></dt>
+<dd><p class="first last">Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to <cite>darkhistory.history.reionization.photoheat_rate</cite>.</p>
+</dd>
+<dt><strong>xe_reion_func</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function, optional</span></dt>
+<dd><p class="first last">Specifies a fixed ionization history after reion_rs.</p>
+</dd>
+<dt><strong>init_cond</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of floats</span></dt>
+<dd><p class="first last">Specifies the initial (xH, xHe, Tm). Defaults to RECFAST if None.</p>
+</dd>
+<dt><strong>coarsen_factor</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int</span></dt>
+<dd><p class="first last">Coarsening to apply to the transfer function matrix.</p>
+</dd>
+<dt><strong>backreaction</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">If <cite>False</cite>, uses the baseline TLA solution to calculate f_c(z).</p>
+</dd>
+<dt><strong>use_tqdm</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">Uses tqdm if true.</p>
+</dd>
+</dl>
 </td>
 </tr>
 </tbody>
@@ -83,22 +178,50 @@ initialize <cite>in_spec_elec.rs</cite> and/or <cite>in_spec_phot.rs</cite> dire
 </div>
 
 
-      </div>
-      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
-      
-        <p>
-        «&#160;&#160;<a href="../main.html">main</a>
-        &#160;&#160;::&#160;&#160;
-        <a class="uplink" href="../../index.html">Contents</a>
-        &#160;&#160;::&#160;&#160;
-        <a href="main.get_elec_cooling_data.html">main.get_elec_cooling_data</a>&#160;&#160;»
-        </p>
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../main.html"
+                        title="previous chapter">main</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="main.get_elec_cooling_data.html"
+                        title="next chapter">main.get_elec_cooling_data</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../_sources/_autosummary/main/main.evolve.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/_autosummary/main/main.evolve.rst.rst">Edit page</a>
+</div>
 
+        </div>
       </div>
+        </div>
+      </div>
+    </div>
 
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
     </div>
   </body>
 </html>

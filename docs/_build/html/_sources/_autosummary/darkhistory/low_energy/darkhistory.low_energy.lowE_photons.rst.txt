@@ -8,9 +8,9 @@ darkhistory.low\_energy.lowE\_photons
    .. rubric:: Functions
 
    .. autosummary::
+      :toctree: lowE_photons
    
       compute_fs
-      get_kappa_2s
       getf_continuum
       getf_excitation
       getf_ion

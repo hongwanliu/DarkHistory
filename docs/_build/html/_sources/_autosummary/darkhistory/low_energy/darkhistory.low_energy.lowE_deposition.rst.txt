@@ -8,6 +8,7 @@ darkhistory.low\_energy.lowE\_deposition
    .. rubric:: Functions
 
    .. autosummary::
+      :toctree: lowE_deposition
    
       compute_fs
    

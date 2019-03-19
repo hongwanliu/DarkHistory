@@ -4,7 +4,6 @@ darkhistory.electrons.elec\_cooling
 .. automodule:: darkhistory.electrons.elec_cooling
 
    
-   
    .. rubric:: Functions
 
    .. autosummary::

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.low_energy.lowE_photons.kappa_DM &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
+    <link rel="up" title="darkhistory.low_energy.lowE_photons" href="../darkhistory.low_energy.lowE_photons.html" >
+    <link rel="next" title="darkhistory.spec" href="../../darkhistory.spec.html" >
+    <link rel="prev" title="darkhistory.low_energy.lowE_photons.getf_ion" href="darkhistory.low_energy.lowE_photons.getf_ion.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../../darkhistory.low_energy.html" >darkhistory.low_energy</a></li>
+          <li class="active"><a href="../darkhistory.low_energy.lowE_photons.html" accesskey="U">darkhistory.low_energy.lowE_photons</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../../darkhistory.spec.html" title="darkhistory.spec"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.low_energy.lowE_photons.getf_ion.html" title="darkhistory.low_energy.lowE_photons.getf_ion"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-low-energy-lowe-photons-kappa-dm">
+<h1>darkhistory.low_energy.lowE_photons.kappa_DM<a class="headerlink" href="#darkhistory-low-energy-lowe-photons-kappa-dm" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="darkhistory.low_energy.lowE_photons.kappa_DM">
+<code class="descclassname">darkhistory.low_energy.lowE_photons.</code><code class="descname">kappa_DM</code><span class="sig-paren">(</span><em>photspec</em>, <em>xe</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.low_energy.lowE_photons.kappa_DM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute kappa_DM of the modified tla.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>photspec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum object</span></dt>
+<dd><p class="first last">spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return Energy per baryon.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>kappa_DM</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">The added photoionization rate due to products of DM.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="darkhistory.low_energy.lowE_photons.getf_ion.html"
+                        title="previous chapter">darkhistory.low_energy.lowE_photons.getf_ion</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../../darkhistory.spec.html"
+                        title="next chapter">darkhistory.spec</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../../_sources/_autosummary/darkhistory/low_energy/lowE_photons/darkhistory.low_energy.lowE_photons.kappa_DM.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/_autosummary/darkhistory/low_energy/lowE_photons/darkhistory.low_energy.lowE_photons.kappa_DM.rst.rst">Edit page</a>
+</div>
+
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

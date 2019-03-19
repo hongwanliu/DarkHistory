@@ -8,6 +8,7 @@ darkhistory.history.reionization
    .. rubric:: Functions
 
    .. autosummary::
+      :toctree: reionization
    
       alphaA_recomb
       brem_cooling_rate

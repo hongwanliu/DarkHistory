@@ -12,6 +12,7 @@ darkhistory.spec.spectrum
    .. rubric:: Classes
 
    .. autosummary::
+      :toctree: spectrum
    
       Spectrum
    

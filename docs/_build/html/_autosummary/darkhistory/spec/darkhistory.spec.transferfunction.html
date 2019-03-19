@@ -1,39 +1,96 @@
+<!DOCTYPE html>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>darkhistory.spec.transferfunction &#8212; DarkHistory  documentation</title>
-    <link rel="stylesheet" href="../../../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.spec.transferfunction &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="prev" title="darkhistory.spec.transferfunclist" href="darkhistory.spec.transferfunclist.html" /> 
-  </head><body>
-      <div class="header" role="banner"><h1 class="heading"><a href="../../../index.html">
-          <span>DarkHistory  documentation</span></a></h1>
-        <h2 class="heading"><span>darkhistory.spec.transferfunction</span></h2>
-      </div>
-      <div class="topnav" role="navigation" aria-label="top navigation">
-      
-        <p>
-        «&#160;&#160;<a href="darkhistory.spec.transferfunclist.html">darkhistory.spec.transferfunclist</a>
-        &#160;&#160;::&#160;&#160;
-        <a class="uplink" href="../../../index.html">Contents</a>
-        </p>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../index.html" >
+    <link rel="up" title="darkhistory.spec" href="../darkhistory.spec.html" >
+    <link rel="next" title="darkhistory.spec.transferfunction.TransFuncAtEnergy" href="transferfunction/darkhistory.spec.transferfunction.TransFuncAtEnergy.html" >
+    <link rel="prev" title="darkhistory.spec.transferfunclist.TransferFuncListArray" href="transferfunclist/darkhistory.spec.transferfunclist.TransferFuncListArray.html" > 
+  </head>
+  <body>
 
-      </div>
-      <div class="content">
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
         
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../darkhistory.spec.html" accesskey="U">darkhistory.spec</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="transferfunction/darkhistory.spec.transferfunction.TransFuncAtEnergy.html" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="transferfunclist/darkhistory.spec.transferfunclist.TransferFuncListArray.html" title="darkhistory.spec.transferfunclist.TransferFuncListArray"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
         
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
   <div class="section" id="module-darkhistory.spec.transferfunction">
 <span id="darkhistory-spec-transferfunction"></span><h1>darkhistory.spec.transferfunction<a class="headerlink" href="#module-darkhistory.spec.transferfunction" title="Permalink to this headline">¶</a></h1>
 <p>Functions and classes for processing transfer functions.</p>
@@ -44,10 +101,10 @@
 <col width="90%" />
 </colgroup>
 <tbody valign="top">
-<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtEnergy</span></code>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;…])</td>
+<tr class="row-odd"><td><a class="reference internal" href="transferfunction/darkhistory.spec.transferfunction.TransFuncAtEnergy.html#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="darkhistory.spec.transferfunction.TransFuncAtEnergy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtEnergy</span></code></a>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;…])</td>
 <td>Transfer function at a given injection energy.</td>
 </tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtRedshift</span></code>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;…])</td>
+<tr class="row-even"><td><a class="reference internal" href="transferfunction/darkhistory.spec.transferfunction.TransFuncAtRedshift.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransFuncAtRedshift</span></code></a>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;…])</td>
 <td>Transfer function at a given redshift.</td>
 </tr>
 </tbody>
@@ -55,20 +112,50 @@
 </div>
 
 
-      </div>
-      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
-      
-        <p>
-        «&#160;&#160;<a href="darkhistory.spec.transferfunclist.html">darkhistory.spec.transferfunclist</a>
-        &#160;&#160;::&#160;&#160;
-        <a class="uplink" href="../../../index.html">Contents</a>
-        </p>
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="transferfunclist/darkhistory.spec.transferfunclist.TransferFuncListArray.html"
+                        title="previous chapter">darkhistory.spec.transferfunclist.TransferFuncListArray</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="transferfunction/darkhistory.spec.transferfunction.TransFuncAtEnergy.html"
+                        title="next chapter">darkhistory.spec.transferfunction.TransFuncAtEnergy</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../_sources/_autosummary/darkhistory/spec/darkhistory.spec.transferfunction.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+<div class="this-page-menu">
+  <a href="/scipy/docs/scipy-docs/_autosummary/darkhistory/spec/darkhistory.spec.transferfunction.rst.rst">Edit page</a>
+</div>
 
+        </div>
       </div>
+        </div>
+      </div>
+    </div>
 
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
     </div>
   </body>
 </html>

@@ -30,8 +30,8 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     float
         The Compton cooling rate in eV/s.
 
-    Note
-    ----
+    Notes
+    -----
     This is the energy loss rate, *not* the temperature loss rate.
 
     """
@@ -87,8 +87,8 @@ def get_history(
     list of ndarray
         [temperature solution (in eV), xHII solution, xHeII, xHeIII].
 
-    Note
-    ----
+    Notes
+    -----
     The actual differential equation that we solve is expressed in terms of y = arctanh(f*(x - f)), where f = 0.5 for x = xHII, and f = nHe/nH * 0.5 for x = xHeII or xHeIII, where nHe/nH is approximately 0.083.
 
     """

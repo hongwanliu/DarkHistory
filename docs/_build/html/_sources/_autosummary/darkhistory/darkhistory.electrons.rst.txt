@@ -7,7 +7,7 @@ darkhistory.electrons
 
 .. autosummary::
    :toctree: electrons
-
+   
    elec_cooling
    positronium
 

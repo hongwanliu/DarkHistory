@@ -26,10 +26,11 @@ class Spectrum:
         The injection energy of the primary, if this is a secondary spectrum. Set to -1 if not specified.
     mode : {'N', 'dNdE'}, optional
         Whether the input is N or dN/dE in each bin. Default is 'dNdE'.
-
+    
     Attributes
     ----------
-    eng : ndarray
+
+    eng : ndarray 
         Abscissa for the spectrum.
     dNdE : ndarray
         dN/dE of the spectrum.
@@ -719,8 +720,8 @@ class Spectrum:
             The maximum energy in `out_eng` cannot be smaller than any bin in `self.eng`.
 
 
-        Note
-        ----
+        Notes
+        -----
         The total number and total energy is conserved by assigning the number of particles N in a bin of energy eng to two adjacent bins in new_eng, with energies eng_low and eng_upp such that eng_low < eng < eng_upp. Then dN_low_dE_low = (eng_upp - eng)/(eng_upp - eng_low)*(N/(E * dlogE_low)), and dN_upp_dE_upp = (eng - eng_low)/(eng_upp - eng_low)*(N/(E*dlogE_upp)).
 
         If a bin in `self.eng` is below the lowest bin in `out_eng`, then the total number and energy not assigned to the lowest bin are assigned to the underflow. Particles will only be assigned to the lowest bin if there is some overlap between the bin index with respect to `out_eng` bin centers is larger than -1.0.
@@ -854,8 +855,8 @@ class Spectrum:
             The new abscissa to bin into. If `self.eng` has values that are smaller than `out_eng[0]` or larger than `out_eng[-1]`, then the value is discarded *without error*.
 
 
-        Note
-        ----
+        Notes
+        -----
         The total number and total energy is conserved by assigning the number of particles N in a bin of energy eng to two adjacent bins in new_eng, with energies eng_low and eng_upp such that eng_low < eng < eng_upp. Then dN_low_dE_low = (eng_upp - eng)/(eng_upp - eng_low)*(N/(E * dlogE_low)), and dN_upp_dE_upp = (eng - eng_low)/(eng_upp - eng_low)*(N/(E*dlogE_upp)).
 
         This implementation dispenses with underflow, and some checks.
@@ -935,8 +936,8 @@ class Spectrum:
         fast: bool, optional
             If fast, uses Spectrum.rebin_fast instead of Spectrum.rebin.
 
-        Note
-        ----
+        Notes
+        -----
         This is primarily useful only when the spectrum represents an energy loss spectrum, i.e. when `self.eng` represents some *loss* in energy Delta. The loss spectrum can be directly converted into a secondary spectrum by using dN/(d Delta)* (d Delta) = dN/dE*dE, where the LHS is evaluated at Delta, and the RHS is evaluated at in_eng - Delta.
 
         """
