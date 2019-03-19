@@ -411,12 +411,12 @@ def evolve(
             
             # Low energy electrons from electron cooling, per injection event.
             elec_processes_lowengelec_spec = (
-                elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
+                elec_processes_lowengelec_tf.sum_specs(in_spec_elec.N)
             )
 
             # Add this to lowengelec_at_rs. 
-            lowengelec_spec_at_rs += (
-                elec_processes_lowengelec_spec*norm_fac(rs)
+            lowengelec_spec_at_rs.N += (
+                elec_processes_lowengelec_spec.N*norm_fac(rs)
             )
 
             # High-energy deposition into ionization, *per baryon per dlnz*. 
@@ -442,7 +442,7 @@ def evolve(
 
             # ICS secondary photon spectrum after electron cooling, 
             # per injection event.
-            ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+            ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec.N)
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
@@ -454,11 +454,12 @@ def evolve(
         # Add injected photons + photons from injected electrons
         # to the photon spectrum that got propagated forward. 
         if elec_processes:
-            highengphot_spec_at_rs += (
-                in_spec_phot + ics_phot_spec + positronium_phot_spec
+            highengphot_spec_at_rs.N += (
+                in_spec_phot.N + ics_phot_spec.N + positronium_phot_spec.N
             ) * norm_fac(rs)
         else:
-            highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
+            # THIS IS A HACK!!!! I shouldn't have to put in .N to make this work
+            highengphot_spec_at_rs.N += in_spec_phot.N * norm_fac(rs)
 
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
