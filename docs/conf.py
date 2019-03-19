@@ -172,6 +172,7 @@ html_theme_path = ['.']
 #
 # html_theme_options = {}
 html_theme_options = {
+    "edit_link": False,
     "sidebar": "right",
     "scipy_org_logo": "true", 
     "rootlinks": [('https://github.com/hongwanliu/DarkHistory/tree/development', 'Repository')]
