@@ -103,9 +103,9 @@ def evolve(
 
     # Handle the case where a DM process is specified. 
     if DM_process == 'swave':
-        if sigmav is None or primary is None or start_rs is None:
+        if sigmav is None or start_rs is None:
             raise ValueError(
-                'sigmav, primary and start_rs must be specified.'
+                'sigmav and start_rs must be specified.'
             )
         if primary == 'elec_delta':
             # Exact kinetic energy of each electron. 
@@ -164,9 +164,9 @@ def evolve(
             )
 
     if DM_process == 'decay':
-        if lifetime is None or primary is None or start_rs is None:
+        if lifetime is None or start_rs is None:
             raise ValueError(
-                'lifetime, primary and start_rs must be specified.'
+                'lifetime and start_rs must be specified.'
             )
         if primary == 'elec_delta':
             # Exact kinetic energy of each electron. 
@@ -480,18 +480,19 @@ def evolve(
         # Compute f_c(z)                                                    #
         #####################################################################
         #####################################################################
-        # High-energy deposition from input electrons. 
-        highengdep_at_rs += np.array([
-            deposited_ion/dt,
-            deposited_exc/dt,
-            deposited_heat/dt,
-            deposited_ICS/dt
-        ])
+        if elec_processes:
+            # High-energy deposition from input electrons. 
+            highengdep_at_rs += np.array([
+                deposited_ion/dt,
+                deposited_exc/dt,
+                deposited_heat/dt,
+                deposited_ICS/dt
+            ])
         
-        # Upscattered CMB photon energy from input electrons. 
-        cmbloss_at_rs += np.dot(
-            continuum_loss/dt, in_spec_elec.N*norm_fac(rs)
-        )
+            # Upscattered CMB photon energy from input electrons. 
+            cmbloss_at_rs += np.dot(
+                continuum_loss/dt, in_spec_elec.N*norm_fac(rs)
+            )
         
 
         # Values of (xHI, xHeI, xHeII) to use for computing f.
