@@ -22,8 +22,12 @@ data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 # eleceng = binning[1]
 
 # Structure formation data. 
+# Use empty string for readthedocs. 
+struct_data = ''
 # struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
 # Baseline ionization and thermal histories. 
+# Use empty string for readthedocs.
+soln_baseline = ''
 # soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
