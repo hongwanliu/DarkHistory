@@ -1,4 +1,4 @@
-"""Three-level atom model.
+"""Three-level atom model and integrator.
 
 """
 
@@ -527,14 +527,14 @@ def get_history(
         if helium_TLA:
             _init_cond = [
                 phys.Tm_std(rs_start), 
-                phys.xH_std(rs_start), 
-                phys.xHe_std(rs_start), 
+                phys.xHII_std(rs_start), 
+                phys.xHeII_std(rs_start), 
                 1e-12
             ]
         else:
             _init_cond = [
                 phys.Tm_std(rs_start), 
-                phys.xH_std(rs_start), 
+                phys.xHII_std(rs_start), 
                 1e-12, 
                 1e-12
             ]

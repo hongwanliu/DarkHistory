@@ -396,11 +396,8 @@ class Spectra:
         -----
         This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
         """
+        if np.isscalar(other):
 
-        if (
-            np.issubdtype(type(other), float)
-            or np.issubdtype(type(other), int)
-        ):
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
             out_spectra._in_eng = self.in_eng
@@ -549,13 +546,19 @@ class Spectra:
 
         return other * inv_spectra
 
-    def switch_spec_type(self):
+    def switch_spec_type(self, target=None):
+        """Switches between the type of values to be stored.
 
+        Parameters
+        ----------
+        target : {'N', 'dNdE'}
+            The target type to switch to. 
+        """
         log_bin_width = get_log_bin_width(self.eng)
-        if self.spec_type == 'N':
+        if self.spec_type == 'N' and not target == 'N':
             self._grid_vals = self.grid_vals/(self.eng * log_bin_width)
             self._spec_type = 'dNdE'
-        elif self.spec_type == 'dNdE':
+        elif self.spec_type == 'dNdE' and not target == 'dNdE':
             self._grid_vals = self.grid_vals*self.eng*log_bin_width
             self._spec_type = 'N'
 
@@ -869,7 +872,7 @@ class Spectra:
                 self.eng, new_data, spec_type=weight.spec_type
             )
         else:
-            raise TypeError('weight must be an ndarray or spectrum.')
+            raise TypeError('weight must be an ndarray or Spectrum.')
 
     def rebin(self, out_eng):
         """ Re-bins all `Spectrum` objects according to a new abscissa.
