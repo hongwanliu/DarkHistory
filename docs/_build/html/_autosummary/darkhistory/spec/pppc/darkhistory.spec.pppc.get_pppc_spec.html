@@ -98,6 +98,14 @@
 <dt id="darkhistory.spec.pppc.get_pppc_spec">
 <code class="descclassname">darkhistory.spec.pppc.</code><code class="descname">get_pppc_spec</code><span class="sig-paren">(</span><em>mDM</em>, <em>eng</em>, <em>pri</em>, <em>sec</em>, <em>decay=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.pppc.get_pppc_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the PPPC4DMID spectrum.</p>
+<p>This is the secondary spectrum to e+e-/photons normalized to one annihilation or decay event to the species specified in <code class="docutils literal notranslate"><span class="pre">pri</span></code>. These results include electroweak corrections. The full list of allowed channels is:</p>
+<ul class="simple">
+<li>Leptons: <code class="docutils literal notranslate"><span class="pre">e_L,</span> <span class="pre">e_R,</span> <span class="pre">e,</span> <span class="pre">mu_L,</span> <span class="pre">mu_R,</span> <span class="pre">mu,</span> <span class="pre">tau_L,</span> <span class="pre">tau_R,</span> <span class="pre">tau</span></code></li>
+<li>Quarks:  <code class="docutils literal notranslate"><span class="pre">q,</span> <span class="pre">c,</span> <span class="pre">b,</span> <span class="pre">t</span></code></li>
+<li>Gauge bosons: <code class="docutils literal notranslate"><span class="pre">gamma,</span> <span class="pre">g,</span> <span class="pre">W_L,</span> <span class="pre">W_T,</span> <span class="pre">W,</span> <span class="pre">Z_L,</span> <span class="pre">Z_T,</span> <span class="pre">Z</span></code></li>
+<li>Higgs: <code class="docutils literal notranslate"><span class="pre">h</span></code></li>
+</ul>
+<p>Variables with subscripts, e.g. <code class="docutils literal notranslate"><span class="pre">e_L</span></code>, correspond to particles with different polarizations. These polarizations are suitably averaged to obtain the spectra returned in their corresponding variables without subscripts, e.g. <code class="docutils literal notranslate"><span class="pre">e</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -110,28 +118,26 @@
 <dd><p class="first last">The energy abscissa for the output spectrum (in eV).</p>
 </dd>
 <dt><strong>pri</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd><p class="first last">One of the channels in <cite>chan_list</cite> above.</p>
+<dd><p class="first last">One of the available channels (see Notes).</p>
 </dd>
 <dt><strong>sec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘elec’, ‘phot’}</span></dt>
 <dd><p class="first last">The secondary spectrum to obtain.</p>
 </dd>
 <dt><strong>decay</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd><p class="first last">If <cite>True</cite>, returns the result for decays.</p>
+<dd><p class="first last">If <code class="docutils literal notranslate"><span class="pre">True</span></code>, returns the result for decays.</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>Spectrum</strong></dt>
-<dd><p class="first last">The <cite>Spectrum</cite> object containing the spectrum.</p>
+<dd><p class="first last">The output <a class="reference internal" href="../spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 </dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Notes</p>
-<p>This returns the PPPC4DMID output spectrum, which is the secondary spectrum to e+e-/photons normalized to one annihilation event to the species specified in <cite>pri</cite>.</p>
 </dd></dl>
 
 </div>

@@ -101,12 +101,13 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>in_spec_elec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum, optional</span></dt>
-<dd><p class="first last">Spectrum per injection event into electrons. <cite>in_spec_elec.rs</cite> of the spectrum
-must be the initial condition.</p>
+<dt><strong>in_spec_elec</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><a class="reference internal" href="../darkhistory/spec/spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a>, optional</span></dt>
+<dd><p class="first last">Spectrum per injection event into electrons. <code class="docutils literal notranslate"><span class="pre">in_spec_elec.rs</span></code>
+of the <a class="reference internal" href="../darkhistory/spec/spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> must be the initial condition.</p>
 </dd>
-<dt><strong>in_spec_phot</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum, optional</span></dt>
-<dd><p class="first last">Spectrum per injection event into photons.</p>
+<dt><strong>in_spec_phot</strong> <span class="classifier-delimiter">:</span> <span class="classifier"><a class="reference internal" href="../darkhistory/spec/spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a>, optional</span></dt>
+<dd><p class="first last">Spectrum per injection event into photons. <code class="docutils literal notranslate"><span class="pre">in_spec_phot.rs</span></code> 
+of the <a class="reference internal" href="../darkhistory/spec/spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> must be the initial condition.</p>
 </dd>
 <dt><strong>rate_func_N</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function, optional</span></dt>
 <dd><p class="first last">Function returning number of injection events per volume per time.</p>
@@ -118,14 +119,14 @@ must be the initial condition.</p>
 <dd><p class="first last">Dark matter process to use.</p>
 </dd>
 <dt><strong>sigmav</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd><p class="first last">Thermally averaged cross section for <cite>DM_process == ‘swave’</cite>.</p>
+<dd><p class="first last">Thermally averaged cross section for <code class="docutils literal notranslate"><span class="pre">DM_process</span> <span class="pre">==</span> <span class="pre">'swave'</span></code>.</p>
 </dd>
 <dt><strong>lifetime</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd><p class="first last">Decay lifetime for <cite>DM_process == ‘decay’</cite>.</p>
+<dd><p class="first last">Decay lifetime for <code class="docutils literal notranslate"><span class="pre">DM_process</span> <span class="pre">==</span> <span class="pre">'decay'</span></code>.</p>
 </dd>
 <dt><strong>primary</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string, optional</span></dt>
 <dd><p class="first last">Primary channel of annihilation/decay. Refer to 
-<cite>darkhistory.spec.pppc.chan_list</cite> for complete list. Use <cite>‘elec_delta’</cite> or <cite>‘phot_delta’</cite> for delta function injections of a pair of photons/an electron-positron pair.</p>
+<code class="xref py py-data docutils literal notranslate"><span class="pre">pppc.chan_list</span></code> for complete list. Use <code class="docutils literal notranslate"><span class="pre">'elec_delta'</span></code> or <code class="docutils literal notranslate"><span class="pre">'phot_delta'</span></code> for delta function injections of a pair of photons/an electron-positron pair.</p>
 </dd>
 <dt><strong>struct_boost</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function, optional</span></dt>
 <dd><p class="first last">Energy injection boost factor due to structure formation.</p>

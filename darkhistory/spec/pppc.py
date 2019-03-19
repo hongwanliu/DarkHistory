@@ -1,4 +1,4 @@
-""" PPPC4DMID Information and Functions
+""" PPPC4DMID [1]_ [2]_ Information and Functions. 
 
 """
 
@@ -216,6 +216,15 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
     """ Returns the PPPC4DMID spectrum. 
 
+    This is the secondary spectrum to e+e-/photons normalized to one annihilation or decay event to the species specified in ``pri``. These results include electroweak corrections. The full list of allowed channels is: 
+
+    - Leptons: ``e_L, e_R, e, mu_L, mu_R, mu, tau_L, tau_R, tau``
+    - Quarks:  ``q, c, b, t``
+    - Gauge bosons: ``gamma, g, W_L, W_T, W, Z_L, Z_T, Z``
+    - Higgs: ``h``
+
+    Variables with subscripts, e.g. ``e_L``, correspond to particles with different polarizations. These polarizations are suitably averaged to obtain the spectra returned in their corresponding variables without subscripts, e.g. ``e``. 
+
     Parameters
     ----------
     mDM : float
@@ -223,21 +232,17 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     eng : ndarray
         The energy abscissa for the output spectrum (in eV). 
     pri : string
-        One of the channels in `chan_list` above. 
+        One of the available channels (see Notes). 
     sec : {'elec', 'phot'}
         The secondary spectrum to obtain. 
     decay : bool, optional
-        If `True`, returns the result for decays.
+        If ``True``, returns the result for decays.
 
     Returns
     -------
     Spectrum
-        The `Spectrum` object containing the spectrum. 
-
-    Notes
-    -----
-    This returns the PPPC4DMID output spectrum, which is the secondary spectrum to e+e-/photons normalized to one annihilation event to the species specified in `pri`. 
-
+        The output :class:`.Spectrum` object.
+    
     """
 
     if decay:
