@@ -3,39 +3,114 @@ darkhistory.physics
 
 .. automodule:: darkhistory.physics
 
-   
-   
-   .. rubric:: Functions
+Fundamental Constants
+---------------------
 
-   .. autosummary::
-      :toctree: physics
+.. rubric:: Attributes
+
+.. autosummary::
+   :toctree: physics
+
+   mp
+   me
+   mHe
+   hbar
+   c
+   kB
+   alpha
+   ele
+   G
+   mass
+   thomson_xsec
+   stefboltz
+   ele_rad
+   ele_compton
+
+Cosmology
+----------
+
+.. rubric:: Attributes
+
+.. autosummary::
+   :toctree: physics
+
+   h
+   H0
+   omega_m
+   omega_rad
+   omega_lambda
+   omega_baryon
+   omega_DM
+   rho_crit
+   rho_DM
+   rho_baryon
+   nB
+   nH
+   nHe
+   nA
+   chi
+   YHe
+
+.. rubric:: Functions
+
+.. autosummary::
+   :toctree: physics
+
+   hubble
+   dtdz
+   TCMB
+   CMB_N_density
+   CMB_eng_density
+   CMB_spec
+   Tm_std
+   xHII_std
+   xHeII_std
+   get_optical_depth
+   inj_rate
+   struct_boost_func
+
+Atomic and Optical Physics
+--------------------------
+
+.. rubric:: Attributes
+
+.. autosummary::
+   :toctree: physics
+
+   rydberg
+   lya_eng
+   lya_freq
+   width_2s1s_H
+   bohr_rad
+   He_ion_eng
+   He_exc_lambda
+   He_exc_eng
+   A_He_21p
+   A_He_23P1
+   width_21s_1s_He
    
-      CMB_N_density
-      CMB_eng_density
-      CMB_spec
-      C_He
-      TCMB
-      Tm_std
-      alpha_recomb
-      beta_ion
-      coll_exc_xsec
-      coll_ion_sec_elec_spec
-      coll_ion_xsec
-      d_xe_Saha_dz
-      dtdz
-      elec_heating_engloss_rate
-      get_optical_depth
-      hubble
-      inj_rate
-      peebles_C
-      photo_ion_rate
-      photo_ion_xsec
-      struct_boost_func
-      xHII_std
-      xHeII_std
-      xe_Saha
+   
+.. rubric:: Functions
+
+.. autosummary::
+   :toctree: physics
+   
+   alpha_recomb
+   beta_ion
+   peebles_C
+   C_He
+   xe_Saha
+   d_xe_Saha_dz
+   photo_ion_rate
+   photo_ion_xsec
+   coll_exc_xsec
+   coll_ion_sec_elec_spec
+   coll_ion_xsec
+   elec_heating_engloss_rate
    
    
+
+      
 
    
    

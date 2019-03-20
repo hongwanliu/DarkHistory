@@ -99,7 +99,9 @@ def setup(app):
 # extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary',
 #     'sphinx.ext.doctest','sphinx.ext.napoleon']
 
-extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary', 'numpydoc']
+extensions = ['sphinx.ext.autodoc','sphinx.ext.autosummary', 'numpydoc', 'sphinx.ext.mathjax']
+
+mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 numpydoc_class_members_toctree = False
 

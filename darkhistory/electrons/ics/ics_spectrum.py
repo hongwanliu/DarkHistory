@@ -721,7 +721,7 @@ def nonrel_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         return spec
     else:
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
 
         spec_arr = [
             Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
@@ -891,7 +891,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         return spec 
     else:
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
         
         spec_arr = [
             Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
@@ -1058,7 +1058,7 @@ def ics_spec(
     else:
 
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
 
         # spec_arr = [
         #     Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 

@@ -690,7 +690,7 @@ def engloss_spec(
     else:
 
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
 
         # spec_arr = [
         #     Spectrum(delta, sp, rs=rs, in_eng=in_eng) 

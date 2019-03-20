@@ -203,7 +203,7 @@ def get_history(
 
 
             return adiabatic_cooling_rate + (
-                - phys.dtdz(rs)*(
+                phys.dtdz(rs)*(
                     compton_cooling_rate(
                         xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
                     )
@@ -239,7 +239,7 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-            return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
+            return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                 # Recombination processes. 
                 # Boltzmann factor is T_r, agrees with HyREC paper.
                 - phys.peebles_C(xHII(yHII), rs) * (
@@ -299,7 +299,7 @@ def get_history(
                 * np.exp(-phys.He_exc_eng['23s']/phys.TCMB(rs))
             )
 
-            return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (
+            return 2/chi * np.cosh(yHeII)**2 * phys.dtdz(rs) * (
                 -phys.C_He(xHII(yHII), xHeII(yHeII), rs, 'singlet') * (
                     term_recomb_singlet - term_ion_singlet
                 )
@@ -366,17 +366,17 @@ def get_history(
                 + xHeII(yHeII) * photoheat_rate_HeII(rs)
             )
 
-            compton_rate = - phys.dtdz(rs)*(
+            compton_rate = -phys.dtdz(rs)*(
                 compton_cooling_rate(
                     xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
                 )
             ) / (3/2 * nH * (1 + chi + xe))
 
-            dm_heating_rate = - phys.dtdz(rs)*(
+            dm_heating_rate = phys.dtdz(rs)*(
                 _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
             ) / (3/2 * nH * (1 + chi + xe))
 
-            reion_rate = - phys.dtdz(rs) * (
+            reion_rate = phys.dtdz(rs) * (
                 + photoheat_total_rate
                 + reion.recomb_cooling_rate(
                     xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -409,7 +409,7 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-            return 2 * np.cosh(yHII)**2 * -phys.dtdz(rs) * (
+            return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                 # DM injection. Note that C = 1 at late times.
                 + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * (
                     inj_rate / (phys.rydberg * nH)
@@ -440,7 +440,7 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-            return 2/chi * np.cosh(yHeII)**2 * -phys.dtdz(rs) * (
+            return 2/chi * np.cosh(yHeII)**2 * phys.dtdz(rs) * (
                 # Photoionization of HeI into HeII.
                 xHeI * photoion_rate_HeI(rs)
                 # Collisional ionization of HeI to HeII.
@@ -467,7 +467,7 @@ def get_history(
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
 
-            return 2/chi * np.cosh(yHeIII)**2 * -phys.dtdz(rs) * (
+            return 2/chi * np.cosh(yHeIII)**2 * phys.dtdz(rs) * (
                 # Photoionization of HeII into HeIII.
                 xHeII(yHeII) * photoion_rate_HeII(rs)
                 # Collisional ionization of HeII into HeIII.
@@ -511,7 +511,7 @@ def get_history(
             return (
                 adiabatic_cooling_rate
                 + (
-                    - phys.dtdz(rs)*(
+                    phys.dtdz(rs)*(
                         compton_cooling_rate(xHII, xHeII, 0, T_m, rs)
                         + _f_heating(rs, xHI, xHeI, 0) * _dm_injection_rate(rs)
                     )

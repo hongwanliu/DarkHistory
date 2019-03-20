@@ -2,8 +2,6 @@ darkhistory.utilities
 =====================
 
 .. automodule:: darkhistory.utilities
-
-   
    
    .. rubric:: Functions
 

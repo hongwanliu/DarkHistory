@@ -27,19 +27,19 @@ mHe         = 3.97107*mp
 hbar        = 6.58211951e-16
 """hbar in eV s."""
 c           = 299792458e2
-"""Speed of light in cm/s."""
+"""Speed of light in cm s\ :sup:`-1`\ ."""
 if not cross_check:
     kB          = 8.6173324e-5
-    """Boltzmann constant in eV/K."""
+    """Boltzmann constant in eV K\ :sup:`-1`\ ."""
 else:
     kB = 8.6173423e-5
 alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
-"""Electron charge in C."""
+"""Electron charge in coulombs."""
 if not cross_check:
     G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
-    """Newton's constant in cm^5 s^-4 eV^-1"""
+    """Newton's gravitational constant in cm\ :sup:`5` s\ :sup:`-4` eV\ :sup:`-1`\ ."""
 else:
     G = 6.6730e-8
 
@@ -50,9 +50,10 @@ mass = {
 }
 """Masses of Standard Model particles."""
 thomson_xsec = 6.652458734e-25
-"""Thomson cross section in cm^2."""
+"""Thomson cross section in cm\ :sup:`2`\ ."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
-"""Stefan-Boltzmann constant in eV^-3 cm^-2 s^-1."""
+"""Stefan-Boltzmann constant in eV\ :sup:`-3` cm\ :sup:`-2` s\ :sup:`-1`\ .
+"""
 ele_rad      = hbar * c * alpha / me
 """Classical electron radius in cm."""
 ele_compton  = 2*np.pi*hbar * c / me
@@ -74,7 +75,7 @@ if not cross_check:
     H0   = 100*h*3.241e-20
 else:
     H0 = 1/(4.5979401e17)
-""" Hubble parameter today in s^-1."""
+""" Hubble parameter today in s\ :sup:`-1`\ ."""
 
 if not cross_check:
     omega_m      = 0.3156
@@ -105,18 +106,18 @@ else:
     #""" Omega of dark matter today."""
 
 rho_crit     = 1.05375e4*(h**2)
-""" Critical density of the universe in eV/cm^3."""
+""" Critical density of the universe in eV cm\ :sup:`-3`\ ."""
 if not cross_check:
     rho_DM       = rho_crit*omega_DM
-    """ DM density in eV/cm^3."""
+    """ DM density in eV cm\ :sup:`-3`\ ."""
 else:
     #rho_DM = omega_DM/(8*np.pi*G/(3*H0**2))*eVperg
     rho_DM=1274.4140
 if not cross_check:
     rho_baryon   = rho_crit*omega_baryon
-    """ Baryon density in eV/cm^3."""
+    """ Baryon density in eV cm\ :sup:`-3`\ ."""
     nB          = rho_baryon/mp
-    """ Baryon number density in cm^-3."""
+    """ Baryon number density in eV cm\ :sup:`-3`\ ."""
 else:
     nB = nh0
     rho_baryon = nh0*mp
@@ -127,17 +128,17 @@ if not cross_check:
 else:
     YHe = .24
 nH          = (1-YHe)*nB
-""" Atomic hydrogen number density in cm^-3."""
+""" Atomic hydrogen number density in cm\ :sup:`-3`\ ."""
 nHe         = (YHe/4)*nB
-""" Atomic helium number density in cm^-3."""
+""" Atomic helium number density in cm\ :sup:`-3`\ ."""
 nA          = nH + nHe
-""" Hydrogen and helium number density in cm^-3.""" 
+""" Hydrogen and helium number density in cm\ :sup:`-3`\ .""" 
 chi         = nHe/nH
 """Ratio of helium to hydrogen nuclei."""
 
 
 def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ Hubble parameter in s^-1.
+    """ Hubble parameter in s\ :sup:`-1`\ .
 
     Assumes a flat universe.
 
@@ -163,9 +164,7 @@ def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_l
     return H0*np.sqrt(omega_rad*rs**4 + omega_m*rs**3 + omega_lambda)
 
 def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ abs(dt/dz) in s.
-
-    Assumes a flat universe.
+    """ dt/dz in s.
 
     Parameters
     ----------
@@ -185,7 +184,7 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
     float
     """
 
-    return 1/(rs*hubble(rs, H0, omega_m, omega_rad, omega_lambda))
+    return -1./(rs*hubble(rs, H0, omega_m, omega_rad, omega_lambda))
 
 #########################################
 # CMB                                   #
@@ -211,9 +210,9 @@ def TCMB(rs):
     return fac * kB * rs
 
 def CMB_spec(eng, temp):
-    """CMB spectrum in number of photons/cm^3/eV.
+    """CMB spectrum in number of photons cm\ :sup:`-3` eV\ :sup:`-1`\ .
 
-    Returns zero if the energy exceeds 500 times the temperature. See `darkhistory.utilities.arrays_equal`. 
+    Returns zero if the energy exceeds 500 times the temperature. See :func:`.arrays_equal`. 
 
     Parameters
     ----------
@@ -224,8 +223,8 @@ def CMB_spec(eng, temp):
 
     Returns
     -------
-    phot_spec_density : ndarray
-        Returns the number of photons/cm^3/eV.
+    ndarray
+        The number density of photons.
 
     """
     prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
@@ -254,7 +253,7 @@ def CMB_spec(eng, temp):
     return expr
 
 def CMB_N_density(T):
-    """ CMB number density in cm^-3.
+    """ CMB number density in cm\ :sup:`-3`\ .
 
     Parameters
     ----------
@@ -272,7 +271,7 @@ def CMB_N_density(T):
     return 4*stefboltz/c*T**3*(zeta(3)/(3*zeta_4))
 
 def CMB_eng_density(T):
-    """CMB energy density in eV/cm^3.
+    """CMB energy density in eV cm\ :sup:`-3`\ .
 
     Parameters
     ----------
@@ -303,14 +302,14 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     mDM : float, optional
         DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm^3 s^-1.
+        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ .
     lifetime : float, optional
         Decay lifetime in s.
 
     Returns
     -------
     float
-        The dE/dV_dt injection rate in eV cm^-3 s^-1.
+        The dE/dV_dt injection rate in eV cm\ :sup:`-3`\ s\ :sup:`-1`\ .
 
     """
 
@@ -328,7 +327,7 @@ log_struct_interp = interp1d(
 )
 
 def struct_boost_func(model='einasto_with_subs', model_params=None):
-    """Structure formation boost factor 1+B(z)
+    """Structure formation boost factor 1+B(z).
 
     Parameters
     ----------
@@ -399,10 +398,10 @@ def get_optical_depth(rs_vec, xe_vec):
     from darkhistory.spec.spectools import get_log_bin_width
 
     rs_log_bin_width = get_log_bin_width(rs_vec)
-    dtdz_vec = dtdz(rs_vec)
+    abs_dtdz_vec = -dtdz(rs_vec)
 
     return np.dot(
-        xe_vec*nH*thomson_xsec*c*dtdz_vec,
+        xe_vec*nH*thomson_xsec*c*abs_dtdz_vec,
         rs_vec**4*rs_log_bin_width
     )
 
@@ -423,7 +422,7 @@ lya_eng      = rydberg*3/4
 lya_freq     = lya_eng / (2*np.pi*hbar)
 """Lyman alpha transition frequency in Hz."""
 width_2s1s_H = 8.22458
-"""Hydrogen 2s to 1s decay width in s^-1."""
+"""Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
 
@@ -451,11 +450,11 @@ He_exc_eng = {
 """HeI n=1 to n=2 excitation energies in eV."""
 
 A_He_21p = 1.798287e9    
-"""Einstein coefficient for 21p -> 1s decay in s^-1."""
+"""Einstein coefficient for 2\ :sup:`1`\ p :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 A_He_23P1 = 177.58        
-"""Einstein coefficient for 2^3P_1 -> 1s decay in s^-1."""
+"""Einstein coefficient for 2\ :sup:`3`\ P\ :sub:`1` :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 width_21s_1s_He = 51.3 
-"""Width of He 21s -> 1s decay in s^-1."""
+"""Width of He 2\ :sup:`1`\ s :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 
 #########################################
 # Recombination/Ionization              #
@@ -474,7 +473,7 @@ def alpha_recomb(T_m, species):
     Returns
     -------
     float
-        Case-B recombination coefficient in cm^3/s.
+        Case-B recombination coefficient in cm\ :sup:`-3`\ s\ :sup:`-1`\ .
 
     Notes
     -----
@@ -541,7 +540,7 @@ def beta_ion(T_rad, species):
     Returns
     -------
     float
-        Case-B photoionization coefficient in s^-1.
+        Case-B photoionization coefficient in s\ :sup:`-1`\ .
 
     Notes
     -----
@@ -581,7 +580,7 @@ def beta_ion(T_rad, species):
         return TypeError('invalid species.')
 
 def peebles_C(xHII, rs):
-    """Returns the hydrogen Peebles C coefficient.
+    """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
 
@@ -619,7 +618,7 @@ def peebles_C(xHII, rs):
     return rate_exc/(rate_exc + rate_ion)
 
 def C_He(xHII, xHeII, rs, species):
-    """Returns the helium C coefficients. 
+    """Helium C coefficients. 
 
     These coefficients play a similar role to the Peebles C factor.
 
@@ -732,7 +731,7 @@ def C_He(xHII, xHeII, rs, species):
         return TypeError('invalid species.')
 
 def xe_Saha(rs, species):
-    """Returns the Saha equilibrium ionization value for H/He. 
+    """Saha equilibrium ionization value for H and He. 
 
     Parameters
     ----------
@@ -762,12 +761,6 @@ def xe_Saha(rs, species):
         b  = rhs
         q  = -rhs
 
-        # print('in phys.xe_Saha')
-        # print(rhs)
-        # print((-b + np.sqrt(b**2 - 4*a*q))/(2*a))
-        # print(1. - a/rhs)
-        # print('out!')
-
         if rhs < 1e9:
             
             xe = (-b + np.sqrt(b**2 - 4*a*q))/(2*a)
@@ -796,7 +789,7 @@ def xe_Saha(rs, species):
     return xe
 
 def d_xe_Saha_dz(rs, species):
-    """Returns the z derivative of the Saha equilibrium ionization value.
+    """`z`-derivative of the Saha equilibrium ionization value.
 
     Parameters
     ----------
@@ -840,7 +833,7 @@ _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
 _Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
 
 def xHII_std(rs):
-    """Returns the baseline nHII/nH value.
+    """Baseline nHII/nH value.
 
     Parameters
     ----------
@@ -855,7 +848,7 @@ def xHII_std(rs):
     return _xHII_std(rs)
 
 def xHeII_std(rs):
-    """Returns the baseline nHeII/nH value.
+    """Baseline nHeII/nH value.
 
     Parameters
     ----------
@@ -870,7 +863,7 @@ def xHeII_std(rs):
     return _xHeII_std(rs)
 
 def Tm_std(rs):
-    """Returns the baseline Tm value.
+    """Baseline Tm value.
 
     Parameters
     ----------
@@ -889,7 +882,7 @@ def Tm_std(rs):
 # Atomic Cross-Sections
 
 def photo_ion_xsec(eng, species):
-    """Photoionization cross section in cm^2.
+    """Photoionization cross section in cm\ :sup:`2`\ .
 
     Cross sections for hydrogen, neutral helium and singly-ionized helium are available.
 
@@ -903,7 +896,7 @@ def photo_ion_xsec(eng, species):
     Returns
     -------
     xsec : ndarray
-        Cross section in cm^2.
+        Photoionization cross section.
     """
 
     eng_thres = {'HI':rydberg, 'HeI':He_ion_eng, 'HeII':4*rydberg}
@@ -951,7 +944,7 @@ def photo_ion_xsec(eng, species):
     return xsec
 
 def photo_ion_rate(rs, eng, xH, xe, atom=None):
-    """Photoionization rate in cm^3 s^-1.
+    """Photoionization rate in cm\ :sup:`-3` s\ :sup:`-1`\ .
 
     Parameters
     ----------
@@ -968,8 +961,8 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
 
     Returns
     -------
-    ionrate : float
-        The ionization rate of the particular species or the total ionization rate.
+    float
+        The photoionization rate of the particular species or the total ionization rate.
 
     """
     atoms = ['HI', 'HeI', 'HeII']
@@ -991,7 +984,9 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         return sum([ion_rate[atom] for atom in atoms])
 
 def coll_exc_xsec(eng, species=None):
-    """ Returns the collisional excitation rate. See 0906.1197.
+    """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
+
+    See 0906.1197.
 
     Parameters
     ----------
@@ -1003,7 +998,7 @@ def coll_exc_xsec(eng, species=None):
     Returns
     -------
     float or ndarray
-        Collisional excitation cross section in cm^2.
+        e-e collisional excitation cross section.
     """
     if species == 'HI' or species == 'HeI':
 
@@ -1063,7 +1058,9 @@ def coll_exc_xsec(eng, species=None):
         raise TypeError('invalid species.')
 
 def coll_ion_xsec(eng, species=None):
-    """ Returns the collisional ionization rate. See 0906.1197.
+    """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
+
+    See 0906.1197.
 
     Parameters
     ----------
@@ -1075,7 +1072,7 @@ def coll_ion_xsec(eng, species=None):
     Returns
     -------
     float or ndarray
-        Collisional ionization cross section in cm^2.
+        e-e collisional ionization cross section.
 
     Notes
     -----
@@ -1121,7 +1118,9 @@ def coll_ion_xsec(eng, species=None):
     return xsec
 
 def coll_ion_sec_elec_spec(in_eng, eng, species=None):
-    """ Returns the secondary electron spectrum after collisional ionization. See 0910.4410.
+    """ Secondary electron spectrum after collisional ionization. 
+
+    See 0910.4410.
 
     Parameters
     ----------
@@ -1222,7 +1221,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
 
 
 def elec_heating_engloss_rate(eng, xe, rs):
-    """Returns the electron energy loss rate due to heating of the gas.
+    """Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .
 
     Parameters
     ----------
@@ -1251,9 +1250,6 @@ def elec_heating_engloss_rate(eng, xe, rs):
     prefac = 4*np.pi*ele**4/(4*np.pi*eps_0)**2
     # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2).
     prefac *= 100**2/ele**2
-
-    # Comparison with Tracy's numfac: numfac == phys.ele**4/((4*np.pi*eps_0)**2*phys.me/phys.c**2)*(100**2/phys.ele**2)/phys.c
-    # Because she factored out beta, and left m_e c in numfac.
 
     # zeta_e = 7.40e-11*nB*rs**3
     zeta_e = 7.40e-11*ne
