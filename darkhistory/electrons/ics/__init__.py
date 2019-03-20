@@ -1,2 +1,2 @@
-"""Functions for computing ICS spectra integrated over the CMB.
+"""Inverse Compton scattering modules.
 """

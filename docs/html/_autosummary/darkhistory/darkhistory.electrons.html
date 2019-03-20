@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" >
     <link rel="search" title="Search" href="../../search.html" >
@@ -93,6 +94,8 @@
   <div class="section" id="module-darkhistory.electrons">
 <span id="darkhistory-electrons"></span><h1>darkhistory.electrons<a class="headerlink" href="#module-darkhistory.electrons" title="Permalink to this headline">¶</a></h1>
 <p>Electron cooling processes.</p>
+<p>Electrons cool via inverse Compton scattering (ICS), which is handled by the package <a class="reference internal" href="electrons/darkhistory.electrons.ics.html#module-darkhistory.electrons.ics" title="darkhistory.electrons.ics"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ics</span></code></a>. The full electron cooling calculation, including both ICS and atomic cooling, is done in <a class="reference internal" href="electrons/darkhistory.electrons.elec_cooling.html#module-darkhistory.electrons.elec_cooling" title="darkhistory.electrons.elec_cooling"><code class="xref py py-mod docutils literal notranslate"><span class="pre">elec_cooling</span></code></a>.</p>
+<p>Positrons ultimately annihilate with electrons after first forming positronium: the resulting spectrum is calculated in <a class="reference internal" href="electrons/darkhistory.electrons.positronium.html#module-darkhistory.electrons.positronium" title="darkhistory.electrons.positronium"><code class="xref py py-mod docutils literal notranslate"><span class="pre">positronium</span></code></a>.</p>
 <p class="rubric">Modules</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -101,7 +104,7 @@
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><a class="reference internal" href="electrons/darkhistory.electrons.elec_cooling.html#module-darkhistory.electrons.elec_cooling" title="darkhistory.electrons.elec_cooling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elec_cooling</span></code></a></td>
-<td>Functions for electron cooling.</td>
+<td>Function for calculating the electron cooling transfer function.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="electrons/darkhistory.electrons.positronium.html#module-darkhistory.electrons.positronium" title="darkhistory.electrons.positronium"><code class="xref py py-obj docutils literal notranslate"><span class="pre">positronium</span></code></a></td>
 <td>Positronium annihilation functions.</td>
@@ -116,7 +119,7 @@
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><a class="reference internal" href="electrons/darkhistory.electrons.ics.html#module-darkhistory.electrons.ics" title="darkhistory.electrons.ics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ics</span></code></a></td>
-<td>Functions for computing ICS spectra integrated over the CMB.</td>
+<td>Inverse Compton scattering modules.</td>
 </tr>
 </tbody>
 </table>

@@ -1,2 +1,2 @@
-"""Main body of the code.
+"""DarkHistory packages.
 """

@@ -98,11 +98,9 @@
 <dt id="darkhistory.utilities.exp_expn">
 <code class="descclassname">darkhistory.utilities.</code><code class="descname">exp_expn</code><span class="sig-paren">(</span><em>n</em>, <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.exp_expn" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns <span class="math notranslate nohighlight">\(e^x E_n(x)\)</span>.</p>
-<p>The exponential integral <span class="math notranslate nohighlight">\(E_n(x)\)</span> is defined as
-.. math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">int_1</span><span class="o">^</span>\<span class="n">infty</span> <span class="n">dt</span>\<span class="p">,</span> \<span class="n">frac</span><span class="p">{</span><span class="n">e</span><span class="o">^</span><span class="p">{</span><span class="o">-</span><span class="n">xt</span><span class="p">}}{</span><span class="n">t</span><span class="o">^</span><span class="n">n</span><span class="p">}</span>
-</pre></div>
-</div>
+<p>The exponential integral <span class="math notranslate nohighlight">\(E_n(x)\)</span> is defined as</p>
+<div class="math notranslate nohighlight">
+\[E_n(x) \equiv \int_1^\infty dt\, \frac{e^{-xt}}{t^n}\]</div>
 <p>Circumvents overflow error in <code class="docutils literal notranslate"><span class="pre">np.exp</span></code> by expanding the exponential integral in a series to the 5th or 6th order.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -120,7 +118,7 @@
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>ndarray</strong></dt>
-<dd><p class="first last">The result of <span class="math notranslate nohighlight">\(e^x E_n(x)\)</span></p>
+<dd><p class="first last">The value of <span class="math notranslate nohighlight">\(e^x E_n(x)\)</span>.</p>
 </dd>
 </dl>
 </td>

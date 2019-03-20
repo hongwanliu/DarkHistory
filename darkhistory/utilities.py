@@ -101,7 +101,7 @@ def bernoulli(k):
     This function is written as a look-up table for the first few Bernoulli numbers for speed. The Bernoulli number definition we use is:
 
     .. math::
-       \\frac{x}{e^x - 1} = \\sum_{n = 0}^\\infty \\frac{B_n x^n}{n!} \\,.
+       \\frac{x}{e^x - 1} \\equiv \\sum_{n = 0}^\\infty \\frac{B_n x^n}{n!} \\,.
 
     Parameters
     ----------
@@ -154,8 +154,9 @@ def spence_series_diff(b, a):
     """ Returns the Taylor series for Li\ :sub:`2`\ (b) - Li\ :sub:`2`\ (a).
 
     Li2 is the polylogarithm function defined by
+    
     .. math::
-       \\text{Li}_2(z) = \\sum_{k=1}^\\infty \\frac{z^k}{k^s} \\,.
+       \\text{Li}_2(z) \\equiv \\sum_{k=1}^\\infty \\frac{z^k}{k^s} \\,.
 
     Parameters
     ----------
@@ -183,8 +184,9 @@ def exp_expn(n, x):
     """ Returns :math:`e^x E_n(x)`.
 
     The exponential integral :math:`E_n(x)` is defined as
+
     .. math::
-       \\int_1^\\infty dt\\, \\frac{e^{-xt}}{t^n}
+       E_n(x) \\equiv \\int_1^\\infty dt\\, \\frac{e^{-xt}}{t^n}
 
     Circumvents overflow error in ``np.exp`` by expanding the exponential integral in a series to the 5th or 6th order.  
 
@@ -198,7 +200,7 @@ def exp_expn(n, x):
     Returns
     -------
     ndarray
-        The result of :math:`e^x E_n(x)`
+        The value of :math:`e^x E_n(x)`. 
 
     """
     import scipy.special as sp
