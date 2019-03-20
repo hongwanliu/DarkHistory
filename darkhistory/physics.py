@@ -342,8 +342,8 @@ def struct_boost_func(model='einasto_with_subs', model_params=None):
     float or ndarray
         Boost factor. 
 
-    Note
-    ----
+    Notes
+    -----
     Refer to 1408.1109 for erfc model, 1604.02457 for all other model
     descriptions and parameters.
 
@@ -476,8 +476,8 @@ def alpha_recomb(T_m, species):
     float
         Case-B recombination coefficient in cm^3/s.
 
-    Note
-    ----
+    Notes
+    -----
     For HeI, returns beta with respect to the 2s state,
     in agreement with convention in RECFAST.
     """
@@ -543,8 +543,8 @@ def beta_ion(T_rad, species):
     float
         Case-B photoionization coefficient in s^-1.
 
-    Note
-    ----
+    Notes
+    -----
     For HeI, returns beta with respect to the 2s state,
     in agreement with convention in RECFAST.
 
@@ -746,7 +746,7 @@ def xe_Saha(rs, species):
     float
         The Saha equilibrium xe.
 
-    Note
+    Notes
     -----
     See astro-ph/9909275 and 1011.3758 for details.
     """
@@ -809,7 +809,7 @@ def d_xe_Saha_dz(rs, species):
     float
         The derivative of the Saha equilibrium d xe/dz. 
 
-    Note
+    Notes
     -----
     See astro-ph/9909275 and 1011.3758 for details.
     """
@@ -1077,8 +1077,8 @@ def coll_ion_xsec(eng, species=None):
     float or ndarray
         Collisional ionization cross section in cm^2.
 
-    Note
-    ----
+    Notes
+    -----
     Returns the Arnaud and Rothenflug rate.
 
     """
@@ -1137,8 +1137,8 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
     ndarray
         Secondary electron spectrum. Total number of electrons = 2.
 
-    Note
-    ----
+    Notes
+    -----
     Includes both the freed and initial electrons. Conservation of energy
     is not enforced, but number of electrons is.
 
@@ -1238,7 +1238,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     ndarray
         The energy loss rate due to heating (positive).
 
-    Note
+    Notes
     -------
     See 0910.4410 for the expression. The units have e^2/r being in units of energy, so to convert to SI, we insert 1/(4*pi*eps_0)^2.
     """

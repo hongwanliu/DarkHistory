@@ -281,8 +281,8 @@ def get_grid(a, b):
     ndarray
         2D array with grid values from `a` and `b`.
 
-    Note
-    ----
+    Notes
+    -----
     This function returns an array that when passed to RegularGridInterpolator produces the same result as scipy.interpolate.interp2d(a, b).
     """
 

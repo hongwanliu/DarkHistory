@@ -3,6 +3,15 @@ darkhistory
 
 .. automodule:: darkhistory
 
+.. rubric:: Modules
+   
+.. autosummary::
+   :toctree: darkhistory
+
+   darkhistory.physics
+   darkhistory.utilities
+
+
 .. rubric:: Packages
 
 .. autosummary::
