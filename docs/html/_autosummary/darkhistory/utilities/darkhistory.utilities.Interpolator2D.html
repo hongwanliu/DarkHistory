@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" >
     <link rel="search" title="Search" href="../../../search.html" >
@@ -96,14 +97,14 @@
 <dl class="class">
 <dt id="darkhistory.utilities.Interpolator2D">
 <em class="property">class </em><code class="descclassname">darkhistory.utilities.</code><code class="descname">Interpolator2D</code><span class="sig-paren">(</span><em>arr0</em>, <em>name0</em>, <em>arr1</em>, <em>name1</em>, <em>val_arr</em>, <em>logInterp=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.Interpolator2D" title="Permalink to this definition">¶</a></dt>
-<dd><p>Interpolation function over list of objects</p>
+<dd><p>Interpolation function over a list of objects.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>val_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list of objects</span></dt>
-<dd><p class="first last">List of objects, ndim = (arr0.size, arr1.size, …)</p>
+<dd><p class="first last">List of objects, <code class="docutils literal notranslate"><span class="pre">ndim</span> <span class="pre">=</span> <span class="pre">(arr0.size,</span> <span class="pre">arr1.size,</span> <span class="pre">...)</span></code></p>
 </dd>
 <dt><strong>arr0</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
 <dd><p class="first last">list of values along 0th dimension</p>
@@ -116,7 +117,7 @@
 </tr>
 <tr class="field-even field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>interp_func</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function</span></dt>
-<dd><p class="first last">A 2D interpolation function over xe and rs.</p>
+<dd><p class="first last">A 2D interpolation function over <code class="docutils literal notranslate"><span class="pre">arr0</span></code> and <code class="docutils literal notranslate"><span class="pre">arr1</span></code>.</p>
 </dd>
 <dt><strong>_grid_vals</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
 <dd><p class="first last">a nD array of input data</p>

@@ -1,4 +1,4 @@
-""" Non-physics functions used in darkhistory.
+""" Non-physics convenience and mathematical functions.
 
 """
 
@@ -7,7 +7,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 def arrays_equal(ndarray_list):
-    """Check if the arrays contained in `ndarray_list` are equal.
+    """Checks if a list of arrays are all equal.
 
     Parameters
     ----------
@@ -30,7 +30,7 @@ def arrays_equal(ndarray_list):
     return same
 
 def is_log_spaced(arr):
-    """Checks if `arr` is a log-spaced array.
+    """Checks for a log-spaced array.
 
     Parameters
     ----------
@@ -52,20 +52,22 @@ def compare_arr(ndarray_list):
     ----------
     ndarray_list : list of ndarray
         The list of 1D arrays to compare.
+
+    Returns
+    --------
+    None
     """
 
     print(np.stack(ndarray_list, axis=-1))
 
-    return 0
-
 def log_1_plus_x(x):
     """ Computes log(1+x) with greater floating point accuracy.
 
-    Unlike scipy.special.log1p, this can take float128. However the performance is certainly slower. See "What every computer scientist should know about floating-point arithmetic" by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.
+    Unlike ``scipy.special.log1p``, this can take ``float128``. However the performance is certainly slower. See [1]_ for details. If that trick does not work, the code reverts to a Taylor expansion.
 
     Parameters
     ----------
-    x : ndarray
+    x : float or ndarray
         The input value.
 
     Returns
@@ -94,9 +96,12 @@ def log_1_plus_x(x):
     return expr
 
 def bernoulli(k):
-    """ Returns the kth Bernoulli number.
+    """ The kth Bernoulli number.
 
-    This function is written as a look-up table for the first few Bernoulli numbers for speed.
+    This function is written as a look-up table for the first few Bernoulli numbers for speed. The Bernoulli number definition we use is:
+
+    .. math::
+       \\frac{x}{e^x - 1} = \\sum_{n = 0}^\\infty \\frac{B_n x^n}{n!} \\,.
 
     Parameters
     ----------
@@ -123,7 +128,7 @@ def bernoulli(k):
         return sp.bernoulli(k)[-1]
 
 def log_series_diff(b, a):
-    """ Returns the Taylor series for log(1+b) - log(1+a).
+    """ The Taylor series for log(1+b) - log(1+a).
 
     Parameters
     ----------
@@ -146,19 +151,23 @@ def log_series_diff(b, a):
     )
 
 def spence_series_diff(b, a):
-    """ Returns the Taylor series for Li2(b) - Li2(a).
+    """ Returns the Taylor series for Li\ :sub:`2`\ (b) - Li\ :sub:`2`\ (a).
+
+    Li2 is the polylogarithm function defined by
+    .. math::
+       \\text{Li}_2(z) = \\sum_{k=1}^\\infty \\frac{z^k}{k^s} \\,.
 
     Parameters
     ----------
     a : ndarray
-        Input for Li2(a).
+        Input for Li\ :sub:`2`\ (a).
     b : ndarray
-        Input for Li2(b).
+        Input for Li\ :sub:`2`\ (b).
 
     Returns
     -------
     ndarray
-        The Taylor series Li2(b) - Li2(a), up to the 11th order term.
+        The Taylor series Li\ :sub:`2`\ (b) - Li\ :sub:`2`\ (a), up to the 11th order term.
 
     """
 
@@ -171,9 +180,13 @@ def spence_series_diff(b, a):
     )
 
 def exp_expn(n, x):
-    """ Returns exp(x)*E_n(n, x).
+    """ Returns :math:`e^x E_n(x)`.
 
-    Circumvents overflow error in np.exp by expanding the exponential integral in a series.
+    The exponential integral :math:`E_n(x)` is defined as
+    .. math::
+       \\int_1^\\infty dt\\, \\frac{e^{-xt}}{t^n}
+
+    Circumvents overflow error in ``np.exp`` by expanding the exponential integral in a series to the 5th or 6th order.  
 
     Parameters
     ----------
@@ -185,7 +198,7 @@ def exp_expn(n, x):
     Returns
     -------
     ndarray
-        The result of exp(x)*E_n(n, x)
+        The result of :math:`e^x E_n(x)`
 
     """
     import scipy.special as sp
@@ -217,21 +230,21 @@ def exp_expn(n, x):
     return expr
 
 def hyp2f1_func_real(n, x):
-    """ Returns the real part of 2F1(1, n+1, n+2, x).
+    """ Returns the real part of :math:`_2F_1(1, n+1, n+2, x)`.
 
-    Avoids the need for complex numbers in scipy.special.hyp2f1, which is very slow.
+    Avoids the need for complex numbers in ``scipy.special.hyp2f1``, which is very slow. The function definition is identical.
 
     Parameters
     ----------
     n : integer
-        The order of 2F1(1, n+1, n+2, x) to evaluate.
+        The order of :math:`_2F_1(1, n+1, n+2, x)` to evaluate.
     x : ndarray
         The main argument of the function.
 
     Returns
     -------
     ndarray
-        The result of 2F1(1, n+1, n+2, x).
+        The result of :math:`_2F_1(1, n+1, n+2, x)`.
 
     """
 
@@ -283,7 +296,7 @@ def get_grid(a, b):
 
     Notes
     -----
-    This function returns an array that when passed to RegularGridInterpolator produces the same result as scipy.interpolate.interp2d(a, b).
+    This function returns an array that when passed to ``scipy.interpolate.RegularGridInterpolator`` produces the same result as ``scipy.interpolate.interp2d(a, b)``.
     """
 
     grid_list = np.meshgrid(a,b)
@@ -314,12 +327,12 @@ def check_err(val, err, epsrel):
 
 class Interpolator2D:
 
-    """Interpolation function over list of objects
+    """Interpolation function over a list of objects.
 
     Parameters
     ----------
     val_arr : list of objects
-        List of objects, ndim = (arr0.size, arr1.size, ...)
+        List of objects, ``ndim = (arr0.size, arr1.size, ...)``
     arr0 : ndarray
         list of values along 0th dimension
     arr1 : ndarray
@@ -328,7 +341,7 @@ class Interpolator2D:
     Attributes
     ----------
     interp_func : function
-        A 2D interpolation function over xe and rs.
+        A 2D interpolation function over ``arr0`` and ``arr1``.
     _grid_vals : ndarray
         a nD array of input data
     """

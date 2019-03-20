@@ -1,5 +1,7 @@
 """ Physics functions as well as constants.
 
+Throughout DarkHistory, we choose cm, s and eV as our system of units. Masses and temperatures are also given in eV. Particle Data Group central values [1]_ are used for constants, while cosmological parameters are set to the central values of the Planck 2018 baseline TT,TE,EE+lowE+lensing [2]_. 
+
 """
 
 import pickle
@@ -37,10 +39,8 @@ alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in coulombs."""
-if not cross_check:
-    G = 6.70711 * 10**-39 * hbar * c**5 * 10**-18
-    """Newton's gravitational constant in cm\ :sup:`5` s\ :sup:`-4` eV\ :sup:`-1`\ ."""
-else:
+
+if cross_check:
     G = 6.6730e-8
 
 mass = {
@@ -69,24 +69,24 @@ ele_compton  = 2*np.pi*hbar * c / me
 # Densities and Hubble                  #
 #########################################
 
-h    = 0.6727
+h    = 0.6736
 """ h parameter."""
 if not cross_check:
     H0   = 100*h*3.241e-20
 else:
     H0 = 1/(4.5979401e17)
-""" Hubble parameter today in s\ :sup:`-1`\ ."""
+    """ Hubble parameter today in s\ :sup:`-1`\ ."""
 
 if not cross_check:
-    omega_m      = 0.3156
+    omega_m      = 0.3153
     """ Omega of all matter today."""
     omega_rad    = 8e-5
     """ Omega of radiation today."""
-    omega_lambda = 0.6844
+    omega_lambda = 0.6847
     """ Omega of dark energy today."""
-    omega_baryon = 0.02225/(h**2)
+    omega_baryon = 0.02237/(h**2)
     """ Omega of baryons today."""
-    omega_DM      = 0.1198/(h**2)
+    omega_DM      = 0.1200/(h**2)
     """ Omega of dark matter today."""
 else:
     kmperMpc = 3.08568025e19
@@ -105,8 +105,11 @@ else:
     omega_DM      = omega_m-omega_baryon
     #""" Omega of dark matter today."""
 
-rho_crit     = 1.05375e4*(h**2)
-""" Critical density of the universe in eV cm\ :sup:`-3`\ ."""
+rho_crit     = 1.05371e4*(h**2)
+""" Critical density of the universe in eV cm\ :sup:`-3`\ . 
+
+See [1] for the definition. This is a mass density, with mass measured in eV.
+"""
 if not cross_check:
     rho_DM       = rho_crit*omega_DM
     """ DM density in eV cm\ :sup:`-3`\ ."""
@@ -123,7 +126,7 @@ else:
     rho_baryon = nh0*mp
 
 if not cross_check:
-    YHe         = 0.250
+    YHe         = 0.245
     """Helium abundance by mass."""
 else:
     YHe = .24

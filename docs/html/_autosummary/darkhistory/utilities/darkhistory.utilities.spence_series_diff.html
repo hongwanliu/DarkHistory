@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" >
     <link rel="search" title="Search" href="../../../search.html" >
@@ -96,24 +97,29 @@
 <dl class="function">
 <dt id="darkhistory.utilities.spence_series_diff">
 <code class="descclassname">darkhistory.utilities.</code><code class="descname">spence_series_diff</code><span class="sig-paren">(</span><em>b</em>, <em>a</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.spence_series_diff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the Taylor series for Li2(b) - Li2(a).</p>
+<dd><p>Returns the Taylor series for Li<sub>2</sub>(b) - Li<sub>2</sub>(a).</p>
+<p>Li2 is the polylogarithm function defined by
+.. math:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">text</span><span class="p">{</span><span class="n">Li</span><span class="p">}</span><span class="n">_2</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">=</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">}</span><span class="o">^</span>\<span class="n">infty</span> \<span class="n">frac</span><span class="p">{</span><span class="n">z</span><span class="o">^</span><span class="n">k</span><span class="p">}{</span><span class="n">k</span><span class="o">^</span><span class="n">s</span><span class="p">}</span> \<span class="p">,</span><span class="o">.</span>
+</pre></div>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>a</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">Input for Li2(a).</p>
+<dd><p class="first last">Input for Li<sub>2</sub>(a).</p>
 </dd>
 <dt><strong>b</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">Input for Li2(b).</p>
+<dd><p class="first last">Input for Li<sub>2</sub>(b).</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>ndarray</strong></dt>
-<dd><p class="first last">The Taylor series Li2(b) - Li2(a), up to the 11th order term.</p>
+<dd><p class="first last">The Taylor series Li<sub>2</sub>(b) - Li<sub>2</sub>(a), up to the 11th order term.</p>
 </dd>
 </dl>
 </td>

@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" >
     <link rel="search" title="Search" href="../../../search.html" >
@@ -96,15 +97,15 @@
 <dl class="function">
 <dt id="darkhistory.utilities.hyp2f1_func_real">
 <code class="descclassname">darkhistory.utilities.</code><code class="descname">hyp2f1_func_real</code><span class="sig-paren">(</span><em>n</em>, <em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.hyp2f1_func_real" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the real part of 2F1(1, n+1, n+2, x).</p>
-<p>Avoids the need for complex numbers in scipy.special.hyp2f1, which is very slow.</p>
+<dd><p>Returns the real part of <span class="math notranslate nohighlight">\(_2F_1(1, n+1, n+2, x)\)</span>.</p>
+<p>Avoids the need for complex numbers in <code class="docutils literal notranslate"><span class="pre">scipy.special.hyp2f1</span></code>, which is very slow. The function definition is identical.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>n</strong> <span class="classifier-delimiter">:</span> <span class="classifier">integer</span></dt>
-<dd><p class="first last">The order of 2F1(1, n+1, n+2, x) to evaluate.</p>
+<dd><p class="first last">The order of <span class="math notranslate nohighlight">\(_2F_1(1, n+1, n+2, x)\)</span> to evaluate.</p>
 </dd>
 <dt><strong>x</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
 <dd><p class="first last">The main argument of the function.</p>
@@ -114,7 +115,7 @@
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>ndarray</strong></dt>
-<dd><p class="first last">The result of 2F1(1, n+1, n+2, x).</p>
+<dd><p class="first last">The result of <span class="math notranslate nohighlight">\(_2F_1(1, n+1, n+2, x)\)</span>.</p>
 </dd>
 </dl>
 </td>

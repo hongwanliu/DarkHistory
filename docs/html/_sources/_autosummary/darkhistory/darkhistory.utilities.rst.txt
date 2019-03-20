@@ -29,10 +29,6 @@ darkhistory.utilities
    .. autosummary::
       :toctree: utilities
    
-      Interpolator2D
-   
-   
-
-   
+      Interpolator2D   
    
    

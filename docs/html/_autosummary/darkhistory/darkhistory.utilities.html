@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" >
     <link rel="search" title="Search" href="../../search.html" >
@@ -92,7 +93,7 @@
             
   <div class="section" id="module-darkhistory.utilities">
 <span id="darkhistory-utilities"></span><h1>darkhistory.utilities<a class="headerlink" href="#module-darkhistory.utilities" title="Permalink to this headline">¶</a></h1>
-<p>Non-physics functions used in darkhistory.</p>
+<p>Non-physics convenience and mathematical functions.</p>
 <p class="rubric">Functions</p>
 <table border="1" class="longtable docutils">
 <colgroup>
@@ -101,10 +102,10 @@
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.arrays_equal.html#darkhistory.utilities.arrays_equal" title="darkhistory.utilities.arrays_equal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">arrays_equal</span></code></a>(ndarray_list)</td>
-<td>Check if the arrays contained in <cite>ndarray_list</cite> are equal.</td>
+<td>Checks if a list of arrays are all equal.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="utilities/darkhistory.utilities.bernoulli.html#darkhistory.utilities.bernoulli" title="darkhistory.utilities.bernoulli"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bernoulli</span></code></a>(k)</td>
-<td>Returns the kth Bernoulli number.</td>
+<td>The kth Bernoulli number.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.check_err.html#darkhistory.utilities.check_err" title="darkhistory.utilities.check_err"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_err</span></code></a>(val,&nbsp;err,&nbsp;epsrel)</td>
 <td>Checks the relative error given a tolerance.</td>
@@ -113,25 +114,25 @@
 <td>Prints the arrays in a suitable format for comparison.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.exp_expn.html#darkhistory.utilities.exp_expn" title="darkhistory.utilities.exp_expn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exp_expn</span></code></a>(n,&nbsp;x)</td>
-<td>Returns exp(x)*E_n(n, x).</td>
+<td>Returns <span class="math notranslate nohighlight">\(e^x E_n(x)\)</span>.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="utilities/darkhistory.utilities.get_grid.html#darkhistory.utilities.get_grid" title="darkhistory.utilities.get_grid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_grid</span></code></a>(a,&nbsp;b)</td>
 <td>Returns a 2D grid of coordinates from 2 1D arrays.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.hyp2f1_func_real.html#darkhistory.utilities.hyp2f1_func_real" title="darkhistory.utilities.hyp2f1_func_real"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hyp2f1_func_real</span></code></a>(n,&nbsp;x)</td>
-<td>Returns the real part of 2F1(1, n+1, n+2, x).</td>
+<td>Returns the real part of <span class="math notranslate nohighlight">\(_2F_1(1, n+1, n+2, x)\)</span>.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="utilities/darkhistory.utilities.is_log_spaced.html#darkhistory.utilities.is_log_spaced" title="darkhistory.utilities.is_log_spaced"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_log_spaced</span></code></a>(arr)</td>
-<td>Checks if <cite>arr</cite> is a log-spaced array.</td>
+<td>Checks for a log-spaced array.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.log_1_plus_x.html#darkhistory.utilities.log_1_plus_x" title="darkhistory.utilities.log_1_plus_x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_1_plus_x</span></code></a>(x)</td>
 <td>Computes log(1+x) with greater floating point accuracy.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="utilities/darkhistory.utilities.log_series_diff.html#darkhistory.utilities.log_series_diff" title="darkhistory.utilities.log_series_diff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_series_diff</span></code></a>(b,&nbsp;a)</td>
-<td>Returns the Taylor series for log(1+b) - log(1+a).</td>
+<td>The Taylor series for log(1+b) - log(1+a).</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.spence_series_diff.html#darkhistory.utilities.spence_series_diff" title="darkhistory.utilities.spence_series_diff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spence_series_diff</span></code></a>(b,&nbsp;a)</td>
-<td>Returns the Taylor series for Li2(b) - Li2(a).</td>
+<td>Returns the Taylor series for Li<sub>2</sub>(b) - Li<sub>2</sub>(a).</td>
 </tr>
 </tbody>
 </table>
@@ -143,7 +144,7 @@
 </colgroup>
 <tbody valign="top">
 <tr class="row-odd"><td><a class="reference internal" href="utilities/darkhistory.utilities.Interpolator2D.html#darkhistory.utilities.Interpolator2D" title="darkhistory.utilities.Interpolator2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interpolator2D</span></code></a>(arr0,&nbsp;name0,&nbsp;arr1,&nbsp;name1,&nbsp;val_arr)</td>
-<td>Interpolation function over list of objects</td>
+<td>Interpolation function over a list of objects.</td>
 </tr>
 </tbody>
 </table>

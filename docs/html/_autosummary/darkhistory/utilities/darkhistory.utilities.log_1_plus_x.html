@@ -24,6 +24,7 @@
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" >
     <link rel="search" title="Search" href="../../../search.html" >
@@ -97,13 +98,13 @@
 <dt id="darkhistory.utilities.log_1_plus_x">
 <code class="descclassname">darkhistory.utilities.</code><code class="descname">log_1_plus_x</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.log_1_plus_x" title="Permalink to this definition">¶</a></dt>
 <dd><p>Computes log(1+x) with greater floating point accuracy.</p>
-<p>Unlike scipy.special.log1p, this can take float128. However the performance is certainly slower. See “What every computer scientist should know about floating-point arithmetic” by David Goldberg for details. If that trick does not work, the code reverts to a Taylor expansion.</p>
+<p>Unlike <code class="docutils literal notranslate"><span class="pre">scipy.special.log1p</span></code>, this can take <code class="docutils literal notranslate"><span class="pre">float128</span></code>. However the performance is certainly slower. See <a class="footnote-reference" href="#id2" id="id1">[1]</a> for details. If that trick does not work, the code reverts to a Taylor expansion.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>x</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dt><strong>x</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float or ndarray</span></dt>
 <dd><p class="first last">The input value.</p>
 </dd>
 </dl>
@@ -120,6 +121,13 @@
 </table>
 </dd></dl>
 
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>David Goldberg. 1991. What every computer scientist should know about floating-point arithmetic. ACM Comput. Surv. 23, 1 (March 1991), 5-48.</td></tr>
+</tbody>
+</table>
 </div>
 
 

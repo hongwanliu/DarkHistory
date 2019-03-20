@@ -94,6 +94,7 @@
   <div class="section" id="module-darkhistory.physics">
 <span id="darkhistory-physics"></span><h1>darkhistory.physics<a class="headerlink" href="#module-darkhistory.physics" title="Permalink to this headline">¶</a></h1>
 <p>Physics functions as well as constants.</p>
+<p>Throughout DarkHistory, we choose cm, s and eV as our system of units. Masses and temperatures are also given in eV. Particle Data Group central values <a class="footnote-reference" href="#id3" id="id1">[1]</a> are used for constants, while cosmological parameters are set to the central values of the Planck 2018 baseline TT,TE,EE+lowE+lensing <a class="footnote-reference" href="#id4" id="id2">[2]</a>.</p>
 <div class="section" id="fundamental-constants">
 <h2>Fundamental Constants<a class="headerlink" href="#fundamental-constants" title="Permalink to this headline">¶</a></h2>
 <p class="rubric">Attributes</p>
@@ -127,22 +128,19 @@
 <tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.ele.html#darkhistory.physics.ele" title="darkhistory.physics.ele"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ele</span></code></a></td>
 <td>Electron charge in coulombs.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.G.html#darkhistory.physics.G" title="darkhistory.physics.G"><code class="xref py py-obj docutils literal notranslate"><span class="pre">G</span></code></a></td>
-<td>Newton’s gravitational constant in cm<sup>5</sup> s<sup>-4</sup> eV<sup>-1</sup>.</td>
-</tr>
-<tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.mass.html#darkhistory.physics.mass" title="darkhistory.physics.mass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.mass.html#darkhistory.physics.mass" title="darkhistory.physics.mass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mass</span></code></a></td>
 <td>Masses of Standard Model particles.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.thomson_xsec.html#darkhistory.physics.thomson_xsec" title="darkhistory.physics.thomson_xsec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">thomson_xsec</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.thomson_xsec.html#darkhistory.physics.thomson_xsec" title="darkhistory.physics.thomson_xsec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">thomson_xsec</span></code></a></td>
 <td>Thomson cross section in cm<sup>2</sup>.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.stefboltz.html#darkhistory.physics.stefboltz" title="darkhistory.physics.stefboltz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stefboltz</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.stefboltz.html#darkhistory.physics.stefboltz" title="darkhistory.physics.stefboltz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stefboltz</span></code></a></td>
 <td>Stefan-Boltzmann constant in eV<sup>-3</sup> cm<sup>-2</sup> s<sup>-1</sup>.</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.ele_rad.html#darkhistory.physics.ele_rad" title="darkhistory.physics.ele_rad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ele_rad</span></code></a></td>
+<tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.ele_rad.html#darkhistory.physics.ele_rad" title="darkhistory.physics.ele_rad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ele_rad</span></code></a></td>
 <td>Classical electron radius in cm.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.ele_compton.html#darkhistory.physics.ele_compton" title="darkhistory.physics.ele_compton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ele_compton</span></code></a></td>
+<tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.ele_compton.html#darkhistory.physics.ele_compton" title="darkhistory.physics.ele_compton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ele_compton</span></code></a></td>
 <td>Electron Compton wavelength in cm.</td>
 </tr>
 </tbody>
@@ -161,7 +159,7 @@
 <td>h parameter.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.H0.html#darkhistory.physics.H0" title="darkhistory.physics.H0"><code class="xref py py-obj docutils literal notranslate"><span class="pre">H0</span></code></a></td>
-<td>float(x) -&gt; floating point number</td>
+<td>Hubble parameter today in s<sup>-1</sup>.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.omega_m.html#darkhistory.physics.omega_m" title="darkhistory.physics.omega_m"><code class="xref py py-obj docutils literal notranslate"><span class="pre">omega_m</span></code></a></td>
 <td>Omega of all matter today.</td>
@@ -218,7 +216,7 @@
 <td>Hubble parameter in s<sup>-1</sup>.</td>
 </tr>
 <tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.dtdz.html#darkhistory.physics.dtdz" title="darkhistory.physics.dtdz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dtdz</span></code></a>(rs[,&nbsp;H0,&nbsp;omega_m,&nbsp;omega_rad,&nbsp;omega_lambda])</td>
-<td>abs(dt/dz) in s.</td>
+<td>dt/dz in s.</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="physics/darkhistory.physics.TCMB.html#darkhistory.physics.TCMB" title="darkhistory.physics.TCMB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TCMB</span></code></a>(rs)</td>
 <td>CMB temperature in eV.</td>
@@ -340,6 +338,22 @@
 <tr class="row-even"><td><a class="reference internal" href="physics/darkhistory.physics.elec_heating_engloss_rate.html#darkhistory.physics.elec_heating_engloss_rate" title="darkhistory.physics.elec_heating_engloss_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elec_heating_engloss_rate</span></code></a>(eng,&nbsp;xe,&nbsp;rs)</td>
 <td>Electron energy loss rate of electrons due to Coulomb heating in eV s<sup>-1</sup>.</td>
 </tr>
+</tbody>
+</table>
+<p class="rubric">Footnotes</p>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><ol class="first last upperalpha simple" start="14">
+<li>Aghanim et al. [Planck Collaboration], “Planck 2018 results. VI. Cosmological parameters,” arXiv:1807.06209 [astro-ph.CO]</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Tanabashi et al. (Particle Data Group), Phys. Rev. D 98, 030001 (2018).</td></tr>
 </tbody>
 </table>
 </div>

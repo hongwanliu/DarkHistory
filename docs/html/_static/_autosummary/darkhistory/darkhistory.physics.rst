@@ -19,7 +19,6 @@ Fundamental Constants
    kB
    alpha
    ele
-   G
    mass
    thomson_xsec
    stefboltz
@@ -108,7 +107,11 @@ Atomic and Optical Physics
    coll_ion_xsec
    elec_heating_engloss_rate
    
-   
+.. rubric:: Footnotes
+
+.. [1] N. Aghanim et al. [Planck Collaboration], “Planck 2018 results. VI. Cosmological parameters,” arXiv:1807.06209 [astro-ph.CO]
+
+.. [2] Tanabashi et al. (Particle Data Group), Phys. Rev. D 98, 030001 (2018).
 
       
 
