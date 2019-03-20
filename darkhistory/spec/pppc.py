@@ -8,19 +8,12 @@ import json
 from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 
-from config import data_path
+from config import data_path, coords_file_name, values_file_name
 
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 
 # Import data.  
-
-coords_file_name = (
-    data_path+'/dlNdlxIEW_coords_table.txt'
-)
-values_file_name = (
-    data_path+'/dlNdlxIEW_values_table.txt'
-)
 
 with open(coords_file_name) as data_file:    
     coords_data = np.array(json.load(data_file))
