@@ -3,6 +3,7 @@
 """
 # import os
 import numpy as np
+import json
 # import pickle
 
 # # Location of all data files. 
@@ -48,5 +49,15 @@ soln_baseline = np.ones((4, 4))
 # with open(values_file_name) as data_file:
 #     values_data = np.array(json.load(data_file))
 
-coords_data = np.ones((2, 23, 2))
-values_data = np.ones((2, 23))
+coords_data = np.array([
+    [
+        [[1 for a in np.arange(62)],[1 for b in np.arange(156)]]
+        for c in np.arange(23)
+    ] for d in np.arange(2)
+])
+values_data = np.array([
+    [
+        [[1 for a in np.arange(62 + b % 2)] for b in np.arange(156 + c % 2)]
+        for c in np.arange(23)
+    ] for d in np.arange(2)
+])
