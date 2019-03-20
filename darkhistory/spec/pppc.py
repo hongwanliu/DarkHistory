@@ -8,17 +8,12 @@ import json
 from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 
-from config import data_path, coords_file_name, values_file_name
+from config import data_path, coords_data, values_data
 
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 
-# Import data.  
 
-with open(coords_file_name) as data_file:    
-    coords_data = np.array(json.load(data_file))
-with open(values_file_name) as data_file:
-    values_data = np.array(json.load(data_file))
 
 # coords_data is a (2, 23, 2) array. 
 # axis 0: stable SM secondaries, {'elec', 'phot'}

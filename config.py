@@ -35,11 +35,18 @@ soln_baseline = np.ones((4, 4))
 # soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
 # PPPC data.  
-coords_file_name = np.ones((2, 23, 2))
-values_file_name = np.ones((2, 23))
+
+# Import data.  
 # coords_file_name = (
 #     data_path+'/dlNdlxIEW_coords_table.txt'
 # )
 # values_file_name = (
 #     data_path+'/dlNdlxIEW_values_table.txt'
 # )
+# with open(coords_file_name) as data_file:    
+#     coords_data = np.array(json.load(data_file))
+# with open(values_file_name) as data_file:
+#     values_data = np.array(json.load(data_file))
+
+coords_data = np.ones((2, 23, 2))
+values_data = np.ones((2, 23))
