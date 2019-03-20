@@ -31,6 +31,6 @@ struct_data = np.ones((2, 2))
 
 # Baseline ionization and thermal histories. 
 # Use empty string for readthedocs.
-soln_baseline = np.ones((3, 4))
+soln_baseline = np.ones((4, 4))
 # soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
