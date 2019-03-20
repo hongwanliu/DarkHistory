@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.spec.spectools.rebin_N_arr &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
+    <link rel="up" title="darkhistory.spec.spectools" href="../darkhistory.spec.spectools.html" >
+    <link rel="next" title="darkhistory.spec.spectools.scatter" href="darkhistory.spec.spectools.scatter.html" >
+    <link rel="prev" title="darkhistory.spec.spectools.get_normalized_spec" href="darkhistory.spec.spectools.get_normalized_spec.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../../darkhistory.spec.html" >darkhistory.spec</a></li>
+          <li class="active"><a href="../darkhistory.spec.spectools.html" accesskey="U">darkhistory.spec.spectools</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.spec.spectools.scatter.html" title="darkhistory.spec.spectools.scatter"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.spec.spectools.get_normalized_spec.html" title="darkhistory.spec.spectools.get_normalized_spec"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-spec-spectools-rebin-n-arr">
+<h1>darkhistory.spec.spectools.rebin_N_arr<a class="headerlink" href="#darkhistory-spec-spectools-rebin-n-arr" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="darkhistory.spec.spectools.rebin_N_arr">
+<code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">rebin_N_arr</code><span class="sig-paren">(</span><em>N_arr</em>, <em>in_eng</em>, <em>out_eng=None</em>, <em>spec_type='dNdE'</em>, <em>log_bin_width=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.rebin_N_arr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rebins an array of particle number with fixed energy.</p>
+<p>Returns an array or a <cite>Spectrum</cite> object. The rebinning conserves both total number and total energy.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>N_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">An array of number of particles in each bin.</p>
+</dd>
+<dt><strong>in_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">An array of the energy abscissa for each bin. The total energy in each bin <cite>i</cite> should be <cite>N_arr[i]*in_eng[i]</cite>.</p>
+</dd>
+<dt><strong>out_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dd><p class="first last">The new abscissa to bin into. If unspecified, assumed to be in_eng.</p>
+</dd>
+<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘N’, ‘dNdE’}, optional</span></dt>
+<dd><p class="first last">The spectrum type to be output. Default is ‘dNdE’.</p>
+</dd>
+<dt><strong>log_bin_width</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dd><p class="first last">The bin width of the output abscissa.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>Spectrum</strong></dt>
+<dd><p class="first last">The output <cite>Spectrum</cite> with appropriate dN/dE, with abscissa out_eng.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>OverflowError</strong></dt>
+<dd><p class="first last">The maximum energy in <cite>out_eng</cite> cannot be smaller than any bin in <cite>self.eng</cite>.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spectrum.Spectrum.rebin</span></code></p>
+</div>
+<p class="rubric">Notes</p>
+<p>The total number and total energy is conserved by assigning the number of particles N in a bin of energy eng to two adjacent bins in new_eng, with energies eng_low and eng_upp such that eng_low &lt; eng &lt; eng_upp. Then dN_low_dE_low = (eng_upp - eng)/(eng_upp - eng_low)*(N/(E * dlogE_low)), and dN_upp_dE_upp = (eng - eng_low)/(eng_upp - eng_low)*(N/(E*dlogE_upp)).</p>
+<p>If a bin in <cite>in_eng</cite> is below the lowest bin in <cite>out_eng</cite>, then the total number and energy not assigned to the lowest bin are assigned to the underflow. Particles will only be assigned to the lowest bin if there is some overlap between the bin index with respect to <cite>out_eng</cite> bin centers is larger than -1.0.</p>
+<p>If a bin in <cite>in_eng</cite> is above the highest bin in <cite>out_eng</cite>, then an <cite>OverflowError</cite> is thrown.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="darkhistory.spec.spectools.get_normalized_spec.html"
+                        title="previous chapter">darkhistory.spec.spectools.get_normalized_spec</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="darkhistory.spec.spectools.scatter.html"
+                        title="next chapter">darkhistory.spec.spectools.scatter</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../../_sources/_autosummary/darkhistory/spec/spectools/darkhistory.spec.spectools.rebin_N_arr.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+    
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<!---->
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

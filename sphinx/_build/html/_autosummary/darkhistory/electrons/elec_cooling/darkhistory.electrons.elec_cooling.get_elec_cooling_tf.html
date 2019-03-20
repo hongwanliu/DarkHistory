@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.electrons.elec_cooling.get_elec_cooling_tf &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
+    <link rel="up" title="darkhistory.electrons.elec_cooling" href="../darkhistory.electrons.elec_cooling.html" >
+    <link rel="next" title="darkhistory.electrons.positronium" href="../darkhistory.electrons.positronium.html" >
+    <link rel="prev" title="darkhistory.electrons.elec_cooling" href="../darkhistory.electrons.elec_cooling.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../../darkhistory.electrons.html" >darkhistory.electrons</a></li>
+          <li class="active"><a href="../darkhistory.electrons.elec_cooling.html" accesskey="U">darkhistory.electrons.elec_cooling</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.electrons.positronium.html" title="darkhistory.electrons.positronium"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.electrons.elec_cooling.html" title="darkhistory.electrons.elec_cooling"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-electrons-elec-cooling-get-elec-cooling-tf">
+<h1>darkhistory.electrons.elec_cooling.get_elec_cooling_tf<a class="headerlink" href="#darkhistory-electrons-elec-cooling-get-elec-cooling-tf" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="darkhistory.electrons.elec_cooling.get_elec_cooling_tf">
+<code class="descclassname">darkhistory.electrons.elec_cooling.</code><code class="descname">get_elec_cooling_tf</code><span class="sig-paren">(</span><em>raw_nonrel_tf</em>, <em>raw_rel_tf</em>, <em>raw_engloss_tf</em>, <em>coll_ion_sec_elec_specs</em>, <em>coll_exc_sec_elec_specs</em>, <em>eleceng</em>, <em>photeng</em>, <em>rs</em>, <em>xH</em>, <em>xHe=0</em>, <em>ics_engloss_data=None</em>, <em>check_conservation_eng=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.elec_cooling.get_elec_cooling_tf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns transfer function for complete electron cooling through ICS and atomic processes using a linear algebra method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>nonrel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
+<dd><p class="first last">Raw nonrelativistic primary electron ICS transfer function.</p>
+</dd>
+<dt><strong>rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd><p class="first last">Raw relativistic primary electron ICS transfer function.</p>
+</dd>
+<dt><strong>engloss_tf_filename</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
+<dd><p class="first last">Raw primary electron ICS energy loss transfer function.</p>
+</dd>
+<dt><strong>coll_ion_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of ndarray</span></dt>
+<dd><p class="first last">Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).</p>
+</dd>
+<dt><strong>coll_exc_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of ndarray</span></dt>
+<dd><p class="first last">Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).</p>
+</dd>
+<dt><strong>eleceng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">The electron <em>kinetic</em> energy abscissa.</p>
+</dd>
+<dt><strong>photeng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">The photon energy abscissa.</p>
+</dd>
+<dt><strong>rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">The redshift.</p>
+</dd>
+<dt><strong>xH</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">Ionized hydrogen fraction, nHII/nH.</p>
+</dd>
+<dt><strong>xHe</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.</p>
+</dd>
+<dt><strong>ics_engloss_data</strong> <span class="classifier-delimiter">:</span> <span class="classifier">EnglossRebinData</span></dt>
+<dd><p class="first last">Stores rebinning information for speed.</p>
+</dd>
+<dt><strong>check_conservation_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">If true, checks for energy conservation.</p>
+</dd>
+<dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">If true, prints energy conservation checks.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>tuple of TransFuncAtRedshift</strong></dt>
+<dd><p class="first last">Transfer functions for photons and low energy electrons.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
+photon spectrum after scattering by one electron.</p>
+<p>This version of the code uses a linear algebra method to solve for the spectra directly.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../darkhistory.electrons.elec_cooling.html"
+                        title="previous chapter">darkhistory.electrons.elec_cooling</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../darkhistory.electrons.positronium.html"
+                        title="next chapter">darkhistory.electrons.positronium</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../../_sources/_autosummary/darkhistory/electrons/elec_cooling/darkhistory.electrons.elec_cooling.get_elec_cooling_tf.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+    
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<!---->
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

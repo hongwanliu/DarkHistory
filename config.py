@@ -22,16 +22,3 @@ binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
 photeng = binning[0]
 eleceng = binning[1]
 
-# photeng = np.ones(500)
-# eleceng = np.ones(500)
-
-# Structure formation data. 
-# Use empty string for readthedocs. 
-# struct_data = np.ones((2, 2))
-struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
-
-# Baseline ionization and thermal histories. 
-# Use empty string for readthedocs.
-# soln_baseline = np.ones((4, 4))
-soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
-
