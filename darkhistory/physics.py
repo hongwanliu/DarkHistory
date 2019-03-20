@@ -8,7 +8,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
-from config import data_path, struct_data, soln_baseline
+from config import data_path
 
 cross_check = True
 
@@ -319,7 +319,8 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/lifetime
 
-# Create interpolation with structure formation data (from config.py) 
+# Create interpolation with structure formation data. 
+struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
 log_struct_interp = interp1d(
     np.log(struct_data[:,0]), np.log(struct_data[:,1]),
@@ -832,9 +833,11 @@ def d_xe_Saha_dz(rs, species):
     return numer/denom
 
 # Standard ionization and thermal histories
+soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
+
 _xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
 _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
-_Tm_std  = interp1d(soln_baseline[0,:], soln_baseline[1,:])
+_Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
 
 def xHII_std(rs):
     """Returns the baseline nHII/nH value.

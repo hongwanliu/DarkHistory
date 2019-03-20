@@ -1,63 +1,37 @@
 """ Configuration and defaults.
 
 """
-# import os
+import os
 import numpy as np
 import json
-# import pickle
+import pickle
 
 # # Location of all data files. 
 
 data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 # data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
-# if data_path == '' or not os.path.isdir(data_path):
-#     print('NOTE: enter data directory in config.py to avoid this step.')
-#     data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
+if data_path == '' or not os.path.isdir(data_path):
+    print('NOTE: enter data directory in config.py to avoid this step.')
+    data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
 
 # # Default binning for photons and low-energy electrons. 
 
-# binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
+binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
 
-# photeng = binning[0]
-# eleceng = binning[1]
+photeng = binning[0]
+eleceng = binning[1]
 
-photeng = np.ones(500)
-eleceng = np.ones(500)
+# photeng = np.ones(500)
+# eleceng = np.ones(500)
 
 # Structure formation data. 
 # Use empty string for readthedocs. 
-struct_data = np.ones((2, 2))
-# struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
+# struct_data = np.ones((2, 2))
+struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
 # Baseline ionization and thermal histories. 
 # Use empty string for readthedocs.
-soln_baseline = np.ones((4, 4))
-# soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
+# soln_baseline = np.ones((4, 4))
+soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
-# PPPC data.  
-
-# Import data.  
-# coords_file_name = (
-#     data_path+'/dlNdlxIEW_coords_table.txt'
-# )
-# values_file_name = (
-#     data_path+'/dlNdlxIEW_values_table.txt'
-# )
-# with open(coords_file_name) as data_file:    
-#     coords_data = np.array(json.load(data_file))
-# with open(values_file_name) as data_file:
-#     values_data = np.array(json.load(data_file))
-
-coords_data = np.array([
-    [
-        [[1 for a in np.arange(62)],[1 for b in np.arange(156)]]
-        for c in np.arange(23)
-    ] for d in np.arange(2)
-])
-values_data = np.array([
-    [
-        [[1 for a in np.arange(62 + b % 2)] for b in np.arange(156 + c % 2)]
-        for c in np.arange(23)
-    ] for d in np.arange(2)
-])
