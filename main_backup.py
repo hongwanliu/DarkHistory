@@ -347,8 +347,11 @@ def evolve(
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
                     x_arr[-1,0], xHe=x_arr[-1,1],
-                    ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                    coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+                    raw_thomson_tf=ics_thomson_ref_tf, 
+                    raw_rel_tf=ics_rel_ref_tf, 
+                    raw_engloss_tf=engloss_ref_tf,
+                    coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
+                    coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                     ics_engloss_data=ics_engloss_data
                 )
 
@@ -712,8 +715,11 @@ def evolve(
                 ) = get_elec_cooling_tf(
                         eleceng, photeng, rs, 
                         xH_elec_cooling, xHe=xHe_elec_cooling,
-                        ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf,
-                        coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+                        raw_thomson_tf=ics_thomson_ref_tf, 
+                        raw_rel_tf=ics_rel_ref_tf, 
+                        raw_engloss_tf=engloss_ref_tf,
+                        coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
+                        coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                         ics_engloss_data=ics_engloss_data
                     )
 
