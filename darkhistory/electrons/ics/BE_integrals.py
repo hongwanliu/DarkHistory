@@ -23,7 +23,7 @@ def F2(a,b,tol=1e-10):
     b : ndarray
         Upper limit of integration. Can be either 1D or 2D.
     tol : float
-        The relative tolerance to be reached.
+        The relative tolerance to be reached. Default is 1e-10. 
 
     Returns
     -------
@@ -219,6 +219,17 @@ def F2(a,b,tol=1e-10):
 def F1(a,b,epsrel=0):
     """Definite integral of x/[(exp(x) - 1)]. 
 
+    This is computed from the indefinite integral
+
+    .. math::
+
+        \\int dx \\frac{x}{e^x - 1} = x \\log\\left(1 - e^{-x} \\right)
+        - \\text{Li}_2\\left(e^{-x}\\right) = 
+        x \\log\\left(1 - e^{-x} \\right) - 
+        \\text{Sp}\\left( 1 - e^{-x} \\right) + \\frac{\\pi^2}{6} \\,,
+    
+    where Sp is Spence's function, as implemented in ``scipy.special.spence``. 
+
     Parameters
     ----------
     a : ndarray
@@ -226,7 +237,7 @@ def F1(a,b,epsrel=0):
     b : ndarray
         Upper limit of integration. Can be either 1D or 2D.
     epsrel : float
-        Error associated with series expansion. If zero, then the error is not computed.
+        Target relative error associated with series expansion. If zero, then the error is not computed. Default is 0. If the error is larger than ``epsrel``, then the Taylor expansions used here are insufficient. Higher order terms can be added very easily, however.
 
     Returns
     -------
@@ -236,6 +247,10 @@ def F1(a,b,epsrel=0):
     Notes
     -----
     For a or b > 0.01, the exact analytic expression is used, whereas below that we use a series expansion. This avoids numerical errors due to computation of log(1 - exp(-x)) and likewise in the `spence` function. Note that `scipy.special.spence` can only take `float64` numbers, so downcasting is necessary for 0.01 < x < 3. 
+
+    See Also
+    ---------
+    :func:`.log_1_plus_x`, :func:`.spence_series_diff`
     
     """
     lowlim = 0.1

@@ -100,6 +100,13 @@
 <dt id="darkhistory.electrons.ics.BE_integrals.F1">
 <code class="descclassname">darkhistory.electrons.ics.BE_integrals.</code><code class="descname">F1</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>epsrel=0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.BE_integrals.F1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Definite integral of x/[(exp(x) - 1)].</p>
+<p>The indefinite integral is</p>
+<div class="math notranslate nohighlight">
+\[\int dx \frac{x}{e^x - 1} = x \log\left(1 - e^{-x} \right)
+- \text{Li}_2\left(e^{-x}\right) = 
+x \log\left(1 - e^{-x} \right) - 
+\text{Sp}\left( 1 - e^{-x} \right) + \frac{\pi^2}{6} \,,\]</div>
+<p>where Sp is Spence’s function, as implemented in <code class="docutils literal notranslate"><span class="pre">scipy.special.spence</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -112,7 +119,7 @@
 <dd><p class="first last">Upper limit of integration. Can be either 1D or 2D.</p>
 </dd>
 <dt><strong>epsrel</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd><p class="first last">Error associated with series expansion. If zero, then the error is not computed.</p>
+<dd><p class="first last">Target relative error associated with series expansion. If zero, then the error is not computed. Default is 0. If the error is larger than <code class="docutils literal notranslate"><span class="pre">epsrel</span></code>, then the Taylor expansions used here are insufficient. Higher order terms can be added very easily, however.</p>
 </dd>
 </dl>
 </td>
@@ -126,6 +133,10 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="../../../utilities/darkhistory.utilities.log_1_plus_x.html#darkhistory.utilities.log_1_plus_x" title="darkhistory.utilities.log_1_plus_x"><code class="xref py py-func docutils literal notranslate"><span class="pre">log_1_plus_x()</span></code></a>, <a class="reference internal" href="../../../utilities/darkhistory.utilities.spence_series_diff.html#darkhistory.utilities.spence_series_diff" title="darkhistory.utilities.spence_series_diff"><code class="xref py py-func docutils literal notranslate"><span class="pre">spence_series_diff()</span></code></a></p>
+</div>
 <p class="rubric">Notes</p>
 <p>For a or b &gt; 0.01, the exact analytic expression is used, whereas below that we use a series expansion. This avoids numerical errors due to computation of log(1 - exp(-x)) and likewise in the <cite>spence</cite> function. Note that <cite>scipy.special.spence</cite> can only take <cite>float64</cite> numbers, so downcasting is necessary for 0.01 &lt; x &lt; 3.</p>
 </dd></dl>

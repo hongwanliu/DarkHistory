@@ -319,6 +319,10 @@ def check_err(val, err, epsrel):
     epsrel : float
         The target tolerance.
 
+    Returns
+    -------
+    None
+
     """
     if np.max(np.abs(err/val)) > epsrel:
         print('Series relative error is: ', err/val)

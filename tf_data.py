@@ -1,4 +1,5 @@
-""" Loads the transfer function data.
+""" Loads the transfer function data for photon cooling and inverse Compton 
+scattering.
 
 """
 

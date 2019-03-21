@@ -15,9 +15,10 @@ from scipy.linalg import solve_triangular
 
 
 def get_elec_cooling_tf(
-    raw_thomson_tf, raw_rel_tf, raw_engloss_tf,
-    coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-    eleceng, photeng, rs, xHII, xHeII=0, ics_engloss_data=None, 
+    eleceng, photeng, rs, xHII, xHeII=0, 
+    raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
+    coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
+    ics_engloss_data=None, 
     check_conservation_eng = False, verbose=False
 ):
 
@@ -26,16 +27,6 @@ def get_elec_cooling_tf(
 
     Parameters
     ----------
-    raw_thomson_tf : TransFuncAtRedshift
-        Thomson ICS scattered photon spectrum transfer function.
-    rel_tf : TransFuncAtRedshift
-        Relativistic ICS scattered photon spectrum transfer function.
-    raw_engloss_tf : TransFuncAtRedshift
-        Thomson ICS scattered electron net energy loss transfer function.. 
-    coll_ion_sec_elec_specs : tuple of 3 ndarrays, shapes (m, m). 
-        Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.
-    coll_exc_sec_elec_specs : tuple of 3 ndarray, shapes (m, m). 
-        Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.
     eleceng : ndarray, shape (m, )
         The electron kinetic energy abscissa.
     photeng : ndarray
@@ -46,6 +37,16 @@ def get_elec_cooling_tf(
         Ionized hydrogen fraction, nHII/nH. 
     xHeII : float, optional
         Singly-ionized helium fraction, nHe+/nH. Default is 0. 
+    raw_thomson_tf : TransFuncAtRedshift
+        Thomson ICS scattered photon spectrum transfer function.
+    rel_tf : TransFuncAtRedshift
+        Relativistic ICS scattered photon spectrum transfer function.
+    raw_engloss_tf : TransFuncAtRedshift
+        Thomson ICS scattered electron net energy loss transfer function.. 
+    coll_ion_sec_elec_specs : tuple of 3 ndarrays, shapes (m, m). 
+        Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.
+    coll_exc_sec_elec_specs : tuple of 3 ndarray, shapes (m, m). 
+        Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.
     ics_engloss_data : EnglossRebinData
         An `EnglossRebinData` object which stores rebinning information (based on ``eleceng`` and ``photeng``) for speed. Default is None.
     check_conservation_eng : bool
