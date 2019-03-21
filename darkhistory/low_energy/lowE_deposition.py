@@ -44,8 +44,8 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     f_c(z) for z within spec.rs +/- dt/2
     The order of the channels is {H Ionization, He Ionization, H Excitation, Heating and Continuum} 
 
-    NOTE
-    ----
+    Notes
+    -----
     The CMB component hasn't been subtracted from the continuum photons yet
     Think about the exceptions that should be thrown (elec_spec.rs should equal phot_spec.rs)
     """

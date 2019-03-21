@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.spec.transferfunction.TransFuncAtEnergy &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
+    <link rel="up" title="darkhistory.spec.transferfunction" href="../darkhistory.spec.transferfunction.html" >
+    <link rel="next" title="darkhistory.spec.transferfunction.TransFuncAtRedshift" href="darkhistory.spec.transferfunction.TransFuncAtRedshift.html" >
+    <link rel="prev" title="darkhistory.spec.transferfunction" href="../darkhistory.spec.transferfunction.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../../darkhistory.spec.html" >darkhistory.spec</a></li>
+          <li class="active"><a href="../darkhistory.spec.transferfunction.html" accesskey="U">darkhistory.spec.transferfunction</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.spec.transferfunction.TransFuncAtRedshift.html" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.spec.transferfunction.html" title="darkhistory.spec.transferfunction"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-spec-transferfunction-transfuncatenergy">
+<h1>darkhistory.spec.transferfunction.TransFuncAtEnergy<a class="headerlink" href="#darkhistory-spec-transferfunction-transfuncatenergy" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy">
+<em class="property">class </em><code class="descclassname">darkhistory.spec.transferfunction.</code><code class="descname">TransFuncAtEnergy</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>eng=None</em>, <em>in_eng=None</em>, <em>rs=None</em>, <em>spec_type='dNdE'</em>, <em>dlnz=-1</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transfer function at a given injection energy.</p>
+<p>Collection of Spectrum objects, each at different redshifts.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>spec_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list of Spectrum</span></dt>
+<dd><p class="first last">List of Spectrum to be stored together.</p>
+</dd>
+<dt><strong>eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dd><p class="first last">Energy abscissa.</p>
+</dd>
+<dt><strong>in_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dd><p class="first last">Injection energy abscissa.</p>
+</dd>
+<dt><strong>rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dd><p class="first last">The redshift of the spectra.</p>
+</dd>
+<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘N’, ‘dNdE’}, optional</span></dt>
+<dd><p class="first last">Type of data stored, ‘dNdE’ is the default.</p>
+</dd>
+<dt><strong>dlnz</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">The d ln(1+z) step for the transfer function.</p>
+</dd>
+<dt><strong>rebin_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dd><p class="first last">New abscissa to rebin all of the Spectrum objects into.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>in_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">Array of injection energies corresponding to each spectrum.</p>
+</dd>
+<dt><strong>eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">Array of energy abscissa of each spectrum.</p>
+</dd>
+<dt><strong>rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">Array of redshifts corresponding to each spectrum.</p>
+</dd>
+<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘N’, ‘dNdE’}</span></dt>
+<dd><p class="first last">The type of values stored.</p>
+</dd>
+<dt><strong>dlnz</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">The d ln(1+z) step for the transfer function.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code>(spec)</td>
+<td>Appends a new Spectrum.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_rs</span></code>(new_rs[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
+<td>Interpolates the transfer function at a new redshift.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_each_spec</span></code>([weight])</td>
+<td>Sums over each individual spectrum with some weight.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<td>Plots the contained <cite>Spectrum</cite> objects.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin</span></code>(out_eng)</td>
+<td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum_specs</span></code>([weight])</td>
+<td>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch_spec_type</span></code>([target])</td>
+<td>Switches between the type of values to be stored.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">totN</span></code>([bound_type,&nbsp;bound_arr])</td>
+<td>Returns the total number of particles in part of the spectra.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">toteng</span></code>([bound_type,&nbsp;bound_arr])</td>
+<td>Returns the total energy of particles in part of the spectra.</td>
+</tr>
+</tbody>
+</table>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="45%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>redshift</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="darkhistory.spec.transferfunction.TransFuncAtEnergy.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>spec_arr</em>, <em>eng=None</em>, <em>in_eng=None</em>, <em>rs=None</em>, <em>spec_type='dNdE'</em>, <em>dlnz=-1</em>, <em>rebin_eng=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.transferfunction.TransFuncAtEnergy.__init__" title="darkhistory.spec.transferfunction.TransFuncAtEnergy.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(spec_arr[,&nbsp;eng,&nbsp;in_eng,&nbsp;rs,&nbsp;…])</td>
+<td>Initialize self.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code>(spec)</td>
+<td>Appends a new Spectrum.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">at_rs</span></code>(new_rs[,&nbsp;interp_type,&nbsp;bounds_error,&nbsp;…])</td>
+<td>Interpolates the transfer function at a new redshift.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">integrate_each_spec</span></code>([weight])</td>
+<td>Sums over each individual spectrum with some weight.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot</span></code>(ax[,&nbsp;ind,&nbsp;step,&nbsp;indtype,&nbsp;fac])</td>
+<td>Plots the contained <cite>Spectrum</cite> objects.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rebin</span></code>(out_eng)</td>
+<td>Re-bins all <cite>Spectrum</cite> objects according to a new abscissa.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">redshift</span></code>(rs_arr)</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">sum_specs</span></code>([weight])</td>
+<td>Sums the spectrum in each energy bin, weighted by <cite>weight</cite>.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch_spec_type</span></code>([target])</td>
+<td>Switches between the type of values to be stored.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">totN</span></code>([bound_type,&nbsp;bound_arr])</td>
+<td>Returns the total number of particles in part of the spectra.</td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">toteng</span></code>([bound_type,&nbsp;bound_arr])</td>
+<td>Returns the total energy of particles in part of the spectra.</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">N_underflow</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">eng</span></code></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">eng_underflow</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">grid_vals</span></code></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">in_eng</span></code></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">rs</span></code></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">spec_type</span></code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../darkhistory.spec.transferfunction.html"
+                        title="previous chapter">darkhistory.spec.transferfunction</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="darkhistory.spec.transferfunction.TransFuncAtRedshift.html"
+                        title="next chapter">darkhistory.spec.transferfunction.TransFuncAtRedshift</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../../_sources/_autosummary/darkhistory/spec/transferfunction/darkhistory.spec.transferfunction.TransFuncAtEnergy.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+    
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<!---->
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>
