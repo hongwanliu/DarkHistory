@@ -438,10 +438,8 @@ def get_elec_cooling_tf(
         + deposited_ion_eng_arr
         + deposited_heat_eng_arr
     )
-    # utils.compare_arr([toteng_no_self_scatter_arr, eleceng])
-    
-    fac_arr = eleceng/toteng_no_self_scatter_arr
 
+    fac_arr = eleceng/toteng_no_self_scatter_arr
     
     sec_elec_spec_N_arr *= fac_arr[:, np.newaxis]
     sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
