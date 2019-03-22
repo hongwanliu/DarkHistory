@@ -12,7 +12,7 @@ def get_kappa_2s(photspec):
     Parameters
     ----------
     photspec : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return Energy per baryon.
+        spectrum of photons. spec.toteng() should return Energy per baryon.
 
     Returns
     -------

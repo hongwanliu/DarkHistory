@@ -20,7 +20,11 @@ def ortho_photon_spec(eng):
     Returns
     -------
     Spectrum
-        The resulting photon spectrum. 
+        The resulting photon :class:`.Spectrum` object. 
+
+    See Also
+    --------
+    :func:`.discretize` 
     """
 
     fac = np.pi**2 - 9
@@ -52,17 +56,6 @@ def ortho_photon_spec(eng):
         else:
             return 0
 
-    # ONLY FOR COMPARISON WITH TRACY. REMOVE!
-    #dNdE= np.array(
-    #    [norm_spec(en) for en in eng]
-    #)
-
-    #from darkhistory.spec.spectools import get_log_bin_width
-
-    #bin_width = eng*get_log_bin_width(eng)
-
-    #return Spectrum(eng, dNdE*2*phys.me/np.dot(dNdE, eng*bin_width))
-
     return discretize(eng, norm_spec)
 
 def para_photon_spec(eng):
@@ -78,7 +71,11 @@ def para_photon_spec(eng):
     Returns
     -------
     Spectrum
-        The resulting photon spectrum. 
+        The resulting photon :class:`.Spectrum` object. 
+
+    See Also
+    --------
+    :func:`.rebin_N_arr`
     """
 
     return rebin_N_arr(np.array([2]), np.array([phys.me]), eng)
@@ -97,7 +94,7 @@ def weighted_photon_spec(eng):
     Returns
     -------
     Spectrum
-        The resulting photon spectrum. 
+        The resulting photon :class:`.Spectrum` object. 
     """
 
     return 3/4*ortho_photon_spec(eng) + 1/4*para_photon_spec(eng)

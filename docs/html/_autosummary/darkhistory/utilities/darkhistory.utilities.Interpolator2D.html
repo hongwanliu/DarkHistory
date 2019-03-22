@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.utilities.Interpolator2D &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../index.html" >
+    <link rel="up" title="darkhistory.utilities" href="../darkhistory.utilities.html" >
+    <link rel="next" title="darkhistory.electrons" href="../darkhistory.electrons.html" >
+    <link rel="prev" title="darkhistory.utilities.spence_series_diff" href="darkhistory.utilities.spence_series_diff.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../darkhistory.utilities.html" accesskey="U">darkhistory.utilities</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.electrons.html" title="darkhistory.electrons"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.utilities.spence_series_diff.html" title="darkhistory.utilities.spence_series_diff"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-utilities-interpolator2d">
+<h1>darkhistory.utilities.Interpolator2D<a class="headerlink" href="#darkhistory-utilities-interpolator2d" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="darkhistory.utilities.Interpolator2D">
+<em class="property">class </em><code class="descclassname">darkhistory.utilities.</code><code class="descname">Interpolator2D</code><span class="sig-paren">(</span><em>arr0</em>, <em>name0</em>, <em>arr1</em>, <em>name1</em>, <em>val_arr</em>, <em>logInterp=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.Interpolator2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interpolation function over a list of objects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>val_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list of objects</span></dt>
+<dd><p class="first last">List of objects, <code class="docutils literal notranslate"><span class="pre">ndim</span> <span class="pre">=</span> <span class="pre">(arr0.size,</span> <span class="pre">arr1.size,</span> <span class="pre">...)</span></code></p>
+</dd>
+<dt><strong>arr0</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">list of values along 0th dimension</p>
+</dd>
+<dt><strong>arr1</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">list of values along 1st dimension</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>interp_func</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function</span></dt>
+<dd><p class="first last">A 2D interpolation function over <code class="docutils literal notranslate"><span class="pre">arr0</span></code> and <code class="docutils literal notranslate"><span class="pre">arr1</span></code>.</p>
+</dd>
+<dt><strong>_grid_vals</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">a nD array of input data</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="55%" />
+<col width="45%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>get_val</strong></td>
+<td>&#160;</td>
+</tr>
+<tr class="row-even"><td><strong>get_vals</strong></td>
+<td>&#160;</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="darkhistory.utilities.Interpolator2D.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>arr0</em>, <em>name0</em>, <em>arr1</em>, <em>name1</em>, <em>val_arr</em>, <em>logInterp=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.utilities.Interpolator2D.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.utilities.Interpolator2D.__init__" title="darkhistory.utilities.Interpolator2D.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(arr0,&nbsp;name0,&nbsp;arr1,&nbsp;name1,&nbsp;val_arr)</td>
+<td>Initialize self.</td>
+</tr>
+<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_val</span></code>(val0,&nbsp;val1)</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_vals</span></code>(val0,&nbsp;vals1)</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="darkhistory.utilities.spence_series_diff.html"
+                        title="previous chapter">darkhistory.utilities.spence_series_diff</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../darkhistory.electrons.html"
+                        title="next chapter">darkhistory.electrons</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../_sources/_autosummary/darkhistory/utilities/darkhistory.utilities.Interpolator2D.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+    
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<!---->
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

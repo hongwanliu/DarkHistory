@@ -42,8 +42,8 @@ def get_ics_cooling_tf(
     tuple of TransFuncAtRedshift
         Transfer functions for photons and low energy electrons.
 
-    Note
-    ----
+    Notes
+    -----
     The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
     photon spectrum after scattering by one electron.
 
@@ -384,8 +384,8 @@ def get_ics_cooling_tf_fast(
     tuple of TransFuncAtRedshift
         Transfer functions for photons and low energy electrons.
 
-    Note
-    ----
+    Notes
+    -----
     The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
     photon spectrum after scattering by one electron.
 

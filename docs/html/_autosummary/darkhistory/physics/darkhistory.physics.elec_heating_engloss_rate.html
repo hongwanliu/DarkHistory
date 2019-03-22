@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.physics.elec_heating_engloss_rate &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../index.html" >
+    <link rel="up" title="darkhistory.physics" href="../darkhistory.physics.html" >
+    <link rel="next" title="darkhistory.utilities" href="../darkhistory.utilities.html" >
+    <link rel="prev" title="darkhistory.physics.coll_ion_xsec" href="darkhistory.physics.coll_ion_xsec.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../darkhistory.physics.html" accesskey="U">darkhistory.physics</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.utilities.html" title="darkhistory.utilities"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.physics.coll_ion_xsec.html" title="darkhistory.physics.coll_ion_xsec"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-physics-elec-heating-engloss-rate">
+<h1>darkhistory.physics.elec_heating_engloss_rate<a class="headerlink" href="#darkhistory-physics-elec-heating-engloss-rate" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="darkhistory.physics.elec_heating_engloss_rate">
+<code class="descclassname">darkhistory.physics.</code><code class="descname">elec_heating_engloss_rate</code><span class="sig-paren">(</span><em>eng</em>, <em>xe</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.physics.elec_heating_engloss_rate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Electron energy loss rate of electrons due to Coulomb heating in eV s<sup>-1</sup>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
+<dd><p class="first last">Abscissa of electron <em>kinetic</em> energy.</p>
+</dd>
+<dt><strong>xe</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">The free electron fraction.</p>
+</dd>
+<dt><strong>rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">The redshift.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>ndarray</strong></dt>
+<dd><p class="first last">The energy loss rate due to heating (positive).</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>See 0910.4410 for the expression. The units have e^2/r being in units of energy, so to convert to SI, we insert 1/(4*pi*eps_0)^2.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="darkhistory.physics.coll_ion_xsec.html"
+                        title="previous chapter">darkhistory.physics.coll_ion_xsec</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../darkhistory.utilities.html"
+                        title="next chapter">darkhistory.utilities</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../_sources/_autosummary/darkhistory/physics/darkhistory.physics.elec_heating_engloss_rate.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+    
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<!---->
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>

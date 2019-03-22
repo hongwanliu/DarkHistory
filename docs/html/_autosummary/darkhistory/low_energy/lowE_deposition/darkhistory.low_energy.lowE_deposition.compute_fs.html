@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    
+    <title>darkhistory.low_energy.lowE_deposition.compute_fs &mdash; DarkHistory  documentation</title>
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../../../../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" >
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../../_static/language_data.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" >
+    <link rel="search" title="Search" href="../../../../search.html" >
+    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
+    <link rel="up" title="darkhistory.low_energy.lowE_deposition" href="../darkhistory.low_energy.lowE_deposition.html" >
+    <link rel="next" title="darkhistory.low_energy.lowE_electrons" href="../darkhistory.low_energy.lowE_electrons.html" >
+    <link rel="prev" title="darkhistory.low_energy.lowE_deposition" href="../darkhistory.low_energy.lowE_deposition.html" > 
+  </head>
+  <body>
+
+<div class="container">
+  <div class="top-scipy-org-logo-header">
+    <a href="../../../../index.html">
+      <img style="border: 0;" alt="SciPy" src="../../../../_static/img/DarkHistory_logo.png"></a>
+    </div>
+  </div>
+</div>
+
+
+    <div class="container">
+      <div class="main">
+        
+	<div class="row-fluid">
+	  <div class="span12">
+	    <div class="spc-navbar">
+              
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
+	
+        <li class="active"><a href="../../../../index.html">DarkHistory  documentation</a></li>
+	
+          <li class="active"><a href="../../../../modules.html" >DarkHistory</a></li>
+          <li class="active"><a href="../../../darkhistory.html" >darkhistory</a></li>
+          <li class="active"><a href="../../darkhistory.low_energy.html" >darkhistory.low_energy</a></li>
+          <li class="active"><a href="../darkhistory.low_energy.lowE_deposition.html" accesskey="U">darkhistory.low_energy.lowE_deposition</a></li> 
+    </ul>
+              
+              
+    <ul class="nav nav-pills pull-right">
+      <li class="active">
+        <a href="../../../../genindex.html" title="General Index"
+           accesskey="I">index</a>
+      </li>
+      <li class="active">
+        <a href="../../../../py-modindex.html" title="Python Module Index"
+           >modules</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.low_energy.lowE_electrons.html" title="darkhistory.low_energy.lowE_electrons"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="../darkhistory.low_energy.lowE_deposition.html" title="darkhistory.low_energy.lowE_deposition"
+           accesskey="P">previous</a>
+      </li>
+    </ul>
+              
+	    </div>
+	  </div>
+	</div>
+        
+
+	<div class="row-fluid">
+          <div class="span9">
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
+  <div class="section" id="darkhistory-low-energy-lowe-deposition-compute-fs">
+<h1>darkhistory.low_energy.lowE_deposition.compute_fs<a class="headerlink" href="#darkhistory-low-energy-lowe-deposition-compute-fs" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="darkhistory.low_energy.lowE_deposition.compute_fs">
+<code class="descclassname">darkhistory.low_energy.lowE_deposition.</code><code class="descname">compute_fs</code><span class="sig-paren">(</span><em>MEDEA_interp</em>, <em>elec_spec</em>, <em>phot_spec</em>, <em>x</em>, <em>dE_dVdt_inj</em>, <em>dt</em>, <em>highengdep</em>, <em>cmbloss</em>, <em>method='old'</em>, <em>separate_higheng=True</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.low_energy.lowE_deposition.compute_fs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII</p>
+<p>Given a spectrum of deposited electrons and photons, resolve their energy into
+H ionization, and ionization, H excitation, heating, and continuum photons in that order.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
+<dt><strong>phot_spec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum object</span></dt>
+<dd><p class="first last">spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number <em>per baryon</em>.</p>
+</dd>
+<dt><strong>elec_spec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum object</span></dt>
+<dd><p class="first last">spectrum of electrons. Assumed to be in dNdE mode. spec.totN() should return number <em>per baryon</em>.</p>
+</dd>
+<dt><strong>x</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list of floats</span></dt>
+<dd><p class="first last">number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs</p>
+</dd>
+<dt><strong>dE_dVdt_inj</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">DM energy injection rate, dE/dVdt injected.  This is for unclustered DM (i.e. without structure formation).</p>
+</dd>
+<dt><strong>dt</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">time in seconds over which these spectra were deposited.</p>
+</dd>
+<dt><strong>highengdep</strong> <span class="classifier-delimiter">:</span> <span class="classifier">list of floats</span></dt>
+<dd><p class="first last">total amount of energy deposited by high energy particles into {H_ionization, H_excitation, heating, continuum} per baryon per time, in that order.</p>
+</dd>
+<dt><strong>cmbloss</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt</p>
+</dd>
+<dt><strong>method</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’,’helium’,’new’}</span></dt>
+<dd><p class="first last">‘old’: All photons &gt;= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, &lt; 10.2eV are labelled continuum.
+‘helium’: Same as ‘old’, but now photons &gt;= 13.6 can ionize HeI and HeII also.
+‘new’: Same as ‘ion’, but now [10.2, 13.6)eV photons treated more carefully.</p>
+</dd>
+<dt><strong>separate_higheng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">If True, returns separate high energy deposition.</p>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>ndarray or tuple of ndarray</strong></dt>
+<dd></dd>
+<dt><strong>f_c(z) for z within spec.rs +/- dt/2</strong></dt>
+<dd></dd>
+<dt><strong>The order of the channels is {H Ionization, He Ionization, H Excitation, Heating and Continuum}</strong></dt>
+<dd></dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The CMB component hasn’t been subtracted from the continuum photons yet
+Think about the exceptions that should be thrown (elec_spec.rs should equal phot_spec.rs)</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+          </div>
+      <div class="spc-rightsidebar span3">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../darkhistory.low_energy.lowE_deposition.html"
+                        title="previous chapter">darkhistory.low_energy.lowE_deposition</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../darkhistory.low_energy.lowE_electrons.html"
+                        title="next chapter">darkhistory.low_energy.lowE_electrons</a></p>
+  <h3>This Page</h3>
+  <div>
+    <a href="../../../../_sources/_autosummary/darkhistory/low_energy/lowE_deposition/darkhistory.low_energy.lowE_deposition.compute_fs.rst.txt"
+       rel="nofollow">Show Source</a>
+  </div>
+    
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+<!---->
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
+      </div>
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2019, Hongwan Liu, Gregory Ridgway and Tracy Slatyer.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.8.5.
+      </li>
+    </ul>
+    </div>
+    </div>
+    </div>
+  </body>
+</html>
