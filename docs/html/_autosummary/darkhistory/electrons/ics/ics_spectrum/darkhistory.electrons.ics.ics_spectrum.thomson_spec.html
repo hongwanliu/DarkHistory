@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8">
     
-    <title>darkhistory.electrons.ics.ics_spectrum.ics_spec &mdash; DarkHistory  documentation</title>
+    <title>darkhistory.electrons.ics.ics_spectrum.thomson_spec &mdash; DarkHistory  documentation</title>
     
     <link rel="stylesheet" type="text/css" href="../../../../../_static/css/spc-bootstrap.css">
     <link rel="stylesheet" type="text/css" href="../../../../../_static/css/spc-extend.css">
@@ -30,7 +30,8 @@
     <link rel="search" title="Search" href="../../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" >
     <link rel="up" title="darkhistory.electrons.ics.ics_spectrum" href="../darkhistory.electrons.ics.ics_spectrum.html" >
-    <link rel="prev" title="darkhistory.electrons.ics.ics_spectrum" href="../darkhistory.electrons.ics.ics_spectrum.html" > 
+    <link rel="next" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff" href="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff.html" >
+    <link rel="prev" title="darkhistory.electrons.ics.ics_spectrum.ics_spec" href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html" > 
   </head>
   <body>
 
@@ -73,7 +74,11 @@
            >modules</a>
       </li>
       <li class="active">
-        <a href="../darkhistory.electrons.ics.ics_spectrum.html" title="darkhistory.electrons.ics.ics_spectrum"
+        <a href="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff.html" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html" title="darkhistory.electrons.ics.ics_spectrum.ics_spec"
            accesskey="P">previous</a>
       </li>
     </ul>
@@ -89,20 +94,20 @@
         <div class="bodywrapper">
           <div class="body" id="spc-section-body">
             
-  <div class="section" id="darkhistory-electrons-ics-ics-spectrum-ics-spec">
-<h1>darkhistory.electrons.ics.ics_spectrum.ics_spec<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-ics-spec" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="darkhistory-electrons-ics-ics-spectrum-thomson-spec">
+<h1>darkhistory.electrons.ics.ics_spectrum.thomson_spec<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-thomson-spec" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
-<dt id="darkhistory.electrons.ics.ics_spectrum.ics_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">ics_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>thomson_tf=None</em>, <em>rel_tf=None</em>, <em>T_ref=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>ICS spectrum of secondary photons.</p>
-<p>Switches between <cite>nonrel_spec</cite> and <cite>rel_spec</cite>.</p>
+<dt id="darkhistory.electrons.ics.ics_spectrum.thomson_spec">
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">thomson_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.thomson_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thomson ICS spectrum of secondary photons.</p>
+<p>Switches between <cite>nonrel_spec_diff</cite> and <cite>nonrel_spec_series</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>eleckineng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">Incoming electron energy.</p>
+<dd><p class="first last">Incoming electron kinetic energy.</p>
 </dd>
 <dt><strong>photeng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
 <dd><p class="first last">Outgoing photon energy.</p>
@@ -110,24 +115,18 @@
 <dt><strong>T</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd><p class="first last">CMB temperature.</p>
 </dd>
-<dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd><p class="first last">If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
 </dd>
-<dt><strong>thomson_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
-<dd><p class="first last">Reference Thomson ICS transfer function. If specified, calculation is done by interpolating over the transfer function.</p>
-</dd>
-<dt><strong>rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
-<dd><p class="first last">Reference relativistic ICS transfer function. If specified, calculation is done by interpolating over the transfer function.</p>
-</dd>
-<dt><strong>T_ref</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
-<dd><p class="first last">The reference temperature at which the reference transfer functions is evaluated. If not specified, defaults to phys.TCMB(400).</p>
+<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’, ‘new’}</span></dt>
+<dd><p class="first last">Choice of secondary photon spectrum to use.</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>TransFuncAtRedshift</strong></dt>
-<dd><p class="first last">dN/(dt dE) of the outgoing photons, dt = 1 s, with <cite>self.in_eng = eleckineng</cite> and <cite>self.eng = photeng</cite>. <cite>self.rs</cite> is determined from <cite>T</cite>, and <cite>self.dlnz</cite> is normalized to 1 second.</p>
+<dt><strong>TransFuncAtRedshift or ndarray</strong></dt>
+<dd><p class="first last">dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, photeng).</p>
 </dd>
 </dl>
 </td>
@@ -147,11 +146,14 @@
       <div class="spc-rightsidebar span3">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../darkhistory.electrons.ics.ics_spectrum.html"
-                        title="previous chapter">darkhistory.electrons.ics.ics_spectrum</a></p>
+  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html"
+                        title="previous chapter">darkhistory.electrons.ics.ics_spectrum.ics_spec</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff.html"
+                        title="next chapter">darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff</a></p>
   <h3>This Page</h3>
   <div>
-    <a href="../../../../../_sources/_autosummary/darkhistory/electrons/ics/ics_spectrum/darkhistory.electrons.ics.ics_spectrum.ics_spec.rst.txt"
+    <a href="../../../../../_sources/_autosummary/darkhistory/electrons/ics/ics_spectrum/darkhistory.electrons.ics.ics_spectrum.thomson_spec.rst.txt"
        rel="nofollow">Show Source</a>
   </div>
     

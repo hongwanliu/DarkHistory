@@ -11,7 +11,7 @@ darkhistory.electrons.ics.ics\_spectrum
       :toctree: ics_spectrum
    
       ics_spec
-      nonrel_spec
+      thomson_spec
       nonrel_spec_diff
       nonrel_spec_quad
       nonrel_spec_series

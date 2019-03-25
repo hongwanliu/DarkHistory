@@ -601,8 +601,8 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
 
     return term, err
 
-def nonrel_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
-    """ Nonrelativistic ICS spectrum of secondary photons.
+def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
+    """ Thomson ICS spectrum of secondary photons.
 
     Switches between `nonrel_spec_diff` and `nonrel_spec_series`. 
 
@@ -908,7 +908,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
 def ics_spec(
     eleckineng, photeng, T, as_pairs=False, 
-    nonrel_tf=None, rel_tf=None, T_ref=None
+    thomson_tf=None, rel_tf=None, T_ref=None
 ):
     """ ICS spectrum of secondary photons.
 
@@ -924,8 +924,8 @@ def ics_spec(
         CMB temperature. 
     as_pairs : bool, optional
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
-    nonrel_tf : TransFuncAtRedshift, optional
-        Reference nonrelativistic ICS transfer function. If specified, calculation is done by interpolating over the transfer function. 
+    thomson_tf : TransFuncAtRedshift, optional
+        Reference Thomson ICS transfer function. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
         Reference relativistic ICS transfer function. If specified, calculation is done by interpolating over the transfer function. 
     T_ref : float, optional
@@ -1044,7 +1044,7 @@ def ics_spec(
         spec[~rel] = y**2*nonrel_tf_interp.flatten()
 
     else:
-        spec[~rel] = nonrel_spec(
+        spec[~rel] = thomson_spec(
             eleckineng_mask[~rel], photeng_mask[~rel], 
             T, as_pairs=True
         )

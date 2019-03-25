@@ -174,7 +174,7 @@ def get_elec_cooling_tf(
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
     phot_ICS_tf = ics_spec(
-        eleceng, photeng, T, nonrel_tf = raw_thomson_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
