@@ -253,7 +253,7 @@ def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
         )
     )
 
-def thomson_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
+def thomson_spec_quad(eleckineng_arr, photeng_arr, T):
     """ Thomson ICS spectrum of secondary photons using quadrature.
 
     Parameters
@@ -264,8 +264,6 @@ def thomson_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
         Outgoing photon energy. 
     T : float
         CMB temperature. 
-    spec_type : {'old', 'new'}
-        Choice of secondary photon spectrum to use.
 
     Returns
     -------
@@ -293,19 +291,11 @@ def thomson_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
         beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
 
 
-        if spec_type == 'old':
-            prefac = ( 
-                phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-                * (8*np.pi/(phys.ele_compton*phys.me)**3)
-            )
-        elif spec_type == 'new':
-            prefac = (
-                phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
-                * (8*np.pi/(phys.ele_compton*phys.me)**3)
-            )
-        else:
-            raise TypeError('invalid spec specified.')
-
+        prefac = (
+            phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
+            * (8*np.pi/(phys.ele_compton*phys.me)**3)
+        )
+        
         if eps/T < 100:
             prefac *= 1/(np.exp(eps/T) - 1)
         else:
@@ -313,64 +303,36 @@ def thomson_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
 
         if eps < photeng:
 
-            if spec_type == 'old':
-
-                fac = (
-                    (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))*eps
-                    + 2/beta*np.sqrt((1-beta)/(1+beta))*photeng
-                    - (1-beta)**2/beta**2*np.sqrt((1+beta)/(1-beta))*(
-                        photeng**2/eps
-                    )
-                    + 2/(gamma*beta**2)*photeng*np.log(
-                        (1-beta)/(1+beta)*photeng/eps
-                    )
+            fac = (
+                - (2/gamma**2)*(3-beta**2)*(eps+photeng)*np.log(
+                    (1+beta)*eps/((1-beta)*photeng)
                 )
-
-            else:
-
-                fac = (
-                    - (2/gamma**2)*(3-beta**2)*(eps+photeng)*np.log(
-                        (1+beta)*eps/((1-beta)*photeng)
-                    )
-                    + (1/gamma**4)*(eps**2/photeng)
-                    - (1/gamma**4)*(photeng**2/eps)
-                    +(1+beta)*(
-                        beta*(beta**2+3) + (1/gamma**2)*(9-4*beta**2) 
-                    )*eps
-                    + (1-beta)*(
-                        beta*(beta**2+3) - (1/gamma**2)*(9-4*beta**2)
-                    )*photeng
-                )
+                + (1/gamma**4)*(eps**2/photeng)
+                - (1/gamma**4)*(photeng**2/eps)
+                +(1+beta)*(
+                    beta*(beta**2+3) + (1/gamma**2)*(9-4*beta**2) 
+                )*eps
+                + (1-beta)*(
+                    beta*(beta**2+3) - (1/gamma**2)*(9-4*beta**2)
+                )*photeng
+            )
 
 
         else:
 
-            if spec_type == 'old':
-
-                fac = (
-                    - (1+beta**2)/beta**2*np.sqrt((1-beta)/(1+beta))*eps
-                    + 2/beta*np.sqrt((1+beta)/(1-beta))*photeng 
-                    + (1+beta)/(gamma*beta**2)*photeng**2/eps 
-                    - 2/(gamma*beta**2)*photeng*np.log(
-                        (1+beta)/(1-beta)*photeng/eps 
-                    )
+            fac = (
+                (2/gamma**2)*(3-beta**2)*(eps+photeng)*np.log(
+                    (1-beta)*eps/((1+beta)*photeng)
                 )
-
-            else:
-
-                fac = (
-                    (2/gamma**2)*(3-beta**2)*(eps+photeng)*np.log(
-                        (1-beta)*eps/((1+beta)*photeng)
-                    )
-                    - (1/gamma**4)*(eps**2/photeng)
-                    + (1/gamma**4)*(photeng**2/eps)
-                    -(1-beta)*(
-                        -beta*(beta**2+3) + (1/gamma**2)*(9-4*beta**2) 
-                    )*eps
-                    -(1+beta)*(
-                        -beta*(beta**2+3) - (1/gamma**2)*(9-4*beta**2)
-                    )*photeng
-                )
+                - (1/gamma**4)*(eps**2/photeng)
+                + (1/gamma**4)*(photeng**2/eps)
+                -(1-beta)*(
+                    -beta*(beta**2+3) + (1/gamma**2)*(9-4*beta**2) 
+                )*eps
+                -(1+beta)*(
+                    -beta*(beta**2+3) - (1/gamma**2)*(9-4*beta**2)
+                )*photeng
+            )
 
         return prefac*fac
 
