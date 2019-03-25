@@ -58,9 +58,6 @@ def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
         * (8*np.pi*T**2/(phys.ele_compton*phys.me)**3)
     )
 
-    else:
-        raise TypeError('invalid spec specified.')
-
     print('Series 1/12...')
     F1_low = F1(lowlim, eta)
     print('Series 2/12...')
@@ -618,7 +615,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     spec[where_series] = thomson_spec_series(
         eleckineng_mask[where_series],
         photeng_mask[where_series],
-        T, as_pairs=True, spec_type=spec_type
+        T, as_pairs=True
     )
 
     if testing:
