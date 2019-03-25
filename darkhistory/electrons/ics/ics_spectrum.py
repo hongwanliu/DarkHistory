@@ -14,9 +14,7 @@ from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 from tqdm import tqdm_notebook as tqdm
 
-def thomson_spec_series(
-    eleckineng, photeng, T, as_pairs=False, spec_type='new'
-):
+def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
     """ Thomson ICS spectrum of secondary photons by series method.
 
     Parameters
@@ -29,8 +27,6 @@ def thomson_spec_series(
         CMB temperature. 
     as_pairs : bool
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
-    spec_type : {'old', 'new'}
-        Choice of secondary photon spectrum to use.
 
     Returns
     -------
@@ -42,7 +38,7 @@ def thomson_spec_series(
     Insert note on the suitability of the method. 
     """
 
-    print('Computing spectra by analytic series...')
+    print('***** Computing Spectra by Analytic Series... *****')
 
     gamma = 1 + eleckineng/phys.me
     # Most accurate way of finding beta when beta is small, I think.
@@ -57,48 +53,39 @@ def thomson_spec_series(
     
     eta = photeng/T
 
-    if spec_type == 'old':
-        prefac = np.float128( 
-            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-            * (8*np.pi/(phys.ele_compton*phys.me)**3) 
-            * (1+beta**2)/beta**2*np.sqrt((1+beta)/(1-beta))
-        )
-    elif spec_type == 'new':
-        prefac = np.float128(
-            phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
-            * (8*np.pi*T**2/(phys.ele_compton*phys.me)**3)
-        )
+    prefac = np.float128(
+        phys.c*(3/8)*phys.thomson_xsec/(4*gamma**2*beta**6)
+        * (8*np.pi*T**2/(phys.ele_compton*phys.me)**3)
+    )
 
     else:
         raise TypeError('invalid spec specified.')
 
-    print('*** Computing series 1/12...')
+    print('Series 1/12...')
     F1_low = F1(lowlim, eta)
-    print('*** Computing series 2/12...')
+    print('Series 2/12...')
     F0_low = F0(lowlim, eta)
-    print('*** Computing series 3/12...')
+    print('Series 3/12...')
     F_inv_low = F_inv(lowlim, eta)[0]
-    print('*** Computing series 4/12...')
+    print('Series 4/12...')
     F_log_low = F_log(lowlim, eta)[0]
 
-    print('*** Computing series 5/12...')
+    print('Series 5/12...')
     F1_upp = F1(eta, upplim)
-    print('*** Computing series 6/12...')
+    print('Series 6/12...')
     F0_upp = F0(eta, upplim)
-    print('*** Computing series 7/12...')
+    print('Series 7/12...')
     F_inv_upp = F_inv(eta, upplim)[0]
-    print('*** Computing series 8/12...')
+    print('Series 8/12...')
     F_log_upp = F_log(eta, upplim)[0]
-
-    if spec_type == 'new':
-        F2_low = F2(lowlim, eta)[0]
-        print('*** Computing series 9/12...')
-        F2_upp = F2(eta, upplim)[0]
-        print('*** Computing series 10/12...')
-        F_x_log_low = F_x_log(lowlim, eta)[0]
-        print('*** Computing series 11/12...')
-        F_x_log_upp = F_x_log(eta, upplim)[0]
-        print('*** Computing series 12/12...')
+    print('Series 9/12...')
+    F2_low = F2(lowlim, eta)[0]
+    print('Series 10/12...')
+    F2_upp = F2(eta, upplim)[0]
+    print('Series 11/12...')
+    F_x_log_low = F_x_log(lowlim, eta)[0]
+    print('Series 12/12...')
+    F_x_log_upp = F_x_log(eta, upplim)[0]
 
 
     # CMB photon energy less than outgoing photon energy.
@@ -107,157 +94,99 @@ def thomson_spec_series(
     # We can take photeng*F1_vec_low for element-wise products. 
     # In the other dimension, we must take transpose(eleckineng*transpose(x)).
 
-    if spec_type == 'old':
+    # CMB photon energy lower than outgoing photon energy
 
-        # CMB photon energy lower than outgoing photon energy
-
-        term_low_1 = F1_low * T**2
-
-        term_low_2 = np.transpose(
-            2*beta/(1+beta**2)*(1-beta)/(1+beta)
-            * np.transpose(photeng*F0_low) * T
+    term_low_1 = np.transpose(
+        -(1/gamma**4)*np.transpose(
+            photeng**2/T**2*F_inv_low
         )
+    )
 
-        term_low_3 = np.transpose(
-            -(1-beta)**2/(1+beta**2)
-            * np.transpose((photeng**2)*F_inv_low)
-        )
-
-        term_low_4 = np.transpose(
-            2*(1-beta)/(1+beta**2)*(log_1_plus_x(-beta) - log_1_plus_x(beta))
-            * np.transpose(photeng*F0_low*T)
-            + 2*(1-beta)/(1+beta**2) 
-            * np.transpose(np.log(photeng)*photeng*F0_low*T)
-        )
-
-        term_low_5 = np.transpose(
-            -2*(1-beta)/(1+beta**2) * np.transpose(
-                photeng*(T*np.log(T)*F0_low + F_log_low*T)
-            )
-        )
-
-        # CMB photon energy higher than outgoing photon energy
-
-        term_high_1 = np.transpose(
-            -(1-beta)/(1+beta) * np.transpose(F1_upp * T**2)
-        )
-
-        term_high_2 = np.transpose(
-            2*beta/(1+beta**2) * np.transpose(photeng * F0_upp * T)
-        )
-
-        term_high_3 = np.transpose(
-            (1-beta**2)/(1+beta**2) * np.transpose(photeng**2*F_inv_upp)
-        )
-
-        term_high_4 = np.transpose(
-            - 2*(1-beta)/(1+beta**2)*(log_1_plus_x(beta) - log_1_plus_x(-beta))
-            * np.transpose(photeng*F0_upp*T)
-            - 2*(1-beta)/(1+beta**2) 
-            * np.transpose(np.log(photeng)*photeng*F0_upp*T)
-        )
-
-        term_high_5 = np.transpose(
-            2*(1-beta)/(1+beta**2) * np.transpose(
-                photeng*(T*np.log(T)*F0_upp+ F_log_upp*T)
-            )
-        )
-
-    elif spec_type == 'new':
-
-        # CMB photon energy lower than outgoing photon energy
-
-        term_low_1 = np.transpose(
-            -(1/gamma**4)*np.transpose(
-                photeng**2/T**2*F_inv_low
-            )
-        )
-
-        term_low_2 = np.transpose(
-            (
-                (1-beta)*(
-                    beta*(beta**2 + 3) - (1/gamma**2)*(9 - 4*beta**2)
-                )
-                - 2/gamma**2*(3-beta**2)
-                *(np.log1p(beta)-np.log1p(-beta))
-            )*np.transpose(photeng/T*F0_low)
-        ) - np.transpose(
-            2/gamma**2*(3 - beta**2)*np.transpose(
-                photeng/T*(-np.log(photeng/T))*F0_low
-            )
-        )
-
-        term_low_3 = np.transpose(
-            -2/gamma**2*(3 - beta**2)*np.transpose(
-                photeng/T*F_log_low
-            )
-        )
-
-        term_low_4 = np.transpose(
-            -(2/gamma**2)*(3 - beta**2)
-            *(np.log1p(beta)-np.log1p(-beta))*np.transpose(F1_low)
-            +(2/gamma**2)*(3 - beta**2)*np.transpose(
-                np.log(photeng/T)*F1_low
-            )
-            +(1+beta)*(
-                beta*(beta**2 + 3) + (1/gamma**2)*(9 - 4*beta**2)
-            )*np.transpose(F1_low) 
-        )
-
-        term_low_5 = np.transpose(
-            1/gamma**4*np.transpose(F2_low/(photeng/T))
-        )
-
-        term_low_6 = np.transpose(
-            -2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_low)
-        )
-
-        # CMB photon energy higher than outgoing photon energy
-
-        term_high_1 = np.transpose(
-            (1/gamma**4)*np.transpose(
-                photeng**2/T**2*F_inv_upp
-            )
-        )
-
-        term_high_2 = np.transpose(
-            (
-                (1+beta)*(
-                    beta*(beta**2 + 3) + (1/gamma**2)*(9 - 4*beta**2)
-                )
-                + (2/gamma**2)*(3-beta**2)
-                    *(np.log1p(-beta)-np.log1p(beta))
-            )*np.transpose(photeng/T*F0_upp)
-        ) + np.transpose(
-            2/gamma**2*(3 - beta**2)*np.transpose(
-                photeng/T*(-np.log(photeng/T))*F0_upp
-            )
-        )
-
-        term_high_3 = np.transpose(
-            2/gamma**2*(3 - beta**2)*np.transpose(
-                photeng/T*F_log_upp
-            )
-        )
-
-        term_high_4 = np.transpose(
-            (2/gamma**2)*(3 - beta**2)
-            *(np.log1p(-beta)-np.log1p(beta))*np.transpose(F1_upp)
-            +(2/gamma**2)*(3 - beta**2)*np.transpose(
-                -np.log(photeng/T)*F1_upp
-            )
-            +(1-beta)*(
+    term_low_2 = np.transpose(
+        (
+            (1-beta)*(
                 beta*(beta**2 + 3) - (1/gamma**2)*(9 - 4*beta**2)
-            )*np.transpose(F1_upp) 
+            )
+            - 2/gamma**2*(3-beta**2)
+            *(np.log1p(beta)-np.log1p(-beta))
+        )*np.transpose(photeng/T*F0_low)
+    ) - np.transpose(
+        2/gamma**2*(3 - beta**2)*np.transpose(
+            photeng/T*(-np.log(photeng/T))*F0_low
         )
+    )
 
-        term_high_5 = -np.transpose(
-            1/gamma**4*np.transpose(F2_upp/(photeng/T))
+    term_low_3 = np.transpose(
+        -2/gamma**2*(3 - beta**2)*np.transpose(
+            photeng/T*F_log_low
         )
+    )
 
-        term_high_6 = np.transpose(
-            2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_upp)
+    term_low_4 = np.transpose(
+        -(2/gamma**2)*(3 - beta**2)
+        *(np.log1p(beta)-np.log1p(-beta))*np.transpose(F1_low)
+        +(2/gamma**2)*(3 - beta**2)*np.transpose(
+            np.log(photeng/T)*F1_low
         )
+        +(1+beta)*(
+            beta*(beta**2 + 3) + (1/gamma**2)*(9 - 4*beta**2)
+        )*np.transpose(F1_low) 
+    )
+
+    term_low_5 = np.transpose(
+        1/gamma**4*np.transpose(F2_low/(photeng/T))
+    )
+
+    term_low_6 = np.transpose(
+        -2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_low)
+    )
+
+    # CMB photon energy higher than outgoing photon energy
+
+    term_high_1 = np.transpose(
+        (1/gamma**4)*np.transpose(
+            photeng**2/T**2*F_inv_upp
+        )
+    )
+
+    term_high_2 = np.transpose(
+        (
+            (1+beta)*(
+                beta*(beta**2 + 3) + (1/gamma**2)*(9 - 4*beta**2)
+            )
+            + (2/gamma**2)*(3-beta**2)
+                *(np.log1p(-beta)-np.log1p(beta))
+        )*np.transpose(photeng/T*F0_upp)
+    ) + np.transpose(
+        2/gamma**2*(3 - beta**2)*np.transpose(
+            photeng/T*(-np.log(photeng/T))*F0_upp
+        )
+    )
+
+    term_high_3 = np.transpose(
+        2/gamma**2*(3 - beta**2)*np.transpose(
+            photeng/T*F_log_upp
+        )
+    )
+
+    term_high_4 = np.transpose(
+        (2/gamma**2)*(3 - beta**2)
+        *(np.log1p(-beta)-np.log1p(beta))*np.transpose(F1_upp)
+        +(2/gamma**2)*(3 - beta**2)*np.transpose(
+            -np.log(photeng/T)*F1_upp
+        )
+        +(1-beta)*(
+            beta*(beta**2 + 3) - (1/gamma**2)*(9 - 4*beta**2)
+        )*np.transpose(F1_upp) 
+    )
+
+    term_high_5 = -np.transpose(
+        1/gamma**4*np.transpose(F2_upp/(photeng/T))
+    )
+
+    term_high_6 = np.transpose(
+        2/gamma**2*(3 - beta**2)*np.transpose(F_x_log_upp)
+    )
 
     testing = False
     if testing:
@@ -330,31 +259,18 @@ def thomson_spec_series(
 
     # Addition ordered to minimize catastrophic cancellation, but if this is important, you shouldn't be using this method.
 
-    print('----> Computation by analytic series complete!')
-
-    if spec_type == 'old':
-
-        return np.transpose(
-            prefac*np.transpose(
-                (term_low_1 + term_high_1)
-                + (term_low_2 + term_high_2)
-                + (term_low_3 + term_high_3)
-                + (term_low_4 + term_high_4)
-                + (term_low_5 + term_high_5)
-            )
+    print('***** Analytic Series Computation Complete! *****')
+    
+    return np.transpose(
+        prefac*np.transpose(
+            (term_low_1 + term_high_1)
+            + (term_low_2 + term_high_2)
+            + (term_low_3 + term_high_3)
+            + (term_low_4 + term_high_4)
+            + (term_low_5 + term_high_5)
+            + (term_low_6 + term_high_6)
         )
-
-    elif spec_type == 'new':
-        return np.transpose(
-            prefac*np.transpose(
-                (term_low_1 + term_high_1)
-                + (term_low_2 + term_high_2)
-                + (term_low_3 + term_high_3)
-                + (term_low_4 + term_high_4)
-                + (term_low_5 + term_high_5)
-                + (term_low_6 + term_high_6)
-            )
-        )
+    )
 
 def thomson_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
     """ Thomson ICS spectrum of secondary photons using quadrature.
@@ -977,28 +893,6 @@ def ics_spec(
         # Note relativistic spectrum is indexed by TOTAL electron energy.
         # rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > rel_bound])
         # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
-        # rel_tf = rel_tf.at_eng(
-        #     y*photeng, 
-        #     bounds_error = False, 
-        #     fill_value = (np.nan, 0)
-        # )
-
-        # OLD METHOD: call at_val
-
-        # rel_tf = rel_tf.at_val(
-        #     y*eleceng[gamma > rel_bound], y*photeng, 
-        #     bounds_error = False, fill_value = 1e-200
-        # )
-        
-        # spec[rel] = y**4*rel_tf.grid_vals.flatten()
-
-        # NEW METHOD: call interpolator. 
-
-        # points = utils.get_grid(
-        #     np.log(y*eleceng[gamma > rel_bound]), np.log(y*photeng)
-        # )
-
-        # rel_tf_interp = rel_tf.interp_func(points)
 
         rel_tf_interp = np.transpose(
             rel_tf.interp_func(
@@ -1040,14 +934,6 @@ def ics_spec(
 
         rs = T/phys.TCMB(1)
         dlnz = -1./(phys.dtdz(rs)*rs)
-
-        # spec_arr = [
-        #     Spectrum(photeng, sp, rs = rs, in_eng = in_eng) 
-        #     for sp, in_eng in zip(spec, eleckineng)
-        # ]
-
-        # # Use kinetic energy of the electron for better interpolation when necessary. 
-        # return TransFuncAtRedshift(spec_arr, dlnz=dlnz)
 
         return TransFuncAtRedshift(
             spec, in_eng = eleckineng, eng = photeng, 
