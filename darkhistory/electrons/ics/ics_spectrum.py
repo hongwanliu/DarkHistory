@@ -424,7 +424,7 @@ def thomson_spec_diff(eleckineng, photeng, T, as_pairs=False):
 
     return term, err
 
-def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
+def thomson_spec(eleckineng, photeng, T, as_pairs=False):
     """ Thomson ICS spectrum of secondary photons.
 
     Switches between `thomson_spec_diff` and `thomson_spec_series`. 
@@ -439,8 +439,6 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         CMB temperature. 
     as_pairs : bool
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.
-    spec_type : {'old', 'new'}
-        Choice of secondary photon spectrum to use.
 
     Returns
     -------
@@ -495,7 +493,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     spec[where_diff], err_with_diff = thomson_spec_diff(
         eleckineng_mask[where_diff], 
         photeng_mask[where_diff], 
-        T, as_pairs=True, spec_type=spec_type
+        T, as_pairs=True
     )
 
     epsrel[where_diff] = np.abs(
