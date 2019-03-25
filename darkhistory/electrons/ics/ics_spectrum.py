@@ -371,9 +371,7 @@ def thomson_spec_quad(eleckineng_arr, photeng_arr, T):
 
     return integral
 
-def thomson_spec_diff(
-    eleckineng, photeng, T, as_pairs=False, spec_type='new'
-):
+def thomson_spec_diff(eleckineng, photeng, T, as_pairs=False):
     """ Thomson ICS spectrum of secondary photons by beta expansion.
 
     Parameters
@@ -386,8 +384,6 @@ def thomson_spec_diff(
         CMB temperature.
     as_pairs : bool
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.
-    spec_type : {'old', 'new'}
-        Choice of secondary photon spectrum to use. 
 
     Returns
     -------
@@ -399,7 +395,7 @@ def thomson_spec_diff(
     Insert note on the suitability of the method. 
     """
 
-    print('Computing spectra by an expansion in beta...')
+    print('***** Computing Spectra by Expansion in beta ...', end='')
 
     gamma = eleckineng/phys.me + 1
     # Most accurate way of finding beta when beta is small, I think.
@@ -409,56 +405,22 @@ def thomson_spec_diff(
     if testing: 
         print('beta: ', beta)
 
-    if spec_type == 'old':
-        prefac = ( 
-            phys.c*(3/8)*phys.thomson_xsec/(2*gamma**3*beta**2)
-            * (8*np.pi/(phys.ele_compton*phys.me)**3)
+    # The terms dependent on beta have been absorbed into
+    # the expansion.
+    prefac = (
+        phys.c*(3/8)*phys.thomson_xsec/4
+        * (
+            8*np.pi*T**2
+            /(phys.ele_compton*phys.me)**3
         )
-    elif spec_type == 'new':
-        # The terms dependent on beta have been absorbed into
-        # the expansion.
-        prefac = (
-            phys.c*(3/8)*phys.thomson_xsec/4
-            * (
-                8*np.pi*T**2
-                /(phys.ele_compton*phys.me)**3
-            )
-        )
-    else:
-        raise TypeError('invalid spec specified.')
+    )
 
-    if spec_type == 'old':
+    diff_term = diff_expansion(beta, photeng, T, as_pairs=as_pairs)
 
-        print('Computing Q and K terms...')
-        Q_and_K_term = Q_and_K(beta, photeng, T, as_pairs=as_pairs)
-        print('Computing H and G terms...')
-        H_and_G_term = H_and_G(beta, photeng, T, as_pairs=as_pairs)
+    term = np.transpose(prefac*np.transpose(diff_term[0]))
+    err = np.transpose(prefac*np.transpose(diff_term[1]))
 
-    elif spec_type == 'new':
-
-        diff_term = diff_expansion(beta, photeng, T, as_pairs=as_pairs)
-
-    if spec_type == 'old':
-        term = np.transpose(
-            prefac*np.transpose(
-                Q_and_K_term[0] + H_and_G_term[0]
-            )
-        )
-
-        err = np.transpose(
-            prefac*np.transpose(
-                Q_and_K_term[1] + H_and_G_term[1]
-            )
-        )
-
-    elif spec_type == 'new':
-        # print('Prefactor: ', prefac)
-        # print('Sum without prefac: ', diff_term[0])
-        term = np.transpose(prefac*np.transpose(diff_term[0]))
-
-        err = np.transpose(prefac*np.transpose(diff_term[1]))
-
-    print('----> Computation by expansion in beta complete!')
+    print('... Complete! *****')
 
     return term, err
 
