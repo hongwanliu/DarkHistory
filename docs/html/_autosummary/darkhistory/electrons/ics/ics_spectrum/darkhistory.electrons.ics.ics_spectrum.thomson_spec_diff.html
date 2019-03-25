@@ -98,7 +98,7 @@
 <h1>darkhistory.electrons.ics.ics_spectrum.thomson_spec_diff<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-thomson-spec-diff" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.thomson_spec_diff">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">thomson_spec_diff</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.thomson_spec_diff" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">thomson_spec_diff</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.thomson_spec_diff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Thomson ICS spectrum of secondary photons by beta expansion.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -116,9 +116,6 @@
 </dd>
 <dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd><p class="first last">If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
-</dd>
-<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’, ‘new’}</span></dt>
-<dd><p class="first last">Choice of secondary photon spectrum to use.</p>
 </dd>
 </dl>
 </td>
