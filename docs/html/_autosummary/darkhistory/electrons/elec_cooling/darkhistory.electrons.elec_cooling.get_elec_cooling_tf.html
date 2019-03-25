@@ -125,7 +125,7 @@
 <dt><strong>raw_rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
 <dd><p class="first last">Relativistic ICS scattered photon spectrum transfer function. If None, uses the default transfer function. Default is None.</p>
 </dd>
-<dt><strong>raw_engloss_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
+<dt><strong>raw_engloss_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
 <dd><p class="first last">Thomson ICS scattered electron net energy loss transfer function. If None, uses the default transfer function. Default is None.</p>
 </dd>
 <dt><strong>coll_ion_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of 3 ndarrays, shapes (m, m), optional</span></dt>
@@ -138,7 +138,7 @@
 <dd><p class="first last">An <cite>EnglossRebinData</cite> object which stores rebinning information (based on <code class="docutils literal notranslate"><span class="pre">eleceng</span></code> and <code class="docutils literal notranslate"><span class="pre">photeng</span></code>) for speed. Default is None.</p>
 </dd>
 <dt><strong>check_conservation_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first last">If True, checks for energy conservation. Default is False.</p>
+<dd><p class="first last">If True, lower=True, checks for energy conservation. Default is False.</p>
 </dd>
 <dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd><p class="first last">If True, prints energy conservation checks. Default is False.</p>

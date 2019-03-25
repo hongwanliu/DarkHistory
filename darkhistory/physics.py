@@ -215,7 +215,13 @@ def TCMB(rs):
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons cm\ :sup:`-3` eV\ :sup:`-1`\ .
 
-    Returns zero if the energy exceeds 500 times the temperature. See :func:`.arrays_equal`. 
+    The normalization used here is
+
+    .. math::
+
+        \\frac{dN}{dE \\, dV} = \\frac{E^2}{\\pi^2 (\\hbar c)^3} \\frac{1}{e^{E/T_\\text{CMB}} - 1} \\,,
+
+    with T\ :sub:`CMB` given in eV. Returns zero if E > 500 T\ :sub:`CMB`.
 
     Parameters
     ----------
@@ -227,7 +233,7 @@ def CMB_spec(eng, temp):
     Returns
     -------
     ndarray
-        The number density of photons.
+        The number density of photons per unit energy in eV.
 
     """
     prefactor = 8*np.pi*(eng**2)/((ele_compton*me)**3)
