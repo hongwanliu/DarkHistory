@@ -124,7 +124,7 @@ def evolve(
             in_spec_phot = Spectrum(
                 photeng, np.zeros_like(photeng), spec_type='N'
             )
-
+            
         elif primary == 'phot_delta':
             # Exact kinetic energy of each photon. 
             eng_phot = mDM
@@ -401,7 +401,7 @@ def evolve(
                 continuum_loss, deposited_ICS_arr
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
-                    x_arr[-1,0], xHe=x_arr[-1,1],
+                    x_arr[-1,0], xHeII=x_arr[-1,1],
                     raw_thomson_tf=ics_thomson_ref_tf, 
                     raw_rel_tf=ics_rel_ref_tf, 
                     raw_engloss_tf=engloss_ref_tf,

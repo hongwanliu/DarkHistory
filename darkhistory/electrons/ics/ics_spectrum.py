@@ -533,7 +533,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False):
         print('Final Result: ')
         print(spec)
 
-    print('Spectrum computed!')
+    print('########### Spectrum computed! ###########')
 
     # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero so that we can take log interpolations later.
     spec[spec < 1e-100] = 0.
@@ -558,8 +558,8 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False):
 
         return spec_tf
 
-def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
-    """ Relativistic ICS spectrum of secondary photons.
+def rel_spec_Jones_corr(eleceng, photeng, T, as_pairs=False):
+    """ Relativistic ICS correction for downscattered photons.
 
     Parameters
     ----------
@@ -580,7 +580,77 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
 
     Notes
     -----
-    This function accepts the *energy* of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions. This enables the evaluation of the relativistic rate at unphysical values of the electron energy, a mathematical trick that we use when we obtain the ICS rates at a low temperature by interpolating over the result at a higher temperature.
+    This function accepts the *energy* of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions.
+
+    See Also
+    ---------
+    :function:`.rel_spec`
+    """
+
+    gamma = eleceng/phys.me
+    prefac = 3*phys.thomson_xsec*phys.c*np.pi/(
+        2*(phys.ele_compton * phys.me)**3 * gamma**4
+    )
+
+    if as_pairs:
+        if eleceng.size != photeng.size:
+            raise TypeError('Photon and electron energy arrays must have the same length for pairwise computation.')
+
+        low_lim = (1. + 1/gamma) * photeng / T
+        upp_lim = 4*gamma**2 * photeng / T
+
+        term_1 = F0(low_lim, upp_lim) * 4*gamma**2 * photeng * T
+        term_2 = -F1(low_lim, upp_lim) * T**2
+
+        return prefac * (term_1 + term_2)
+
+    else:
+
+        low_lim = np.outer(1. + 1/gamma, photeng)/T
+        upp_lim = np.outer(4*gamma**2  , photeng)/T
+
+        term_1 = np.transpose(
+            np.transpose(F0(low_lim, upp_lim)) * 4*gamma**2
+        ) * photeng * T
+        term_2 = -F1(low_lim, upp_lim) * T**2
+
+        return np.transpose(prefac * np.transpose(term_1 + term_2))
+
+
+
+def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
+    """ Relativistic ICS spectrum of secondary photons.
+
+    Parameters
+    ----------
+    eleceng : ndarray
+        Incoming electron energy. 
+    photeng : ndarray
+        Outgoing photon energy. 
+    T : float
+        CMB temperature. 
+    inf_upp_bound : bool
+        If True, calculates the approximate spectrum that is used for fast interpolation over different values of T. See Notes for more details. Default is False. 
+    as_pairs : bool
+        If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size. 
+
+
+    Returns
+    -------
+    TransFuncAtRedshift or ndarray
+        dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleceng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleceng, photeng). 
+
+    Notes
+    -----
+    This function accepts the *energy* of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions.
+
+    The flag ``inf_upp_bound`` determines whether an approximation is taken that only gets the shape of the spectrum correct for :math:`E_{\\gamma,\\text{final}} \\gtrsim T_\\text{CMB}`. This is sufficient from an energy conservation perspective, and is used for building a table that can be interpolated over different values of T quickly.
+
+    If ``inf_upp_bound == False``,  the spectrum up to :math:`\\mathcal{O}(1/\\gamma^2)` corrections is given. This is a combination of the spectrum derived in Eq. (2.48) of Ref. [1]_ and Eq. (9) of Ref. [2]_, which assumes that electrons only lose energy, and Eq. (8) of Ref. [2]_, which contains the spectrum of photons produced electrons getting upscattered. 
+
+    See Also
+    ---------
+    :function:`.rel_spec_Jones_corr`
 
     """
     print('Initializing...')
@@ -603,7 +673,8 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         if inf_upp_bound:
             upplim = np.inf*np.ones_like(gamma)
         else:
-            upplim = 4*(gamma**2)*B/T
+            upplim = photeng/T
+            # upplim = 4*(gamma**2)*B/T
         
     else: 
         photeng_to_eleceng = np.outer(1/eleceng, photeng)
@@ -622,9 +693,10 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         if inf_upp_bound:
             upplim = np.inf*np.ones_like(photeng_to_eleceng)
         else:
-            upplim = np.transpose(
-                4*gamma**2*np.transpose(B)/T
-            )
+            upplim = np.outer(np.ones_like(eleceng), photeng)/T
+            # upplim = np.transpose(
+            #     4*gamma**2*np.transpose(B)/T
+            # )
         
     spec = np.zeros_like(Gamma_eps_q)
     F1_int = np.zeros_like(Gamma_eps_q)
@@ -701,9 +773,15 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         term_1[good] + term_2[good] + term_3[good] + term_4[good]
     )
 
-    spec = np.transpose(
-        prefac*np.transpose(spec)
-    )
+    spec = np.transpose(prefac*np.transpose(spec))
+
+    # Get the downscattering correction if requested. 
+    if not inf_upp_bound:
+        downscatter_spec = rel_spec_Jones_corr(
+            eleceng, photeng, T, as_pairs=as_pairs
+        )
+
+        spec += downscatter_spec
 
     # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. 
     spec[spec < 1e-100] = 0.

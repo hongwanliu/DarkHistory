@@ -156,7 +156,7 @@ def spence_series_diff(b, a):
     Li2 is the polylogarithm function defined by
     
     .. math::
-       \\text{Li}_2(z) \\equiv \\sum_{k=1}^\\infty \\frac{z^k}{k^s} \\,.
+       \\text{Li}_2(z) \\equiv \\sum_{k=1}^\\infty \\frac{z^k}{k^2} \\,.
 
     Parameters
     ----------
