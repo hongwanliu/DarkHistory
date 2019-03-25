@@ -1,5 +1,4 @@
-"""Function for calculating the electron cooling transfer function.
-"""
+"""Functions for electron cooling."""
 
 import numpy as np
 
@@ -15,79 +14,60 @@ from scipy.linalg import solve_triangular
 
 
 def get_elec_cooling_tf(
-    raw_thomson_tf, raw_rel_tf, raw_engloss_tf,
+    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
     coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-    eleceng, photeng, rs, xHII, xHeII=0, ics_engloss_data=None, 
+    eleceng, photeng, rs, xH, xHe=0, ics_engloss_data=None, 
     check_conservation_eng = False, verbose=False
 ):
 
-    """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
-  
+    """Returns transfer function for complete electron cooling through ICS and atomic processes using a linear algebra method.
 
     Parameters
     ----------
-    raw_thomson_tf : TransFuncAtRedshift
-        Thomson ICS scattered photon spectrum transfer function.
-    rel_tf : TransFuncAtRedshift
-        Relativistic ICS scattered photon spectrum transfer function.
-    raw_engloss_tf : TransFuncAtRedshift
-        Thomson ICS scattered electron net energy loss transfer function.. 
-    coll_ion_sec_elec_specs : tuple of 3 ndarrays, shapes (m, m). 
-        Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.
-    coll_exc_sec_elec_specs : tuple of 3 ndarray, shapes (m, m). 
-        Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.
-    eleceng : ndarray, shape (m, )
-        The electron kinetic energy abscissa.
+    nonrel_tf : TransFuncAtRedshift
+        Raw nonrelativistic primary electron ICS transfer function.
+    rel_tf : string
+        Raw relativistic primary electron ICS transfer function.
+    engloss_tf_filename : string
+        Raw primary electron ICS energy loss transfer function.
+    coll_ion_sec_elec_specs : tuple of ndarray
+        Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).
+    coll_exc_sec_elec_specs : tuple of ndarray
+        Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by eleceng (injection) x eleceng (abscissa).
+    eleceng : ndarray
+        The electron *kinetic* energy abscissa.
     photeng : ndarray
         The photon energy abscissa.
     rs : float
-        The redshift (1+z). 
-    xHII : float
+        The redshift.
+    xH : float
         Ionized hydrogen fraction, nHII/nH. 
-    xHeII : float, optional
-        Singly-ionized helium fraction, nHe+/nH. Default is 0. 
+    xHe : float, optional
+        Singly-ionized helium fraction, nHe+/nH. Set to nHe/nH*xe if None.
     ics_engloss_data : EnglossRebinData
-        An `EnglossRebinData` object which stores rebinning information (based on ``eleceng`` and ``photeng``) for speed. Default is None.
+        Stores rebinning information for speed. 
     check_conservation_eng : bool
-        If True, checks for energy conservation. Default is False.
+        If true, checks for energy conservation.
     verbose : bool
-        If True, prints energy conservation checks. Default is False.
+        If true, prints energy conservation checks.
     
     Returns
     -------
 
-    tuple
-        Transfer functions for electron cooling deposition and spectra.
+    tuple of TransFuncAtRedshift
+        Transfer functions for photons and low energy electrons.
 
-    See Also
-    ---------
-    :class:`.TransFuncAtRedshift`
-    :class:`.EnglossRebinData`
-    :mod:`.ics`
+    Note
+    ----
+    The raw transfer functions should be generated when the code package is first installed. The transfer function corresponds to the fully resolved
+    photon spectrum after scattering by one electron.
 
-    Notes
-    -----
-    
-    The entries of the output tuple are (see Sec IIIC of the paper):
-
-    0. The secondary propagating photon transfer function :math:`\\overline{\\mathsf{T}}_\\gamma`; 
-    1. The low-energy electron transfer function :math:`\\overline{\\mathsf{T}}_e`; 
-    2. Energy deposited into ionization :math:`\\overline{\\mathbf{R}}_\\text{ion}`; 
-    3. Energy deposited into excitation :math:`\\overline{\\mathbf{R}}_\\text{exc}`; 
-    4. Energy deposited into heating :math:`\\overline{\\mathbf{R}}_\\text{heat}`;
-    5. Upscattered CMB photon total energy :math:`\\overline{\\mathbf{R}}_\\text{CMB}`, and
-    6. Numerical error away from energy conservation.
-
-    Items 2--5 are vectors that when dotted into an electron spectrum with abscissa ``eleceng``, return the energy deposited/CMB energy upscattered for that spectrum. 
-
-    Items 0--1 are :class:`.TransFuncAtRedshift` objects. For each of these objects ``tf`` and a given electron spectrum ``elec_spec``, ``tf.sum_specs(elec_spec)`` returns the propagating photon/low-energy electron spectrum after cooling.
-
-    A default version of the three ICS transfer functions that are required by this function is provided in :mod:`.tf_data`.
+    This version of the code uses a linear algebra method to solve for the spectra directly.
 
     """
 
     # Set the electron fraction. 
-    xe = xHII + xHeII
+    xe = xH + xHe
     
     # v/c of electrons
     beta_ele = np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
@@ -101,7 +81,7 @@ def get_elec_cooling_tf(
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
     phot_ICS_tf = ics_spec(
-        eleceng, photeng, T, nonrel_tf = raw_thomson_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, nonrel_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
@@ -157,15 +137,15 @@ def get_elec_cooling_tf(
 
     # Collisional excitation rates.
     rate_vec_exc_HI = (
-        (1 - xHII)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
+        (1 - xH)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_exc_HeI = (
-        (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
+        (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
     )
     
     rate_vec_exc_HeII = (
-        xHeII*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
+        xHe*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
     )
 
     # Normalized electron spectrum after excitation.
@@ -197,17 +177,17 @@ def get_elec_cooling_tf(
 
     # Collisional ionization rates.
     rate_vec_ion_HI = (
-        (1 - xHII)*phys.nH*rs**3 
+        (1 - xH)*phys.nH*rs**3 
         * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_ion_HeI = (
-        (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3 
+        (phys.nHe/phys.nH - xHe)*phys.nH*rs**3 
         * phys.coll_ion_xsec(eleceng, species='HeI') * beta_ele * phys.c
     )
     
     rate_vec_ion_HeII = (
-        xHeII*phys.nH*rs**3
+        xHe*phys.nH*rs**3
         * phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
     )
 

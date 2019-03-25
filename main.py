@@ -42,12 +42,11 @@ def evolve(
 
     Parameters
     -----------
-    in_spec_elec : :class:`.Spectrum`, optional
-        Spectrum per injection event into electrons. ``in_spec_elec.rs``
-        of the :class:`.Spectrum` must be the initial condition. 
-    in_spec_phot : :class:`.Spectrum`, optional
-        Spectrum per injection event into photons. ``in_spec_phot.rs`` 
-        of the :class:`.Spectrum` must be the initial condition. 
+    in_spec_elec : Spectrum, optional
+        Spectrum per injection event into electrons. `in_spec_elec.rs` of the spectrum
+        must be the initial condition. 
+    in_spec_phot : Spectrum, optional
+        Spectrum per injection event into photons. 
     rate_func_N : function, optional
         Function returning number of injection events per volume per time. 
     rate_func_eng : function, optional
@@ -55,12 +54,12 @@ def evolve(
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. 
     sigmav : float, optional
-        Thermally averaged cross section for ``DM_process == 'swave'``. 
+        Thermally averaged cross section for `DM_process == 'swave'`. 
     lifetime : float, optional
-        Decay lifetime for ``DM_process == 'decay'``.
+        Decay lifetime for `DM_process == 'decay'`.
     primary : string, optional
         Primary channel of annihilation/decay. Refer to 
-        :data:`.pppc.chan_list` for complete list. Use ``'elec_delta'`` or ``'phot_delta'`` for delta function injections of a pair of photons/an electron-positron pair. 
+        `darkhistory.spec.pppc.chan_list` for complete list. Use `'elec_delta'` or `'phot_delta'` for delta function injections of a pair of photons/an electron-positron pair. 
     struct_boost : function, optional
         Energy injection boost factor due to structure formation.
     start_rs : float, optional
@@ -680,7 +679,7 @@ def evolve(
 
 def get_elec_cooling_data(eleceng, photeng):
     """
-    Returns electron cooling data for use in :func:`main.evolve`.
+    Returns electron cooling data for use in `main.evolve`.
 
     Parameters
     ----------
@@ -696,9 +695,8 @@ def get_elec_cooling_data(eleceng, photeng):
         normalized collisional ionization scattered electron spectrum for 
         HI, HeI and HeII. The second contains the normalized collisional 
         excitation scattered electron spectrum for HI, HeI and HeII. The 
-        last tuple is an 
-        :class:`.EnglossRebinData` object for use in rebinning ICS energy loss data to obtain the ICS scattered 
-        electron spectrum. 
+        last tuple is an `EnglossRebinData` object for use in rebinning ICS 
+        energy loss data to obtain the ICS scattered electron spectrum. 
     """
 
     # Compute the (normalized) collisional ionization spectra.

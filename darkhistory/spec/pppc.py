@@ -1,4 +1,4 @@
-""" PPPC4DMID [1]_ [2]_ Information and Functions. 
+""" PPPC4DMID Information and Functions
 
 """
 
@@ -13,20 +13,19 @@ from config import data_path
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 
-# PPPC data.  
-
 # Import data.  
+
 coords_file_name = (
     data_path+'/dlNdlxIEW_coords_table.txt'
 )
 values_file_name = (
     data_path+'/dlNdlxIEW_values_table.txt'
 )
+
 with open(coords_file_name) as data_file:    
     coords_data = np.array(json.load(data_file))
 with open(values_file_name) as data_file:
     values_data = np.array(json.load(data_file))
-
 
 # coords_data is a (2, 23, 2) array. 
 # axis 0: stable SM secondaries, {'elec', 'phot'}
@@ -217,15 +216,6 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
     """ Returns the PPPC4DMID spectrum. 
 
-    This is the secondary spectrum to e+e-/photons normalized to one annihilation or decay event to the species specified in ``pri``. These results include electroweak corrections. The full list of allowed channels is: 
-
-    - Leptons: ``e_L, e_R, e, mu_L, mu_R, mu, tau_L, tau_R, tau``
-    - Quarks:  ``q, c, b, t``
-    - Gauge bosons: ``gamma, g, W_L, W_T, W, Z_L, Z_T, Z``
-    - Higgs: ``h``
-
-    Variables with subscripts, e.g. ``e_L``, correspond to particles with different polarizations. These polarizations are suitably averaged to obtain the spectra returned in their corresponding variables without subscripts, e.g. ``e``. 
-
     Parameters
     ----------
     mDM : float
@@ -233,17 +223,21 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     eng : ndarray
         The energy abscissa for the output spectrum (in eV). 
     pri : string
-        One of the available channels (see Notes). 
+        One of the channels in `chan_list` above. 
     sec : {'elec', 'phot'}
         The secondary spectrum to obtain. 
     decay : bool, optional
-        If ``True``, returns the result for decays.
+        If `True`, returns the result for decays.
 
     Returns
     -------
     Spectrum
-        The output :class:`.Spectrum` object.
-    
+        The `Spectrum` object containing the spectrum. 
+
+    Notes
+    -----
+    This returns the PPPC4DMID output spectrum, which is the secondary spectrum to e+e-/photons normalized to one annihilation event to the species specified in `pri`. 
+
     """
 
     if decay:

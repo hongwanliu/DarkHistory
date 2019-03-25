@@ -37,8 +37,8 @@ def engloss_spec_series(
     ndarray
         dN/(dt d(delta)) of the outgoing photons, with abscissa delta.
 
-    Notes
-    -----
+    Note
+    ----
     The final result dN/(dt d(delta)) is the *net* spectrum, i.e. the total number of photons upscattered by delta - number of photons downscattered by delta. 
 
     """
@@ -422,8 +422,8 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False, spec_type='new'):
     ndarray
         dN/(dt d(delta)) of the outgoing photons, with abscissa delta.
 
-    Notes
-    -----
+    Note
+    ----
     The final result dN/(dt d(delta)) is the *net* spectrum, i.e. the total number of photons upscattered by delta - number of photons downscattered by delta. 
 
     """
@@ -690,7 +690,7 @@ def engloss_spec(
     else:
 
         rs = T/phys.TCMB(1)
-        dlnz = -1./(phys.dtdz(rs)*rs)
+        dlnz = 1/(phys.dtdz(rs)*rs)
 
         # spec_arr = [
         #     Spectrum(delta, sp, rs=rs, in_eng=in_eng) 
