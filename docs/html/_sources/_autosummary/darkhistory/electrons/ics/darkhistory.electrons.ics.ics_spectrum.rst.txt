@@ -11,10 +11,10 @@ darkhistory.electrons.ics.ics\_spectrum
       :toctree: ics_spectrum
    
       ics_spec
-      nonrel_spec
-      nonrel_spec_diff
-      nonrel_spec_quad
-      nonrel_spec_series
+      thomson_spec_series
+      thomson_spec_diff
+      thomson_spec
+      thomson_spec_quad
       rel_spec
    
    

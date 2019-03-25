@@ -28,10 +28,7 @@
     <script type="text/javascript" src="../../../../../_static/js/copybutton.js"></script>
     <link rel="index" title="Index" href="../../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../../search.html" >
-    <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" >
-    <link rel="up" title="darkhistory.electrons.ics.ics_spectrum" href="../darkhistory.electrons.ics.ics_spectrum.html" >
-    <link rel="next" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff" href="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff.html" >
-    <link rel="prev" title="darkhistory.electrons.ics.ics_spectrum.ics_spec" href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html" > 
+    <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" > 
   </head>
   <body>
 
@@ -55,12 +52,7 @@
         <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
 	
         <li class="active"><a href="../../../../../index.html">DarkHistory  documentation</a></li>
-	
-          <li class="active"><a href="../../../../../modules.html" >DarkHistory</a></li>
-          <li class="active"><a href="../../../../darkhistory.html" >darkhistory</a></li>
-          <li class="active"><a href="../../../darkhistory.electrons.html" >darkhistory.electrons</a></li>
-          <li class="active"><a href="../../darkhistory.electrons.ics.html" >darkhistory.electrons.ics</a></li>
-          <li class="active"><a href="../darkhistory.electrons.ics.ics_spectrum.html" accesskey="U">darkhistory.electrons.ics.ics_spectrum</a></li> 
+	 
     </ul>
               
               
@@ -72,14 +64,6 @@
       <li class="active">
         <a href="../../../../../py-modindex.html" title="Python Module Index"
            >modules</a>
-      </li>
-      <li class="active">
-        <a href="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff.html" title="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff"
-           accesskey="N">next</a>
-      </li>
-      <li class="active">
-        <a href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html" title="darkhistory.electrons.ics.ics_spectrum.ics_spec"
-           accesskey="P">previous</a>
       </li>
     </ul>
               
@@ -96,47 +80,6 @@
             
   <div class="section" id="darkhistory-electrons-ics-ics-spectrum-nonrel-spec">
 <h1>darkhistory.electrons.ics.ics_spectrum.nonrel_spec<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-nonrel-spec" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
-<dt id="darkhistory.electrons.ics.ics_spectrum.nonrel_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">nonrel_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.nonrel_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Nonrelativistic ICS spectrum of secondary photons.</p>
-<p>Switches between <cite>nonrel_spec_diff</cite> and <cite>nonrel_spec_series</cite>.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>eleckineng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">Incoming electron kinetic energy.</p>
-</dd>
-<dt><strong>photeng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">Outgoing photon energy.</p>
-</dd>
-<dt><strong>T</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd><p class="first last">CMB temperature.</p>
-</dd>
-<dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first last">If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
-</dd>
-<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’, ‘new’}</span></dt>
-<dd><p class="first last">Choice of secondary photon spectrum to use.</p>
-</dd>
-</dl>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>TransFuncAtRedshift or ndarray</strong></dt>
-<dd><p class="first last">dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, photeng).</p>
-</dd>
-</dl>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Notes</p>
-<p>Insert note on the suitability of the method.</p>
-</dd></dl>
-
 </div>
 
 
@@ -145,12 +88,6 @@
           </div>
       <div class="spc-rightsidebar span3">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html"
-                        title="previous chapter">darkhistory.electrons.ics.ics_spectrum.ics_spec</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff.html"
-                        title="next chapter">darkhistory.electrons.ics.ics_spectrum.nonrel_spec_diff</a></p>
   <h3>This Page</h3>
   <div>
     <a href="../../../../../_sources/_autosummary/darkhistory/electrons/ics/ics_spectrum/darkhistory.electrons.ics.ics_spectrum.nonrel_spec.rst.txt"

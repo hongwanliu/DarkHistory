@@ -61,7 +61,7 @@ def get_ics_cooling_tf(
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
     ICS_tf = ics_spec(
-        eleceng, photeng, T, nonrel_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
@@ -398,7 +398,7 @@ def get_ics_cooling_tf_fast(
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
     ICS_tf = ics_spec(
-        eleceng, photeng, T, nonrel_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot

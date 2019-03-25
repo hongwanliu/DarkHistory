@@ -97,28 +97,13 @@
 <h1>darkhistory.electrons.elec_cooling.get_elec_cooling_tf<a class="headerlink" href="#darkhistory-electrons-elec-cooling-get-elec-cooling-tf" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.electrons.elec_cooling.get_elec_cooling_tf">
-<code class="descclassname">darkhistory.electrons.elec_cooling.</code><code class="descname">get_elec_cooling_tf</code><span class="sig-paren">(</span><em>raw_thomson_tf</em>, <em>raw_rel_tf</em>, <em>raw_engloss_tf</em>, <em>coll_ion_sec_elec_specs</em>, <em>coll_exc_sec_elec_specs</em>, <em>eleceng</em>, <em>photeng</em>, <em>rs</em>, <em>xHII</em>, <em>xHeII=0</em>, <em>ics_engloss_data=None</em>, <em>check_conservation_eng=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.elec_cooling.get_elec_cooling_tf" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.elec_cooling.</code><code class="descname">get_elec_cooling_tf</code><span class="sig-paren">(</span><em>eleceng</em>, <em>photeng</em>, <em>rs</em>, <em>xHII</em>, <em>xHeII=0</em>, <em>raw_thomson_tf=None</em>, <em>raw_rel_tf=None</em>, <em>raw_engloss_tf=None</em>, <em>coll_ion_sec_elec_specs=None</em>, <em>coll_exc_sec_elec_specs=None</em>, <em>ics_engloss_data=None</em>, <em>check_conservation_eng=False</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.elec_cooling.get_elec_cooling_tf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>raw_thomson_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
-<dd><p class="first last">Thomson ICS scattered photon spectrum transfer function.</p>
-</dd>
-<dt><strong>rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
-<dd><p class="first last">Relativistic ICS scattered photon spectrum transfer function.</p>
-</dd>
-<dt><strong>raw_engloss_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
-<dd><p class="first last">Thomson ICS scattered electron net energy loss transfer function..</p>
-</dd>
-<dt><strong>coll_ion_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of 3 ndarrays, shapes (m, m).</span></dt>
-<dd><p class="first last">Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.</p>
-</dd>
-<dt><strong>coll_exc_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of 3 ndarray, shapes (m, m).</span></dt>
-<dd><p class="first last">Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy.</p>
-</dd>
 <dt><strong>eleceng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, shape (m, )</span></dt>
 <dd><p class="first last">The electron kinetic energy abscissa.</p>
 </dd>
@@ -134,11 +119,26 @@
 <dt><strong>xHeII</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
 <dd><p class="first last">Singly-ionized helium fraction, nHe+/nH. Default is 0.</p>
 </dd>
+<dt><strong>raw_thomson_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
+<dd><p class="first last">Thomson ICS scattered photon spectrum transfer function. If None, uses the default transfer function. Default is None.</p>
+</dd>
+<dt><strong>raw_rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
+<dd><p class="first last">Relativistic ICS scattered photon spectrum transfer function. If None, uses the default transfer function. Default is None.</p>
+</dd>
+<dt><strong>raw_engloss_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
+<dd><p class="first last">Thomson ICS scattered electron net energy loss transfer function. If None, uses the default transfer function. Default is None.</p>
+</dd>
+<dt><strong>coll_ion_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of 3 ndarrays, shapes (m, m), optional</span></dt>
+<dd><p class="first last">Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy. If None, the function calculates this. Default is None.</p>
+</dd>
+<dt><strong>coll_exc_sec_elec_specs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">tuple of 3 ndarray, shapes (m, m), optional</span></dt>
+<dd><p class="first last">Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy. If None, the function calculates this. Default is None.</p>
+</dd>
 <dt><strong>ics_engloss_data</strong> <span class="classifier-delimiter">:</span> <span class="classifier">EnglossRebinData</span></dt>
 <dd><p class="first last">An <cite>EnglossRebinData</cite> object which stores rebinning information (based on <code class="docutils literal notranslate"><span class="pre">eleceng</span></code> and <code class="docutils literal notranslate"><span class="pre">photeng</span></code>) for speed. Default is None.</p>
 </dd>
 <dt><strong>check_conservation_eng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first last">If True, checks for energy conservation. Default is False.</p>
+<dd><p class="first last">If True, lower=True, checks for energy conservation. Default is False.</p>
 </dd>
 <dt><strong>verbose</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd><p class="first last">If True, prints energy conservation checks. Default is False.</p>
@@ -148,7 +148,7 @@
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>tuple</strong></dt>
-<dd><p class="first last">Transfer functions and vectors for electron cooling deposition and spectra.</p>
+<dd><p class="first last">Transfer functions for electron cooling deposition and spectra.</p>
 </dd>
 </dl>
 </td>
@@ -172,7 +172,7 @@
 </ol>
 <p>Items 2–5 are vectors that when dotted into an electron spectrum with abscissa <code class="docutils literal notranslate"><span class="pre">eleceng</span></code>, return the energy deposited/CMB energy upscattered for that spectrum.</p>
 <p>Items 0–1 are <a class="reference internal" href="../../spec/transferfunction/darkhistory.spec.transferfunction.TransFuncAtRedshift.html#darkhistory.spec.transferfunction.TransFuncAtRedshift" title="darkhistory.spec.transferfunction.TransFuncAtRedshift"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransFuncAtRedshift</span></code></a> objects. For each of these objects <code class="docutils literal notranslate"><span class="pre">tf</span></code> and a given electron spectrum <code class="docutils literal notranslate"><span class="pre">elec_spec</span></code>, <code class="docutils literal notranslate"><span class="pre">tf.sum_specs(elec_spec)</span></code> returns the propagating photon/low-energy electron spectrum after cooling.</p>
-<p>A default version of the three ICS transfer functions that are required by this function is provided in <a class="reference internal" href="../../../tf_data.html#module-tf_data" title="tf_data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tf_data</span></code></a>.</p>
+<p>The default version of the three ICS transfer functions that are required by this function is provided in <a class="reference internal" href="../../../tf_data.html#module-tf_data" title="tf_data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tf_data</span></code></a>.</p>
 </dd></dl>
 
 </div>

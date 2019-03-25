@@ -20,7 +20,7 @@ import darkhistory.history.histools as ht
 import darkhistory.history.tla as tla
 
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
-from darkhistory.electrons.ics.ics_spectrum import nonrel_spec
+from darkhistory.electrons.ics.ics_spectrum import thomson_spec
 from darkhistory.electrons.ics.ics_spectrum import rel_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf
@@ -605,7 +605,7 @@ def load_ics_data():
     lowengEe_nonrel = Emin*np.exp((np.arange(nEe)+0.5)*dlnEe)
 
     print('********* Thomson regime scattered photon spectrum *********')
-    ics_thomson_ref_tf = nonrel_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400))
+    ics_thomson_ref_tf = thomson_spec(lowengEe_nonrel, lowengEp_nonrel, phys.TCMB(400))
     print('********* Relativistic regime scattered photon spectrum *********')
     ics_rel_ref_tf = rel_spec(lowengEe_rel, lowengEp_rel, phys.TCMB(400), inf_upp_bound=True)
     print('********* Thomson regime energy loss spectrum *********')
