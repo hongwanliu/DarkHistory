@@ -14,10 +14,10 @@ from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
 from tqdm import tqdm_notebook as tqdm
 
-def nonrel_spec_series(
+def thomson_spec_series(
     eleckineng, photeng, T, as_pairs=False, spec_type='new'
 ):
-    """ Nonrelativistic ICS spectrum of secondary photons by series method.
+    """ Thomson ICS spectrum of secondary photons by series method.
 
     Parameters
     ----------
@@ -356,8 +356,8 @@ def nonrel_spec_series(
             )
         )
 
-def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
-    """ Nonrelativistic ICS spectrum of secondary photons using quadrature.
+def thomson_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
+    """ Thomson ICS spectrum of secondary photons using quadrature.
 
     Parameters
     ----------
@@ -512,8 +512,10 @@ def nonrel_spec_quad(eleckineng_arr, photeng_arr, T, spec_type='new'):
 
     return integral
 
-def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
-    """ Nonrelativistic ICS spectrum of secondary photons by beta expansion.
+def thomson_spec_diff(
+    eleckineng, photeng, T, as_pairs=False, spec_type='new'
+):
+    """ Thomson ICS spectrum of secondary photons by beta expansion.
 
     Parameters
     ----------
@@ -604,7 +606,7 @@ def nonrel_spec_diff(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
 def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     """ Thomson ICS spectrum of secondary photons.
 
-    Switches between `nonrel_spec_diff` and `nonrel_spec_series`. 
+    Switches between `thomson_spec_diff` and `thomson_spec_series`. 
 
     Parameters
     ----------
@@ -669,7 +671,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         spec = np.zeros((eleckineng.size, photeng.size), dtype='float128')
         epsrel = np.zeros((eleckineng.size, photeng.size), dtype='float128')
 
-    spec[where_diff], err_with_diff = nonrel_spec_diff(
+    spec[where_diff], err_with_diff = thomson_spec_diff(
         eleckineng_mask[where_diff], 
         photeng_mask[where_diff], 
         T, as_pairs=True, spec_type=spec_type
@@ -685,9 +687,9 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     )
     
     if testing:
-        print('spec from nonrel_spec_diff: ')
+        print('spec from thomson_spec_diff: ')
         print(spec)
-        print('epsrel from nonrel_spec_diff: ')
+        print('epsrel from thomson_spec_diff: ')
         print(epsrel)
 
     where_series = (~where_diff) | (epsrel > 1e-3)
@@ -697,7 +699,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
         print('where_series on (eleckineng, photeng) grid: ')
         print(where_series)
 
-    spec[where_series] = nonrel_spec_series(
+    spec[where_series] = thomson_spec_series(
         eleckineng_mask[where_series],
         photeng_mask[where_series],
         T, as_pairs=True, spec_type=spec_type
@@ -706,7 +708,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False, spec_type='new'):
     if testing:
         spec_with_series = np.array(spec)
         spec_with_series[~where_series] = 0
-        print('spec from nonrel_spec_series: ')
+        print('spec from thomson_spec_series: ')
         print(spec_with_series)
         print('*********************')
         print('Final Result: ')
@@ -912,7 +914,7 @@ def ics_spec(
 ):
     """ ICS spectrum of secondary photons.
 
-    Switches between `nonrel_spec` and `rel_spec`. 
+    Switches between `thomson_spec` and `rel_spec`. 
 
     Parameters
     ----------
@@ -1012,36 +1014,15 @@ def ics_spec(
             inf_upp_bound=True, as_pairs=True
         )
 
-    if nonrel_tf != None:
-        # nonrel_tf = nonrel_tf.at_in_eng(eleckineng[gamma <= rel_bound])
-        # nonrel_tf = nonrel_tf.at_eng(
-        #     photeng/y,
-        #     bounds_error = False,
-        #     fill_value = (np.nan, 0)
-        # )
+    if thomson_tf != None:
 
-        # OLD METHOD: call at_val
-
-        # nonrel_tf = nonrel_tf.at_val(
-        #     eleckineng[gamma <= rel_bound], photeng/y, 
-        #     bounds_error = False, fill_value = 1e-200
-        # )
-        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
-
-        # NEW METHOD: call interpolator directly.
-
-        # points = utils.get_grid(
-        #     np.log(eleckineng[gamma <= rel_bound]), np.log(photeng/y)
-        # )
-        # nonrel_tf_interp = nonrel_tf.interp_func(points)
-
-        nonrel_tf_interp = np.transpose(
-            nonrel_tf.interp_func(
+        thomson_tf_interp = np.transpose(
+            thomson_tf.interp_func(
                 np.log(eleckineng[gamma <= rel_bound]), np.log(photeng/y)
             )
         )
 
-        spec[~rel] = y**2*nonrel_tf_interp.flatten()
+        spec[~rel] = y**2*thomson_tf_interp.flatten()
 
     else:
         spec[~rel] = thomson_spec(
