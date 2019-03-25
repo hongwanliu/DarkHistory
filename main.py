@@ -372,7 +372,6 @@ def evolve(
         if use_tqdm:
             pbar.update(1)
 
-        
         #############################
         # First Step Special Cases  #
         #############################
@@ -412,7 +411,7 @@ def evolve(
                 )
 
             # Apply the transfer function to the input electron spectrum. 
-            
+
             # Low energy electrons from electron cooling, per injection event.
             elec_processes_lowengelec_spec = (
                 elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
@@ -492,12 +491,11 @@ def evolve(
                 deposited_heat/dt,
                 deposited_ICS/dt
             ])
-        
+
             # Upscattered CMB photon energy from input electrons. 
-            cmbloss_at_rs += np.dot(
+            cmbloss_at_rs = np.dot(
                 continuum_loss/dt, in_spec_elec.N*norm_fac(rs)
             )
-        
 
         # Values of (xHI, xHeI, xHeII) to use for computing f.
         if backreaction:
