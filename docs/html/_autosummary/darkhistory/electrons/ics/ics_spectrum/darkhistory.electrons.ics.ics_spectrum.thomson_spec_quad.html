@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8">
     
-    <title>darkhistory.electrons.ics.ics_spectrum.thomson_spec &mdash; DarkHistory  documentation</title>
+    <title>darkhistory.electrons.ics.ics_spectrum.thomson_spec_quad &mdash; DarkHistory  documentation</title>
     
     <link rel="stylesheet" type="text/css" href="../../../../../_static/css/spc-bootstrap.css">
     <link rel="stylesheet" type="text/css" href="../../../../../_static/css/spc-extend.css">
@@ -30,7 +30,8 @@
     <link rel="search" title="Search" href="../../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" >
     <link rel="up" title="darkhistory.electrons.ics.ics_spectrum" href="../darkhistory.electrons.ics.ics_spectrum.html" >
-    <link rel="prev" title="darkhistory.electrons.ics.ics_spectrum.ics_spec" href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html" > 
+    <link rel="next" title="darkhistory.electrons.ics.ics_spectrum.rel_spec" href="darkhistory.electrons.ics.ics_spectrum.rel_spec.html" >
+    <link rel="prev" title="darkhistory.electrons.ics.ics_spectrum.thomson_spec" href="darkhistory.electrons.ics.ics_spectrum.thomson_spec.html" > 
   </head>
   <body>
 
@@ -73,7 +74,11 @@
            >modules</a>
       </li>
       <li class="active">
-        <a href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html" title="darkhistory.electrons.ics.ics_spectrum.ics_spec"
+        <a href="darkhistory.electrons.ics.ics_spectrum.rel_spec.html" title="darkhistory.electrons.ics.ics_spectrum.rel_spec"
+           accesskey="N">next</a>
+      </li>
+      <li class="active">
+        <a href="darkhistory.electrons.ics.ics_spectrum.thomson_spec.html" title="darkhistory.electrons.ics.ics_spectrum.thomson_spec"
            accesskey="P">previous</a>
       </li>
     </ul>
@@ -89,13 +94,12 @@
         <div class="bodywrapper">
           <div class="body" id="spc-section-body">
             
-  <div class="section" id="darkhistory-electrons-ics-ics-spectrum-thomson-spec">
-<h1>darkhistory.electrons.ics.ics_spectrum.thomson_spec<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-thomson-spec" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="darkhistory-electrons-ics-ics-spectrum-thomson-spec-quad">
+<h1>darkhistory.electrons.ics.ics_spectrum.thomson_spec_quad<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-thomson-spec-quad" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
-<dt id="darkhistory.electrons.ics.ics_spectrum.thomson_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">thomson_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.thomson_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Thomson ICS spectrum of secondary photons.</p>
-<p>Switches between <cite>thomson_spec_diff</cite> and <cite>thomson_spec_series</cite>.</p>
+<dt id="darkhistory.electrons.ics.ics_spectrum.thomson_spec_quad">
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">thomson_spec_quad</code><span class="sig-paren">(</span><em>eleckineng_arr</em>, <em>photeng_arr</em>, <em>T</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.thomson_spec_quad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thomson ICS spectrum of secondary photons using quadrature.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -110,9 +114,6 @@
 <dt><strong>T</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd><p class="first last">CMB temperature.</p>
 </dd>
-<dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first last">If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
-</dd>
 <dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’, ‘new’}</span></dt>
 <dd><p class="first last">Choice of secondary photon spectrum to use.</p>
 </dd>
@@ -120,8 +121,8 @@
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>TransFuncAtRedshift or ndarray</strong></dt>
-<dd><p class="first last">dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, photeng).</p>
+<dt><strong>ndarray</strong></dt>
+<dd><p class="first last">dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa photeng.</p>
 </dd>
 </dl>
 </td>
@@ -141,11 +142,14 @@
       <div class="spc-rightsidebar span3">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
-  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.ics_spec.html"
-                        title="previous chapter">darkhistory.electrons.ics.ics_spectrum.ics_spec</a></p>
+  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.thomson_spec.html"
+                        title="previous chapter">darkhistory.electrons.ics.ics_spectrum.thomson_spec</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="darkhistory.electrons.ics.ics_spectrum.rel_spec.html"
+                        title="next chapter">darkhistory.electrons.ics.ics_spectrum.rel_spec</a></p>
   <h3>This Page</h3>
   <div>
-    <a href="../../../../../_sources/_autosummary/darkhistory/electrons/ics/ics_spectrum/darkhistory.electrons.ics.ics_spectrum.thomson_spec.rst.txt"
+    <a href="../../../../../_sources/_autosummary/darkhistory/electrons/ics/ics_spectrum/darkhistory.electrons.ics.ics_spectrum.thomson_spec_quad.rst.txt"
        rel="nofollow">Show Source</a>
   </div>
     

@@ -1,4 +1,4 @@
-"""Nonrelativistic ICS spectrum after integrating over CMB."""
+"""Inverse Compton scattering spectrum after integrating over CMB."""
 
 import numpy as np 
 from scipy.integrate import quad
@@ -199,8 +199,7 @@ def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
         print('term_low_3: ', term_low_3)
         print('term_low_4: ', term_low_4)
         print('term_low_5: ', term_low_5)
-        if spec_type == 'new':
-            print('term_low_6: ', term_low_6)
+        print('term_low_6: ', term_low_6)
 
         print('***** epsilon > epsilon_1 *****')
         print('term_high_1: ', term_high_1)
@@ -208,8 +207,7 @@ def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
         print('term_high_3: ', term_high_3)
         print('term_high_4: ', term_high_4)
         print('term_high_5: ', term_high_5)
-        if spec_type == 'new':
-            print('term_high_6: ', term_high_6)
+        print('term_high_6: ', term_high_6)
 
         print('***** Term Sums *****')
         print('term_low_1 + term_high_1: ', term_low_1 + term_high_1)
@@ -217,41 +215,27 @@ def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
         print('term_low_3 + term_high_3: ', term_low_3 + term_high_3)
         print('term_low_4 + term_high_4: ', term_low_4 + term_high_4)
         print('term_low_5 + term_high_5: ', term_low_5 + term_high_5)
-        if spec_type == 'new':
-            print(
-                'term_low_6 + term_high_6: ', 
-                term_low_6 + term_high_6
-            )
+        print(
+            'term_low_6 + term_high_6: ', 
+            term_low_6 + term_high_6
+        )
 
         print('***** Prefactor *****')
         print(prefac)
         
         print('***** Total Sum *****')
-        if spec_type == 'old':
-            print(
-                np.transpose(
-                    prefac*np.transpose(
-                        (term_low_1 + term_high_1)
-                        + (term_low_2 + term_high_2)
-                        + (term_low_3 + term_high_3)
-                        + (term_low_4 + term_high_4)
-                        + (term_low_5 + term_high_5)
-                    )
+        print(
+            np.transpose(
+                prefac*np.transpose(
+                    (term_low_1 + term_high_1)
+                    + (term_low_2 + term_high_2)
+                    + (term_low_3 + term_high_3)
+                    + (term_low_4 + term_high_4)
+                    + (term_low_5 + term_high_5)
+                    + (term_low_6 + term_high_6)
                 )
             )
-        elif spec_type == 'new':
-            print(
-                np.transpose(
-                    prefac*np.transpose(
-                        (term_low_1 + term_high_1)
-                        + (term_low_2 + term_high_2)
-                        + (term_low_3 + term_high_3)
-                        + (term_low_4 + term_high_4)
-                        + (term_low_5 + term_high_5)
-                        + (term_low_6 + term_high_6)
-                    )
-                )
-            )
+        )
         print('***** End Diagnostics *****')
 
     # Addition ordered to minimize catastrophic cancellation, but if this is important, you shouldn't be using this method.
