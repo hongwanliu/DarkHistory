@@ -189,8 +189,9 @@ chan_list = [
     'VV_to_4e', 'VV_to_4mu', 'VV_to_4tau'
 ]
 
-# Mass threshold for mDM to decay into the primaries.
+# Mass threshold for mDM to annihilate into the primaries.
 mass_threshold = {
+    'elec_delta': phys.mass['e'],
     'e_L'   : phys.mass['e'],   'e_R': phys.mass['e'], 
     'e': phys.mass['e'],
     'mu_L'  : phys.mass['mu'], 'mu_R': phys.mass['mu'], 
@@ -250,6 +251,17 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     
     """
 
+    if decay:
+        # Primary energies is for 1 GeV decay = 0.5 GeV annihilation.
+        _mDM = mDM/2.
+    else:
+        _mDM = mDM
+
+    if _mDM < mass_threshold[pri]:
+        # This avoids the absurd situation where mDM is less than the 
+        # threshold but we get a nonzero spectrum due to interpolation.
+        raise ValueError('mDM is below the threshold to produce pri particles.')
+
     if pri == 'elec_delta':
         # Exact kinetic energy of each electron.
         if not decay:
@@ -300,12 +312,6 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
         else:
             raise ValueError('invalid sec.')
-
-    if decay:
-        # Primary energies is for 1 GeV decay = 0.5 GeV annihilation.
-        _mDM = mDM/2.
-    else:
-        _mDM = mDM
     
     log10x = np.log10(eng/_mDM)
 
@@ -324,11 +330,6 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
                 np.arange(log10x.size), 
                 log10x
             )
- 
-    if _mDM < mass_threshold[pri]:
-        # This avoids the absurd situation where mDM is less than the 
-        # threshold but we get a nonzero spectrum due to interpolation.
-        return Spectrum(eng, np.zeros_like(eng), spec_type='dNdE')
     
     # Get the spectrum for the interpolator.
     dN_dlog10x = 10**dlNdlxIEW_interp[sec][pri].get_val(_mDM/1e9, log10x)
