@@ -12,6 +12,7 @@ from config import data_path
 
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.spectools import rebin_N_arr
 
 # PPPC data.  
 
@@ -219,10 +220,13 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
     This is the secondary spectrum to e+e-/photons normalized to one annihilation or decay event to the species specified in ``pri``. These results include electroweak corrections. The full list of allowed channels is: 
 
+    - :math:`\\delta`\ -function injections: ``elec_delta, phot_delta``
     - Leptons: ``e_L, e_R, e, mu_L, mu_R, mu, tau_L, tau_R, tau``
     - Quarks:  ``q, c, b, t``
     - Gauge bosons: ``gamma, g, W_L, W_T, W, Z_L, Z_T, Z``
     - Higgs: ``h``
+
+    ``elec_delta`` and ``phot_delta`` assumes annihilation or decay to two electrons and photons respectively with no EW corrections or ISR/FSR. 
 
     Variables with subscripts, e.g. ``e_L``, correspond to particles with different polarizations. These polarizations are suitably averaged to obtain the spectra returned in their corresponding variables without subscripts, e.g. ``e``. 
 
@@ -242,9 +246,60 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     Returns
     -------
     Spectrum
-        The output :class:`.Spectrum` object.
+        Output :class:`.Spectrum` object, ``spec_type == 'dNdE'``.
     
     """
+
+    if pri == 'elec_delta':
+        # Exact kinetic energy of each electron.
+        if not decay:
+            eng_elec = mDM - phys.me
+        else:
+            eng_elec = (mDM - 2*phys.me)/2
+        # Find the correct bin in eleceng.
+        eng_to_inj = eng[eng < eng_elec][-1]
+        # Place 2*eng_elec worth of electrons into that bin. Use
+        # rebinning to accomplish this.
+
+        if sec == 'elec':
+            return rebin_N_arr(
+                np.array([2 * eng_elec / eng_to_inj]), 
+                np.array([eng_to_inj]), 
+                eng
+            )
+
+        elif sec == 'phot':
+            return Spectrum(
+                eng, np.zeros_like(eng), spec_type='dNdE'
+            )
+
+        else:
+            raise ValueError('invalid sec.')
+
+    if pri == 'phot_delta':
+        # Exact kinetic energy of each photon. 
+        if not decay:
+            eng_phot = mDM
+        else:
+            eng_phot = mDM/2
+        # Find the correct bin in photeng.
+        eng_to_inj = eng[eng < eng_phot][-1]
+        # Place 2*eng_phot worth of photons into that bin. Use
+        # rebinning to accomplish this. 
+        if sec == 'elec':
+            return Spectrum(
+                eng, np.zeros_like(eng), spec_type='dNdE'
+            )
+
+        elif sec == 'phot':
+            return rebin_N_arr(
+                np.array([2 * eng_phot / eng_to_inj]), 
+                np.array([eng_to_inj]), 
+                eng
+            )
+
+        else:
+            raise ValueError('invalid sec.')
 
     if decay:
         # Primary energies is for 1 GeV decay = 0.5 GeV annihilation.

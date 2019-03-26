@@ -314,7 +314,9 @@ def engloss_spec(
 
         else:
 
-            print('Computing relativistic energy loss spectrum...')
+            print(
+                '###### RELATIVISTIC ENERGY LOSS SPECTRUM ######'
+            )
 
             spec[rel] = ics_spectrum.rel_spec(
                 eleceng_mask[rel],
@@ -322,7 +324,7 @@ def engloss_spec(
                 T, inf_upp_bound=True, as_pairs=True 
             )
 
-            print('Relativistic energy loss spectrum complete!')
+            print('###### COMPLETE! ######')
 
     if thomson_tf != None:
         
@@ -335,7 +337,7 @@ def engloss_spec(
         spec[~rel] = y**2*thomson_tf_interp.flatten()
 
     else:
-        print('Computing Thomson energy loss spectrum...')
+        print('###### THOMSON ENERGY LOSS SPECTRUM ######')
         # beta_small obviously doesn't intersect with rel. 
         spec[beta_small] = engloss_spec_diff(
             eleckineng_mask[beta_small], 
@@ -346,7 +348,7 @@ def engloss_spec(
             eleckineng_mask[~beta_small & ~rel],
             delta_mask[~beta_small & ~rel], T, as_pairs=True
         )
-        print('Thomson energy loss spectrum computed!')
+        print('###### COMPLETE! ######')
 
     # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero to take log interpolation later. 
     spec[spec < 1e-100] = 1e-100
