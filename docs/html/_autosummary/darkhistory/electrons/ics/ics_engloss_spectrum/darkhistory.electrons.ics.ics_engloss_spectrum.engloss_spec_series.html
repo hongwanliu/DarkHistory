@@ -98,8 +98,8 @@
 <h1>darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series<a class="headerlink" href="#darkhistory-electrons-ics-ics-engloss-spectrum-engloss-spec-series" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series">
-<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec_series</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series" title="Permalink to this definition">¶</a></dt>
-<dd><p>Nonrelativistic ICS energy loss spectrum using the series method.</p>
+<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec_series</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thomson ICS scattered electron energy loss spectrum, series method.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -109,7 +109,7 @@
 <dd><p class="first last">Incoming electron kinetic energy.</p>
 </dd>
 <dt><strong>delta</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">Energy gained by photon after upscattering (only positive values).</p>
+<dd><p class="first last">Energy lost by electron after one scatter (only positive values).</p>
 </dd>
 <dt><strong>T</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd><p class="first last">CMB temperature.</p>
@@ -117,23 +117,18 @@
 <dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd><p class="first last">If true, treats eleckineng and delta as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each delta for each eleckineng, return an array of length eleckineng.size*delta.size.</p>
 </dd>
-<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’, ‘new’}</span></dt>
-<dd><p class="first last">The ICS secondary photon spectrum to integrate over.</p>
-</dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>ndarray</strong></dt>
-<dd><p class="first last">dN/(dt d(delta)) of the outgoing photons, with abscissa delta.</p>
+<dd><p class="first last">dN/(dt d(delta)) of the scattered electrons, with abscissa delta.</p>
 </dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
-<p class="rubric">Notes</p>
-<p>The final result dN/(dt d(delta)) is the <em>net</em> spectrum, i.e. the total number of photons upscattered by delta - number of photons downscattered by delta.</p>
 </dd></dl>
 
 </div>

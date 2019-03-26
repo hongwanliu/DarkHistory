@@ -264,7 +264,7 @@ def rebin_N_arr(
 
 
 def discretize(eng, func_dNdE, *args):
-    """Discretizes a continuous function.
+    """Discretizes a continuous function. 
 
     The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**.
 
@@ -281,6 +281,24 @@ def discretize(eng, func_dNdE, *args):
     -------
     Spectrum
         The discretized spectrum. rs is set to -1, and must be set manually.
+
+    Notes
+    ------
+    Given a spectrum :math:`dN/dE`\ , represented by the function ``func_dNdE``, this function calculates the following quantities at the energy values :math:`E_i` specified in ``eng``:
+
+    .. math::
+        
+        N[i] = \\int_{E_i}^{E_{i+1}} \\frac{dN}{dE} \\, dE
+    
+    .. math::
+
+        \\epsilon[i] = \\frac{1}{N[i]} \\int_{E_i}^{E_{i+1}} E \\frac{dN}{dE} \\, dE
+
+    We can now treat :math:`N[i]` and :math:`\\epsilon[i]` as a list of bins with energies :math:`\\epsilon[i]` and number of particles :math:`N[i]`. This is now rebinned into the abscissa specified by ``eng`` using :func:`.rebin_N_arr`, which conserves the total number 
+
+    See Also
+    ---------
+    :func:`.rebin_N_arr`
 
     """
     def func_EdNdE(eng, *args):

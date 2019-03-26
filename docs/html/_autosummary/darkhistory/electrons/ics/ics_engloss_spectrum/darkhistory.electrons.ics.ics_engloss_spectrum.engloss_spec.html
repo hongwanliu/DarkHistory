@@ -98,9 +98,9 @@
 <h1>darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec<a class="headerlink" href="#darkhistory-electrons-ics-ics-engloss-spectrum-engloss-spec" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>nonrel=False</em>, <em>nonrel_tf=None</em>, <em>rel_tf=None</em>, <em>spec_type='new'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec" title="Permalink to this definition">¶</a></dt>
-<dd><p>Energy loss ICS spectrum.</p>
-<p>Switches between <cite>engloss_spec_series</cite> and <cite>engloss_spec_diff</cite>.</p>
+<code class="descclassname">darkhistory.electrons.ics.ics_engloss_spectrum.</code><code class="descname">engloss_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>delta</em>, <em>T</em>, <em>as_pairs=False</em>, <em>thomson_only=False</em>, <em>thomson_tf=None</em>, <em>rel_tf=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Thomson ICS scattered electron energy loss spectrum.</p>
+<p>Switches between <a class="reference internal" href="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series.html#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series" title="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_series"><code class="xref py py-func docutils literal notranslate"><span class="pre">engloss_spec_series()</span></code></a> and <a class="reference internal" href="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_diff.html#darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_diff" title="darkhistory.electrons.ics.ics_engloss_spectrum.engloss_spec_diff"><code class="xref py py-func docutils literal notranslate"><span class="pre">engloss_spec_diff()</span></code></a> in the Thomson regime. Also switches between Thomson and relativistic regimes automatically.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -118,17 +118,14 @@
 <dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
 <dd><p class="first last">If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
 </dd>
-<dt><strong>nonrel</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd><p class="first last">If true, only returns the nonrelativistic energy loss spectrum, and never switches to the relativistic case.</p>
+<dt><strong>thomson_only</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
+<dd><p class="first last">If true, only returns the Thomson energy loss spectrum, and never switches to the relativistic case.</p>
 </dd>
-<dt><strong>nonrel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
-<dd><p class="first last">Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</p>
+<dt><strong>thomson_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
+<dd><p class="first last">Reference Thomson energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</p>
 </dd>
 <dt><strong>rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
 <dd><p class="first last">Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function.</p>
-</dd>
-<dt><strong>spec_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘old’, ‘new’}</span></dt>
-<dd><p class="first last">The ICS secondary photon spectrum to integrate over.</p>
 </dd>
 </dl>
 </td>
