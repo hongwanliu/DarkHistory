@@ -35,7 +35,7 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
 
     """
 
-    print('Computing energy loss spectrum by analytic series...')
+    print('****** Energy Loss Spectrum by Analytic Series ******')
 
     gamma = eleckineng/phys.me + 1
     # Most accurate way of finding beta when beta is small, I think.
@@ -172,75 +172,6 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
         -4/gamma**2*(3-beta**2)*np.transpose(F_x_log_a_down)
     )
 
-    testing = False
-
-    if testing:
-        print('***** Diagnostics *****')
-        print('lowlim_up: ', lowlim_up)
-        print('lowlim_down: ', lowlim_down)
-        print('beta: ', beta)
-        print('delta/T: ', delta/T)
-
-        print('***** Individual terms *****')
-        print('term_inv_a_up: ', term_inv_a_up)
-        print('term_inv_up: ', term_inv_up)
-        print('term_1_up: ', term_1_up)
-        print('term_log_up: ', term_log_up)
-        print('term_log_a_up: ', term_log_a_up)
-        print('term_x_up: ', term_x_up)
-        print('term_x_log_up: ', term_x_log_up)
-        print('term_x_log_a_up: ', term_x_log_a_up)
-        print('term_inv_a_down: ', term_inv_a_down)
-        print('term_inv_down: ', term_inv_down)
-        print('term_1_down: ', term_1_down)
-        print('term_log_down: ', term_log_down)
-        print('term_log_a_down: ', term_log_a_down)
-        print('term_x_down: ', term_x_down)
-        print('term_x_log_down: ', term_x_log_down)
-        print('term_x_log_a_down: ', term_x_log_a_down)
-
-        print('***** Upscatter and Downscatter Differences *****')
-        print('term_inv_a: ', term_inv_a_up - term_inv_a_down)
-        print('term_inv: ', term_inv_up - term_inv_down)
-        print('term_1: ', term_1_up - term_1_down)
-        print('term_log: ', term_log_up - term_log_down)
-        print('term_log_a: ', term_log_a_up - term_log_a_down)
-        print('term_x: ', term_x_up - term_x_down)
-        print('term_x_log: ', term_x_log_up - term_x_log_down)
-        print('term_x_log_a: ', term_x_log_a_up - term_x_log_a_down)
-
-        sum_terms = (
-            term_inv_a_up - term_inv_a_down 
-            + term_inv_up - term_inv_down
-            + term_1_up - term_1_down 
-            + term_log_up - term_log_down 
-            + term_log_a_up - term_log_a_down 
-            + term_x_up - term_x_down 
-            + term_x_log_up - term_x_log_down 
-            + term_x_log_a_up - term_x_log_a_down
-        )
-
-        print('***** Sum without prefac *****')
-        print(sum_terms)
-        print('***** Final result *****')
-        print('Upscattering loss spectrum: ')
-        print(
-            np.transpose(prefac*np.transpose(
-                term_inv_a_up + term_inv_up + term_1_up + term_log_up
-                + term_log_a_up + term_x_up + term_x_log_up + term_x_log_a_up
-            )
-        ))
-        print('Downscattering loss spectrum: ')
-        print(
-            np.transpose(prefac*np.transpose(
-                term_inv_a_down + term_inv_down + term_1_down + term_log_down
-                + term_log_a_down + term_x_down 
-                + term_x_log_down + term_x_log_a_down
-            )
-        ))
-        print('Final Sum: ')
-        print(np.transpose(prefac*np.transpose(sum_terms)))
-
     sum_terms = (
         term_inv_a_up - term_inv_a_down 
         + term_inv_up - term_inv_down
@@ -251,6 +182,8 @@ def engloss_spec_series(eleckineng, delta, T, as_pairs=False):
         + term_x_log_up - term_x_log_down 
         + term_x_log_a_up - term_x_log_a_down
     )
+
+    print('****** Complete! ******')
 
     return np.transpose(prefac*np.transpose(sum_terms))
 
@@ -275,7 +208,7 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
 
     """
 
-    print('Computing energy loss spectrum by beta expansion...')
+    print('****** Energy Loss Spectrum by beta Expansion ******')
 
     gamma = eleckineng/phys.me + 1
     beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
@@ -290,7 +223,7 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False):
 
     term = np.transpose(prefac*np.transpose(diff_term))
 
-    print('Computation by expansion in beta complete!')
+    print('****** Complete! ******')
 
     return term
 
