@@ -806,7 +806,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         return spec_tf 
 
 def ics_spec(
-    eleckineng, photeng, T, as_pairs=False, 
+    eleckineng, photeng, T, as_pairs=False, inf_upp_bound=True,
     thomson_tf=None, rel_tf=None, T_ref=None
 ):
     """ ICS spectrum of secondary photons.
@@ -822,7 +822,9 @@ def ics_spec(
     T : float
         CMB temperature. 
     as_pairs : bool, optional
-        If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
+        If True, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
+    inf_upp_bound : bool
+        If True, calculates the approximate relativistic spectrum that is used for fast interpolation over different values of T. See Notes for more details. Default is True.  
     thomson_tf : TransFuncAtRedshift, optional
         Reference Thomson ICS transfer function. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
@@ -839,6 +841,10 @@ def ics_spec(
     -----
     Insert note on the suitability of the method. 
     """
+
+    if not inf_upp_bound and (thomson_tf is not None or rel_tf is not None):
+
+        raise ValueError('inf_upp_bound must be True in order to use an interpolation over reference transfer functions.')
 
     gamma = eleckineng/phys.me + 1
     eleceng = eleckineng + phys.me
@@ -886,7 +892,7 @@ def ics_spec(
     else: 
         spec[rel] = rel_spec(
             eleceng_mask[rel], photeng_mask[rel], T, 
-            inf_upp_bound=True, as_pairs=True
+            inf_upp_bound=inf_upp_bound, as_pairs=True
         )
 
     if thomson_tf != None:
@@ -907,7 +913,7 @@ def ics_spec(
 
 
     # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero to take log interpolations later.
-    spec[spec < 1e-100] = 0.
+    spec[spec < 1e-100] = 1e-100
 
     if as_pairs:
         return spec
