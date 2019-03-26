@@ -516,12 +516,12 @@ def engloss_spec_diff(eleckineng, delta, T, as_pairs=False, spec_type='new'):
 
 def engloss_spec(
     eleckineng, delta, T, 
-    as_pairs=False, nonrel=False, nonrel_tf=None, rel_tf=None,
+    as_pairs=False, thomson_only=False, thomson_tf=None, rel_tf=None,
     spec_type='new'
 ):
     """ Energy loss ICS spectrum. 
 
-    Switches between `engloss_spec_series` and `engloss_spec_diff`. 
+    Switches between :func:`.engloss_spec_series` and :func:`.engloss_spec_diff` in the Thomson regime. Also switches between Thomson and relativistic regimes automatically.
 
     Parameters
     ----------
@@ -533,10 +533,10 @@ def engloss_spec(
         CMB temperature.
     as_pairs : bool, optional
         If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size. 
-    nonrel : bool, optional
-        If true, only returns the nonrelativistic energy loss spectrum, and never switches to the relativistic case. 
-    nonrel_tf : TransFuncAtRedshift, optional
-        Reference nonrelativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
+    thomson_only : bool, optional
+        If true, only returns the Thomson energy loss spectrum, and never switches to the relativistic case. 
+    thomson_tf : TransFuncAtRedshift, optional
+        Reference Thomson energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
     rel_tf : TransFuncAtRedshift, optional
         Reference relativistic energy loss ICS spectrum. If specified, calculation is done by interpolating over the transfer function. 
     spec_type : {'old', 'new'}
@@ -553,8 +553,8 @@ def engloss_spec(
     beta = np.sqrt(eleckineng/phys.me*(gamma+1)/gamma**2)
     eta = delta/T
 
-    # where to switch between nonrelativistic and relativistic treatments.
-    if nonrel:
+    # where to switch between Thomson and relativistic treatments.
+    if thomson_only:
         rel_bound = np.inf 
     else:
         rel_bound = 20
@@ -589,33 +589,14 @@ def engloss_spec(
 
     y = T/phys.TCMB(400)
 
-    if not nonrel:
+    if not thomson_only:
         if rel_tf != None:
             if as_pairs:
                 raise TypeError('When reading from file, the keyword as_pairs is not supported.')
             # If the electron energy at which interpolation is to be taken is outside rel_tf, then an error should be returned, since the file has not gone up to high enough energies.
             #rel_tf = rel_tf.at_in_eng(y*eleceng[gamma > rel_bound])
             # If the photon energy at which interpolation is to be taken is outside rel_tf, then for large photon energies, we set it to zero, since the spectrum should already be zero long before. If it is below, nan is returned, and the results should not be used.
-            # rel_tf = rel_tf.at_eng(
-            #     y*delta, 
-            #     bounds_error = False,
-            #     fill_value = (np.nan, 0)
-            # )
 
-            # OLD METHOD: call at_val
-
-            # rel_tf = rel_tf.at_val(
-            #     y*eleceng[gamma > rel_bound], y*delta, 
-            #     bounds_error=False, fill_value = 1e-200
-            # )
-            # spec[rel] = y**4*rel_tf.grid_vals.flatten()
-
-            # NEW METHOD: call interpolator
-            # points = utils.get_grid(
-            #     np.log(y*eleceng[gamma > rel_bound]), np.log(y*delta)
-            # )
-            # rel_tf_interp = rel_tf.interp_func(points)
-            
             rel_tf_interp = np.transpose(
                 rel_tf.interp_func(
                     np.log(y*eleceng[gamma > rel_bound]), np.log(y*delta)
@@ -636,38 +617,18 @@ def engloss_spec(
 
             print('Relativistic energy loss spectrum complete!')
 
-    if nonrel_tf != None:
-        # nonrel_tf = nonrel_tf.at_in_eng(eleceng[gamma <= rel_bound] - phys.me)
-        # nonrel_tf = nonrel_tf.at_eng(
-        #     delta/y,
-        #     bounds_error = False,
-        #     fill_value = (np.nan, 0)
-        # )
-
-        # OLD METHOD: call at_val
-        # nonrel_tf = nonrel_tf.at_val(
-        #     eleckineng[gamma <= rel_bound], delta/y,
-        #     bounds_error = False, fill_value = 1e-200
-        # )
-        # spec[~rel] = y**2*nonrel_tf.grid_vals.flatten()
-
-        # NEW METHOD: call interpolator
-        # points = utils.get_grid(
-        #     np.log(eleckineng[gamma <= rel_bound]), np.log(delta/y)
-        # )
-
-        # nonrel_tf_interp = nonrel_tf.interp_func(points)
+    if thomson_tf != None:
         
-        nonrel_tf_interp = np.transpose(
-            nonrel_tf.interp_func(
+        thomson_tf_interp = np.transpose(
+            thomson_tf.interp_func(
                 np.log(eleckineng[gamma <= rel_bound]), np.log(delta/y)
             )
         )
 
-        spec[~rel] = y**2*nonrel_tf_interp.flatten()
+        spec[~rel] = y**2*thomson_tf_interp.flatten()
 
     else:
-        print('Computing nonrelativistic energy loss spectrum...')
+        print('Computing Thomson energy loss spectrum...')
         # beta_small obviously doesn't intersect with rel. 
         spec[beta_small] = engloss_spec_diff(
             eleckineng_mask[beta_small],
@@ -680,10 +641,10 @@ def engloss_spec(
             delta_mask[~beta_small & ~rel],
             T, as_pairs=True, spec_type=spec_type
         )
-        print('Nonrelativistic energy loss spectrum computed!')
+        print('Thomson energy loss spectrum computed!')
 
     # Zero out spec values that are too small (clearly no scatters within the age of the universe), and numerical errors. Non-zero to take log interpolation later. 
-    spec[spec < 1e-100] = 0.
+    spec[spec < 1e-100] = 1e-100
     
     if as_pairs:
         return spec 
@@ -691,17 +652,6 @@ def engloss_spec(
 
         rs = T/phys.TCMB(1)
         dlnz = -1./(phys.dtdz(rs)*rs)
-
-        # spec_arr = [
-        #     Spectrum(delta, sp, rs=rs, in_eng=in_eng) 
-        #     for sp, in_eng in zip(spec, eleckineng)
-        # ]
-
-        # return TransFuncAtRedshift(
-        #     spec_arr, dlnz=dlnz, 
-        #     in_eng = eleckineng, eng = delta,
-        #     with_interp_func=True
-        # )
 
         return TransFuncAtRedshift(
             spec, in_eng = eleckineng, eng = delta, 
