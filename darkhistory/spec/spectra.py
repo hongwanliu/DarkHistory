@@ -867,7 +867,9 @@ class Spectra:
             if not np.array_equal(self.in_eng, weight.eng):
                 raise TypeError('spectra.in_eng must equal weight.eng')
 
-            new_data = np.dot(weight._data, self.grid_vals)
+            # new_data = np.dot(weight._data, self.grid_vals)
+            # Should always take the dot with type 'N'. 
+            np.dot(weight.N, self.grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type
             )
