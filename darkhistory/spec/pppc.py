@@ -191,7 +191,7 @@ chan_list = [
 
 # Mass threshold for mDM to annihilate into the primaries.
 mass_threshold = {
-    'elec_delta': phys.mass['e'],
+    'elec_delta': phys.mass['e'], 'phot_delta': 0.,
     'e_L'   : phys.mass['e'],   'e_R': phys.mass['e'], 
     'e': phys.mass['e'],
     'mu_L'  : phys.mass['mu'], 'mu_R': phys.mass['mu'], 
