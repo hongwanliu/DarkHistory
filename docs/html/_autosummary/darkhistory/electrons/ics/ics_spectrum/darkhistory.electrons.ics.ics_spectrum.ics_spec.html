@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" >
@@ -98,7 +98,7 @@
 <h1>darkhistory.electrons.ics.ics_spectrum.ics_spec<a class="headerlink" href="#darkhistory-electrons-ics-ics-spectrum-ics-spec" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_spectrum.ics_spec">
-<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">ics_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>thomson_tf=None</em>, <em>rel_tf=None</em>, <em>T_ref=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.electrons.ics.ics_spectrum.</code><code class="descname">ics_spec</code><span class="sig-paren">(</span><em>eleckineng</em>, <em>photeng</em>, <em>T</em>, <em>as_pairs=False</em>, <em>inf_upp_bound=True</em>, <em>thomson_tf=None</em>, <em>rel_tf=None</em>, <em>T_ref=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_spectrum.ics_spec" title="Permalink to this definition">¶</a></dt>
 <dd><p>ICS spectrum of secondary photons.</p>
 <p>Switches between <cite>thomson_spec</cite> and <cite>rel_spec</cite>.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -116,7 +116,10 @@
 <dd><p class="first last">CMB temperature.</p>
 </dd>
 <dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd><p class="first last">If true, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
+<dd><p class="first last">If True, treats eleckineng and photeng as a paired list: produces eleckineng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleckineng, returning an array of length eleckineng.size*photeng.size.</p>
+</dd>
+<dt><strong>inf_upp_bound</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">If True, calculates the approximate relativistic spectrum that is used for fast interpolation over different values of T. See Notes for more details. Default is True.</p>
 </dd>
 <dt><strong>thomson_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift, optional</span></dt>
 <dd><p class="first last">Reference Thomson ICS transfer function. If specified, calculation is done by interpolating over the transfer function.</p>

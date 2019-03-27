@@ -13,26 +13,26 @@ from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
 def get_ics_cooling_tf(
-    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
+    raw_thomson_tf, raw_rel_tf, raw_engloss_tf,
     eleceng, photeng, rs, fast=True
 ):
 
-    """Returns transfer function for complete electron cooling through ICS.
+    """Transfer function for complete electron cooling through ICS.
 
     Parameters
     ----------
-    nonrel_tf : TransFuncAtRedshift
-        Raw nonrelativistic primary electron ICS transfer function.
-    rel_tf : string
-        Raw relativistic primary electron ICS transfer function.
-    engloss_tf_filename : string
-        Raw primary electron ICS energy loss transfer function.
+    raw_thomson_tf : TransFuncAtRedshift
+        Raw Thomson ICS scattered photon spectrum transfer function.
+    raw_rel_tf : TransFuncAtRedshift
+        Raw relativistic ICS scattered photon spectrum transfer function.
+    raw_engloss_tf : TransFuncAtRedshift
+        Raw Thomson ICS scattered electron net energy loss spectrum transfer function.
     eleceng : ndarray
-        The electron kinetic energy abscissa.
+        The electron *kinetic* energy abscissa.
     photeng : ndarray
         The photon energy abscissa.
     rs : float
-        The redshift.
+        The redshift (1+z).
     fast : bool, optional
         If True, uses optimized code (with very little checks)
 
@@ -51,7 +51,7 @@ def get_ics_cooling_tf(
 
     if fast:
         return get_ics_cooling_tf_fast(
-            raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
+            raw_thomson_tf, raw_rel_tf, raw_engloss_tf,
             eleceng, photeng, rs
         )
 
@@ -61,7 +61,7 @@ def get_ics_cooling_tf(
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
     ICS_tf = ics_spec(
-        eleceng, photeng, T, thomson_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
@@ -70,7 +70,7 @@ def get_ics_cooling_tf(
     # Energy loss transfer function for single primary electron
     # single scattering. This is dN/(dE dt), dt = 1 s.
     engloss_tf = engloss_spec(
-        eleceng, photeng, T, nonrel_tf = raw_engloss_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
@@ -97,11 +97,6 @@ def get_ics_cooling_tf(
         # Add to the appropriate row.
         sec_elec_tf._grid_vals[i] += spec.dNdE
 
-    # sec_elec_tf_2 = scattered_elec_spec(
-    #     eleceng, eleceng, T,
-    #     nonrel_tf=raw_scattered_elec_nonrel_tf,
-    #     rel_tf = raw_scattered_elec_rel_tf
-    # )
 
     # Low and high energy boundaries
     loweng = 3000
@@ -355,28 +350,26 @@ def get_ics_cooling_tf(
 
 
 def get_ics_cooling_tf_fast(
-    raw_nonrel_tf, raw_rel_tf, raw_engloss_tf,
+    raw_thomson_tf, raw_rel_tf, raw_engloss_tf,
     eleceng, photeng, rs
 ):
 
-    """Returns transfer function for complete electron cooling through ICS.
+    """ Transfer function for complete electron cooling through ICS.
 
     Parameters
     ----------
-    nonrel_tf : TransFuncAtRedshift
-        Raw nonrelativistic primary electron ICS transfer function.
-    rel_tf : string
-        Raw relativistic primary electron ICS transfer function.
-    engloss_tf_filename : string
-        Raw primary electron ICS energy loss transfer function.
+    raw_thomson_tf : TransFuncAtRedshift
+        Raw Thomson ICS scattered photon spectrum transfer function.
+    raw_rel_tf : TransFuncAtRedshift
+        Raw relativistic ICS scattered photon spectrum transfer function.
+    raw_engloss_tf : TransFuncAtRedshift
+        Raw Thomson ICS scattered electron net energy loss spectrum transfer function.
     eleceng : ndarray
-        The electron kinetic energy abscissa.
+        The electron *kinetic* energy abscissa.
     photeng : ndarray
         The photon energy abscissa.
     rs : float
-        The redshift.
-    fast : bool, optional
-        If True, uses optimized code (with very little checks)
+        The redshift (1+z). 
 
     Returns
     -------
@@ -398,7 +391,7 @@ def get_ics_cooling_tf_fast(
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
     ICS_tf = ics_spec(
-        eleceng, photeng, T, thomson_tf = raw_nonrel_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
@@ -407,7 +400,7 @@ def get_ics_cooling_tf_fast(
     # Energy loss transfer function for single primary electron
     # single scattering. This is dN/(dE dt), dt = 1 s.
     engloss_tf = engloss_spec(
-        eleceng, photeng, T, nonrel_tf = raw_engloss_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot

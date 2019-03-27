@@ -183,7 +183,7 @@ def get_elec_cooling_tf(
     # Energy loss transfer function for single primary electron
     # single scattering. This is dN/(dE dt), dt = 1 s.
     engloss_ICS_tf = engloss_spec(
-        eleceng, photeng, T, nonrel_tf = raw_engloss_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot

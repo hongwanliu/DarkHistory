@@ -168,6 +168,7 @@ todo_include_todos = False
 
 html_theme = 'scipy'
 html_theme_path = ['.']
+html_favicon = 'scipy/static/img/DarkHistory_favicon.png'
 # html_theme = 'sphinx_rtd_theme'
 # html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 

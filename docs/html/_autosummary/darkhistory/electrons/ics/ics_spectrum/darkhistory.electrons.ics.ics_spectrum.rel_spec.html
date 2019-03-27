@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" >
@@ -114,6 +114,9 @@
 <dt><strong>T</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
 <dd><p class="first last">CMB temperature.</p>
 </dd>
+<dt><strong>inf_upp_bound</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
+<dd><p class="first last">If True, calculates the approximate spectrum that is used for fast interpolation over different values of T. See Notes for more details. Default is False.</p>
+</dd>
 <dt><strong>as_pairs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
 <dd><p class="first last">If true, treats eleceng and photeng as a paired list: produces eleceng.size == photeng.size values. Otherwise, gets the spectrum at each photeng for each eleceng, returning an array of length eleceng.size*photeng.size.</p>
 </dd>
@@ -129,8 +132,14 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a href="#id1"><span class="problematic" id="id2">:function:`.rel_spec_Jones_corr`</span></a></p>
+</div>
 <p class="rubric">Notes</p>
-<p>This function accepts the <em>energy</em> of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions. This enables the evaluation of the relativistic rate at unphysical values of the electron energy, a mathematical trick that we use when we obtain the ICS rates at a low temperature by interpolating over the result at a higher temperature.</p>
+<p>This function accepts the <em>energy</em> of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions.</p>
+<p>The flag <code class="docutils literal notranslate"><span class="pre">inf_upp_bound</span></code> determines whether an approximation is taken that only gets the shape of the spectrum correct for <span class="math notranslate nohighlight">\(E_{\gamma,\text{final}} \gtrsim T_\text{CMB}\)</span>. This is sufficient from an energy conservation perspective, and is used for building a table that can be interpolated over different values of T quickly.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">inf_upp_bound</span> <span class="pre">==</span> <span class="pre">False</span></code>,  the spectrum up to <span class="math notranslate nohighlight">\(\mathcal{O}(1/\gamma^2)\)</span> corrections is given. This is a combination of the spectrum derived in Eq. (2.48) of Ref. <a href="#id6"><span class="problematic" id="id3">[1]_</span></a> and Eq. (9) of Ref. <a href="#id7"><span class="problematic" id="id4">[2]_</span></a>, which assumes that electrons only lose energy, and Eq. (8) of Ref. <a href="#id8"><span class="problematic" id="id5">[2]_</span></a>, which contains the spectrum of photons produced electrons getting upscattered.</p>
 </dd></dl>
 
 </div>

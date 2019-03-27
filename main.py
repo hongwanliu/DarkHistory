@@ -108,43 +108,10 @@ def evolve(
             raise ValueError(
                 'sigmav and start_rs must be specified.'
             )
-        if primary == 'elec_delta':
-            # Exact kinetic energy of each electron. 
-            eng_elec = mDM - phys.me
-            # Find the correct bin in eleceng.
-            eng_to_inj = eleceng[eleceng < eng_elec][-1]
-            # Place 2*eng_elec worth of electrons into that bin. Use
-            # rebinning to accomplish this.
-            in_spec_elec = rebin_N_arr(
-                np.array([2 * eng_elec / eng_to_inj]), 
-                np.array([eng_to_inj]), 
-                eleceng
-            )
-            # Empty photon spectrum.
-            in_spec_phot = Spectrum(
-                photeng, np.zeros_like(photeng), spec_type='N'
-            )
-
-        elif primary == 'phot_delta':
-            # Exact kinetic energy of each photon. 
-            eng_phot = mDM
-            # Find the correct bin in photeng.
-            eng_to_inj = photeng[photeng < eng_phot][-1]
-            # Place 2*eng_phot worth of electrons into that bin. Use
-            # rebinning to accomplish this.
-            in_spec_phot = rebin_N_arr(
-                np.array([2 * eng_phot / eng_to_inj]), 
-                np.array([eng_to_inj]), 
-                photeng
-            )
-            # Empty photon spectrum.
-            in_spec_elec = Spectrum(
-                eleceng, np.zeros_like(eleceng), spec_type='N'
-            )
-        else: 
-            # Get input spectra from PPPC. 
-            in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
-            in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
+        
+        # Get input spectra from PPPC. 
+        in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
+        in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
         # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs
         in_spec_phot.rs = start_rs
@@ -169,48 +136,14 @@ def evolve(
             raise ValueError(
                 'lifetime and start_rs must be specified.'
             )
-        if primary == 'elec_delta':
-            # Exact kinetic energy of each electron. 
-            eng_elec = (mDM - 2*phys.me)/2
-            # Find the correct bin in eleceng.
-            eng_to_inj = eleceng[eleceng < eng_elec][-1]
-            # Place 2*eng_elec worth of electrons into that bin. Use
-            # rebinning to accomplish this.
-            in_spec_elec = rebin_N_arr(
-                np.array([2 * eng_elec / eng_to_inj]), 
-                np.array([eng_to_inj]), 
-                eleceng
-            )
-            # Empty photon spectrum.
-            in_spec_phot = Spectrum(
-                photeng, np.zeros_like(photeng), spec_type='N'
-            )
-
-        elif primary == 'phot_delta':
-            # Exact kinetic energy of each photon. 
-            eng_phot = mDM/2
-            # Find the correct bin in photeng.
-            eng_to_inj = photeng[photeng < eng_phot][-1]
-            # Place mDM worth of electrons into that bin. Use
-            # rebinning to accomplish this.
-            in_spec_phot = rebin_N_arr(
-                np.array([2 * eng_phot / eng_to_inj]), 
-                np.array([eng_to_inj]), 
-                photeng
-            )
-            # Empty photon spectrum.
-            in_spec_elec = Spectrum(
-                eleceng, np.zeros_like(eleceng), spec_type='N'
-            )
-
-        else:
-            # Get spectra from PPPC.
-            in_spec_elec = pppc.get_pppc_spec(
-                mDM, eleceng, primary, 'elec', decay=True
-            )
-            in_spec_phot = pppc.get_pppc_spec(
-                mDM, photeng, primary, 'phot', decay=True
-            )
+        
+        # Get spectra from PPPC.
+        in_spec_elec = pppc.get_pppc_spec(
+            mDM, eleceng, primary, 'elec', decay=True
+        )
+        in_spec_phot = pppc.get_pppc_spec(
+            mDM, photeng, primary, 'phot', decay=True
+        )
 
         # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs

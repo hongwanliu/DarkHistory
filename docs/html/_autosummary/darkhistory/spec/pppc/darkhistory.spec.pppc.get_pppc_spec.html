@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
@@ -101,11 +101,13 @@
 <dd><p>Returns the PPPC4DMID spectrum.</p>
 <p>This is the secondary spectrum to e+e-/photons normalized to one annihilation or decay event to the species specified in <code class="docutils literal notranslate"><span class="pre">pri</span></code>. These results include electroweak corrections. The full list of allowed channels is:</p>
 <ul class="simple">
+<li><span class="math notranslate nohighlight">\(\delta\)</span>-function injections: <code class="docutils literal notranslate"><span class="pre">elec_delta,</span> <span class="pre">phot_delta</span></code></li>
 <li>Leptons: <code class="docutils literal notranslate"><span class="pre">e_L,</span> <span class="pre">e_R,</span> <span class="pre">e,</span> <span class="pre">mu_L,</span> <span class="pre">mu_R,</span> <span class="pre">mu,</span> <span class="pre">tau_L,</span> <span class="pre">tau_R,</span> <span class="pre">tau</span></code></li>
 <li>Quarks:  <code class="docutils literal notranslate"><span class="pre">q,</span> <span class="pre">c,</span> <span class="pre">b,</span> <span class="pre">t</span></code></li>
 <li>Gauge bosons: <code class="docutils literal notranslate"><span class="pre">gamma,</span> <span class="pre">g,</span> <span class="pre">W_L,</span> <span class="pre">W_T,</span> <span class="pre">W,</span> <span class="pre">Z_L,</span> <span class="pre">Z_T,</span> <span class="pre">Z</span></code></li>
 <li>Higgs: <code class="docutils literal notranslate"><span class="pre">h</span></code></li>
 </ul>
+<p><code class="docutils literal notranslate"><span class="pre">elec_delta</span></code> and <code class="docutils literal notranslate"><span class="pre">phot_delta</span></code> assumes annihilation or decay to two electrons and photons respectively with no EW corrections or ISR/FSR.</p>
 <p>Variables with subscripts, e.g. <code class="docutils literal notranslate"><span class="pre">e_L</span></code>, correspond to particles with different polarizations. These polarizations are suitably averaged to obtain the spectra returned in their corresponding variables without subscripts, e.g. <code class="docutils literal notranslate"><span class="pre">e</span></code>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -132,7 +134,7 @@
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
 <dt><strong>Spectrum</strong></dt>
-<dd><p class="first last">The output <a class="reference internal" href="../spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
+<dd><p class="first last">Output <a class="reference internal" href="../spectrum/darkhistory.spec.spectrum.Spectrum.html#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object, <code class="docutils literal notranslate"><span class="pre">spec_type</span> <span class="pre">==</span> <span class="pre">'dNdE'</span></code>.</p>
 </dd>
 </dl>
 </td>

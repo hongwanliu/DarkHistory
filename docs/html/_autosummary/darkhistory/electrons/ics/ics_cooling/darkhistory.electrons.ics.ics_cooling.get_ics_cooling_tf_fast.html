@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../../index.html" >
@@ -98,33 +98,30 @@
 <h1>darkhistory.electrons.ics.ics_cooling.get_ics_cooling_tf_fast<a class="headerlink" href="#darkhistory-electrons-ics-ics-cooling-get-ics-cooling-tf-fast" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.electrons.ics.ics_cooling.get_ics_cooling_tf_fast">
-<code class="descclassname">darkhistory.electrons.ics.ics_cooling.</code><code class="descname">get_ics_cooling_tf_fast</code><span class="sig-paren">(</span><em>raw_nonrel_tf</em>, <em>raw_rel_tf</em>, <em>raw_engloss_tf</em>, <em>eleceng</em>, <em>photeng</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_cooling.get_ics_cooling_tf_fast" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns transfer function for complete electron cooling through ICS.</p>
+<code class="descclassname">darkhistory.electrons.ics.ics_cooling.</code><code class="descname">get_ics_cooling_tf_fast</code><span class="sig-paren">(</span><em>raw_thomson_tf</em>, <em>raw_rel_tf</em>, <em>raw_engloss_tf</em>, <em>eleceng</em>, <em>photeng</em>, <em>rs</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.electrons.ics.ics_cooling.get_ics_cooling_tf_fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transfer function for complete electron cooling through ICS.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>nonrel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
-<dd><p class="first last">Raw nonrelativistic primary electron ICS transfer function.</p>
+<dt><strong>raw_thomson_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
+<dd><p class="first last">Raw Thomson ICS scattered photon spectrum transfer function.</p>
 </dd>
-<dt><strong>rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd><p class="first last">Raw relativistic primary electron ICS transfer function.</p>
+<dt><strong>raw_rel_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
+<dd><p class="first last">Raw relativistic ICS scattered photon spectrum transfer function.</p>
 </dd>
-<dt><strong>engloss_tf_filename</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd><p class="first last">Raw primary electron ICS energy loss transfer function.</p>
+<dt><strong>raw_engloss_tf</strong> <span class="classifier-delimiter">:</span> <span class="classifier">TransFuncAtRedshift</span></dt>
+<dd><p class="first last">Raw Thomson ICS scattered electron net energy loss spectrum transfer function.</p>
 </dd>
 <dt><strong>eleceng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
-<dd><p class="first last">The electron kinetic energy abscissa.</p>
+<dd><p class="first last">The electron <em>kinetic</em> energy abscissa.</p>
 </dd>
 <dt><strong>photeng</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray</span></dt>
 <dd><p class="first last">The photon energy abscissa.</p>
 </dd>
 <dt><strong>rs</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
-<dd><p class="first last">The redshift.</p>
-</dd>
-<dt><strong>fast</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
-<dd><p class="first last">If True, uses optimized code (with very little checks)</p>
+<dd><p class="first last">The redshift (1+z).</p>
 </dd>
 </dl>
 </td>

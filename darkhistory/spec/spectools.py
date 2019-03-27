@@ -264,7 +264,7 @@ def rebin_N_arr(
 
 
 def discretize(eng, func_dNdE, *args):
-    """Discretizes a continuous function.
+    """Discretizes a continuous function. 
 
     The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**.
 
@@ -281,6 +281,24 @@ def discretize(eng, func_dNdE, *args):
     -------
     Spectrum
         The discretized spectrum. rs is set to -1, and must be set manually.
+
+    Notes
+    ------
+    Given a spectrum :math:`dN/dE`\ , represented by the function ``func_dNdE``, this function calculates the following quantities at the energy values :math:`E_i` specified in ``eng``:
+
+    .. math::
+        
+        N[i] = \\int_{E_i}^{E_{i+1}} \\frac{dN}{dE} \\, dE
+    
+    .. math::
+
+        \\epsilon[i] = \\frac{1}{N[i]} \\int_{E_i}^{E_{i+1}} E \\frac{dN}{dE} \\, dE
+
+    We can now treat :math:`N[i]` and :math:`\\epsilon[i]` as a list of bins with energies :math:`\\epsilon[i]` and number of particles :math:`N[i]`. This is now rebinned into the abscissa specified by ``eng`` using :func:`.rebin_N_arr`, which conserves the total number.
+
+    See Also
+    ---------
+    :func:`.rebin_N_arr`
 
     """
     def func_EdNdE(eng, *args):
@@ -305,195 +323,6 @@ def discretize(eng, func_dNdE, *args):
 
 
     return rebin_N_arr(N, eng_mean, eng)
-
-def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
-    """Produces a secondary spectrum.
-
-    Takes a primary spectrum, and multiplies it with the transfer function.
-
-    Parameters
-    ----------
-    tf : TransFuncAtRedshift
-        The secondary spectrum scattering rate, given in dN/(dE dt).
-    spec : Spectrum
-        The primary spectrum.
-    new_eng : ndarray, optional
-        The output spectrum abscissa. If not specified, defaults to spec.eng or eng_arr.
-    dlnz : float, optional
-        The duration over which the secondaries are produced. If specified, spec.rs must be initialized. If negative, the returned spectrum will be a rate, dN/(dE dt).
-    frac : float or ndarray, optional
-        The fraction of the spectrum or each bin of the spectrum which produces the secondary spectrum.
-
-    Returns
-    -------
-    Spectrum
-        The secondary spectrum, N, dN/dt, dN/dE or dN/(dE dt), with spec_type in agreement with tf.spec_type. 
-
-    Notes
-    -----
-    tf can be of type 'N' or 'dNdE', but multiplies spec.N to produce a spectrum of type 'N' or 'dNdE'.
-
-    """
-
-    # Gets the factor associated with time interval (see Ex. 3).
-    if dlnz > 0:
-        # need to think about this.
-        fac = 1
-        # if mode == 'dNdE':
-        #     if spec.rs < 0:
-        #         raise TypeError('spec.rs must be initialized when dlnz is specified.')
-        #     fac = dlnz/phys.hubble(spec.rs)
-        # elif mode == 'N':
-        #     if rs < 0:
-        #         raise TypeError('rs must be initialized when dlnz is specified')
-        #     fac = dlnz/phys.hubble(rs)
-    else:
-        fac = 1
-
-    if new_eng is None:
-            new_eng = spec.eng
-
-    # Interpolates the transfer function at new_eng and spec.eng
-
-    if np.any(spec.eng != tf.in_eng) or np.any(new_eng != tf.eng):
-        tf = tf.at_val(spec.eng, new_eng, bounds_error=True)
-
-    # tf *= fac
-
-    switched = False
-
-    if spec.spec_type != tf.spec_type:
-        spec.switch_spec_type()
-        switched = True
-
-    out_spec = tf.sum_specs(spec*frac)
-
-
-    # tf multiplies a spectrum of type 'N', outputs spectrum of type
-    # determined by tf.spec_type.
-
-    if switched:
-        out_spec.switch_spec_type()
-
-    return out_spec
-
-def evolve(
-    in_spec, tflist, evolve_type='prop', prop_tflist=None,
-    end_rs=None, save_steps=False
-):
-    """Evolves a spectrum using a list of transfer functions.
-
-    Parameters
-    ----------
-    in_spec : Spectrum
-        The initial spectrum to evolve.
-    tflist : TransferFuncList
-        The list of transfer functions for the evolution. Must be of type TransFuncAtEnergy.
-    evolve_type : {'prop', 'dep'}
-        The type of evolution. Use 'prop' to evolve by multiplication by tflist. Use 'dep' to evolve by multiplication by prop_tflist, with tflist giving the transfer matrix for deposition.
-    prop_tflist : TransferFuncList
-        The list of transfer functions for propagation, if evolve_type = 'dep'.
-    end_rs : float, optional
-        The final redshift to evolve to.
-    save_steps : bool, optional
-        Saves every intermediate spectrum if true.
-
-    Returns
-    -------
-    Spectrum or Spectra
-        The evolved final spectrum, with or without intermediate steps.
-
-    Notes
-    -----
-    if `evolve_type = 'dep'`, the Spectrum object in the ouput Spectra with redshift rs corresponds to energy deposited between [rs - dz, rs]
-    """
-    from darkhistory.spec.spectra import Spectra
-
-    switched = False
-
-    if in_spec.spec_type != tflist[0].spec_type:
-        in_spec.switch_spec_type()
-        switched = True
-        print('switched!')
-
-    if not np.all(in_spec.eng == tflist.in_eng):
-        raise TypeError("input spectrum and transfer functions must have the same abscissa for now.")
-
-    if tflist.tftype != 'rs':
-            tflist.transpose()
-
-    if end_rs is not None:
-        # Calculates where to stop the transfer function multiplication.
-        rs_ind = np.arange(tflist.rs.size)
-        rs_last_ind = rs_ind[np.where(tflist.rs >= end_rs)][-1]
-
-    else:
-
-        rs_last_ind = tflist.rs.size-1
-
-    if save_steps is True:
-
-        if evolve_type == 'prop':
-
-            out_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
-            append_spec = out_specs.append
-
-
-
-            for i in np.arange(rs_last_ind):
-                next_spec = tflist[i].sum_specs(out_specs[-1])
-                next_spec.rs = tflist.rs[i+1]
-                append_spec(next_spec)
-
-            if switched:
-                out_specs.switch_spec_type()
-
-            return out_specs
-
-        elif evolve_type == 'dep':
-
-            prop_specs = Spectra([in_spec], spec_type=in_spec.spec_type)
-            out_specs = Spectra([], spec_type=in_spec.spec_type)
-            append_prop_spec = prop_specs.append
-            append_out_spec  = out_specs.append
-
-            for i in np.arange(rs_last_ind):
-                in_spec_dep = tflist[i].sum_specs(prop_specs[-1])
-                next_spec = prop_tflist[i].sum_specs(prop_specs[-1])
-
-                in_spec_dep.rs = tflist.rs[i]
-                next_spec.rs   = tflist.rs[i]
-
-                append_out_spec(in_spec_dep)
-                append_prop_spec(next_spec)
-
-            if switched:
-                out_specs.switch_spec_type()
-
-            return out_specs
-
-        else:
-            raise TypeError('invalid evolve_type.')
-
-
-    else:
-
-        if evolve_type == 'prop':
-
-            for i in np.arange(rs_last_ind):
-                in_spec = tflist[i].sum_specs(in_spec)
-                in_spec.rs = tflist.rs[i+1]
-
-        elif evolve_type == 'dep':
-            raise TypeError('save_steps must be true for deposition.')
-
-        else:
-            raise TypeError('invalid evolve_type.')
-
-        if switched:
-            in_spec.switch_spec_type()
-
-        return in_spec
 
 
 def get_normalized_spec(spec, dE_dVdt, rs):

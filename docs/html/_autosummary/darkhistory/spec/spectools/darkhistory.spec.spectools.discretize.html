@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
@@ -126,6 +126,17 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="darkhistory.spec.spectools.rebin_N_arr.html#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-func docutils literal notranslate"><span class="pre">rebin_N_arr()</span></code></a></p>
+</div>
+<p class="rubric">Notes</p>
+<p>Given a spectrum <span class="math notranslate nohighlight">\(dN/dE\)</span>, represented by the function <code class="docutils literal notranslate"><span class="pre">func_dNdE</span></code>, this function calculates the following quantities at the energy values <span class="math notranslate nohighlight">\(E_i\)</span> specified in <code class="docutils literal notranslate"><span class="pre">eng</span></code>:</p>
+<div class="math notranslate nohighlight">
+\[N[i] = \int_{E_i}^{E_{i+1}} \frac{dN}{dE} \, dE\]</div>
+<div class="math notranslate nohighlight">
+\[\epsilon[i] = \frac{1}{N[i]} \int_{E_i}^{E_{i+1}} E \frac{dN}{dE} \, dE\]</div>
+<p>We can now treat <span class="math notranslate nohighlight">\(N[i]\)</span> and <span class="math notranslate nohighlight">\(\epsilon[i]\)</span> as a list of bins with energies <span class="math notranslate nohighlight">\(\epsilon[i]\)</span> and number of particles <span class="math notranslate nohighlight">\(N[i]\)</span>. This is now rebinned into the abscissa specified by <code class="docutils literal notranslate"><span class="pre">eng</span></code> using <a class="reference internal" href="darkhistory.spec.spectools.rebin_N_arr.html#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-func docutils literal notranslate"><span class="pre">rebin_N_arr()</span></code></a>, which conserves the total number.</p>
 </dd></dl>
 
 </div>
