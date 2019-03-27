@@ -33,8 +33,8 @@ def thomson_spec_series(eleckineng, photeng, T, as_pairs=False):
     ndarray
         dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa photeng. 
 
-    Note
-    ----
+    Notes
+    -----
     Insert note on the suitability of the method. 
     """
 
@@ -270,8 +270,8 @@ def thomson_spec_quad(eleckineng_arr, photeng_arr, T):
     ndarray
         dN/(dt dE) of the outgoing photons (dt = 1 s), with abscissa photeng. 
 
-    Note
-    ----
+    Notes
+    -----
     Insert note on the suitability of the method. 
     """
 
@@ -390,8 +390,8 @@ def thomson_spec_diff(eleckineng, photeng, T, as_pairs=False):
     tuple of ndarrays
         dN/(dt dE) of the outgoing photons (dt = 1 s) and the error, with abscissa given by (eleckineng, photeng). 
 
-    Note
-    ----
+    Notes
+    -----
     Insert note on the suitability of the method. 
     """
 
@@ -445,8 +445,8 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False):
     TransFuncAtRedshift or ndarray
         dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleckineng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleckineng, photeng).  
 
-    Note
-    ----
+    Notes
+    -----
     Insert note on the suitability of the method. 
     """
 
@@ -542,7 +542,7 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False):
         return spec
     else:
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
 
         spec_arr = [
             Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
@@ -578,8 +578,8 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
     TransFuncAtRedshift or ndarray
         dN/(dt dE) of the outgoing photons (dt = 1 s). If as_pairs == False, returns a TransFuncAtRedshift, with abscissa given by (eleceng, photeng). Otherwise, returns an ndarray, with abscissa given by each pair of (eleceng, photeng). 
 
-    Note
-    ----
+    Notes
+    -----
     This function accepts the *energy* of the electron as one of the arguments and not the kinetic energy, unlike the other related ICS functions. This enables the evaluation of the relativistic rate at unphysical values of the electron energy, a mathematical trick that we use when we obtain the ICS rates at a low temperature by interpolating over the result at a higher temperature.
 
     """
@@ -712,7 +712,7 @@ def rel_spec(eleceng, photeng, T, inf_upp_bound=False, as_pairs=False):
         return spec 
     else:
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
         
         spec_arr = [
             Spectrum(photeng, s, rs=rs, in_eng=in_eng) 
@@ -757,8 +757,8 @@ def ics_spec(
     TransFuncAtRedshift
         dN/(dt dE) of the outgoing photons, dt = 1 s, with `self.in_eng = eleckineng` and `self.eng = photeng`. `self.rs` is determined from `T`, and `self.dlnz` is normalized to 1 second. 
 
-    Note
-    ----
+    Notes
+    -----
     Insert note on the suitability of the method. 
     """
 
@@ -836,7 +836,7 @@ def ics_spec(
     else:
 
         rs = T/phys.TCMB(1)
-        dlnz = 1/(phys.dtdz(rs)*rs)
+        dlnz = -1./(phys.dtdz(rs)*rs)
 
         return TransFuncAtRedshift(
             spec, in_eng = eleckineng, eng = photeng, 

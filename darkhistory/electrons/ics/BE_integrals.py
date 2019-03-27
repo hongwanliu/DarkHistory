@@ -244,8 +244,8 @@ def F1(a,b,epsrel=0):
     float
         The resulting integral.
 
-    Note
-    ----
+    Notes
+    -----
     For a or b > 0.01, the exact analytic expression is used, whereas below that we use a series expansion. This avoids numerical errors due to computation of log(1 - exp(-x)) and likewise in the `spence` function. Note that `scipy.special.spence` can only take `float64` numbers, so downcasting is necessary for 0.01 < x < 3. 
 
     See Also

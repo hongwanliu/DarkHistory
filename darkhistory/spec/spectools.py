@@ -142,8 +142,8 @@ def rebin_N_arr(
     OverflowError
         The maximum energy in `out_eng` cannot be smaller than any bin in `self.eng`.
 
-    Note
-    ----
+    Notes
+    -----
     The total number and total energy is conserved by assigning the number of particles N in a bin of energy eng to two adjacent bins in new_eng, with energies eng_low and eng_upp such that eng_low < eng < eng_upp. Then dN_low_dE_low = (eng_upp - eng)/(eng_upp - eng_low)*(N/(E * dlogE_low)), and dN_upp_dE_upp = (eng - eng_low)/(eng_upp - eng_low)*(N/(E*dlogE_upp)).
 
     If a bin in `in_eng` is below the lowest bin in `out_eng`, then the total number and energy not assigned to the lowest bin are assigned to the underflow. Particles will only be assigned to the lowest bin if there is some overlap between the bin index with respect to `out_eng` bin centers is larger than -1.0.
@@ -329,8 +329,8 @@ def scatter(tf, spec, new_eng=None, dlnz=-1., frac=1.):
     Spectrum
         The secondary spectrum, N, dN/dt, dN/dE or dN/(dE dt), with spec_type in agreement with tf.spec_type. 
 
-    Note
-    ----
+    Notes
+    -----
     tf can be of type 'N' or 'dNdE', but multiplies spec.N to produce a spectrum of type 'N' or 'dNdE'.
 
     """
@@ -403,8 +403,8 @@ def evolve(
     Spectrum or Spectra
         The evolved final spectrum, with or without intermediate steps.
 
-    Note
-    ----
+    Notes
+    -----
     if `evolve_type = 'dep'`, the Spectrum object in the ouput Spectra with redshift rs corresponds to energy deposited between [rs - dz, rs]
     """
     from darkhistory.spec.spectra import Spectra
