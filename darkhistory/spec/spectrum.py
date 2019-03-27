@@ -498,13 +498,18 @@ class Spectrum:
         bound_type : {'bin', 'eng', None}
             The type of bounds to use. Bound values do not have to be within the [0:length] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
 
-        bound_arr : ndarray, optional
+        bound_arr : (N,) ndarray, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
 
         Returns
         -------
-        ndarray or float
-            Total number of particles in the spectrum.
+        ndarray with shape (N-1, ) or float
+            Total number of particles in the spectrum, or between the specified boundaries.
+
+        Notes
+        ------
+        To exclude the underflow bin, call the function as ``totN(bound_type='bin')``.
+
         """
 
         length = self.length
@@ -596,14 +601,19 @@ class Spectrum:
         bound_type : {'bin', 'eng', None}
             The type of bounds to use. Bound values do not have to be within the [0:length] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used to obtain the total energy. With `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. With `'eng'`, bounds are specified by energy values.
 
-        bound_arr : ndarray, optional
+        bound_arr : (N,) ndarray, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
 
 
         Returns
         -------
-        ndarray or float
-            Total energy in the spectrum.
+        ndarray of shape (N-1, ) or float
+            Total energy in the spectrum or between the specified boundaries.
+
+        Notes
+        ------
+        To exclude the underflow bin, call the function as ``toteng(bound_type='bin')``.
+        
         """
         eng = self.eng
         length = self.length
@@ -1039,6 +1049,9 @@ class Spectrum:
             The new redshift (1+z) to redshift to.
 
         """
+
+        if self.rs <= 0:
+            raise ValueError('self.rs must be initialized.')
 
         fac = new_rs/self.rs
 

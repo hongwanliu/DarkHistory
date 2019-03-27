@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
@@ -98,7 +98,7 @@
 <dl class="function">
 <dt id="darkhistory.spec.spectools.discretize">
 <code class="descclassname">darkhistory.spec.spectools.</code><code class="descname">discretize</code><span class="sig-paren">(</span><em>eng</em>, <em>func_dNdE</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectools.discretize" title="Permalink to this definition">¶</a></dt>
-<dd><p>Discretizes a continuous function. ssss</p>
+<dd><p>Discretizes a continuous function.</p>
 <p>The function is integrated between the bin boundaries specified by <cite>eng</cite> to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin <strong>boundaries</strong>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -136,7 +136,7 @@
 \[N[i] = \int_{E_i}^{E_{i+1}} \frac{dN}{dE} \, dE\]</div>
 <div class="math notranslate nohighlight">
 \[\epsilon[i] = \frac{1}{N[i]} \int_{E_i}^{E_{i+1}} E \frac{dN}{dE} \, dE\]</div>
-<p>We can now treat <span class="math notranslate nohighlight">\(N[i]\)</span> and <span class="math notranslate nohighlight">\(\epsilon[i]\)</span> as a list of bins with energies <span class="math notranslate nohighlight">\(\epsilon[i]\)</span> and number of particles <span class="math notranslate nohighlight">\(N[i]\)</span>. This is now rebinned into the abscissa specified by <code class="docutils literal notranslate"><span class="pre">eng</span></code> using <a class="reference internal" href="darkhistory.spec.spectools.rebin_N_arr.html#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-func docutils literal notranslate"><span class="pre">rebin_N_arr()</span></code></a>.</p>
+<p>We can now treat <span class="math notranslate nohighlight">\(N[i]\)</span> and <span class="math notranslate nohighlight">\(\epsilon[i]\)</span> as a list of bins with energies <span class="math notranslate nohighlight">\(\epsilon[i]\)</span> and number of particles <span class="math notranslate nohighlight">\(N[i]\)</span>. This is now rebinned into the abscissa specified by <code class="docutils literal notranslate"><span class="pre">eng</span></code> using <a class="reference internal" href="darkhistory.spec.spectools.rebin_N_arr.html#darkhistory.spec.spectools.rebin_N_arr" title="darkhistory.spec.spectools.rebin_N_arr"><code class="xref py py-func docutils literal notranslate"><span class="pre">rebin_N_arr()</span></code></a>, which conserves the total number.</p>
 </dd></dl>
 
 </div>

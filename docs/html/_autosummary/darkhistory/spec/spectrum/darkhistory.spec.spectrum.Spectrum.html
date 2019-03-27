@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
     <script type="text/javascript" src="../../../../_static/language_data.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <script type="text/javascript" src="../../../../_static/js/copybutton.js"></script>
+    <link rel="shortcut icon" href="../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../search.html" >
     <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
@@ -690,21 +690,23 @@
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
 <dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:length] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</p>
 </dd>
-<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">(N,) ndarray, optional</span></dt>
 <dd><p class="first last">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>ndarray or float</strong></dt>
-<dd><p class="first last">Total number of particles in the spectrum.</p>
+<dt><strong>ndarray with shape (N-1, ) or float</strong></dt>
+<dd><p class="first last">Total number of particles in the spectrum, or between the specified boundaries.</p>
 </dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Notes</p>
+<p>To exclude the underflow bin, call the function as <code class="docutils literal notranslate"><span class="pre">totN(bound_type='bin')</span></code>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -720,21 +722,23 @@
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
 <dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:length] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used to obtain the total energy. With <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. With <cite>‘eng’</cite>, bounds are specified by energy values.</p>
 </dd>
-<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
+<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">(N,) ndarray, optional</span></dt>
 <dd><p class="first last">An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>ndarray or float</strong></dt>
-<dd><p class="first last">Total energy in the spectrum.</p>
+<dt><strong>ndarray of shape (N-1, ) or float</strong></dt>
+<dd><p class="first last">Total energy in the spectrum or between the specified boundaries.</p>
 </dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
+<p class="rubric">Notes</p>
+<p>To exclude the underflow bin, call the function as <code class="docutils literal notranslate"><span class="pre">toteng(bound_type='bin')</span></code>.</p>
 </dd></dl>
 
 </dd></dl>

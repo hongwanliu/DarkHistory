@@ -294,7 +294,7 @@ def discretize(eng, func_dNdE, *args):
 
         \\epsilon[i] = \\frac{1}{N[i]} \\int_{E_i}^{E_{i+1}} E \\frac{dN}{dE} \\, dE
 
-    We can now treat :math:`N[i]` and :math:`\\epsilon[i]` as a list of bins with energies :math:`\\epsilon[i]` and number of particles :math:`N[i]`. This is now rebinned into the abscissa specified by ``eng`` using :func:`.rebin_N_arr`, which conserves the total number 
+    We can now treat :math:`N[i]` and :math:`\\epsilon[i]` as a list of bins with energies :math:`\\epsilon[i]` and number of particles :math:`N[i]`. This is now rebinned into the abscissa specified by ``eng`` using :func:`.rebin_N_arr`, which conserves the total number.
 
     See Also
     ---------
