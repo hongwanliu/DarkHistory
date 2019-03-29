@@ -5,6 +5,5 @@
   "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.redshift",
   "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.totN",
   "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.toteng",
-  "tests/test_spectrum.py::test_totN",
   "tests/test_spectrum.py::test_redshift"
 ]

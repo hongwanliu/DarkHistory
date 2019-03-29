@@ -329,7 +329,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         return rho_DM*rs**3/lifetime
 
 # Create interpolation with structure formation data. 
-if not 'pytest' in sys.modules:
+if 'pytest' not in sys.modules and 'sphinx' not in sys.modules:
     struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
     log_struct_interp = interp1d(
@@ -838,7 +838,7 @@ def d_xe_Saha_dz(rs, species):
 
 # Standard ionization and thermal histories
 
-if not 'pytest' in sys.modules:
+if 'pytest' not in sys.modules and 'sphinx' not in sys.modules:
     soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
     _xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
