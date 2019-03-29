@@ -1,4 +1,4 @@
-"""Contains the :class:`Spectrum` class."""
+"""Contains the Spectrum class."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -12,7 +12,7 @@ from scipy import integrate
 from scipy.interpolate import interp1d
 
 class Spectrum:
-    """Structure for photon and electron spectra.
+    """Structure for particle spectra.
 
     Parameters
     ----------
@@ -105,6 +105,8 @@ class Spectrum:
     def __add__(self, other):
         """Adds two :class:`Spectrum` instances together, or an array to the spectrum. The :class:`Spectrum` object is on the left.
 
+        The returned :class:`Spectrum` will have its underflow reset to zero if other is not a :class:`Spectrum` object.
+
         Parameters
         ----------
         other : Spectrum or ndarray
@@ -118,8 +120,6 @@ class Spectrum:
         Notes
         -----
         This special function, together with :meth:`Spectrum.__radd__`, allows the use of the symbol ``+`` to add :class:`Spectrum` objects together.
-
-        The returned :class:`Spectrum` will have its underflow reset to zero if other is not a :class:`Spectrum` object.
 
         See Also
         --------
@@ -169,9 +169,11 @@ class Spectrum:
     def __radd__(self, other):
         """Adds two :class:`Spectrum` instances together, or an array to the spectrum. The :class:`Spectrum` object is on the right.
 
+        The returned :class:`Spectrum` will have its underflow reset to zero if other is not a :class:`Spectrum` object.
+
         Parameters
         ----------
-        other : Spectrum, ndarray
+        other : Spectrum or ndarray
             The object to add to the current :class:`Spectrum` object.
 
         Returns
@@ -183,7 +185,6 @@ class Spectrum:
         -----
         This special function, together with :meth:`Spectrum.__add__`, allows the use of the symbol ``+`` to add :class:`Spectrum` objects together.
 
-        The returned :class:`Spectrum` will have its underflow reset to zero if other is not a :class:`Spectrum` object.
 
         See Also
         --------
@@ -231,9 +232,7 @@ class Spectrum:
             raise TypeError("cannot add object to Spectrum.")
 
     def __sub__(self, other):
-        """Subtracts one :class:`Spectrum` instance from another, or subtracts an array from the spectrum.
-
-        The :class:`Spectrum` is on the left.
+        """Subtracts a :class:`Spectrum` or an array from this :class:`Spectrum`.
 
         Parameters
         ----------
@@ -259,9 +258,7 @@ class Spectrum:
         return self + -1*other
 
     def __rsub__(self, other):
-        """Subtracts one :class:`Spectrum` instance from another, or subtracts the spectrum from an array.
-
-        The :class:`Spectrum` is on the right.
+        """Subtracts this :class:`Spectrum` from another or an array.
 
         Parameters
         ----------
@@ -528,10 +525,14 @@ class Spectrum:
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used when computing the total particle number in the spectrum. For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used when computing the total particle number in the spectrum. 
 
         bound_arr : (N,) ndarray, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are None, then the total number of particles in the spectrum is computed.
+
+            For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+
+            These boundaries need not be integer values for 'bin': specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.
 
         Returns
         -------
@@ -545,6 +546,12 @@ class Spectrum:
         >>> spec = Spectrum(eng, N, spec_type='N')
         >>> spec.totN()
         10.0
+
+        >>> spec.totN('bin', np.array([1, 3]))
+        array([5.])
+
+        >>> spec.totN('eng', np.array([10, 1e4]))
+        array([8.])
 
         Notes
         ------
@@ -643,16 +650,34 @@ class Spectrum:
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used to obtain the total energy. With 'bin', bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. With 'eng', bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within the [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used to obtain the total energy. 
 
         bound_arr : (N,) ndarray, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
+
+            For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+
+            These boundaries need not be integer values for 'bin': specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.
 
 
         Returns
         -------
         ndarray of shape (N-1, ) or float
             Total energy in the spectrum or between the specified boundaries.
+
+        Examples
+        ---------
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> N   = np.array([1, 2, 3, 4])
+        >>> spec = Spectrum(eng, N, spec_type='N')
+        >>> spec.toteng()
+        4321.0
+
+        >>> spec.toteng('bin', np.array([1, 3]))
+        array([320.])
+
+        >>> spec.toteng('eng', np.array([10, 1e4]))
+        array([4310.])
 
         Notes
         ------
@@ -992,15 +1017,6 @@ class Spectrum:
 
         An "energy loss spectrum" is a distribution of outgoing particles as a function of *energy lost* :math:`\\Delta` saved in self.eng after some interaction for an incoming particle :math:`E'` specified by in_eng. The "secondary spectrum" is simply the distribution of outgoing particles as a function of their own energy :math:`E` instead, with abscissa out_eng. 
 
-        This function is simply a numerical version of the fact that
-
-        .. math::
-
-            \\frac{dN}{d \\Delta}(\\Delta) = \\frac{dN}{dE} (E = E' - \\Delta) 
-
-        in discretized form, preserving the total number and total energy in the spectrum using :meth:`Spectrum.rebin`. 
-
-
         Parameters
         ----------
         in_eng : float
@@ -1011,6 +1027,17 @@ class Spectrum:
             The spec_type of the output spectrum. If not specified, the output spectrum will have the same spec_type.
         fast: bool, optional
             If fast, uses :meth:`Spectrum.rebin_fast` instead of :meth:`Spectrum.rebin` for speed.
+
+        Notes
+        -------
+
+        This function is simply a numerical version of the fact that
+
+        .. math::
+
+            \\frac{dN}{d \\Delta}(\\Delta) = \\frac{dN}{dE} (E = E' - \\Delta) 
+
+        in discretized form, preserving the total number and total energy in the spectrum using :meth:`Spectrum.rebin`. 
 
         See Also
         ---------

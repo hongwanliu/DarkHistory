@@ -1,4 +1,4 @@
-"""Contains the `Spectra` class."""
+"""Contains the Spectra class."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -13,12 +13,19 @@ import warnings
 from scipy import interpolate
 
 class Spectra:
-    """Structure for a collection of `Spectrum` objects.
+    """Structure for a collection of :class:`.Spectrum` objects.
+
+    :class:`Spectra` should be viewed as a collection of spectra of 
+    particles at different redshifts, or as a collection of spectra produced 
+    by injected particles over a range of energies. 
+
+    Individual :class:`.Spectrum` objects can be accessed by taking slices
+    of the :class:`Spectra` object.
 
     Parameters
     ----------
     spec_arr : list of Spectrum or ndarray
-        List of `Spectrum` or array to be stored together.
+        List of :class:`Spectrum` objects or arrays to be stored together.
     spec_type : {'N', 'dNdE'}, optional
         The type of entries. Default is 'dNdE'.
     in_eng : ndarray
@@ -28,7 +35,7 @@ class Spectra:
     rs : ndarray
         Array of redshifts corresponding to each spectrum.
     rebin_eng : ndarray, optional
-        New abscissa to rebin all of the spectra into.
+        New abscissa to rebin all of the spectra into, if specified.
 
     Attributes
     ----------
@@ -38,8 +45,33 @@ class Spectra:
         Array of energy abscissa of each spectrum.
     rs : ndarray
         Array of redshifts corresponding to each spectrum.
+    grid_vals : ndarray
+        2D array of the raw data, indexed by either 
+        (rs, eng) or (in_eng, eng). 
     spec_type : {'N', 'dNdE'}
         The type of values stored.
+    N_underflow : ndarray
+        Array of underflow particles for each :class:`.Spectrum`. 
+    eng_underflow : ndarray
+        Array of underflow particles for each :class:`.Spectrum`. 
+
+
+    See Also
+    ---------
+    :class:`.TransFuncAtEnergy` 
+    :class:`.TransFuncAtRedshift`
+
+    Examples
+    -------- 
+
+    Indexing into :class:`Spectra` to obtain a :class:`.Spectrum` object:
+
+    >>> from darkhistory.spec.spectrum import Spectrum
+    >>> eng = np.array([1, 10, 100, 1000])
+    >>> spec_arr = [Spectrum(eng, np.ones(4)*i, spec_type='N') for i in np.arange(9)]
+    >>> test_spectra = Spectra(spec_arr)
+    >>> test_spectra[3].N
+    array([3., 3., 3., 3.])
     """
 
     # __array_priority__ must be larger than 0, so that radd can work.
@@ -234,24 +266,28 @@ class Spectra:
                 self._eng_underflow[i] = spec.underflow['eng']
 
     def __add__(self, other):
-        """Adds two arrays of spectra together.
+        """Adds two :class:`Spectra` instances together, or an array to the :class:`Spectra`. The :class:`Spectra` is on the left.
+
+        The returned :class:`Spectra` will have its underflow reset to zero if other is not a :class:`Spectrum` object. 
 
         Parameters
         ----------
         other : Spectra or ndarray
+            The object to add to the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
-            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
+            New :class:`Spectra` instance which has the summed spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add arrays of spectra together.
+        This special function, together with :meth:`Spectra.__radd__`, allows the use of the symbol ``+`` to add :class:`Spectra` objects together.
 
         See Also
         --------
-        spectra.Spectra.__radd__
+        :meth:`Spectra.__radd__`
+
         """
         if np.issubclass_(type(other), Spectra):
 
@@ -270,34 +306,44 @@ class Spectra:
             if np.array_equal(self.rs, other.rs):
                 out_spectra._rs = self.rs
 
+            out_spectra._N_underflow = self.N_underflow + other.N_underflow
+            out_spectra._eng_underflow = (
+                self.eng_underflow + other.eng_underflow
+            )
+
             return out_spectra
 
         elif isinstance(other, np.ndarray):
 
             self._grid_vals += other
+            self._N_underflow = 0
+            self._eng_underflow = 0
 
         else:
             raise TypeError('adding an object that is not compatible.')
 
     def __radd__(self, other):
-        """Adds two arrays of spectra together.
+        """Adds two :class:`Spectra` instances together, or an array to the spectra. The :class:`Spectra` object is on the right.
+
+        The returned :class:`Spectra` will have its underflow reset to zero if other is not a :class:`Spectrum` object. 
 
         Parameters
         ----------
-        other : Spectra
+        other : Spectra or ndarray
+            The object to add to the current :class:`Spectra` object. 
 
         Returns
         -------
         Spectra
-            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
+            New :class:`Spectra` instance which has the summed spectra. 
 
         Notes
         -----
-        This special function, together with `Spectra.__add__`, allows the use of the symbol + to add two arrays of spectra together.
+        This special function, together with `Spectra.__add__`, allows the use of the symbol ``+`` to add two :class:`Spectra` together.
 
         See Also
         --------
-        spectra.Spectra.__add__
+        :meth:`Spectra.__add__`
         """
         if npissubclass_(type(other), Spectra):
 
@@ -318,83 +364,107 @@ class Spectra:
             if np.array_equal(self.rs, other.rs):
                 out_spectra._rs = self.rs
 
+            out_spectra._N_underflow = self.N_underflow + other.N_underflow
+            out_spectra._eng_underflow = (
+                self.eng_underflow + other.eng_underflow
+            )
+
             return out_spectra
 
         elif isinstance(other, np.ndarray):
 
             self._grid_vals += other
+            self._N_underflow = 0
+            self._eng_underflow = 0
 
         else:
             raise TypeError('adding an object that is not compatible.')
 
     def __sub__(self, other):
-        """Subtracts one array of spectra from another.
+        """Subtracts a :class:`Spectra` or array from this :class:`Spectra`.
 
         Parameters
         ----------
         other : Spectra or ndarray
+            The object to subtract from the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the subtracted spectrum.
 
         Notes
         -----
-        This special function, together with `Spectra.__rsub__`, allows the use of the symbol - to subtract or subtract from `Spectra` objects.
+        This special function, together with :meth:`Spectra.__rsub__`, allows the use of the symbol ``-`` to subtract or subtract from :class:`Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__rsub__
+        :meth:`Spectra.__rsub__`
         """
 
         return self + -1*other
 
     def __rsub__(self, other):
-        """Subtracts one array of spectra from another.
+        """Subtracts this :class:`Spectra` from another or an array.
 
         Parameters
         ----------
         other : Spectra or ndarray
+            The object from which to subtract the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the subtracted spectrum.
 
         Notes
         -----
-        This special function, together with `Spectra.__rsub__`, allows the use of the symbol - to subtract or subtract from `Spectra` objects.
+        This special function, together with :meth:`Spectra.__rsub__`, allows the use of the symbol ``-`` to subtract or subtract from `Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__sub__
+        :meth:`Spectra.__sub__`
         """
 
         return other + -1*self
 
     def __neg__(self):
-        """Negates the spectra values.
+        """Negates the spectra.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance with the spectra negated. 
+
         """
 
         return -1*self
 
     def __mul__(self, other):
-        """Takes a product with this `Spectra`.
+        """Takes a product with the spectra with a :class:`Spectra` object, array or number.
+
+        The :class:`Spectra` object is on the left.
 
         Parameters
         ----------
-        other : Spectra, int, float, list or ndarray
+        other : Spectra, int, float or ndarray
+            The object to multiply to the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance with the multiplied spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
+        This special function, together with :meth:`Spectra.__rmul__`, allows the use of the symbol ``*`` to multiply objects with a `Spectra` object.
+
+        The returned :class:`Spectra` object as underflow set to zero if *other* is not a :class:`Spectra` object.
+
+        See Also
+        --------
+        :meth:`Spectra.__rmul__`
+
         """
         if np.isscalar(other):
 
@@ -404,6 +474,8 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
@@ -416,6 +488,8 @@ class Spectra:
             out_spectra._grid_vals = np.einsum(
                 'ij,i->ij',self.grid_vals, other
             )
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
@@ -435,23 +509,39 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
+            out_spectra._N_underflow = (
+                self.N_underflow + other.N_underflow
+            )
+            out_spectra._eng_underflow = (
+                self.eng_underflow + other.N_underflow
+            )
 
             return out_spectra
 
     def __rmul__(self, other):
-        """Takes a product with this `Spectra`.
+        """Takes a product with the spectra with a :class:`Spectra` object, array or number.
+
+        The :class:`Spectra` object is on the right.
 
         Parameters
         ----------
-        other : Spectra, int, float, list or ndarray
+        other : Spectra, int, float or ndarray
+            The object to multiply to the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance with the multiplied spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
+        This special function, together with :meth:`Spectra.__mul__`, allows the use of the symbol ``*`` to multiply objects with a `Spectra` object.
+
+        The returned :class:`Spectra` object as underflow set to zero if *other* is not a :class:`Spectra` object.
+
+        See Also
+        --------
+        :meth:`Spectra.__mul__`
         """
 
         if (
@@ -466,6 +556,8 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
@@ -484,6 +576,12 @@ class Spectra:
                 out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
+            )
+            out_spectra._N_underflow = (
+                self.N_underflow + other.N_underflow
+            )
+            out_spectra._eng_underflow = (
+                self.eng_underflow + other.eng_underflow
             )
 
             return out_spectra
@@ -563,6 +661,18 @@ class Spectra:
             self._spec_type = 'N'
 
     def redshift(self, rs_arr):
+        """ Redshifts the stored spectra. 
+
+        Parameters
+        ----------
+        rs_arr : ndarray
+            Array of redshifts to redshift each spectrum to. 
+
+        Returns
+        -------
+        None
+
+        """
 
         for i,(val, rs, new_rs, in_eng, N_uf, eng_uf) in enumerate(
             zip(

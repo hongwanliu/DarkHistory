@@ -99,7 +99,7 @@
 <dl class="class">
 <dt id="darkhistory.spec.spectrum.Spectrum">
 <em class="property">class </em><code class="descclassname">darkhistory.spec.spectrum.</code><code class="descname">Spectrum</code><span class="sig-paren">(</span><em>eng</em>, <em>data</em>, <em>rs=-1.0</em>, <em>in_eng=-1.0</em>, <em>spec_type='dNdE'</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Structure for photon and electron spectra.</p>
+<dd><p>Structure for particle spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -295,7 +295,7 @@
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>other</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum, ndarray</span></dt>
+<dt><strong>other</strong> <span class="classifier-delimiter">:</span> <span class="classifier">Spectrum or ndarray</span></dt>
 <dd><p class="first last">The object to add to the current <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 </dd>
 </dl>
@@ -356,8 +356,7 @@
 <dl class="method">
 <dt id="darkhistory.spec.spectrum.Spectrum.__rsub__">
 <code class="descname">__rsub__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.__rsub__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtracts one <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> instance from another, or subtracts the spectrum from an array.</p>
-<p>The <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> is on the right.</p>
+<dd><p>Subtracts this <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> from another or an array.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -421,8 +420,7 @@
 <dl class="method">
 <dt id="darkhistory.spec.spectrum.Spectrum.__sub__">
 <code class="descname">__sub__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.__sub__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtracts one <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> instance from another, or subtracts an array from the spectrum.</p>
-<p>The <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> is on the left.</p>
+<dd><p>Subtracts a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> or an array from this <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -549,10 +547,6 @@
 <code class="descname">engloss_rebin</code><span class="sig-paren">(</span><em>in_eng</em>, <em>out_eng</em>, <em>out_spec_type=None</em>, <em>fast=False</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.engloss_rebin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts an energy loss spectrum to a secondary spectrum.</p>
 <p>An “energy loss spectrum” is a distribution of outgoing particles as a function of <em>energy lost</em> <span class="math notranslate nohighlight">\(\Delta\)</span> saved in self.eng after some interaction for an incoming particle <span class="math notranslate nohighlight">\(E'\)</span> specified by in_eng. The “secondary spectrum” is simply the distribution of outgoing particles as a function of their own energy <span class="math notranslate nohighlight">\(E\)</span> instead, with abscissa out_eng.</p>
-<p>This function is simply a numerical version of the fact that</p>
-<div class="math notranslate nohighlight">
-\[\frac{dN}{d \Delta}(\Delta) = \frac{dN}{dE} (E = E' - \Delta) \]</div>
-<p>in discretized form, preserving the total number and total energy in the spectrum using <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.rebin" title="darkhistory.spec.spectrum.Spectrum.rebin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.rebin()</span></code></a>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -579,6 +573,11 @@
 <p class="first admonition-title">See also</p>
 <p class="last"><a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.rebin" title="darkhistory.spec.spectrum.Spectrum.rebin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.rebin()</span></code></a>, <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.rebin_fast" title="darkhistory.spec.spectrum.Spectrum.rebin_fast"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.rebin_fast()</span></code></a></p>
 </div>
+<p class="rubric">Notes</p>
+<p>This function is simply a numerical version of the fact that</p>
+<div class="math notranslate nohighlight">
+\[\frac{dN}{d \Delta}(\Delta) = \frac{dN}{dE} (E = E' - \Delta) \]</div>
+<p>in discretized form, preserving the total number and total energy in the spectrum using <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.rebin" title="darkhistory.spec.spectrum.Spectrum.rebin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.rebin()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="method">
@@ -724,10 +723,12 @@ speed up the computation.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
-<dd><p class="first last">The type of bounds to use. Bound values do not have to be within [0:length] for ‘bin’ or within the abscissa for ‘eng’. None should only be used when computing the total particle number in the spectrum. For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
+<dd><p class="first last">The type of bounds to use. Bound values do not have to be within [0:length] for ‘bin’ or within the abscissa for ‘eng’. None should only be used when computing the total particle number in the spectrum.</p>
 </dd>
 <dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">(N,) ndarray, optional</span></dt>
-<dd><p class="first last">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are None, then the total number of particles in the spectrum is computed.</p>
+<dd><p class="first">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are None, then the total number of particles in the spectrum is computed.</p>
+<p>For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
+<p class="last">These boundaries need not be integer values for ‘bin’: specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.</p>
 </dd>
 </dl>
 </td>
@@ -752,7 +753,15 @@ speed up the computation.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">N</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">()</span>
-<span class="go">10</span>
+<span class="go">10.0</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="go">array([5.])</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
+<span class="go">array([8.])</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -768,10 +777,12 @@ speed up the computation.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
-<dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:length] for ‘bin’ or within the abscissa for ‘eng’. None should only be used to obtain the total energy. With ‘bin’, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. With ‘eng’, bounds are specified by energy values.</p>
+<dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:length] for ‘bin’ or within the abscissa for ‘eng’. None should only be used to obtain the total energy.</p>
 </dd>
 <dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">(N,) ndarray, optional</span></dt>
-<dd><p class="first last">An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.</p>
+<dd><p class="first">An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.</p>
+<p>For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
+<p class="last">These boundaries need not be integer values for ‘bin’: specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.</p>
 </dd>
 </dl>
 </td>
@@ -791,6 +802,22 @@ speed up the computation.</p>
 </div>
 <p class="rubric">Notes</p>
 <p>To exclude the underflow bin, call the function as <code class="docutils literal notranslate"><span class="pre">toteng(bound_type='bin')</span></code>.</p>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">eng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">N</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">()</span>
+<span class="go">4321.0</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="go">array([320.])</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
+<span class="go">array([4310.])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>
