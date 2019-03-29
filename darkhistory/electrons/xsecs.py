@@ -3,7 +3,6 @@
 import numpy
 import sys
 import darkhistory.physics as physics
-from astropy.io import fits
 from scipy.interpolate import interp1d
 import math
 import scipy.constants as p
