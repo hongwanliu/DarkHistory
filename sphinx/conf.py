@@ -17,6 +17,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import pytest
+
+pytest.skip("Skipping config tests.", allow_module_level=True)
+
+
 import os
 import sys
 # import sphinx_rtd_theme

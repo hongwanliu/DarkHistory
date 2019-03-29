@@ -2,6 +2,10 @@
 
 # """
 
+import pytest
+
+pytest.skip("Skipping tf_data tests.", allow_module_level=True)
+
 # import pickle
 
 # from config import data_path

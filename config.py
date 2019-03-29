@@ -1,6 +1,12 @@
 """ Configuration and defaults.
 
 """
+
+import pytest
+
+pytest.skip("Skipping config tests.", allow_module_level=True)
+
+
 import os
 import numpy as np
 import json
