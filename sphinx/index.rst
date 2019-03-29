@@ -6,7 +6,7 @@
 DarkHistory
 #######################################
 
-Welcome to the DarkHistory page! Here, users will find installation instructions and the detailed documentation of the code. 
+Welcome to the DarkHistory page! Here, users will find installation instructions and detailed documentation of the code. 
 
 .. contents:: Table of Contents
     :depth: 2
@@ -31,12 +31,12 @@ Due to these improvements, DarkHistory allows for rapid scans over many differen
 Installation
 =======================================
 
-There are two parts to Darkhistory: the code stored as a `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_, and the data files. 
+There are two parts to DarkHistory: the code stored as a `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_, and the data files. 
 
 Code
 -------------------
 
-The code can be downloaded as a ``.zip`` file from the `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_ page, or a local version can be cloned using ``git``. 
+The code can be downloaded as a ``.zip`` file from the `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_ page, or a local version of the repository can be cloned using ``git``. 
 
 Data Files
 --------------------
@@ -54,7 +54,7 @@ DarkHistory is written in Python 3, and uses the following Python packages:
 * `Jupyter <https://jupyter.org/>`_
 * `tqdm <https://github.com/tqdm/tqdm>`_
 
-We recommend users download the `Anaconda Distribution <https://www.anaconda.com/distribution/>`_, which includes most of these packages except for tqdm. Anaconda also comes with `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install tqdm, users can simply do
+We recommend users download the `Anaconda Distribution <https://www.anaconda.com/distribution/>`_, which includes most of these packages, except for tqdm. Anaconda also comes with `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install tqdm, users can simply do
 
 .. sourcecode:: bash
 
