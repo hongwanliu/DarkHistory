@@ -196,6 +196,7 @@
 <dt id="darkhistory.spec.spectrum.Spectrum.__add__">
 <code class="descname">__add__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.__add__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds two <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> instances together, or an array to the spectrum. The <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object is on the left.</p>
+<p>The returned <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> will have its underflow reset to zero if other is not a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -222,7 +223,6 @@
 </div>
 <p class="rubric">Notes</p>
 <p>This special function, together with <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.__radd__" title="darkhistory.spec.spectrum.Spectrum.__radd__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.__radd__()</span></code></a>, allows the use of the symbol <code class="docutils literal notranslate"><span class="pre">+</span></code> to add <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> objects together.</p>
-<p>The returned <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> will have its underflow reset to zero if other is not a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 </dd></dl>
 
 <dl class="method">
@@ -234,7 +234,7 @@
 <dl class="method">
 <dt id="darkhistory.spec.spectrum.Spectrum.__mul__">
 <code class="descname">__mul__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.__mul__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes the product of the spectrum with an array or number.</p>
+<dd><p>Takes the product of the spectrum with a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object, array or number.</p>
 <p>The <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object is on the left.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -262,7 +262,7 @@
 </div>
 <p class="rubric">Notes</p>
 <p>This special function, together with <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.__rmul__" title="darkhistory.spec.spectrum.Spectrum.__rmul__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.__rmul__()</span></code></a>, allows the use of the symbol <code class="docutils literal notranslate"><span class="pre">*</span></code> to multiply <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> objects or an array and <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a>.</p>
-<p>The returned <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object has underflow set to zero.</p>
+<p>The returned <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object has underflow set to zero if <em>other</em> is not a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 </dd></dl>
 
 <dl class="method">
@@ -290,6 +290,7 @@
 <dt id="darkhistory.spec.spectrum.Spectrum.__radd__">
 <code class="descname">__radd__</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectrum.Spectrum.__radd__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds two <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> instances together, or an array to the spectrum. The <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object is on the right.</p>
+<p>The returned <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> will have its underflow reset to zero if other is not a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -316,7 +317,6 @@
 </div>
 <p class="rubric">Notes</p>
 <p>This special function, together with <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum.__add__" title="darkhistory.spec.spectrum.Spectrum.__add__"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectrum.__add__()</span></code></a>, allows the use of the symbol <code class="docutils literal notranslate"><span class="pre">+</span></code> to add <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> objects together.</p>
-<p>The returned <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> will have its underflow reset to zero if other is not a <a class="reference internal" href="#darkhistory.spec.spectrum.Spectrum" title="darkhistory.spec.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a> object.</p>
 </dd></dl>
 
 <dl class="method">
@@ -661,6 +661,16 @@ N_\text{upp} &amp;= \frac{E - E_\text{low}}{E_\text{upp} - E_\text{low}} N\end{s
 </tr>
 </tbody>
 </table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">eng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="n">rs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">redshift</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">N</span><span class="p">)</span>
+<span class="go">[1. 1. 1. 0.]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">underflow</span><span class="p">[</span><span class="s1">&#39;N&#39;</span><span class="p">])</span>
+<span class="go">1.0</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -725,7 +735,7 @@ speed up the computation.</p>
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
 <dd><p class="first last">The type of bounds to use. Bound values do not have to be within [0:length] for ‘bin’ or within the abscissa for ‘eng’. None should only be used when computing the total particle number in the spectrum.</p>
 </dd>
-<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">(N,) ndarray, optional</span></dt>
+<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray of length N, optional</span></dt>
 <dd><p class="first">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are None, then the total number of particles in the spectrum is computed.</p>
 <p>For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
 <p class="last">These boundaries need not be integer values for ‘bin’: specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.</p>
@@ -734,7 +744,7 @@ speed up the computation.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>ndarray with shape (N-1, ) or float</strong></dt>
+<dt><strong>ndarray of length N-1, or float</strong></dt>
 <dd><p class="first last">Total number of particles in the spectrum, or between the specified boundaries.</p>
 </dd>
 </dl>
@@ -754,13 +764,9 @@ speed up the computation.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">()</span>
 <span class="go">10.0</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
 <span class="go">array([5.])</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
 <span class="go">array([8.])</span>
 </pre></div>
 </div>
@@ -779,7 +785,7 @@ speed up the computation.</p>
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
 <dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:length] for ‘bin’ or within the abscissa for ‘eng’. None should only be used to obtain the total energy.</p>
 </dd>
-<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">(N,) ndarray, optional</span></dt>
+<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray of length N, optional</span></dt>
 <dd><p class="first">An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.</p>
 <p>For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
 <p class="last">These boundaries need not be integer values for ‘bin’: specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.</p>
@@ -788,7 +794,7 @@ speed up the computation.</p>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>ndarray of shape (N-1, ) or float</strong></dt>
+<dt><strong>ndarray of length N-1, or float</strong></dt>
 <dd><p class="first last">Total energy in the spectrum or between the specified boundaries.</p>
 </dd>
 </dl>
@@ -808,13 +814,9 @@ speed up the computation.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span> <span class="o">=</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">()</span>
 <span class="go">4321.0</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
 <span class="go">array([320.])</span>
-</pre></div>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
 <span class="go">array([4310.])</span>
 </pre></div>
 </div>

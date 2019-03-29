@@ -298,7 +298,7 @@ class Spectrum:
         return -1*self
 
     def __mul__(self,other):
-        """Takes the product of the spectrum with an array or number. 
+        """Takes the product of the spectrum with a :class:`Spectrum` object, array or number. 
 
         The :class:`Spectrum` object is on the left.
 
@@ -316,7 +316,7 @@ class Spectrum:
         -----
         This special function, together with :meth:`Spectrum.__rmul__`, allows the use of the symbol ``*`` to multiply :class:`Spectrum` objects or an array and :class:`Spectrum`.
 
-        The returned :class:`Spectrum` object has underflow set to zero.
+        The returned :class:`Spectrum` object has underflow set to zero if *other* is not a :class:`Spectrum` object.
 
         See Also
         --------
@@ -527,7 +527,7 @@ class Spectrum:
         bound_type : {'bin', 'eng', None}
             The type of bounds to use. Bound values do not have to be within [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used when computing the total particle number in the spectrum. 
 
-        bound_arr : (N,) ndarray, optional
+        bound_arr : ndarray of length N, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are None, then the total number of particles in the spectrum is computed.
 
             For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
@@ -536,7 +536,7 @@ class Spectrum:
 
         Returns
         -------
-        ndarray with shape (N-1, ) or float
+        ndarray of length N-1, or float
             Total number of particles in the spectrum, or between the specified boundaries.
 
         Examples
@@ -546,10 +546,8 @@ class Spectrum:
         >>> spec = Spectrum(eng, N, spec_type='N')
         >>> spec.totN()
         10.0
-
         >>> spec.totN('bin', np.array([1, 3]))
         array([5.])
-
         >>> spec.totN('eng', np.array([10, 1e4]))
         array([8.])
 
@@ -652,7 +650,7 @@ class Spectrum:
         bound_type : {'bin', 'eng', None}
             The type of bounds to use. Bound values do not have to be within the [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used to obtain the total energy. 
 
-        bound_arr : (N,) ndarray, optional
+        bound_arr : ndarray of length N, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
 
             For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
@@ -662,7 +660,7 @@ class Spectrum:
 
         Returns
         -------
-        ndarray of shape (N-1, ) or float
+        ndarray of length N-1, or float
             Total energy in the spectrum or between the specified boundaries.
 
         Examples
@@ -672,10 +670,8 @@ class Spectrum:
         >>> spec = Spectrum(eng, N, spec_type='N')
         >>> spec.toteng()
         4321.0
-
         >>> spec.toteng('bin', np.array([1, 3]))
         array([320.])
-
         >>> spec.toteng('eng', np.array([10, 1e4]))
         array([4310.])
 
@@ -778,7 +774,7 @@ class Spectrum:
         None
         """
         if new_eng.size != self.eng.size:
-            return TypeError("The new abscissa must have the same length as the old one.")
+            raise TypeError("The new abscissa must have the same length as the old one.")
         if not all(np.diff(new_eng) > 0):
             raise TypeError("abscissa must be ordered in increasing energy.")
 
@@ -836,9 +832,14 @@ class Spectrum:
 
         # Add an additional bin at the lower end of out_eng so that underflow can be treated easily.
 
-        first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
-        new_eng = np.insert(out_eng, 0, first_bin_eng)
+        # Forces out_eng to be float, avoids strange problems with np.insert
+        # below if out_eng is of type int. 
 
+        out_eng = out_eng.astype(float)
+
+        first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
+
+        new_eng = np.insert(out_eng, 0, first_bin_eng)
 
         # Find the relative bin indices for self.eng wrt new_eng. The first bin in new_eng has bin index -1.
 
@@ -1141,6 +1142,16 @@ class Spectrum:
         ----------
         new_rs : float
             The new redshift (1+z) to redshift to.
+
+        Examples
+        --------
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec = Spectrum(eng, np.ones(4), rs=100, spec_type='N')
+        >>> spec.redshift(10)
+        >>> print(spec.N)
+        [1. 1. 1. 0.]
+        >>> print(spec.underflow['N'])
+        1.0
 
         """
 

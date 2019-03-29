@@ -1,6 +1,10 @@
 [
   "darkhistory/numpy_groupies/aggregate.py::DarkHistory.darkhistory.numpy_groupies.aggregate._cumsum",
   "darkhistory/spec/spectra.py::DarkHistory.darkhistory.spec.spectra.Spectra",
+  "darkhistory/spec/spectra.py::DarkHistory.darkhistory.spec.spectra.Spectra.redshift",
+  "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.redshift",
   "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.totN",
-  "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.toteng"
+  "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.toteng",
+  "tests/test_spectrum.py::test_totN",
+  "tests/test_spectrum.py::test_redshift"
 ]

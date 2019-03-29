@@ -24,28 +24,28 @@ class Spectra:
 
     Parameters
     ----------
-    spec_arr : list of Spectrum or ndarray
+    spec_arr : list of Spectrum or ndarray of length N
         List of :class:`Spectrum` objects or arrays to be stored together.
     spec_type : {'N', 'dNdE'}, optional
         The type of entries. Default is 'dNdE'.
-    in_eng : ndarray
-        Array of injection energies corresponding to each spectrum.
-    eng : ndarray
-        Array of energy abscissa of each spectrum.
-    rs : ndarray
-        Array of redshifts corresponding to each spectrum.
+    eng : ndarray of length M, optional
+        Array of energy abscissa of each spectrum. Specify only if *spec_arr* is an ndarray. 
+    in_eng : ndarray of length N, optional
+        Array of injection energies corresponding to each spectrum, if relevant.
+    rs : ndarray of length N, optional
+        Array of redshifts corresponding to each spectrum, if relevant.
     rebin_eng : ndarray, optional
         New abscissa to rebin all of the spectra into, if specified.
 
     Attributes
     ----------
-    in_eng : ndarray
-        Array of injection energies corresponding to each spectrum.
-    eng : ndarray
+    eng : ndarray of length M
         Array of energy abscissa of each spectrum.
-    rs : ndarray
+    in_eng : ndarray of length N
+        Array of injection energies corresponding to each spectrum.
+    rs : ndarray of length N
         Array of redshifts corresponding to each spectrum.
-    grid_vals : ndarray
+    grid_vals : ndarray of shape (N,M)
         2D array of the raw data, indexed by either 
         (rs, eng) or (in_eng, eng). 
     spec_type : {'N', 'dNdE'}
@@ -669,7 +669,27 @@ class Spectra:
         -------
         None
 
+        Examples
+        --------
+        >>> from darkhistory.spec.spectrum import Spectrum
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec_arr = [Spectrum(eng, np.ones(4)*i, rs=100, spec_type='N') for i in np.arange(4)]
+        >>> test_spectra = Spectra(spec_arr)
+        >>> test_spectra.redshift(np.array([0.01, 0.1, 1, 10]))
+        >>> print(test_spectra.grid_vals)
+        [[0. 0. 0. 0.]
+         [1. 0. 0. 0.]
+         [2. 2. 0. 0.]
+         [3. 3. 3. 0.]]
+        >>> print(test_spectra.N_underflow)
+        [0. 3. 4. 3.]
+        >>> print(test_spectra.eng_underflow)
+        [0.    0.111 0.22  0.3  ]
+
         """
+
+        if rs_arr.size != self.rs.size:
+            raise TypeError('rs_arr must have the same size as the number of Spectrum objects stored.')
 
         for i,(val, rs, new_rs, in_eng, N_uf, eng_uf) in enumerate(
             zip(
@@ -677,15 +697,17 @@ class Spectra:
                 self.N_underflow, self.eng_underflow
             )
         ):
+
             spec = Spectrum(
-                self.eng, val,
+                self.eng, val.N,
                 rs=rs, in_eng=in_eng,
-                spec_type=self.spec_type
+                spec_type='N'
             )
+
             spec.redshift(new_rs)
             self._grid_vals[i] = spec._data
-            self.N_underflow[i] += spec.underflow['N']
-            self.eng_underflow[i] += spec.underflow['eng']
+            self._N_underflow[i] += spec.underflow['N']
+            self._eng_underflow[i] += spec.underflow['eng']
 
         self._rs = rs_arr
 
@@ -982,6 +1004,7 @@ class Spectra:
             )
         else:
             raise TypeError('weight must be an ndarray or Spectrum.')
+
 
     def rebin(self, out_eng):
         """ Re-bins all `Spectrum` objects according to a new abscissa.
