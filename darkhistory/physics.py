@@ -5,6 +5,7 @@ Throughout DarkHistory, we choose cm, s and eV as our system of units. Masses an
 """
 
 import pickle
+import sys
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -328,12 +329,13 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         return rho_DM*rs**3/lifetime
 
 # Create interpolation with structure formation data. 
-struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
+if not 'pytest' in sys.modules:
+    struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
-log_struct_interp = interp1d(
-    np.log(struct_data[:,0]), np.log(struct_data[:,1]),
-    bounds_error=False, fill_value=(np.nan, 0.)
-)
+    log_struct_interp = interp1d(
+        np.log(struct_data[:,0]), np.log(struct_data[:,1]),
+        bounds_error=False, fill_value=(np.nan, 0.)
+    )
 
 def struct_boost_func(model='einasto_with_subs', model_params=None):
     """Structure formation boost factor 1+B(z).
@@ -835,11 +837,13 @@ def d_xe_Saha_dz(rs, species):
     return numer/denom
 
 # Standard ionization and thermal histories
-soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
-_xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
-_xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
-_Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
+if not 'pytest' in sys.modules:
+    soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
+
+    _xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
+    _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
+    _Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
 
 def xHII_std(rs):
     """Baseline nHII/nH value.

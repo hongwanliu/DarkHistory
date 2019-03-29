@@ -1,3 +1,4 @@
 [
-  "darkhistory/numpy_groupies/aggregate.py::DarkHistory.darkhistory.numpy_groupies.aggregate._cumsum"
+  "darkhistory/numpy_groupies/aggregate.py::DarkHistory.darkhistory.numpy_groupies.aggregate._cumsum",
+  "darkhistory/spec/spectrum.py::DarkHistory.darkhistory.spec.spectrum.Spectrum.totN"
 ]
