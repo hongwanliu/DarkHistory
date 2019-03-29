@@ -459,7 +459,7 @@ class Spectra:
         -----
         This special function, together with :meth:`Spectra.__rmul__`, allows the use of the symbol ``*`` to multiply objects with a `Spectra` object.
 
-        The returned :class:`Spectra` object as underflow set to zero if *other* is not a :class:`Spectra` object.
+        The returned :class:`Spectra` object as underflow set to zero.
 
         See Also
         --------
@@ -509,13 +509,8 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
-            out_spectra._N_underflow = (
-                self.N_underflow + other.N_underflow
-            )
-            out_spectra._eng_underflow = (
-                self.eng_underflow + other.N_underflow
-            )
-
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
             return out_spectra
 
     def __rmul__(self, other):
@@ -537,7 +532,7 @@ class Spectra:
         -----
         This special function, together with :meth:`Spectra.__mul__`, allows the use of the symbol ``*`` to multiply objects with a `Spectra` object.
 
-        The returned :class:`Spectra` object as underflow set to zero if *other* is not a :class:`Spectra` object.
+        The returned :class:`Spectra` object as underflow set to zero.
 
         See Also
         --------
@@ -577,17 +572,13 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
-            out_spectra._N_underflow = (
-                self.N_underflow + other.N_underflow
-            )
-            out_spectra._eng_underflow = (
-                self.eng_underflow + other.eng_underflow
-            )
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
     def __truediv__(self, other):
-        """Divides Spectra by another object.
+        """Divides the spectra by another object.
 
         Parameters
         ----------
@@ -596,14 +587,15 @@ class Spectra:
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the divided spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects.
+        This special function, together with :meth:`Spectra.__rtruediv__`, allows the use fo the symbol ``/`` to divide :class:`Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__rtruediv__
+        :meth:`Spectra.__rtruediv__`
         """
         if np.issubclass_(type(other), Spectra):
             inv_spectra = Spectra([])
@@ -612,12 +604,14 @@ class Spectra:
             inv_spectra._grid_vals = 1/other.grid_vals
             inv_spectra._rs = other.rs
             inv_spectra._spec_type = other.spec_type
+            inv_spectra._N_underflow = 0
+            inv_spectra._eng_underflow = 0
             return self * inv_spectra
         else:
             return self * (1/other)
 
     def __rtruediv__(self, other):
-        """Divides Spectra by another object.
+        """Divides an object by the spectra.
 
         Parameters
         ----------
@@ -626,14 +620,15 @@ class Spectra:
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the divided spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects.
+        This special function, together with :meth:`Spectra.__truediv__`, allows the use fo the symbol ``/`` to divide :class:`Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__truediv__
+        :meth:`Spectra.__truediv__`
         """
         inv_spectra = Spectra([])
         inv_spectra._eng = self.eng
@@ -641,6 +636,8 @@ class Spectra:
         inv_spectra._grid_vals = 1/self.grid_vals
         inv_spectra._spec_type = self.spec_type
         inv_spectra._rs = self.rs
+        inv_spectra._N_underflow = 0
+        inv_spectra._eng_underflow = 0
 
         return other * inv_spectra
 
@@ -666,7 +663,7 @@ class Spectra:
         Parameters
         ----------
         rs_arr : ndarray
-            Array of redshifts to redshift each spectrum to. 
+            Array of redshifts (1+z) to redshift each spectrum to. 
 
         Returns
         -------
