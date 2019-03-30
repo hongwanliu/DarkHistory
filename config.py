@@ -17,7 +17,7 @@ import pickle
 
 # # Location of all data files. 
 
-if 'pytest' not in sys.modules and 'sphinx' not in sys.modules:
+if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
 
     data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
     #data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'

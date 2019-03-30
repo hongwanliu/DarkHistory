@@ -25,7 +25,7 @@ values_file_name = (
     data_path+'/dlNdlxIEW_values_table.txt'
 )
 
-if 'pytest' not in sys.modules and 'sphinx' not in sys.modules: 
+if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules: 
 
     with open(coords_file_name) as data_file:    
         coords_data = np.array(json.load(data_file))
@@ -215,7 +215,7 @@ mass_threshold = {
 # Compile a dictionary of all of the interpolators.
 dlNdlxIEW_interp = {'elec':{}, 'phot':{}}
 
-if 'pytest' not in sys.modules and 'sphinx' not in sys.modules: 
+if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules: 
     for pri in chan_list:
         dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(pri, 'elec')
         dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(pri, 'phot')

@@ -878,15 +878,15 @@ class Spectra:
         >>> spec_arr = [Spectrum(eng, np.arange(4) + 4*i, rs=100, spec_type='N') for i in np.arange(4)]
         >>> test_spectra = Spectra(spec_arr)
         >>> test_spectra.toteng()
-        array([ 6.,  22.,  38.,  54.])
+        array([ 3210.,  7654.,  12098.,  16542.])
         >>> test_spectra.toteng('bin', np.array([1, 3]))
-        array([[210., 650., 1090., 1530.]])
+        array([[ 210., 650., 1090., 1530.]])
         >>> test_spectra.toteng('eng', np.array([10, 1e4]))
-        array([[3205. , 7625., 12045. , 16465.]])
+        array([[ 3205., 7625., 12045., 16465.]])
 
         See Also
         ---------
-        :meth:`Spectra.toteng`
+        :meth:`Spectra.totN`
 
         """
         log_bin_width = get_log_bin_width(self.eng)

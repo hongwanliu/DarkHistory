@@ -10,7 +10,7 @@ from config import data_path
 # Load transfer functions for high-energy photons, low-energy photons, 
 # low-energy electrons, high-energy deposition, and CMB upscattered energy.
 
-if 'pytest' not in sys.modules and 'sphinx' not in sys.modules:
+if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
 
     print('here?')
 
