@@ -47,7 +47,8 @@ def get_history(
     rs_vec, init_cond=None, f_H_ion=None, f_H_exc=None, f_heating=None,
     dm_injection_rate=None, reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, helium_TLA=False, f_He_ion=None, mxstep = 0
+    xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
+    mxstep = 1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -80,7 +81,9 @@ def get_history(
     f_He_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant if float. If None, treated as zero.
     mxstep : int, optional
-        Maximum number of (internally defined) steps allowed for each integration point in t. See scipy.integrate.odeint
+        The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint* for more information.
+    rtol : float, optional
+        The relative error of the solution. See *scipy.integrate.odeint* for more information.
 
     Returns
     -------
@@ -570,7 +573,7 @@ def get_history(
         # No reionization model implemented.
         soln = odeint(
                 tla_before_reion, _init_cond, rs_vec, 
-                mxstep = mxstep, tfirst=True, rtol=1e-4
+                mxstep = mxstep, tfirst=True, rtol=rtol
             )
         # print(init_cond)
         # print(rs_vec)
@@ -587,7 +590,7 @@ def get_history(
         # first argument.
         soln_no_reion = odeint(
             tla_before_reion, _init_cond, rs_vec, 
-            mxstep = mxstep, tfirst=True, rtol=1e-4
+            mxstep = mxstep, tfirst=True, rtol=rtol
         )
         # soln_no_reion = solve_ivp(
         #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
@@ -651,7 +654,7 @@ def get_history(
                 init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
                 soln_with_reion = odeint(
                     tla_reion_fixed_xe, init_cond_fixed_xe, 
-                    rs_above_std_xe_vec, mxstep=mxstep, rtol=1e-4, 
+                    rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol, 
                     tfirst=True
                 )
                 # Remove the initial step, save to soln.
@@ -695,7 +698,7 @@ def get_history(
             rs_before_reion_vec = np.append(rs_before_reion_vec, reion_rs)
             soln_before_reion = odeint(
                 tla_before_reion, _init_cond, 
-                rs_before_reion_vec, mxstep = mxstep, tfirst=True, rtol=1e-4
+                rs_before_reion_vec, mxstep = mxstep, tfirst=True, rtol=rtol
             )
             # soln_before_reion = solve_ivp(
             #     tla_before_reion, 
@@ -713,7 +716,7 @@ def get_history(
             ]
             soln_reion = odeint(
                 tla_reion, init_cond_reion, 
-                rs_reion_vec, mxstep = mxstep, tfirst=True, rtol=1e-4
+                rs_reion_vec, mxstep = mxstep, tfirst=True, rtol=rtol
             )
             # soln_reion = solve_ivp(
             #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),

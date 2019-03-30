@@ -4,8 +4,10 @@
 import numpy as np
 from numpy.linalg import matrix_power
 
-from config import data_path, photeng, eleceng
-from tf_data import *
+# from config import data_path, photeng, eleceng
+# from tf_data import *
+
+from config import load_data
 
 
 import darkhistory.physics as phys
@@ -34,7 +36,7 @@ def evolve(
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
-    compute_fs_method='old',
+    compute_fs_method='old', mxstep=1000, rtol=1e-4,
     use_tqdm=True
 ):
     """
@@ -86,7 +88,11 @@ def evolve(
     coarsen_factor : int
         Coarsening to apply to the transfer function matrix.
     backreaction : bool
-        If `False`, uses the baseline TLA solution to calculate f_c(z). 
+        If False, uses the baseline TLA solution to calculate f_c(z). Default is True.
+    mxstep : int, optional
+        The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint* for more information.
+    rtol : float, optional
+        The relative error of the solution. See *scipy.integrate.odeint* for more information.
     use_tqdm : bool, optional
         Uses tqdm if true.
     """
@@ -101,6 +107,26 @@ def evolve(
     #####################################
     # Initialization for DM_process     #
     #####################################
+
+    # Load data.
+    binning = load_data('binning')
+    photeng = binning['phot']
+    eleceng = binning['elec']
+
+    dep_tf_data = load_data('dep_tf')
+
+    highengphot_tf_interp = dep_tf_data['highengphot']
+    lowengphot_tf_interp  = dep_tf_data['lowengphot']
+    lowengelec_tf_interp  = dep_tf_data['lowengelec']
+    highengdep_interp     = dep_tf_data['highengdep']
+    CMB_engloss_interp    = dep_tf_data['CMB_engloss']
+
+    ics_tf_data = load_data('ics_tf')
+
+    ics_thomson_ref_tf  = ics_tf_data['thomson']
+    ics_rel_ref_tf      = ics_tf_data['rel']
+    engloss_ref_tf      = ics_tf_data['engloss']
+
 
     # Handle the case where a DM process is specified. 
     if DM_process == 'swave':
@@ -502,7 +528,7 @@ def evolve(
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion
+            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
 
         #####################################################################
@@ -718,6 +744,16 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
         electron, upscattered CMB photon energy and high-energy deposition
         transfer functions. 
     """
+
+    # Load data.
+
+    dep_tf_data = load_data('dep_tf')
+
+    highengphot_tf_interp = dep_tf_data['highengphot']
+    lowengphot_tf_interp  = dep_tf_data['lowengphot']
+    lowengelec_tf_interp  = dep_tf_data['lowengelec']
+    highengdep_interp     = dep_tf_data['highengdep']
+    CMB_engloss_interp    = dep_tf_data['CMB_engloss']
 
     if coarsen_factor > 1:
         # rs_to_interpolate = rs

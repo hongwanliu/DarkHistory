@@ -246,6 +246,8 @@ def load_data(data_type):
                 'CMB_engloss' : CMB_engloss_interp
             }
 
+        return glob_dep_tf_data
+
     elif data_type == 'ics_tf':
 
         if glob_ics_tf_data is None:
