@@ -149,10 +149,10 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
                 log10x
             )
     # Get the interpolator. 
-    dlNdlxIEW_interp = load_data('pppc', primary=pri)
+    dlNdlxIEW_interp = load_data('pppc')
 
     # Get the spectrum from the interpolator.
-    dN_dlog10x = 10**dlNdlxIEW_interp[sec].get_val(_mDM/1e9, log10x)
+    dN_dlog10x = 10**dlNdlxIEW_interp[sec][pri].get_val(_mDM/1e9, log10x)
 
     # Recall that dN/dE = dN/dlog10x * dlog10x/dE
     x = 10**log10x

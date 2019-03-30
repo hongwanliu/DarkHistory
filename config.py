@@ -15,6 +15,14 @@ from scipy.interpolate import pchip_interpolate
 
 data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
+# Global variables for data.
+glob_binning_data = None
+glob_dep_tf_data  = None
+glob_ics_tf_data  = None
+glob_struct_data  = None
+glob_hist_data    = None
+glob_pppc_data    = None
+
 class PchipInterpolator2D: 
 
     """ 2D interpolation over PPPC4DMID raw data, using PCHIP method.
@@ -144,7 +152,7 @@ class PchipInterpolator2D:
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
 
-def load_data(data_type, primary=None):
+def load_data(data_type):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -156,10 +164,7 @@ def load_data(data_type, primary=None):
         * *'ics_tf'*: Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
         * *'struct'*: Structure formation boosts; 
         * *'hist'*: Baseline ionization and temperature histories, and
-        * *'pppc'*: Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*. 
-
-    primary : str, optional
-        The valid options are *{'e_L','e_R', 'e', 'mu_L', 'mu_R', 'mu', 'tau_L', 'tau_R', 'tau', 'q',  'c',  'b', 't', 'W_L', 'W_T', 'W', 'Z_L', 'Z_T', 'Z', 'g',  'gamma', 'h', 'nu_e', 'nu_mu', 'nu_tau', 'VV_to_4e', 'VV_to_4mu', 'VV_to_4tau'}*. See :func:`.get_pppc_spec` for more details.
+        * *'pppc'*: Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
 
     Returns
@@ -173,154 +178,189 @@ def load_data(data_type, primary=None):
 
     """
 
-    path = data_path
+    global data_path
+    
+    global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
+    global glob_struct_data,  glob_hist_data, glob_pppc_data
 
-    if path == '' or not os.path.isdir(path):
+    if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
-        path = input('Enter the data directory, e.g. /Users/foo/bar: ')
+        data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
 
     if data_type == 'binning':
 
-        binning = np.loadtxt(open(path+'/default_binning.p', 'rb'))
+        binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
 
-        return {
-            'phot' : binning[0],
-            'elec' : binning[1]
-        }
+        if glob_binning_data is None:
+
+            glob_binning_data =  {
+                'phot' : binning[0],
+                'elec' : binning[1]
+            }
+
+        return glob_binning_data
 
     elif data_type == 'dep_tf':
 
-        print('****** Loading transfer functions... ******')
+        if glob_dep_tf_data is None:
 
-        print('    for propagating photons... ', end =' ')
-        highengphot_tf_interp = pickle.load(
-            open(path+'/highengphot_tf_interp.raw', 'rb')
-        )
-        print(' Done!')
+            print('****** Loading transfer functions... ******')
 
-        print('    for low-energy photons... ', end=' ')
-        lowengphot_tf_interp  = pickle.load(
-            open(path+'/lowengphot_tf_interp.raw', 'rb')
-        )
-        print('Done!')
+            print('    for propagating photons... ', end =' ')
+            highengphot_tf_interp = pickle.load(
+                open(data_path+'/highengphot_tf_interp.raw', 'rb')
+            )
+            print(' Done!')
 
-        print('    for low-energy electrons... ', end=' ')
-        lowengelec_tf_interp  = pickle.load(
-            open(path+"/lowengelec_tf_interp.raw", "rb")
-        )
-        print('Done!')
+            print('    for low-energy photons... ', end=' ')
+            lowengphot_tf_interp  = pickle.load(
+                open(data_path+'/lowengphot_tf_interp.raw', 'rb')
+            )
+            print('Done!')
 
-        print('    for high-energy deposition... ', end=' ')
-        highengdep_interp     = pickle.load(
-            open(path+"/highengdep_interp.raw", "rb")
-        )
-        print('Done!')
+            print('    for low-energy electrons... ', end=' ')
+            lowengelec_tf_interp  = pickle.load(
+                open(data_path+"/lowengelec_tf_interp.raw", "rb")
+            )
+            print('Done!')
 
-        print('    for total upscattered CMB energy rate... ', end=' ')
-        CMB_engloss_interp    = pickle.load(
-            open(path+"/CMB_engloss_interp.raw", "rb")
-        )
-        print('Done!')
+            print('    for high-energy deposition... ', end=' ')
+            highengdep_interp     = pickle.load(
+                open(data_path+"/highengdep_interp.raw", "rb")
+            )
+            print('Done!')
 
-        print('****** Loading complete! ******')
+            print('    for total upscattered CMB energy rate... ', end=' ')
+            CMB_engloss_interp    = pickle.load(
+                open(data_path+"/CMB_engloss_interp.raw", "rb")
+            )
+            print('Done!')
 
-        return {
-            'highengphot' : highengphot_tf_interp,
-            'lowengphot'  : lowengphot_tf_interp,
-            'lowengelec'  : lowengelec_tf_interp,
-            'highengdep'  : highengdep_interp,
-            'CMB_engloss' : CMB_engloss_interp
-        }
+            print('****** Loading complete! ******')
+
+            glob_dep_tf_data = {
+                'highengphot' : highengphot_tf_interp,
+                'lowengphot'  : lowengphot_tf_interp,
+                'lowengelec'  : lowengelec_tf_interp,
+                'highengdep'  : highengdep_interp,
+                'CMB_engloss' : CMB_engloss_interp
+            }
 
     elif data_type == 'ics_tf':
 
-        print('****** Loading transfer functions... ******')
+        if glob_ics_tf_data is None:
 
-        print('    for inverse Compton (Thomson)... ', end=' ')
-        ics_thomson_ref_tf = pickle.load(
-            open(path+"/ics_thomson_ref_tf.raw", "rb")
-        )
-        print('Done!')
+            print('****** Loading transfer functions... ******')
 
-        print('    for inverse Compton (relativistic)... ', end=' ')
-        ics_rel_ref_tf     = pickle.load(
-            open(path+"/ics_rel_ref_tf.raw",     "rb")
-        )
-        print('Done!')
+            print('    for inverse Compton (Thomson)... ', end=' ')
+            ics_thomson_ref_tf = pickle.load(
+                open(data_path+"/ics_thomson_ref_tf.raw", "rb")
+            )
+            print('Done!')
 
-        print('    for inverse Compton (energy loss)... ', end=' ')
-        engloss_ref_tf     = pickle.load(
-            open(path+"/engloss_ref_tf.raw",     "rb")
-        )
-        print('Done!')
+            print('    for inverse Compton (relativistic)... ', end=' ')
+            ics_rel_ref_tf     = pickle.load(
+                open(data_path+"/ics_rel_ref_tf.raw",     "rb")
+            )
+            print('Done!')
 
-        print('****** Loading complete! ******')
+            print('    for inverse Compton (energy loss)... ', end=' ')
+            engloss_ref_tf     = pickle.load(
+                open(data_path+"/engloss_ref_tf.raw",     "rb")
+            )
+            print('Done!')
 
-        return {
-            'thomson' : ics_thomson_ref_tf,
-            'rel'     : ics_rel_ref_tf,
-            'engloss' : engloss_ref_tf
-        }
+            print('****** Loading complete! ******')
+
+            glob_ics_tf_data = {
+                'thomson' : ics_thomson_ref_tf,
+                'rel'     : ics_rel_ref_tf,
+                'engloss' : engloss_ref_tf
+            }
+
+        return glob_ics_tf_data
 
     elif data_type == 'struct':
 
-        einasto_subs = np.loadtxt(
-            open(path+'/boost_Einasto_subs.txt', 'rb')
-        )
+        if glob_struct_data is None:
 
-        return {
-            'einasto_subs' : einasto_subs
-        }
+            einasto_subs = np.loadtxt(
+                open(data_path+'/boost_Einasto_subs.txt', 'rb')
+            )
+
+            glob_struct_data = {
+                'einasto_subs' : einasto_subs
+            }
+
+        return glob_struct_data
 
     elif data_type == 'hist':
 
-        soln_baseline = pickle.load(open(path+'/std_soln_He.p', 'rb'))
+        if glob_hist_data is None:
 
-        return {
-            'rs'    : soln_baseline[0,:],
-            'xHII'  : soln_baseline[2,:],
-            'xHeII' : soln_baseline[3,:],
-            'Tm'    : soln_baseline[1,:]
-        }
+            soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
+
+            glob_hist_data = {
+                'rs'    : soln_baseline[0,:],
+                'xHII'  : soln_baseline[2,:],
+                'xHeII' : soln_baseline[3,:],
+                'Tm'    : soln_baseline[1,:]
+            }
+
+        return glob_hist_data
 
     elif data_type == 'pppc':
 
-        coords_file_name = (
-            path+'/dlNdlxIEW_coords_table.txt'
-        )
-        values_file_name = (
-            path+'/dlNdlxIEW_values_table.txt'
-        )
+        if glob_pppc_data is None:
 
-        with open(coords_file_name) as data_file:    
-            coords_data = np.array(json.load(data_file))
-        with open(values_file_name) as data_file:
-            values_data = np.array(json.load(data_file))
+            coords_file_name = (
+                data_path+'/dlNdlxIEW_coords_table.txt'
+            )
+            values_file_name = (
+                data_path+'/dlNdlxIEW_values_table.txt'
+            )
 
-        # coords_data is a (2, 23, 2) array. 
-        # axis 0: stable SM secondaries, {'elec', 'phot'}
-        # axis 1: annihilation primary channel.
-        # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of 
-        # the secondary. 
-        # Each element is a 1D array.
+            with open(coords_file_name) as data_file:    
+                coords_data = np.array(json.load(data_file))
+            with open(values_file_name) as data_file:
+                values_data = np.array(json.load(data_file))
 
-        # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
-        # axis 0: stable SM secondaries, {'elec', 'phot'}
-        # axis 1: annihilation primary channel.
-        # Each element is a 2D array indexed by {mDM in GeV, np.log10(K/mDM)}
-        # as saved in coords_data. 
+            # coords_data is a (2, 23, 2) array. 
+            # axis 0: stable SM secondaries, {'elec', 'phot'}
+            # axis 1: annihilation primary channel.
+            # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of 
+            # the secondary. 
+            # Each element is a 1D array.
 
-        # Dictionary for the interpolators
-        dlNdlxIEW_interp = {}
+            # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
+            # axis 0: stable SM secondaries, {'elec', 'phot'}
+            # axis 1: annihilation primary channel.
+            # Each element is a 2D array indexed by {mDM in GeV, np.log10(K/mDM)}
+            # as saved in coords_data. 
 
-        dlNdlxIEW_interp['elec'] = PchipInterpolator2D(
-            coords_data, values_data, primary, 'elec'
-        )
-        dlNdlxIEW_interp['phot'] = PchipInterpolator2D(
-            coords_data, values_data, primary, 'phot'
-        )
+            # Compile a dictionary of all of the interpolators.
+            dlNdlxIEW_interp = {'elec':{}, 'phot':{}}
 
-        return dlNdlxIEW_interp
+            chan_list = [
+                'e_L','e_R', 'e', 'mu_L', 'mu_R', 'mu', 
+                'tau_L', 'tau_R', 'tau',
+                'q',  'c',  'b', 't',
+                'W_L', 'W_T', 'W', 'Z_L', 'Z_T', 'Z', 'g',  'gamma', 'h',
+                'nu_e', 'nu_mu', 'nu_tau',
+                'VV_to_4e', 'VV_to_4mu', 'VV_to_4tau'
+            ]
+
+            for pri in chan_list:
+                dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(
+                    coords_data, values_data, pri, 'elec'
+                )
+                dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(
+                    coords_data, values_data, pri, 'phot'
+                )
+
+            glob_pppc_data = dlNdlxIEW_interp
+
+        return glob_pppc_data
 
     else:
 
