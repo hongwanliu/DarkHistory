@@ -749,30 +749,50 @@ of the <a class="reference internal" href="#darkhistory.spec.spectra.Spectra" ti
 <dt id="darkhistory.spec.spectra.Spectra.totN">
 <code class="descname">totN</code><span class="sig-paren">(</span><em>bound_type=None</em>, <em>bound_arr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.spectra.Spectra.totN" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the total number of particles in part of the spectra.</p>
-<p>The part of the <cite>Spectrum</cite> objects to find the total number of particles can be specified in two ways, and is specified by <cite>bound_type</cite>. Multiple totals can be obtained through <cite>bound_arr</cite>.</p>
+<p>The part of the spectra can be specified in two ways, and is specified by <em>bound_type</em>. Multiple totals can be obtained through <em>bound_arr</em>.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
-<dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</p>
+<dd><p class="first">The type of bounds to use. Bound values do not have to be within the [0:eng.size] for ‘bin’ or within the abscissa for ‘eng’. <em>None</em> should only be used when computing the total particle number in the spectrum.</p>
+<p class="last">Specifying <code class="docutils literal notranslate"><span class="pre">bound_type='bin'</span></code> without bound_arr returns the number of particles in each bin.</p>
 </dd>
-<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
-<dd><p class="first last">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</p>
+<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray of length N, optional</span></dt>
+<dd><p class="first">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is <em>None</em>, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are <em>None</em>, then the total number of particles in the spectrum is computed.</p>
+<p>For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
+<p class="last">These boundaries need not be integer values for ‘bin’: specifying <code class="docutils literal notranslate"><span class="pre">np.array([0.5,</span> <span class="pre">1.5])</span></code> for example will include half of the first bin and half of the second.</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>ndarray</strong></dt>
-<dd><p class="first last">Total number of particles in the spectrum, indexed by spectrum x specified boundaries.</p>
+<dt><strong>ndarray of shape (self.rs.size, N-1) or length N-1</strong></dt>
+<dd><p class="first last">Total number of particles in the spectra or between the specified boundaries.</p>
 </dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.toteng" title="darkhistory.spec.spectra.Spectra.toteng"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectra.toteng()</span></code></a></p>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">darkhistory.spec.spectrum</span> <span class="k">import</span> <span class="n">Spectrum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec_arr</span> <span class="o">=</span> <span class="p">[</span><span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="n">rs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span> <span class="o">=</span> <span class="n">Spectra</span><span class="p">(</span><span class="n">spec_arr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span><span class="o">.</span><span class="n">totN</span><span class="p">()</span>
+<span class="go">array([ 6.,  22.,  38.,  54.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="go">array([[ 3., 11., 19., 27.]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span><span class="o">.</span><span class="n">totN</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
+<span class="go">array([[ 5.5, 15.5, 25.5, 35.5]])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
@@ -786,23 +806,43 @@ of the <a class="reference internal" href="#darkhistory.spec.spectra.Spectra" ti
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
 <dt><strong>bound_type</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘bin’, ‘eng’, None}</span></dt>
-<dd><p class="first last">The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum. For <cite>‘bin’</cite>, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For <cite>‘eng’</cite>, bounds are specified by energy values.</p>
+<dd><p class="first">The type of bounds to use. Bound values do not have to be within the [0:eng.size] for <cite>‘bin’</cite> or within the abscissa for <cite>‘eng’</cite>. <cite>None</cite> should only be used when computing the total particle number in the spectrum.</p>
+<p class="last">Specifying <code class="docutils literal notranslate"><span class="pre">bound_type=='bin'</span></code> without bound_arr gives the total energy in each bin.</p>
 </dd>
-<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray, optional</span></dt>
-<dd><p class="first last">An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.</p>
+<dt><strong>bound_arr</strong> <span class="classifier-delimiter">:</span> <span class="classifier">ndarray of length N, optional</span></dt>
+<dd><p class="first">An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.</p>
+<p>For ‘bin’, bounds are specified as the bin <em>boundary</em>, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For ‘eng’, bounds are specified by energy values.</p>
+<p class="last">These boundaries need not be integer values for ‘bin’: specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.</p>
 </dd>
 </dl>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>ndarray</strong></dt>
-<dd><p class="first last">Total energy of particles in the spectrum, indexed by spectrum x specified boundaries.</p>
+<dt><strong>ndarray of shape (self.rs.size, N-1) or length N-1</strong></dt>
+<dd><p class="first last">Total number of particles in the spectra or between the specified boundaries.</p>
 </dd>
 </dl>
 </td>
 </tr>
 </tbody>
 </table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#darkhistory.spec.spectra.Spectra.totN" title="darkhistory.spec.spectra.Spectra.totN"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Spectra.totN()</span></code></a></p>
+</div>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">darkhistory.spec.spectrum</span> <span class="k">import</span> <span class="n">Spectrum</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">eng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">spec_arr</span> <span class="o">=</span> <span class="p">[</span><span class="n">Spectrum</span><span class="p">(</span><span class="n">eng</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="mi">4</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="n">rs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">spec_type</span><span class="o">=</span><span class="s1">&#39;N&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span> <span class="o">=</span> <span class="n">Spectra</span><span class="p">(</span><span class="n">spec_arr</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span><span class="o">.</span><span class="n">toteng</span><span class="p">()</span>
+<span class="go">array([ 3210.,  7654.,  12098.,  16542.])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;bin&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]))</span>
+<span class="go">array([[ 210., 650., 1090., 1530.]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">test_spectra</span><span class="o">.</span><span class="n">toteng</span><span class="p">(</span><span class="s1">&#39;eng&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mf">1e4</span><span class="p">]))</span>
+<span class="go">array([[ 3205., 7625., 12045., 16465.]])</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </dd></dl>

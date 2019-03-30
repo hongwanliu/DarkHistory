@@ -29,10 +29,7 @@
     <link rel="shortcut icon" href="../../../../_static/DarkHistory_favicon.png">
     <link rel="index" title="Index" href="../../../../genindex.html" >
     <link rel="search" title="Search" href="../../../../search.html" >
-    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" >
-    <link rel="up" title="darkhistory.spec.pppc" href="../darkhistory.spec.pppc.html" >
-    <link rel="next" title="darkhistory.spec.spectools" href="../darkhistory.spec.spectools.html" >
-    <link rel="prev" title="darkhistory.spec.pppc.get_pppc_spec" href="darkhistory.spec.pppc.get_pppc_spec.html" > 
+    <link rel="top" title="DarkHistory  documentation" href="../../../../index.html" > 
   </head>
   <body>
 
@@ -56,11 +53,7 @@
         <li class="active"><a href="https://github.com/hongwanliu/DarkHistory/tree/development">Repository</a></li>
 	
         <li class="active"><a href="../../../../index.html">DarkHistory  documentation</a></li>
-	
-          <li class="active"><a href="../../../../modules.html" >DarkHistory</a></li>
-          <li class="active"><a href="../../../darkhistory.html" >darkhistory</a></li>
-          <li class="active"><a href="../../darkhistory.spec.html" >darkhistory.spec</a></li>
-          <li class="active"><a href="../darkhistory.spec.pppc.html" accesskey="U">darkhistory.spec.pppc</a></li> 
+	 
     </ul>
               
               
@@ -72,14 +65,6 @@
       <li class="active">
         <a href="../../../../py-modindex.html" title="Python Module Index"
            >modules</a>
-      </li>
-      <li class="active">
-        <a href="../darkhistory.spec.spectools.html" title="darkhistory.spec.spectools"
-           accesskey="N">next</a>
-      </li>
-      <li class="active">
-        <a href="darkhistory.spec.pppc.get_pppc_spec.html" title="darkhistory.spec.pppc.get_pppc_spec"
-           accesskey="P">previous</a>
       </li>
     </ul>
               
@@ -96,74 +81,6 @@
             
   <div class="section" id="darkhistory-spec-pppc-pchipinterpolator2d">
 <h1>darkhistory.spec.pppc.PchipInterpolator2D<a class="headerlink" href="#darkhistory-spec-pppc-pchipinterpolator2d" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
-<dt id="darkhistory.spec.pppc.PchipInterpolator2D">
-<em class="property">class </em><code class="descclassname">darkhistory.spec.pppc.</code><code class="descname">PchipInterpolator2D</code><span class="sig-paren">(</span><em>pri</em>, <em>sec</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.pppc.PchipInterpolator2D" title="Permalink to this definition">¶</a></dt>
-<dd><p>2D interpolation over the raw data, using PCHIP method.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first docutils">
-<dt><strong>pri</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd><p class="first last">Specifies primary annihilation channel. See below for list.</p>
-</dd>
-<dt><strong>sec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘elec’, ‘phot’}</span></dt>
-<dd><p class="first last">Specifies stable SM secondary to get the spectrum of.</p>
-</dd>
-</dl>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Attributes:</th><td class="field-body"><dl class="first last docutils">
-<dt><strong>pri</strong> <span class="classifier-delimiter">:</span> <span class="classifier">string</span></dt>
-<dd><p class="first last">Specifies primary annihilation channel. See below for list.</p>
-</dd>
-<dt><strong>sec</strong> <span class="classifier-delimiter">:</span> <span class="classifier">{‘elec’, ‘phot’}</span></dt>
-<dd><p class="first last">Specifies stable SM secondary to get the spectrum of.</p>
-</dd>
-<dt><strong>get_val</strong> <span class="classifier-delimiter">:</span> <span class="classifier">function</span></dt>
-<dd><p class="first last">Returns the interpolation value at (mDM_in_GeV, log10(K/mDM)) where K is the kinetic energy of the secondary.</p>
-</dd>
-</dl>
-</td>
-</tr>
-</tbody>
-</table>
-<p class="rubric">Methods</p>
-<table border="1" class="docutils">
-<colgroup>
-<col width="52%" />
-<col width="48%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><strong>get_val</strong></td>
-<td>&#160;</td>
-</tr>
-</tbody>
-</table>
-<dl class="method">
-<dt id="darkhistory.spec.pppc.PchipInterpolator2D.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>pri</em>, <em>sec</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.spec.pppc.PchipInterpolator2D.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
-</dd></dl>
-
-<p class="rubric">Methods</p>
-<table border="1" class="longtable docutils">
-<colgroup>
-<col width="10%" />
-<col width="90%" />
-</colgroup>
-<tbody valign="top">
-<tr class="row-odd"><td><a class="reference internal" href="#darkhistory.spec.pppc.PchipInterpolator2D.__init__" title="darkhistory.spec.pppc.PchipInterpolator2D.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(pri,&nbsp;sec)</td>
-<td>Initialize self.</td>
-</tr>
-<tr class="row-even"><td><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_val</span></code>(mDM_in_GeV,&nbsp;log10x)</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 
 
@@ -172,12 +89,6 @@
           </div>
       <div class="spc-rightsidebar span3">
         <div class="sphinxsidebarwrapper">
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="darkhistory.spec.pppc.get_pppc_spec.html"
-                        title="previous chapter">darkhistory.spec.pppc.get_pppc_spec</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="../darkhistory.spec.spectools.html"
-                        title="next chapter">darkhistory.spec.spectools</a></p>
   <h3>This Page</h3>
   <div>
     <a href="../../../../_sources/_autosummary/darkhistory/spec/pppc/darkhistory.spec.pppc.PchipInterpolator2D.rst.txt"
