@@ -6,11 +6,8 @@ import sys
 import numpy as np
 import json
 
-from scipy.interpolate import PchipInterpolator
-from scipy.interpolate import pchip_interpolate
-
 # from config import data_path
-from config import get_data
+from config import load_data
 
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
@@ -329,7 +326,7 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
                 log10x
             )
     # Get the interpolator. 
-    dlNdlxIEW_interp = get_data('pppc', primary=pri)
+    dlNdlxIEW_interp = load_data('pppc', primary=pri)
 
     # Get the spectrum from the interpolator.
     dN_dlog10x = 10**dlNdlxIEW_interp[sec].get_val(_mDM/1e9, log10x)
