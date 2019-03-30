@@ -52,13 +52,20 @@ DarkHistory is written in Python 3, and uses the following Python packages:
 * `Scipy <https://scipy.org/scipylib/index.html>`_
 * `Matplotlib <https://matplotlib.org/>`_
 * `Jupyter <https://jupyter.org/>`_
+* `Unofficial Jupyter Notebook Extensions <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
 * `tqdm <https://github.com/tqdm/tqdm>`_
 
-We recommend users download the `Anaconda Distribution <https://www.anaconda.com/distribution/>`_, which includes most of these packages, except for tqdm. Anaconda also comes with `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install tqdm, users can simply do
+We recommend users use `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install all of these packages, users can simply do
 
 .. sourcecode:: bash
 
-    $ conda install tqdm
+    $ conda install --file requirements.txt
+
+from the ``DarkHistory/`` directory. Alternatively, if the user would like to use pip instead, installing all of the relevant packages can be done by the following command:
+
+.. sourcecode:: bash
+
+    $ pip install -r requirements.txt
 
 Within the ``examples/`` directory of the repository are several Jupyter notebooks aimed at helping the user learn how to use DarkHistory. To begin, navigate to the ``DarkHistory/`` directory and ensure that you are in a Python 3 environment. Next, execute the following line:
 

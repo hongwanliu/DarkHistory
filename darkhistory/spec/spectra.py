@@ -714,20 +714,43 @@ class Spectra:
     def totN(self, bound_type=None, bound_arr=None):
         """Returns the total number of particles in part of the spectra.
 
-        The part of the `Spectrum` objects to find the total number of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`.
+        The part of the spectra can be specified in two ways, and is specified by *bound_type*. Multiple totals can be obtained through *bound_arr*.
 
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for 'bin' or within the abscissa for 'eng'. *None* should only be used when computing the total particle number in the spectrum.
 
-        bound_arr : ndarray, optional
-            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
+            Specifying ``bound_type='bin'`` without bound_arr returns the number of particles in each bin. 
+
+        bound_arr : ndarray of length N, optional
+            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is *None*, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are *None*, then the total number of particles in the spectrum is computed.
+
+            For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+
+            These boundaries need not be integer values for 'bin': specifying ``np.array([0.5, 1.5])`` for example will include half of the first bin and half of the second.
 
         Returns
         -------
-        ndarray
-            Total number of particles in the spectrum, indexed by spectrum x specified boundaries. 
+        ndarray of shape (self.rs.size, N-1) or length N-1
+            Total number of particles in the spectra or between the specified boundaries.
+
+        Examples
+        --------
+        >>> from darkhistory.spec.spectrum import Spectrum
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec_arr = [Spectrum(eng, np.arange(4) + 4*i, rs=100, spec_type='N') for i in np.arange(4)]
+        >>> test_spectra = Spectra(spec_arr)
+        >>> test_spectra.totN()
+        array([ 6.,  22.,  38.,  54.])
+        >>> test_spectra.totN('bin', np.array([1, 3]))
+        array([[ 3., 11., 19., 27.]])
+        >>> test_spectra.totN('eng', np.array([10, 1e4]))
+        array([[ 5.5, 15.5, 25.5, 35.5]])
+
+        See Also
+        ---------
+        :meth:`Spectra.toteng`
 
         """
         log_bin_width = get_log_bin_width(self.eng)
@@ -832,15 +855,38 @@ class Spectra:
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. 
 
-        bound_arr : ndarray, optional
-            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
+            Specifying ``bound_type=='bin'`` without bound_arr gives the total energy in each bin. 
+
+        bound_arr : ndarray of length N, optional
+            An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
+
+            For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+
+            These boundaries need not be integer values for 'bin': specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.
 
         Returns
         -------
-        ndarray
-            Total energy of particles in the spectrum, indexed by spectrum x specified boundaries.
+        ndarray of shape (self.rs.size, N-1) or length N-1
+            Total number of particles in the spectra or between the specified boundaries.
+
+        Examples
+        --------
+        >>> from darkhistory.spec.spectrum import Spectrum
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec_arr = [Spectrum(eng, np.arange(4) + 4*i, rs=100, spec_type='N') for i in np.arange(4)]
+        >>> test_spectra = Spectra(spec_arr)
+        >>> test_spectra.toteng()
+        array([ 6.,  22.,  38.,  54.])
+        >>> test_spectra.toteng('bin', np.array([1, 3]))
+        array([[210., 650., 1090., 1530.]])
+        >>> test_spectra.toteng('eng', np.array([10, 1e4]))
+        array([[3205. , 7625., 12045. , 16465.]])
+
+        See Also
+        ---------
+        :meth:`Spectra.toteng`
 
         """
         log_bin_width = get_log_bin_width(self.eng)

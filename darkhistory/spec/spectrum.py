@@ -527,6 +527,8 @@ class Spectrum:
         bound_type : {'bin', 'eng', None}
             The type of bounds to use. Bound values do not have to be within [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used when computing the total particle number in the spectrum. 
 
+            Specifying ``bound_type='bin'`` without bound_arr returns self.N. 
+
         bound_arr : ndarray of length N, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are None, then the total number of particles in the spectrum is computed.
 
@@ -550,10 +552,6 @@ class Spectrum:
         array([5.])
         >>> spec.totN('eng', np.array([10, 1e4]))
         array([8.])
-
-        Notes
-        ------
-        To exclude the underflow bin, call the function as ``totN(bound_type='bin')``.
 
         See Also
         --------
@@ -648,7 +646,9 @@ class Spectrum:
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used to obtain the total energy. 
+            The type of bounds to use. Bound values do not have to be within the [0:length] for 'bin' or within the abscissa for 'eng'. None should only be used to obtain the total energy.
+
+            Specifying ``bound_type='bin'`` without bound_arr gives the total energy in each bin.
 
         bound_arr : ndarray of length N, optional
             An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
@@ -674,10 +674,6 @@ class Spectrum:
         array([320.])
         >>> spec.toteng('eng', np.array([10, 1e4]))
         array([4310.])
-
-        Notes
-        ------
-        To exclude the underflow bin, call the function as ``toteng(bound_type='bin')``.
 
         See Also
         ---------
