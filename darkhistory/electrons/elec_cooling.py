@@ -8,6 +8,8 @@ import darkhistory.utilities as utils
 import darkhistory.spec.transferfunction as tf
 import darkhistory.spec.spectools as spectools
 
+from config import load_data
+
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
@@ -89,20 +91,11 @@ def get_elec_cooling_tf(
 
     # Use default ICS transfer functions if not specified.
 
-    if raw_thomson_tf is None:
+    ics_tf = load_data('ics_tf')
 
-        from tf_data import ics_thomson_ref_tf
-        raw_thomson_tf = ics_thomson_ref_tf
-
-    if raw_rel_tf is None:
-
-        from tf_data import ics_rel_ref_tf
-        raw_rel_tf = ics_rel_ref_tf
-
-    if raw_engloss_tf is None:
-
-        from tf_data import engloss_ref_tf
-        raw_engloss_tf = engloss_ref_tf
+    raw_thomson_tf = ics_tf['thomson']
+    raw_rel_tf     = ics_tf['rel']
+    raw_engloss_tf = ics_tf['engloss']
 
     if coll_ion_sec_elec_specs is None:
 
