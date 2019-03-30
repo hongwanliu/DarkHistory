@@ -366,7 +366,7 @@ def get_history(
                 + xHeII(yHeII) * photoheat_rate_HeII(rs)
             )
 
-            compton_rate = -phys.dtdz(rs)*(
+            compton_rate = phys.dtdz(rs)*(
                 compton_cooling_rate(
                     xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
                 )

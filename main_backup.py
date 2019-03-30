@@ -23,7 +23,7 @@ import darkhistory.history.histools as ht
 import darkhistory.history.tla as tla
 
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
-from darkhistory.electrons.ics.ics_spectrum import nonrel_spec
+from darkhistory.electrons.ics.ics_spectrum import thomson_spec
 from darkhistory.electrons.ics.ics_spectrum import rel_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf

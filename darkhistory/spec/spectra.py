@@ -1,4 +1,4 @@
-"""Contains the `Spectra` class."""
+"""Contains the Spectra class."""
 
 import numpy as np
 from darkhistory import utilities as utils
@@ -13,33 +13,65 @@ import warnings
 from scipy import interpolate
 
 class Spectra:
-    """Structure for a collection of `Spectrum` objects.
+    """Structure for a collection of :class:`.Spectrum` objects.
+
+    :class:`Spectra` should be viewed as a collection of spectra of 
+    particles at different redshifts, or as a collection of spectra produced 
+    by injected particles over a range of energies. 
+
+    Individual :class:`.Spectrum` objects can be accessed by taking slices
+    of the :class:`Spectra` object.
 
     Parameters
     ----------
-    spec_arr : list of Spectrum or ndarray
-        List of `Spectrum` or array to be stored together.
+    spec_arr : list of Spectrum or ndarray of length N
+        List of :class:`Spectrum` objects or arrays to be stored together.
     spec_type : {'N', 'dNdE'}, optional
         The type of entries. Default is 'dNdE'.
-    in_eng : ndarray
-        Array of injection energies corresponding to each spectrum.
-    eng : ndarray
-        Array of energy abscissa of each spectrum.
-    rs : ndarray
-        Array of redshifts corresponding to each spectrum.
+    eng : ndarray of length M, optional
+        Array of energy abscissa of each spectrum. Specify only if *spec_arr* is an ndarray. 
+    in_eng : ndarray of length N, optional
+        Array of injection energies corresponding to each spectrum, if relevant.
+    rs : ndarray of length N, optional
+        Array of redshifts corresponding to each spectrum, if relevant.
     rebin_eng : ndarray, optional
-        New abscissa to rebin all of the spectra into.
+        New abscissa to rebin all of the spectra into, if specified.
 
     Attributes
     ----------
-    in_eng : ndarray
-        Array of injection energies corresponding to each spectrum.
-    eng : ndarray
+    eng : ndarray of length M
         Array of energy abscissa of each spectrum.
-    rs : ndarray
+    in_eng : ndarray of length N
+        Array of injection energies corresponding to each spectrum.
+    rs : ndarray of length N
         Array of redshifts corresponding to each spectrum.
+    grid_vals : ndarray of shape (N,M)
+        2D array of the raw data, indexed by either 
+        (rs, eng) or (in_eng, eng). 
     spec_type : {'N', 'dNdE'}
         The type of values stored.
+    N_underflow : ndarray
+        Array of underflow particles for each :class:`.Spectrum`. 
+    eng_underflow : ndarray
+        Array of underflow particles for each :class:`.Spectrum`. 
+
+
+    See Also
+    ---------
+    :class:`.TransFuncAtEnergy` 
+    :class:`.TransFuncAtRedshift`
+
+    Examples
+    -------- 
+
+    Indexing into :class:`Spectra` to obtain a :class:`.Spectrum` object:
+
+    >>> from darkhistory.spec.spectrum import Spectrum
+    >>> eng = np.array([1, 10, 100, 1000])
+    >>> spec_arr = [Spectrum(eng, np.ones(4)*i, spec_type='N') for i in np.arange(9)]
+    >>> test_spectra = Spectra(spec_arr)
+    >>> test_spectra[3].N
+    array([3., 3., 3., 3.])
     """
 
     # __array_priority__ must be larger than 0, so that radd can work.
@@ -234,24 +266,28 @@ class Spectra:
                 self._eng_underflow[i] = spec.underflow['eng']
 
     def __add__(self, other):
-        """Adds two arrays of spectra together.
+        """Adds two :class:`Spectra` instances together, or an array to the :class:`Spectra`. The :class:`Spectra` is on the left.
+
+        The returned :class:`Spectra` will have its underflow reset to zero if other is not a :class:`Spectrum` object. 
 
         Parameters
         ----------
         other : Spectra or ndarray
+            The object to add to the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
-            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
+            New :class:`Spectra` instance which has the summed spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__radd__`, allows the use of the symbol + to add arrays of spectra together.
+        This special function, together with :meth:`Spectra.__radd__`, allows the use of the symbol ``+`` to add :class:`Spectra` objects together.
 
         See Also
         --------
-        spectra.Spectra.__radd__
+        :meth:`Spectra.__radd__`
+
         """
         if np.issubclass_(type(other), Spectra):
 
@@ -270,34 +306,44 @@ class Spectra:
             if np.array_equal(self.rs, other.rs):
                 out_spectra._rs = self.rs
 
+            out_spectra._N_underflow = self.N_underflow + other.N_underflow
+            out_spectra._eng_underflow = (
+                self.eng_underflow + other.eng_underflow
+            )
+
             return out_spectra
 
         elif isinstance(other, np.ndarray):
 
             self._grid_vals += other
+            self._N_underflow = 0
+            self._eng_underflow = 0
 
         else:
             raise TypeError('adding an object that is not compatible.')
 
     def __radd__(self, other):
-        """Adds two arrays of spectra together.
+        """Adds two :class:`Spectra` instances together, or an array to the spectra. The :class:`Spectra` object is on the right.
+
+        The returned :class:`Spectra` will have its underflow reset to zero if other is not a :class:`Spectrum` object. 
 
         Parameters
         ----------
-        other : Spectra
+        other : Spectra or ndarray
+            The object to add to the current :class:`Spectra` object. 
 
         Returns
         -------
         Spectra
-            New `Spectra` instance which is an element-wise sum of the `Spectrum` objects in each Spectra.
+            New :class:`Spectra` instance which has the summed spectra. 
 
         Notes
         -----
-        This special function, together with `Spectra.__add__`, allows the use of the symbol + to add two arrays of spectra together.
+        This special function, together with `Spectra.__add__`, allows the use of the symbol ``+`` to add two :class:`Spectra` together.
 
         See Also
         --------
-        spectra.Spectra.__add__
+        :meth:`Spectra.__add__`
         """
         if npissubclass_(type(other), Spectra):
 
@@ -318,83 +364,107 @@ class Spectra:
             if np.array_equal(self.rs, other.rs):
                 out_spectra._rs = self.rs
 
+            out_spectra._N_underflow = self.N_underflow + other.N_underflow
+            out_spectra._eng_underflow = (
+                self.eng_underflow + other.eng_underflow
+            )
+
             return out_spectra
 
         elif isinstance(other, np.ndarray):
 
             self._grid_vals += other
+            self._N_underflow = 0
+            self._eng_underflow = 0
 
         else:
             raise TypeError('adding an object that is not compatible.')
 
     def __sub__(self, other):
-        """Subtracts one array of spectra from another.
+        """Subtracts a :class:`Spectra` or array from this :class:`Spectra`.
 
         Parameters
         ----------
         other : Spectra or ndarray
+            The object to subtract from the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the subtracted spectrum.
 
         Notes
         -----
-        This special function, together with `Spectra.__rsub__`, allows the use of the symbol - to subtract or subtract from `Spectra` objects.
+        This special function, together with :meth:`Spectra.__rsub__`, allows the use of the symbol ``-`` to subtract or subtract from :class:`Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__rsub__
+        :meth:`Spectra.__rsub__`
         """
 
         return self + -1*other
 
     def __rsub__(self, other):
-        """Subtracts one array of spectra from another.
+        """Subtracts this :class:`Spectra` from another or an array.
 
         Parameters
         ----------
         other : Spectra or ndarray
+            The object from which to subtract the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the subtracted spectrum.
 
         Notes
         -----
-        This special function, together with `Spectra.__rsub__`, allows the use of the symbol - to subtract or subtract from `Spectra` objects.
+        This special function, together with :meth:`Spectra.__rsub__`, allows the use of the symbol ``-`` to subtract or subtract from `Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__sub__
+        :meth:`Spectra.__sub__`
         """
 
         return other + -1*self
 
     def __neg__(self):
-        """Negates the spectra values.
+        """Negates the spectra.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance with the spectra negated. 
+
         """
 
         return -1*self
 
     def __mul__(self, other):
-        """Takes a product with this `Spectra`.
+        """Takes a product with the spectra with a :class:`Spectra` object, array or number.
+
+        The :class:`Spectra` object is on the left.
 
         Parameters
         ----------
-        other : Spectra, int, float, list or ndarray
+        other : Spectra, int, float or ndarray
+            The object to multiply to the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance with the multiplied spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__rmul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
+        This special function, together with :meth:`Spectra.__rmul__`, allows the use of the symbol ``*`` to multiply objects with a `Spectra` object.
+
+        The returned :class:`Spectra` object as underflow set to zero.
+
+        See Also
+        --------
+        :meth:`Spectra.__rmul__`
+
         """
         if np.isscalar(other):
 
@@ -404,6 +474,8 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
@@ -416,6 +488,8 @@ class Spectra:
             out_spectra._grid_vals = np.einsum(
                 'ij,i->ij',self.grid_vals, other
             )
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
@@ -435,23 +509,34 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
-
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
             return out_spectra
 
     def __rmul__(self, other):
-        """Takes a product with this `Spectra`.
+        """Takes a product with the spectra with a :class:`Spectra` object, array or number.
+
+        The :class:`Spectra` object is on the right.
 
         Parameters
         ----------
-        other : Spectra, int, float, list or ndarray
+        other : Spectra, int, float or ndarray
+            The object to multiply to the current :class:`Spectra` object.
 
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance with the multiplied spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__mul__`, allows the use of the symbol * to multiply objects with a `Spectra` object.
+        This special function, together with :meth:`Spectra.__mul__`, allows the use of the symbol ``*`` to multiply objects with a `Spectra` object.
+
+        The returned :class:`Spectra` object as underflow set to zero.
+
+        See Also
+        --------
+        :meth:`Spectra.__mul__`
         """
 
         if (
@@ -466,6 +551,8 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
@@ -485,11 +572,13 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
+            out_spectra._N_underflow = 0
+            out_spectra._eng_underflow = 0
 
             return out_spectra
 
     def __truediv__(self, other):
-        """Divides Spectra by another object.
+        """Divides the spectra by another object.
 
         Parameters
         ----------
@@ -498,14 +587,15 @@ class Spectra:
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the divided spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use fo the symbol / to divide `Spectra` objects.
+        This special function, together with :meth:`Spectra.__rtruediv__`, allows the use fo the symbol ``/`` to divide :class:`Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__rtruediv__
+        :meth:`Spectra.__rtruediv__`
         """
         if np.issubclass_(type(other), Spectra):
             inv_spectra = Spectra([])
@@ -514,12 +604,14 @@ class Spectra:
             inv_spectra._grid_vals = 1/other.grid_vals
             inv_spectra._rs = other.rs
             inv_spectra._spec_type = other.spec_type
+            inv_spectra._N_underflow = 0
+            inv_spectra._eng_underflow = 0
             return self * inv_spectra
         else:
             return self * (1/other)
 
     def __rtruediv__(self, other):
-        """Divides Spectra by another object.
+        """Divides an object by the spectra.
 
         Parameters
         ----------
@@ -528,14 +620,15 @@ class Spectra:
         Returns
         -------
         Spectra
+            New :class:`Spectra` instance which has the divided spectra.
 
         Notes
         -----
-        This special function, together with `Spectra.__rtruediv__`, allows the use of the symbol / to divide `Spectra` objects.
+        This special function, together with :meth:`Spectra.__truediv__`, allows the use fo the symbol ``/`` to divide :class:`Spectra` objects.
 
         See Also
         --------
-        spectrum.Spectra.__truediv__
+        :meth:`Spectra.__truediv__`
         """
         inv_spectra = Spectra([])
         inv_spectra._eng = self.eng
@@ -543,6 +636,8 @@ class Spectra:
         inv_spectra._grid_vals = 1/self.grid_vals
         inv_spectra._spec_type = self.spec_type
         inv_spectra._rs = self.rs
+        inv_spectra._N_underflow = 0
+        inv_spectra._eng_underflow = 0
 
         return other * inv_spectra
 
@@ -563,6 +658,38 @@ class Spectra:
             self._spec_type = 'N'
 
     def redshift(self, rs_arr):
+        """ Redshifts the stored spectra. 
+
+        Parameters
+        ----------
+        rs_arr : ndarray
+            Array of redshifts (1+z) to redshift each spectrum to. 
+
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        >>> from darkhistory.spec.spectrum import Spectrum
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec_arr = [Spectrum(eng, np.ones(4)*i, rs=100, spec_type='N') for i in np.arange(4)]
+        >>> test_spectra = Spectra(spec_arr)
+        >>> test_spectra.redshift(np.array([0.01, 0.1, 1, 10]))
+        >>> print(test_spectra.grid_vals)
+        [[0. 0. 0. 0.]
+         [1. 0. 0. 0.]
+         [2. 2. 0. 0.]
+         [3. 3. 3. 0.]]
+        >>> print(test_spectra.N_underflow)
+        [0. 3. 4. 3.]
+        >>> print(test_spectra.eng_underflow)
+        [0.    0.111 0.22  0.3  ]
+
+        """
+
+        if rs_arr.size != self.rs.size:
+            raise TypeError('rs_arr must have the same size as the number of Spectrum objects stored.')
 
         for i,(val, rs, new_rs, in_eng, N_uf, eng_uf) in enumerate(
             zip(
@@ -570,35 +697,60 @@ class Spectra:
                 self.N_underflow, self.eng_underflow
             )
         ):
+
             spec = Spectrum(
-                self.eng, val,
+                self.eng, val.N,
                 rs=rs, in_eng=in_eng,
-                spec_type=self.spec_type
+                spec_type='N'
             )
+
             spec.redshift(new_rs)
             self._grid_vals[i] = spec._data
-            self.N_underflow[i] += spec.underflow['N']
-            self.eng_underflow[i] += spec.underflow['eng']
+            self._N_underflow[i] += spec.underflow['N']
+            self._eng_underflow[i] += spec.underflow['eng']
 
         self._rs = rs_arr
 
     def totN(self, bound_type=None, bound_arr=None):
         """Returns the total number of particles in part of the spectra.
 
-        The part of the `Spectrum` objects to find the total number of particles can be specified in two ways, and is specified by `bound_type`. Multiple totals can be obtained through `bound_arr`.
+        The part of the spectra can be specified in two ways, and is specified by *bound_type*. Multiple totals can be obtained through *bound_arr*.
 
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for 'bin' or within the abscissa for 'eng'. *None* should only be used when computing the total particle number in the spectrum.
 
-        bound_arr : ndarray, optional
-            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
+            Specifying ``bound_type='bin'`` without bound_arr returns the number of particles in each bin. 
+
+        bound_arr : ndarray of length N, optional
+            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr is *None*, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr are *None*, then the total number of particles in the spectrum is computed.
+
+            For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+
+            These boundaries need not be integer values for 'bin': specifying ``np.array([0.5, 1.5])`` for example will include half of the first bin and half of the second.
 
         Returns
         -------
-        ndarray
-            Total number of particles in the spectrum, indexed by spectrum x specified boundaries. 
+        ndarray of shape (self.rs.size, N-1) or length N-1
+            Total number of particles in the spectra or between the specified boundaries.
+
+        Examples
+        --------
+        >>> from darkhistory.spec.spectrum import Spectrum
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec_arr = [Spectrum(eng, np.arange(4) + 4*i, rs=100, spec_type='N') for i in np.arange(4)]
+        >>> test_spectra = Spectra(spec_arr)
+        >>> test_spectra.totN()
+        array([ 6.,  22.,  38.,  54.])
+        >>> test_spectra.totN('bin', np.array([1, 3]))
+        array([[ 3., 11., 19., 27.]])
+        >>> test_spectra.totN('eng', np.array([10, 1e4]))
+        array([[ 5.5, 15.5, 25.5, 35.5]])
+
+        See Also
+        ---------
+        :meth:`Spectra.toteng`
 
         """
         log_bin_width = get_log_bin_width(self.eng)
@@ -703,15 +855,38 @@ class Spectra:
         Parameters
         ----------
         bound_type : {'bin', 'eng', None}
-            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. For `'bin'`, bounds are specified as the bin boundary, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For `'eng'`, bounds are specified by energy values.
+            The type of bounds to use. Bound values do not have to be within the [0:eng.size] for `'bin'` or within the abscissa for `'eng'`. `None` should only be used when computing the total particle number in the spectrum. 
 
-        bound_arr : ndarray, optional
-            An array of boundaries (bin or energy), between which the total number of particles will be computed. If bound_arr = None, but bound_type is specified, the total number of particles in each bin is computed. If both bound_type and bound_arr = None, then the total number of particles in the spectrum is computed.
+            Specifying ``bound_type=='bin'`` without bound_arr gives the total energy in each bin. 
+
+        bound_arr : ndarray of length N, optional
+            An array of boundaries (bin or energy), between which the total number of particles will be computed. If unspecified, the total number of particles in the whole spectrum is computed.
+
+            For 'bin', bounds are specified as the bin *boundary*, with 0 being the left most boundary, 1 the right-hand of the first bin and so on. This is equivalent to integrating over a histogram. For 'eng', bounds are specified by energy values.
+
+            These boundaries need not be integer values for 'bin': specifying np.array([0.5, 1.5]) for example will include half of the first bin and half of the second.
 
         Returns
         -------
-        ndarray
-            Total energy of particles in the spectrum, indexed by spectrum x specified boundaries.
+        ndarray of shape (self.rs.size, N-1) or length N-1
+            Total number of particles in the spectra or between the specified boundaries.
+
+        Examples
+        --------
+        >>> from darkhistory.spec.spectrum import Spectrum
+        >>> eng = np.array([1, 10, 100, 1000])
+        >>> spec_arr = [Spectrum(eng, np.arange(4) + 4*i, rs=100, spec_type='N') for i in np.arange(4)]
+        >>> test_spectra = Spectra(spec_arr)
+        >>> test_spectra.toteng()
+        array([ 3210.,  7654.,  12098.,  16542.])
+        >>> test_spectra.toteng('bin', np.array([1, 3]))
+        array([[ 210., 650., 1090., 1530.]])
+        >>> test_spectra.toteng('eng', np.array([10, 1e4]))
+        array([[ 3205., 7625., 12045., 16465.]])
+
+        See Also
+        ---------
+        :meth:`Spectra.totN`
 
         """
         log_bin_width = get_log_bin_width(self.eng)
@@ -869,12 +1044,13 @@ class Spectra:
 
             # new_data = np.dot(weight._data, self.grid_vals)
             # Should always take the dot with type 'N'. 
-            np.dot(weight.N, self.grid_vals)
+            new_data = np.dot(weight.N, self.grid_vals)
             return Spectrum(
                 self.eng, new_data, spec_type=weight.spec_type
             )
         else:
             raise TypeError('weight must be an ndarray or Spectrum.')
+
 
     def rebin(self, out_eng):
         """ Re-bins all `Spectrum` objects according to a new abscissa.

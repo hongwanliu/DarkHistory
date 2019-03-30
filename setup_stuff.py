@@ -24,9 +24,6 @@ from darkhistory.electrons.ics.ics_spectrum import thomson_spec
 from darkhistory.electrons.ics.ics_spectrum import rel_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 from darkhistory.electrons.ics.ics_cooling import get_ics_cooling_tf
-from darkhistory.electrons.elec_cooling import get_elec_cooling_tf_fast
-from darkhistory.electrons.elec_cooling import \
-    get_elec_cooling_tf_fast_linalg
 
 from darkhistory.electrons import positronium as pos
 

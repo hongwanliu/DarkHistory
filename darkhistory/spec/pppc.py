@@ -2,6 +2,7 @@
 
 """
 
+import sys
 import numpy as np
 import json
 
@@ -16,17 +17,20 @@ from darkhistory.spec.spectools import rebin_N_arr
 
 # PPPC data.  
 
-# Import data.  
+# Import data. 
 coords_file_name = (
     data_path+'/dlNdlxIEW_coords_table.txt'
 )
 values_file_name = (
     data_path+'/dlNdlxIEW_values_table.txt'
 )
-with open(coords_file_name) as data_file:    
-    coords_data = np.array(json.load(data_file))
-with open(values_file_name) as data_file:
-    values_data = np.array(json.load(data_file))
+
+if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules: 
+
+    with open(coords_file_name) as data_file:    
+        coords_data = np.array(json.load(data_file))
+    with open(values_file_name) as data_file:
+        values_data = np.array(json.load(data_file))
 
 
 # coords_data is a (2, 23, 2) array. 
@@ -211,9 +215,10 @@ mass_threshold = {
 # Compile a dictionary of all of the interpolators.
 dlNdlxIEW_interp = {'elec':{}, 'phot':{}}
 
-for pri in chan_list:
-    dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(pri, 'elec')
-    dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(pri, 'phot')
+if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules: 
+    for pri in chan_list:
+        dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(pri, 'elec')
+        dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(pri, 'phot')
 
 def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 

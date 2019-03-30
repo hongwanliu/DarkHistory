@@ -3,13 +3,12 @@
 import numpy
 import sys
 import darkhistory.physics as physics
-from astropy.io import fits
 from scipy.interpolate import interp1d
 import math
 import scipy.constants as p
 sys.path.append("../..")
-from spec.spectrum import *
-import spec.spectools as spectools
+from darkhistory.spec.spectrum import *
+import darkhistory.spec.spectools as spectools
 
 
 def thermalize_cs(T, f=0.05, lnV=10):

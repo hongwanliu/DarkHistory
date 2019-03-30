@@ -784,10 +784,10 @@ def _generic_callable(group_idx, a, size, fill_value, dtype=None,
 def _cumsum(group_idx, a, size, fill_value=None, dtype=None):
     """
     N to N aggregate operation of cumsum. Perform cumulative sum for each group.
-    group_idx = np.array([4, 3, 3, 4, 4, 1, 1, 1, 7, 8, 7, 4, 3, 3, 1, 1])
-    a = np.array([3, 4, 1, 3, 9, 9, 6, 7, 7, 0, 8, 2, 1, 8, 9, 8])
-    _cumsum(group_idx, a, np.max(group_idx) + 1)
-    >>> array([ 3,  4,  5,  6, 15,  9, 15, 22,  7,  0, 15, 17,  6, 14, 31, 39])
+    >>> group_idx = np.array([4, 3, 3, 4, 4, 1, 1, 1, 7, 8, 7, 4, 3, 3, 1, 1])
+    >>> a = np.array([3, 4, 1, 3, 9, 9, 6, 7, 7, 0, 8, 2, 1, 8, 9, 8])
+    >>> _cumsum(group_idx, a, np.max(group_idx) + 1)
+    array([ 3,  4,  5,  6, 15,  9, 15, 22,  7,  0, 15, 17,  6, 14, 31, 39])
     """
     sortidx = np.argsort(group_idx, kind='mergesort')
     invsortidx = np.argsort(sortidx, kind='mergesort')

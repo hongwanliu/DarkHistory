@@ -39,3 +39,5 @@ lines.linewidth : 2.5
 legend.fontsize : 16
 legend.borderaxespad : 1
 legend.title_fontsize : 20
+
+savefig.bbox : tight

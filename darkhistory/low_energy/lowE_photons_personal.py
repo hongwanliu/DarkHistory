@@ -2,8 +2,8 @@ import sys
 sys.path.append("../..")
 
 import numpy as np
-import physics as phys
-import spec.spectools as spectools
+import darkhistory.physics as phys
+import darkhistory.spec.spectools as spectools
 
 def compute_dep_inj_ionization_ratio(photon_spectrum, n, tot_inj, method='old'):
     """ Given a spectrum of deposited photons, resolve its energy into continuum photons, HI excitation, and HI, HeI, HeII ionization in that order.  The
