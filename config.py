@@ -297,6 +297,19 @@ def load_data(data_type, primary=None):
         with open(values_file_name) as data_file:
             values_data = np.array(json.load(data_file))
 
+        # coords_data is a (2, 23, 2) array. 
+        # axis 0: stable SM secondaries, {'elec', 'phot'}
+        # axis 1: annihilation primary channel.
+        # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of 
+        # the secondary. 
+        # Each element is a 1D array.
+
+        # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
+        # axis 0: stable SM secondaries, {'elec', 'phot'}
+        # axis 1: annihilation primary channel.
+        # Each element is a 2D array indexed by {mDM in GeV, np.log10(K/mDM)}
+        # as saved in coords_data. 
+
         # Dictionary for the interpolators
         dlNdlxIEW_interp = {}
 
