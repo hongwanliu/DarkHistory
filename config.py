@@ -19,9 +19,9 @@ import pickle
 
 if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
 
-    data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+    #data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
     #data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-    # data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+    data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
