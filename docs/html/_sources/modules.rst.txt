@@ -8,7 +8,6 @@ DarkHistory
    
    main
    config
-   tf_data
 
 .. rubric:: Table of Packages
 

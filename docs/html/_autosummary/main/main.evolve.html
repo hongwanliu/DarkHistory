@@ -96,7 +96,7 @@
 <h1>main.evolve<a class="headerlink" href="#main-evolve" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="main.evolve">
-<code class="descclassname">main.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>in_spec_elec=None</em>, <em>in_spec_phot=None</em>, <em>rate_func_N=None</em>, <em>rate_func_eng=None</em>, <em>DM_process=None</em>, <em>mDM=None</em>, <em>sigmav=None</em>, <em>lifetime=None</em>, <em>primary=None</em>, <em>struct_boost=None</em>, <em>start_rs=None</em>, <em>end_rs=4</em>, <em>helium_TLA=False</em>, <em>reion_switch=False</em>, <em>reion_rs=None</em>, <em>photoion_rate_func=None</em>, <em>photoheat_rate_func=None</em>, <em>xe_reion_func=None</em>, <em>init_cond=None</em>, <em>coarsen_factor=1</em>, <em>backreaction=True</em>, <em>compute_fs_method='old'</em>, <em>use_tqdm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#main.evolve" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">main.</code><code class="descname">evolve</code><span class="sig-paren">(</span><em>in_spec_elec=None</em>, <em>in_spec_phot=None</em>, <em>rate_func_N=None</em>, <em>rate_func_eng=None</em>, <em>DM_process=None</em>, <em>mDM=None</em>, <em>sigmav=None</em>, <em>lifetime=None</em>, <em>primary=None</em>, <em>struct_boost=None</em>, <em>start_rs=None</em>, <em>end_rs=4</em>, <em>helium_TLA=False</em>, <em>reion_switch=False</em>, <em>reion_rs=None</em>, <em>photoion_rate_func=None</em>, <em>photoheat_rate_func=None</em>, <em>xe_reion_func=None</em>, <em>init_cond=None</em>, <em>coarsen_factor=1</em>, <em>backreaction=True</em>, <em>compute_fs_method='old'</em>, <em>mxstep=1000</em>, <em>rtol=0.0001</em>, <em>use_tqdm=True</em><span class="sig-paren">)</span><a class="headerlink" href="#main.evolve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main function computing histories and spectra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -166,7 +166,13 @@ initialize <cite>in_spec_elec.rs</cite> and/or <cite>in_spec_phot.rs</cite> dire
 <dd><p class="first last">Coarsening to apply to the transfer function matrix.</p>
 </dd>
 <dt><strong>backreaction</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool</span></dt>
-<dd><p class="first last">If <cite>False</cite>, uses the baseline TLA solution to calculate f_c(z).</p>
+<dd><p class="first last">If False, uses the baseline TLA solution to calculate f_c(z). Default is True.</p>
+</dd>
+<dt><strong>mxstep</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
+<dd><p class="first last">The maximum number of steps allowed for each integration point. See <em>scipy.integrate.odeint</em> for more information.</p>
+</dd>
+<dt><strong>rtol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">The relative error of the solution. See <em>scipy.integrate.odeint</em> for more information.</p>
 </dd>
 <dt><strong>use_tqdm</strong> <span class="classifier-delimiter">:</span> <span class="classifier">bool, optional</span></dt>
 <dd><p class="first last">Uses tqdm if true.</p>

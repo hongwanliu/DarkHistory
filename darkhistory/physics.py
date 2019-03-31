@@ -11,7 +11,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
 
-from config import data_path
+# from config import data_path
+from config import load_data
 
 cross_check = True
 
@@ -329,13 +330,13 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         return rho_DM*rs**3/lifetime
 
 # Create interpolation with structure formation data. 
-if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
-    struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
+# if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
+#     struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
 
-    log_struct_interp = interp1d(
-        np.log(struct_data[:,0]), np.log(struct_data[:,1]),
-        bounds_error=False, fill_value=(np.nan, 0.)
-    )
+#     log_struct_interp = interp1d(
+#         np.log(struct_data[:,0]), np.log(struct_data[:,1]),
+#         bounds_error=False, fill_value=(np.nan, 0.)
+#     )
 
 def struct_boost_func(model='einasto_with_subs', model_params=None):
     """Structure formation boost factor 1+B(z).
@@ -378,6 +379,12 @@ def struct_boost_func(model='einasto_with_subs', model_params=None):
             return 1. + b_h / rs**delta * erfc( rs/(1+z_h) )
 
     else:
+
+        struct_data = load_data('struct')['einasto_subs']
+        log_struct_interp = interp1d(
+            np.log(struct_data[:,0]), np.log(struct_data[:,1]),
+            bounds_error=False, fill_value=(np.nan, 0.)
+        )
 
         def func(rs):
 
@@ -838,12 +845,16 @@ def d_xe_Saha_dz(rs, species):
 
 # Standard ionization and thermal histories
 
-if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
-    soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
+# if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
+#     soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
-    _xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
-    _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
-    _Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
+#     _xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
+#     _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
+#     _Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
+
+_xHII_std  = None
+_xHeII_std = None
+_Tm_std    = None
 
 def xHII_std(rs):
     """Baseline nHII/nH value.
@@ -858,6 +869,16 @@ def xHII_std(rs):
     float
         nHII/nH. 
     """
+
+    global _xHII_std
+
+    if _xHII_std is None:
+
+        rs_vec   = load_data('hist')['rs']
+        xHII_vec = load_data('hist')['xHII']
+
+        _xHII_std = interp1d(rs_vec, xHII_vec)
+
     return _xHII_std(rs)
 
 def xHeII_std(rs):
@@ -873,6 +894,16 @@ def xHeII_std(rs):
     float
         nHeII/nH. 
     """
+
+    global _xHeII_std
+
+    if _xHeII_std is None:
+
+        rs_vec    = load_data('hist')['rs']
+        xHeII_vec = load_data('hist')['xHeII']
+
+        _xHeII_std = interp1d(rs_vec, xHeII_vec)
+
     return _xHeII_std(rs)
 
 def Tm_std(rs):
@@ -888,6 +919,15 @@ def Tm_std(rs):
     float
         Tm in eV. 
     """
+
+    global _Tm_std
+
+    if _Tm_std is None:
+
+        rs_vec  = load_data('hist')['rs']
+        Tm_vec  = load_data('hist')['Tm']
+
+        _Tm_std = interp1d(rs_vec, Tm_vec)
 
     return _Tm_std(rs)
 

@@ -1,7 +1,7 @@
-darkhistory.spec.pppc.PchipInterpolator2D
-=========================================
+config.PchipInterpolator2D
+==========================
 
-.. currentmodule:: darkhistory.spec.pppc
+.. currentmodule:: config
 
 .. autoclass:: PchipInterpolator2D
 

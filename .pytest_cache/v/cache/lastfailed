@@ -24,6 +24,8 @@
   "DarkHistory/spec/transferfunclist.py": true,
   "DarkHistory/spec/transferfunction.py": true,
   "DarkHistory/utilities.py": true,
+  "examples/obsolete/main_backup.py": true,
+  "main_backup.py": true,
   "test_pytest.py::test_answer": true,
   "tests/darkhistory/spec/spectrum/test_spectrum.py::test_totN": true
 }

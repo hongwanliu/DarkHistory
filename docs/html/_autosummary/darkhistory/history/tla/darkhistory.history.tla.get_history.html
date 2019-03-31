@@ -98,7 +98,7 @@
 <h1>darkhistory.history.tla.get_history<a class="headerlink" href="#darkhistory-history-tla-get-history" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
 <dt id="darkhistory.history.tla.get_history">
-<code class="descclassname">darkhistory.history.tla.</code><code class="descname">get_history</code><span class="sig-paren">(</span><em>rs_vec</em>, <em>init_cond=None</em>, <em>f_H_ion=None</em>, <em>f_H_exc=None</em>, <em>f_heating=None</em>, <em>dm_injection_rate=None</em>, <em>reion_switch=False</em>, <em>reion_rs=None</em>, <em>photoion_rate_func=None</em>, <em>photoheat_rate_func=None</em>, <em>xe_reion_func=None</em>, <em>helium_TLA=False</em>, <em>f_He_ion=None</em>, <em>mxstep=0</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.tla.get_history" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">darkhistory.history.tla.</code><code class="descname">get_history</code><span class="sig-paren">(</span><em>rs_vec</em>, <em>init_cond=None</em>, <em>f_H_ion=None</em>, <em>f_H_exc=None</em>, <em>f_heating=None</em>, <em>dm_injection_rate=None</em>, <em>reion_switch=False</em>, <em>reion_rs=None</em>, <em>photoion_rate_func=None</em>, <em>photoheat_rate_func=None</em>, <em>xe_reion_func=None</em>, <em>helium_TLA=False</em>, <em>f_He_ion=None</em>, <em>mxstep=1000</em>, <em>rtol=0.0001</em><span class="sig-paren">)</span><a class="headerlink" href="#darkhistory.history.tla.get_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the ionization and thermal history of the IGM.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -145,7 +145,10 @@
 <dd><p class="first last">f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant if float. If None, treated as zero.</p>
 </dd>
 <dt><strong>mxstep</strong> <span class="classifier-delimiter">:</span> <span class="classifier">int, optional</span></dt>
-<dd><p class="first last">Maximum number of (internally defined) steps allowed for each integration point in t. See scipy.integrate.odeint</p>
+<dd><p class="first last">The maximum number of steps allowed for each integration point. See <em>scipy.integrate.odeint</em> for more information.</p>
+</dd>
+<dt><strong>rtol</strong> <span class="classifier-delimiter">:</span> <span class="classifier">float, optional</span></dt>
+<dd><p class="first last">The relative error of the solution. See <em>scipy.integrate.odeint</em> for more information.</p>
 </dd>
 </dl>
 </td>
