@@ -118,29 +118,30 @@ def kappa_DM(photspec, xe):
 #continuum
 def getf_continuum(photspec, norm_fac):
     # All photons below 10.2eV get deposited into the continuum
-    # return photspec.toteng(
-    #     bound_type='eng',
-    #     bound_arr=np.array([photspec.eng[0],phys.lya_eng])
-    # )[0] * norm_fac
-    return np.dot(
-        photspec.N[photspec.eng < 10.2],
-        photspec.eng[photspec.eng < 10.2]*norm_fac
-    )
+    return photspec.toteng(
+        bound_type='eng',
+        bound_arr=np.array([photspec.eng[0],phys.lya_eng])
+    )[0] * norm_fac
+    #return np.dot(
+    #    photspec.N[photspec.eng < 10.2],
+    #    photspec.eng[photspec.eng < 10.2]*norm_fac
+    #)
 
 #excitation
 def getf_excitation(photspec, norm_fac, dt, xe, n, method):
     if((method == 'old') or (method=='helium') or (method == 'ion')):
-        # All photons between 10.2eV and 13.6eV are deposited into excitation
-        # tot_excite_eng = (
-        #     photspec.toteng(
-        #         bound_type='eng',
-        #         bound_arr=np.array([phys.lya_eng,phys.rydberg])
-        #     )[0]
-        # )
-        tot_excite_eng = np.dot(
-            photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
-            photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
+        # All photons between 11.2eV and 13.6eV are deposited into excitation
+        # partial binning
+        tot_excite_eng = (
+            photspec.toteng(
+                bound_type='eng',
+                bound_arr=np.array([phys.lya_eng,phys.rydberg])
+            )[0]
         )
+        #tot_excite_eng = np.dot(
+        #    photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
+        #    photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
+        #)
         f_excite_HI = tot_excite_eng * norm_fac
     else:
         # Only photons in the 10.2eV bin participate in 1s->2p excitation.
@@ -172,13 +173,14 @@ def getf_ion(photspec, norm_fac, n, method):
 
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
-        # tot_ion_eng = phys.rydberg * photspec.totN(
-        #     bound_type='eng',
-        #     bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
-        # )
-        tot_ion_eng = phys.rydberg*np.sum(
-            photspec.N[photspec.eng > 13.6]
+        #!!! The factor of 10 is probably unecessary
+        tot_ion_eng = phys.rydberg * photspec.totN(
+            bound_type='eng',
+            bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
         )
+        #tot_ion_eng = phys.rydberg*np.sum(
+        #    photspec.N[photspec.eng > 13.6]
+        #)
         f_HI = tot_ion_eng * norm_fac
         f_HeI = 0
         f_HeII = 0
@@ -186,6 +188,7 @@ def getf_ion(photspec, norm_fac, n, method):
     elif method == 'helium':
 
         # Neglect HeII photoionization
+        # !!! Not utilizing partial binning!
         rates = np.array([
             n[i]*phys.photo_ion_xsec(photspec.eng, chan) 
             for i,chan in enumerate(['HI', 'HeI'])

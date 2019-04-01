@@ -30,9 +30,9 @@ def make_interpolator(interp_type='2D'):
         The interpolating function (takes x_e and electron energy)
     """
 
-    #engs = np.array([10.2, 13.6, 14, 30, 60, 100, 300, 3000])
+    engs = np.array([10.2, 13.6, 14, 30, 60, 100, 300, 3000])
     #print('AHHHHHH NOOOOOO!')
-    engs = np.array([14, 30, 60, 100, 300, 3000])
+    #engs = np.array([14., 30, 60, 100, 300, 3000])
 
     grid_vals = np.zeros((26, len(engs), 5))
     os.chdir(dir_path)
