@@ -13,7 +13,8 @@ from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 
 
-data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+#data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
 # Global variables for data.
 glob_binning_data = None
