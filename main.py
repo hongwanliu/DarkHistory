@@ -145,6 +145,11 @@ def evolve(
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
 
+        # If struct_boost is none, just set to 1. 
+        if struct_boost is None:
+            def struct_boost(rs):
+                return 1.
+
         # Define the rate functions. 
         def rate_func_N(rs):
             return (

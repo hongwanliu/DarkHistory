@@ -46,7 +46,9 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 def get_history(
     rs_vec, init_cond=None, baseline_f=False,
     f_H_ion=None, f_H_exc=None, f_heating=None,
-    injection_rate=None, reion_switch=False, reion_rs=None,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None,
+    struct_boost=None, injection_rate=None, 
+    reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -67,8 +69,16 @@ def get_history(
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation. Treated as constant if float.
     f_heating : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
+    DM_process : {'swave', 'decay'}, optional
+        Dark matter process to use. Default is None.
+    sigmav : float, optional
+        Thermally averaged cross section for ``DM_process == 'swave'``. Default is None.
+    lifetime : float, optional
+        Decay lifetime for ``DM_process == 'decay'``. Default is None.
+    struct_boost : function, optional
+        Energy injection boost factor due to structure formation. Default is None.
     injection_rate : function or float, optional
-        Injection rate of DM as a function of redshift. Treated as constant if float.
+        Injection rate of DM as a function of redshift. Treated as constant if float. Default is None. 
     reion_switch : bool
         Reionization model included if True.
     reion_rs : float, optional
@@ -134,13 +144,37 @@ def get_history(
         else:
             return f_He_ion
 
+    if DM_process == 'swave' and (sigmav is None or mDM is None):
+        raise ValueError('sigmav, mDM must be specified for swave.')
+    if DM_process == 'decay' and (lifetime is None or mDM is None):
+        raise ValueError('lifetime, mDM must be specified for decay.')
+    if DM_process is not None and injection_rate is not None:
+        raise ValueError(
+            'cannot specify both DM_process and injection_rate.'
+        )
+
     def _injection_rate(rs):
-        if injection_rate is None:
-            return 0.
-        elif callable(injection_rate):
-            return injection_rate(rs)
-        else: 
-            return injection_rate
+
+        if struct_boost is None:
+            def struct_boost(rs): 
+                return 1
+
+        if DM_process == 'swave':
+            return (
+                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                * struct_boost(rs)
+            )
+        elif DM_process == 'decay':
+            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+
+        else:
+
+            if injection_rate is None:
+                return 0.
+            elif callable(injection_rate):
+                return injection_rate(rs)
+            else: 
+                return injection_rate
         
     chi = phys.chi
 
