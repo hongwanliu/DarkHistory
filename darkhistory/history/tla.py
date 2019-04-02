@@ -44,8 +44,9 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond=None, f_H_ion=None, f_H_exc=None, f_heating=None,
-    dm_injection_rate=None, reion_switch=False, reion_rs=None,
+    rs_vec, init_cond=None, baseline_f=False,
+    f_H_ion=None, f_H_exc=None, f_heating=None,
+    injection_rate=None, reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -54,18 +55,20 @@ def get_history(
 
     Parameters
     ----------
+    rs_vec : ndarray
+        Abscissa for the solution.
     init_cond : array, optional
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
+    baseline_f : bool
+        If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
     f_H_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
     f_H_exc : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation. Treated as constant if float.
     f_heating : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
-    dm_injection_rate : function or float, optional
+    injection_rate : function or float, optional
         Injection rate of DM as a function of redshift. Treated as constant if float.
-    rs_vec : ndarray
-        Abscissa for the solution.
     reion_switch : bool
         Reionization model included if True.
     reion_rs : float, optional
@@ -131,13 +134,13 @@ def get_history(
         else:
             return f_He_ion
 
-    def _dm_injection_rate(rs):
-        if dm_injection_rate is None:
+    def _injection_rate(rs):
+        if injection_rate is None:
             return 0.
-        elif callable(dm_injection_rate):
-            return dm_injection_rate(rs)
+        elif callable(injection_rate):
+            return injection_rate(rs)
         else: 
-            return dm_injection_rate
+            return injection_rate
         
     chi = phys.chi
 
@@ -182,7 +185,7 @@ def get_history(
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = _dm_injection_rate(rs)
+        inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -338,7 +341,7 @@ def get_history(
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = _dm_injection_rate(rs)
+        inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -506,7 +509,7 @@ def get_history(
                 + (
                     phys.dtdz(rs)*(
                         compton_cooling_rate(xHII, xHeII, 0, T_m, rs)
-                        + _f_heating(rs, xHI, xHeI, 0) * _dm_injection_rate(rs)
+                        + _f_heating(rs, xHI, xHeI, 0) * _injection_rate(rs)
                     )
                 ) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
             )

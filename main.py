@@ -523,7 +523,7 @@ def evolve(
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA, 
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
-            dm_injection_rate=rate_func_eng_unclustered,
+            injection_rate=rate_func_eng_unclustered,
             reion_switch=reion_switch, reion_rs=reion_rs,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
