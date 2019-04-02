@@ -102,53 +102,43 @@ def get_history(
     def _f_H_ion(rs, xHI, xHeI, xHeII):
         if f_H_ion is None:
             return 0.
-        elif isinstance(f_H_ion, float) or isinstance(f_H_ion, int):
-            return f_H_ion
         elif callable(f_H_ion):
             return f_H_ion(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_H_ion must be float or an appropriate function.')
+            return f_H_ion
 
     def _f_H_exc(rs, xHI, xHeI, xHeII):
         if f_H_exc is None:
-            return 0
-        elif isinstance(f_H_exc, float) or isinstance(f_H_exc, int):
-            return f_H_exc
+            return 0.
         elif callable(f_H_exc):
             return f_H_exc(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_H_exc must be float or an appropriate function.')
+            return f_H_exc
 
     def _f_heating(rs, xHI, xHeI, xHeII):
         if f_heating is None:
-            return 0
-        elif isinstance(f_heating, float) or isinstance(f_heating, int):
-            return f_heating
+            return 0.
         elif callable(f_heating):
             return f_heating(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_heating must be float or an appropriate function.')
-
+            return f_heating
+        
     def _f_He_ion(rs, xHI, xHeI, xHeII):
         if f_He_ion is None:
             return 0.
-        if isinstance(f_He_ion, float) or isinstance(f_He_ion, int):
-            return f_He_ion
         elif callable(f_He_ion):
             return f_He_ion(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_He_ion must be float or an appropriate function.')
+            return f_He_ion
 
     def _dm_injection_rate(rs):
         if dm_injection_rate is None:
             return 0.
-        elif isinstance(dm_injection_rate, float):
-            return dm_injection_rate
         elif callable(dm_injection_rate):
             return dm_injection_rate(rs)
-        else:
-            raise TypeError('dm_injection_rate must be a float or an appropriate function.')
-
+        else: 
+            return dm_injection_rate
+        
     chi = phys.chi
 
     if reion_switch:
