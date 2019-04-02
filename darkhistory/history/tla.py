@@ -45,6 +45,7 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 
 def get_history(
     rs_vec, init_cond=None, baseline_f=False,
+    inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None,
     struct_boost=None, injection_rate=None, 
@@ -63,6 +64,8 @@ def get_history(
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
     baseline_f : bool
         If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
+    inj_particle : {'elec', 'phot'}, optional
+        Specifies which set of f to use: electron/positron or photon. 
     f_H_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
     f_H_exc : function or float, optional
@@ -112,7 +115,21 @@ def get_history(
     # Defines the f(z) functions, which return a constant, 
     # if the input fz's are floats. 
 
+    if baseline_f and mDM is None:
+        raise ValueError('Specify mDM to use baseline_f.')
+
+    if baseline_f and (
+        f_H_ion is not None or f_H_exc is not None
+        or f_heating is not None
+    ):
+        raise ValueError('Use either baseline_f or specify f manually.')
+
     def _f_H_ion(rs, xHI, xHeI, xHeII):
+        if baseline_f: 
+            return phys.f_std(
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                channel='H ion'
+            )
         if f_H_ion is None:
             return 0.
         elif callable(f_H_ion):
@@ -121,6 +138,11 @@ def get_history(
             return f_H_ion
 
     def _f_H_exc(rs, xHI, xHeI, xHeII):
+        if baseline_f: 
+            return phys.f_std(
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                channel='exc'
+            )
         if f_H_exc is None:
             return 0.
         elif callable(f_H_exc):
@@ -129,6 +151,11 @@ def get_history(
             return f_H_exc
 
     def _f_heating(rs, xHI, xHeI, xHeII):
+        if baseline_f: 
+            return phys.f_std(
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                channel='heat'
+            )
         if f_heating is None:
             return 0.
         elif callable(f_heating):
@@ -153,11 +180,12 @@ def get_history(
             'cannot specify both DM_process and injection_rate.'
         )
 
-    def _injection_rate(rs):
+    # struct_boost should be defined to just return 1 if undefined.
+    if struct_boost is None:
+        def struct_boost(rs): 
+            return 1
 
-        if struct_boost is None:
-            def struct_boost(rs): 
-                return 1
+    def _injection_rate(rs):
 
         if DM_process == 'swave':
             return (

@@ -1270,7 +1270,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # must use the mass of the electron in eV m^2 s^-2.
     return prefac*ne*coulomb_log/(me/c**2*w)
 
-def f_std(Einj, rs, inj_particle=None, inj_type=None, channel=None):
+def f_std(mDM, rs, inj_particle=None, inj_type=None, channel=None):
 
     if (inj_particle != 'phot') and (inj_particle != 'elec'):
         raise ValueError("inj_particle must either be 'phot' or 'elec'")
@@ -1282,6 +1282,18 @@ def f_std(Einj, rs, inj_particle=None, inj_type=None, channel=None):
         raise ValueError(
             "channel must be in ['H ion', 'He ion', 'exc', 'heat', 'cont']"
         )
+
+    if inj_type == 'swave':
+        if inj_particle == 'phot':
+            Einj = mDM
+        else:
+            Einj = mDM - me
+    else:
+        if inj_particle == 'phot':
+            Einj = mDM/2
+        else:
+            Einj = mDM/2 - me
+
     ind_dict = {'H ion' : 0, 'He ion' : 1, 'exc' : 2, 'heat' : 3, 'cont' : 4}
     ind = ind_dict[channel]
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type]
