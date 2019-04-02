@@ -1270,7 +1270,19 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # must use the mass of the electron in eV m^2 s^-2.
     return prefac*ne*coulomb_log/(me/c**2*w)
 
+def f_std(Einj, rs, inj_particle='phot', inj_type='decay', channel = 'heat'):
 
+    if (inj_particle != 'phot') and (inj_particle != 'elec'):
+        raise TypeError("inj_particle must either be 'phot' or 'elec'")
+
+    if (inj_type != 'decay') and (inj_type != 'swave'):
+        raise TypeError("inj_type must either be 'swave' or 'decay'")
+
+    if (channel != 'H ion') and (channel != 'cont') and (channel != 'exc') and (channel != 'heat') and (channel != 'cont'):
+        raise TypeError("channel must be within {'H ion', 'He ion', 'exc', 'heat', 'cont'}")
+    ind = {'H ion' : 0, 'He ion' : 1, 'exc' : 2, 'heat' : 3, 'cont' : 4}[channel]
+
+    return np.exp(load_data('f')[inj_particle+'_'+inj_type]((np.log10(Einj), np.log(rs))))
 
 
 # Unused for now.
@@ -1347,6 +1359,5 @@ def elec_heating_engloss_rate(eng, xe, rs):
 #         probability density of emitting those two photons.
 #     """
 #     return 0
-
 
 
