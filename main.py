@@ -145,6 +145,11 @@ def evolve(
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
 
+        # If struct_boost is none, just set to 1. 
+        if struct_boost is None:
+            def struct_boost(rs):
+                return 1.
+
         # Define the rate functions. 
         def rate_func_N(rs):
             return (
@@ -523,7 +528,7 @@ def evolve(
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA, 
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
-            dm_injection_rate=rate_func_eng_unclustered,
+            injection_rate=rate_func_eng_unclustered,
             reion_switch=reion_switch, reion_rs=reion_rs,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,

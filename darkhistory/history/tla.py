@@ -44,8 +44,12 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond=None, f_H_ion=None, f_H_exc=None, f_heating=None,
-    dm_injection_rate=None, reion_switch=False, reion_rs=None,
+    rs_vec, init_cond=None, baseline_f=False,
+    inj_particle=None,
+    f_H_ion=None, f_H_exc=None, f_heating=None,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None,
+    struct_boost=None, injection_rate=None, 
+    reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -54,18 +58,30 @@ def get_history(
 
     Parameters
     ----------
+    rs_vec : ndarray
+        Abscissa for the solution.
     init_cond : array, optional
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
+    baseline_f : bool
+        If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
+    inj_particle : {'elec', 'phot'}, optional
+        Specifies which set of f to use: electron/positron or photon. 
     f_H_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
     f_H_exc : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation. Treated as constant if float.
     f_heating : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
-    dm_injection_rate : function or float, optional
-        Injection rate of DM as a function of redshift. Treated as constant if float.
-    rs_vec : ndarray
-        Abscissa for the solution.
+    DM_process : {'swave', 'decay'}, optional
+        Dark matter process to use. Default is None.
+    sigmav : float, optional
+        Thermally averaged cross section for ``DM_process == 'swave'``. Default is None.
+    lifetime : float, optional
+        Decay lifetime for ``DM_process == 'decay'``. Default is None.
+    struct_boost : function, optional
+        Energy injection boost factor due to structure formation. Default is None.
+    injection_rate : function or float, optional
+        Injection rate of DM as a function of redshift. Treated as constant if float. Default is None. 
     reion_switch : bool
         Reionization model included if True.
     reion_rs : float, optional
@@ -99,56 +115,95 @@ def get_history(
     # Defines the f(z) functions, which return a constant, 
     # if the input fz's are floats. 
 
+    if baseline_f and mDM is None:
+        raise ValueError('Specify mDM to use baseline_f.')
+
+    if baseline_f and (
+        f_H_ion is not None or f_H_exc is not None
+        or f_heating is not None
+    ):
+        raise ValueError('Use either baseline_f or specify f manually.')
+
     def _f_H_ion(rs, xHI, xHeI, xHeII):
+        if baseline_f: 
+            return phys.f_std(
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                channel='H ion'
+            )
         if f_H_ion is None:
             return 0.
-        elif isinstance(f_H_ion, float) or isinstance(f_H_ion, int):
-            return f_H_ion
         elif callable(f_H_ion):
             return f_H_ion(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_H_ion must be float or an appropriate function.')
+            return f_H_ion
 
     def _f_H_exc(rs, xHI, xHeI, xHeII):
+        if baseline_f: 
+            return phys.f_std(
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                channel='exc'
+            )
         if f_H_exc is None:
-            return 0
-        elif isinstance(f_H_exc, float) or isinstance(f_H_exc, int):
-            return f_H_exc
+            return 0.
         elif callable(f_H_exc):
             return f_H_exc(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_H_exc must be float or an appropriate function.')
+            return f_H_exc
 
     def _f_heating(rs, xHI, xHeI, xHeII):
+        if baseline_f: 
+            return phys.f_std(
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                channel='heat'
+            )
         if f_heating is None:
-            return 0
-        elif isinstance(f_heating, float) or isinstance(f_heating, int):
-            return f_heating
+            return 0.
         elif callable(f_heating):
             return f_heating(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_heating must be float or an appropriate function.')
-
+            return f_heating
+        
     def _f_He_ion(rs, xHI, xHeI, xHeII):
         if f_He_ion is None:
             return 0.
-        if isinstance(f_He_ion, float) or isinstance(f_He_ion, int):
-            return f_He_ion
         elif callable(f_He_ion):
             return f_He_ion(rs, xHI, xHeI, xHeII)
         else:
-            raise TypeError('f_He_ion must be float or an appropriate function.')
+            return f_He_ion
 
-    def _dm_injection_rate(rs):
-        if dm_injection_rate is None:
-            return 0.
-        elif isinstance(dm_injection_rate, float):
-            return dm_injection_rate
-        elif callable(dm_injection_rate):
-            return dm_injection_rate(rs)
+    if DM_process == 'swave' and (sigmav is None or mDM is None):
+        raise ValueError('sigmav, mDM must be specified for swave.')
+    if DM_process == 'decay' and (lifetime is None or mDM is None):
+        raise ValueError('lifetime, mDM must be specified for decay.')
+    if DM_process is not None and injection_rate is not None:
+        raise ValueError(
+            'cannot specify both DM_process and injection_rate.'
+        )
+
+    # struct_boost should be defined to just return 1 if undefined.
+    if struct_boost is None:
+        def struct_boost(rs): 
+            return 1
+
+    def _injection_rate(rs):
+
+        if DM_process == 'swave':
+            return (
+                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                * struct_boost(rs)
+            )
+        elif DM_process == 'decay':
+            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+
         else:
-            raise TypeError('dm_injection_rate must be a float or an appropriate function.')
 
+            if injection_rate is None:
+                return 0.
+            elif callable(injection_rate):
+                return injection_rate(rs)
+            else: 
+                return injection_rate
+        
     chi = phys.chi
 
     if reion_switch:
@@ -192,7 +247,7 @@ def get_history(
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = _dm_injection_rate(rs)
+        inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -348,7 +403,7 @@ def get_history(
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = _dm_injection_rate(rs)
+        inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
@@ -516,7 +571,7 @@ def get_history(
                 + (
                     phys.dtdz(rs)*(
                         compton_cooling_rate(xHII, xHeII, 0, T_m, rs)
-                        + _f_heating(rs, xHI, xHeI, 0) * _dm_injection_rate(rs)
+                        + _f_heating(rs, xHI, xHeI, 0) * _injection_rate(rs)
                     )
                 ) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
             )
