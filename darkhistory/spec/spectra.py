@@ -639,6 +639,7 @@ class Spectra:
         --------
         :meth:`Spectra.__truediv__`
         """
+
         inv_spectra = Spectra([])
         inv_spectra._eng = self.eng
         inv_spectra._in_eng = self.in_eng
@@ -703,23 +704,17 @@ class Spectra:
         for i,(rs, new_rs, in_eng) in enumerate(
             zip(self.rs, rs_arr, self.in_eng)
         ):
-            print('before: ', self.totN())
             spec = Spectrum(
                 self.eng, self.grid_vals[i],
                 rs=rs, in_eng=in_eng,
-                spec_type='N'
+                spec_type=self.spec_type
             )
-            print('before: ', spec.totN())
+
             spec.redshift(new_rs)
-            print('after: ', spec.totN())
-            spec.switch_spec_type(self.spec_type)
-            print('grid: ', self.grid_vals[-1])
             self._grid_vals[i] = spec._data
-            print('grid after: ', self.grid_vals[-1])
             self._N_underflow[i] += spec.underflow['N']
             self._eng_underflow[i] += spec.underflow['eng']
-            print(self._N_underflow)
-            print('after: ', self.totN())
+
 
         self._rs = rs_arr
 
