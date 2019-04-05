@@ -539,7 +539,7 @@ class Spectra:
         :meth:`Spectra.__mul__`
         """
 
-       if np.isscalar(other):
+        if np.isscalar(other):
 
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
@@ -700,20 +700,26 @@ class Spectra:
         if rs_arr.size != self.rs.size:
             raise TypeError('rs_arr must have the same size as the number of Spectrum objects stored.')
 
-        for i,(val, rs, new_rs, in_eng) in enumerate(
-            zip(self, self.rs, rs_arr, self.in_eng)
+        for i,(rs, new_rs, in_eng) in enumerate(
+            zip(self.rs, rs_arr, self.in_eng)
         ):
-
+            print('before: ', self.totN())
             spec = Spectrum(
-                self.eng, val.N,
+                self.eng, self.grid_vals[i],
                 rs=rs, in_eng=in_eng,
                 spec_type='N'
             )
-
+            print('before: ', spec.totN())
             spec.redshift(new_rs)
+            print('after: ', spec.totN())
+            spec.switch_spec_type(self.spec_type)
+            print('grid: ', self.grid_vals[-1])
             self._grid_vals[i] = spec._data
+            print('grid after: ', self.grid_vals[-1])
             self._N_underflow[i] += spec.underflow['N']
             self._eng_underflow[i] += spec.underflow['eng']
+            print(self._N_underflow)
+            print('after: ', self.totN())
 
         self._rs = rs_arr
 
@@ -850,7 +856,7 @@ class Spectra:
 
         else:
             return (
-                np.dot(dNdlogE, log_bin_width) + np.sum(self.N_underflow)
+                np.dot(dNdlogE, log_bin_width) + self.N_underflow
             )
 
     def toteng(self, bound_type=None, bound_arr=None):
@@ -991,7 +997,7 @@ class Spectra:
         else:
             return (
                 np.dot(dNdlogE, self.eng*log_bin_width)
-                + np.sum(self.eng_underflow)
+                + self.eng_underflow
             )
 
     def integrate_each_spec(self, weight=None):
