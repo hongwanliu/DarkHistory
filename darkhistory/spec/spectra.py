@@ -374,8 +374,8 @@ class Spectra:
         elif isinstance(other, np.ndarray):
 
             self._grid_vals += other
-            self._N_underflow = 0
-            self._eng_underflow = 0
+            self._N_underflow = self.N_underflow
+            self._eng_underflow = self.eng_underflow
 
         else:
             raise TypeError('adding an object that is not compatible.')
@@ -474,8 +474,8 @@ class Spectra:
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
-            out_spectra._N_underflow = 0
-            out_spectra._eng_underflow = 0
+            out_spectra._N_underflow = self.N_underflow*other
+            out_spectra._eng_underflow = self.eng_underflow*other
 
             return out_spectra
 
@@ -488,8 +488,8 @@ class Spectra:
             out_spectra._grid_vals = np.einsum(
                 'ij,i->ij',self.grid_vals, other
             )
-            out_spectra._N_underflow = 0
-            out_spectra._eng_underflow = 0
+            out_spectra._N_underflow = self.N_underflow*0
+            out_spectra._eng_underflow = self.eng_underflow*0
 
             return out_spectra
 
@@ -509,8 +509,8 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
-            out_spectra._N_underflow = 0
-            out_spectra._eng_underflow = 0
+            out_spectra._N_underflow = self.N_underflow*0
+            out_spectra._eng_underflow = self.eng_underflow*0
             return out_spectra
 
     def __rmul__(self, other):
@@ -539,20 +539,30 @@ class Spectra:
         :meth:`Spectra.__mul__`
         """
 
-        if (
-            np.issubdtype(type(other), float)
-            or np.issubdtype(type(other), int)
-            or isinstance(other, list)
-            or isinstance(other, np.ndarray)
-        ):
+       if np.isscalar(other):
+
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
             out_spectra._in_eng = self.in_eng
             out_spectra._rs = self.rs
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals*other
-            out_spectra._N_underflow = 0
-            out_spectra._eng_underflow = 0
+            out_spectra._N_underflow = self.N_underflow*other
+            out_spectra._eng_underflow = self.eng_underflow*other
+
+            return out_spectra
+
+        elif isinstance(other, np.ndarray):
+            out_spectra = Spectra([])
+            out_spectra._eng = self.eng
+            out_spectra._in_eng = self.in_eng
+            out_spectra._rs = self.rs
+            out_spectra._spec_type = self.spec_type
+            out_spectra._grid_vals = np.einsum(
+                'ij,i->ij',self.grid_vals, other
+            )
+            out_spectra._N_underflow = self.N_underflow*0
+            out_spectra._eng_underflow = self.eng_underflow*0
 
             return out_spectra
 
@@ -572,9 +582,8 @@ class Spectra:
             out_spectra._grid_vals = (
                 self.grid_vals * other.grid_vals
             )
-            out_spectra._N_underflow = 0
-            out_spectra._eng_underflow = 0
-
+            out_spectra._N_underflow = self.N_underflow*0
+            out_spectra._eng_underflow = self.eng_underflow*0
             return out_spectra
 
     def __truediv__(self, other):
@@ -691,11 +700,8 @@ class Spectra:
         if rs_arr.size != self.rs.size:
             raise TypeError('rs_arr must have the same size as the number of Spectrum objects stored.')
 
-        for i,(val, rs, new_rs, in_eng, N_uf, eng_uf) in enumerate(
-            zip(
-                self, self.rs, rs_arr, self.in_eng,
-                self.N_underflow, self.eng_underflow
-            )
+        for i,(val, rs, new_rs, in_eng) in enumerate(
+            zip(self, self.rs, rs_arr, self.in_eng)
         ):
 
             spec = Spectrum(

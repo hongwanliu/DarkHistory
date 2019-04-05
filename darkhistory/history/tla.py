@@ -183,7 +183,7 @@ def get_history(
     # struct_boost should be defined to just return 1 if undefined.
     if struct_boost is None:
         def struct_boost(rs): 
-            return 1
+            return 1.
 
     def _injection_rate(rs):
 
