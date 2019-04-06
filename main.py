@@ -119,7 +119,6 @@ def evolve(
     lowengphot_tf_interp  = dep_tf_data['lowengphot']
     lowengelec_tf_interp  = dep_tf_data['lowengelec']
     highengdep_interp     = dep_tf_data['highengdep']
-    CMB_engloss_interp    = dep_tf_data['CMB_engloss']
 
     ics_tf_data = load_data('ics_tf')
 
@@ -315,9 +314,7 @@ def evolve(
     f_low  = np.empty((0,5))
     f_high = np.empty((0,5))
 
-    # Initialize arrays to store energy of upscattered photons 
-    # per unit time, and high-energy energy deposition rate. 
-    cmbloss_grid = np.array([])
+    # Initialize array to store high-energy energy deposition rate. 
     highengdep_grid = np.empty((0,4))
 
 
@@ -347,7 +344,6 @@ def evolve(
             lowengphot_spec_at_rs  = in_spec_phot*0
             lowengelec_spec_at_rs  = in_spec_elec*0
             highengdep_at_rs       = np.zeros(4)
-            cmbloss_at_rs          = 0
 
 
         #####################################################################
@@ -456,11 +452,6 @@ def evolve(
                 deposited_ICS/dt
             ])
 
-            # Upscattered CMB photon energy from input electrons. 
-            cmbloss_at_rs = np.dot(
-                continuum_loss/dt, in_spec_elec.N*norm_fac(rs)
-            )
-
         # Values of (xHI, xHeI, xHeII) to use for computing f.
         if backreaction:
             # Use the previous values with backreaction.
@@ -478,7 +469,7 @@ def evolve(
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
-            highengdep_at_rs, cmbloss_at_rs, method=compute_fs_method
+            highengdep_at_rs, method=compute_fs_method
         )
 
         # Save the f_c(z) values.
@@ -486,7 +477,6 @@ def evolve(
         f_high = np.concatenate((f_high, [f_raw[1]]))
 
         # Save CMB upscattered rate and high-energy deposition rate.
-        cmbloss_grid = np.append(cmbloss_grid, cmbloss_at_rs)
         highengdep_grid = np.concatenate(
             (highengdep_grid, [highengdep_at_rs])
         )
@@ -637,7 +627,6 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
-        'cmbloss': cmbloss_grid, 
         'f': f
     }
 
@@ -758,7 +747,6 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     lowengphot_tf_interp  = dep_tf_data['lowengphot']
     lowengelec_tf_interp  = dep_tf_data['lowengelec']
     highengdep_interp     = dep_tf_data['highengdep']
-    CMB_engloss_interp    = dep_tf_data['CMB_engloss']
 
     if coarsen_factor > 1:
         # rs_to_interpolate = rs
@@ -775,9 +763,6 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     lowengelec_tf  = lowengelec_tf_interp.get_tf(
         xHII, xHeII, rs_to_interpolate
     )
-    # cmbloss_arr    = CMB_engloss_interp.get_val(
-    #     xHII, xHeII, rs_to_interpolate
-    # )
     highengdep_arr = highengdep_interp.get_val(
         xHII, xHeII, rs_to_interpolate
     )

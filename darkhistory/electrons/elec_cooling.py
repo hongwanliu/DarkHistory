@@ -10,6 +10,8 @@ import darkhistory.spec.spectools as spectools
 
 from config import load_data
 
+from darkhistory.spec.spectrum import Spectrum
+
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
 
@@ -497,8 +499,23 @@ def get_elec_cooling_tf(
         np.identity(eleceng.size) - sec_highengelec_N_arr,
         sec_lowengelec_N_arr, lower=True, check_finite=False
     )
-    
-    sec_phot_tf._grid_vals = sec_phot_specs
+
+    # Subtract continuum from sec_phot_specs. After this point, 
+    # sec_phot_specs will contain the *distortions* to the CMB. 
+
+    # Normalized CMB spectrum. 
+    norm_CMB_spec = Spectrum(
+        photeng, phys.CMB_spec(photeng, phys.TCMB(rs)), spec_type='dNdE'
+    )
+    norm_CMB_spec /= norm_CMB_spec.toteng()
+
+    # Get the CMB spectrum upscattered from cont_loss_ICS_vec. 
+    upscattered_CMB_grid = np.outer(cont_loss_ICS_vec, norm_CMB_spec.N)
+
+    # Subtract this spectrum from sec_phot_specs to get the final
+    # transfer function.
+
+    sec_phot_tf._grid_vals = sec_phot_specs - upscattered_CMB_grid
     sec_lowengelec_tf._grid_vals = sec_lowengelec_specs
 
     # Conservation checks.
@@ -509,7 +526,7 @@ def get_elec_cooling_tf(
         conservation_check = (
             eleceng
             - np.dot(sec_lowengelec_tf.grid_vals, eleceng)
-            + cont_loss_ICS_vec
+            # + cont_loss_ICS_vec
             - np.dot(sec_phot_tf.grid_vals, photeng)
             - deposited_exc_vec
             - deposited_ion_vec
@@ -532,16 +549,16 @@ def get_elec_cooling_tf(
                     np.dot(sec_lowengelec_tf.grid_vals[i], eleceng)
                 )
 
-                print('Energy in photons: ', 
-                    np.dot(sec_phot_tf.grid_vals[i], photeng)
-                )
+                # print('Energy in photons: ', 
+                #     np.dot(sec_phot_tf.grid_vals[i], photeng)
+                # )
                 
-                print('Continuum_engloss: ', cont_loss_ICS_vec[i])
+                # print('Continuum_engloss: ', cont_loss_ICS_vec[i])
                 
                 print(
                     'Energy in photons - Continuum: ', (
                         np.dot(sec_phot_tf.grid_vals[i], photeng)
-                        - cont_loss_ICS_vec[i]
+                        # - cont_loss_ICS_vec[i]
                     )
                 )
 
