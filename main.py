@@ -394,7 +394,7 @@ def evolve(
             deposited_heat = np.dot(
                 deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
             )
-            # High-energy deposition into continuum, *per baryon per dlnz*.
+            # High-energy deposition numerical error, *per baryon per dlnz*.
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
             )
