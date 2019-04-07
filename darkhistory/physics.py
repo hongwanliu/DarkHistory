@@ -1270,7 +1270,20 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # must use the mass of the electron in eV m^2 s^-2.
     return prefac*ne*coulomb_log/(me/c**2*w)
 
-def f_std(mDM, rs, inj_particle=None, inj_type=None, channel=None):
+def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
+    """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.
+
+    Parameters
+    ----------
+    mDM : float
+        Dark matter mass
+    inj_particle : string
+        Injected particle, either set to 'phot' for photons, or 'elec' for electrons.
+    inj_type : string
+        Type of energy injection, either 'swave' or 'decay
+    struct : bool
+        If True, include structure formation, if False assume no structure formation.  This option makes no difference for decays.
+    """
 
     if (inj_particle != 'phot') and (inj_particle != 'elec'):
         raise ValueError("inj_particle must either be 'phot' or 'elec'")
@@ -1283,20 +1296,25 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, channel=None):
             "channel must be in ['H ion', 'He ion', 'exc', 'heat', 'cont']"
         )
 
+    struct_str = ''
     if inj_type == 'swave':
         if inj_particle == 'phot':
             Einj = mDM
         else:
             Einj = mDM - me
+
+        if struct:
+            struct_str = '_struct'
     else:
         if inj_particle == 'phot':
             Einj = mDM/2
         else:
             Einj = mDM/2 - me
 
+
     ind_dict = {'H ion' : 0, 'He ion' : 1, 'exc' : 2, 'heat' : 3, 'cont' : 4}
     ind = ind_dict[channel]
-    f_data_baseline = load_data('f')[inj_particle+'_'+inj_type]
+    f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
     return np.exp(
         f_data_baseline((np.log10(Einj), np.log(rs)))
     )[ind]

@@ -14,8 +14,8 @@ from scipy.interpolate import pchip_interpolate
 from scipy.interpolate import RegularGridInterpolator
 
 
-data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-#data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+#data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 # data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
 # Global variables for data.
@@ -327,21 +327,27 @@ def load_data(data_type):
             log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
             log10eng[-1] = 12.601505994846297
 
-            f_phot_decay = pickle.load(open(data_path+'/f_phot_decay_std.p', 'rb'))
-            f_phot_swave = pickle.load(open(data_path+'/f_phot_swave_std.p', 'rb'))
-            f_elec_decay = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
-            f_elec_swave = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
+            f_phot_decay        = pickle.load(open(data_path+'/f_phot_decay_std.p', 'rb'))
+            f_phot_swave        = pickle.load(open(data_path+'/f_phot_swave_std.p', 'rb'))
+            f_phot_swave_struct = pickle.load(open(data_path+'/f_phot_swave_std_einasto_subs.p', 'rb'))
+            f_elec_decay        = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
+            f_elec_swave        = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
+            f_elec_swave_struct = pickle.load(open(data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
 
-            f_phot_decay_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
-            f_phot_swave_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_swave))
-            f_elec_decay_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_decay))
-            f_elec_swave_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave))
+            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
+            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_swave))
+            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_swave_struct))
+            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_decay))
+            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave))
+            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave_struct))
 
             glob_f_data = {
-                'phot_decay' : f_phot_decay_interp,
-                'phot_swave' : f_phot_swave_interp,
-                'elec_decay' : f_elec_decay_interp,
-                'elec_swave' : f_elec_swave_interp
+                'phot_decay'        : f_phot_decay_interp,
+                'phot_swave'        : f_phot_swave_interp,
+                'phot_swave_struct' : f_phot_swave_struct_interp,
+                'elec_decay'        : f_elec_decay_interp,
+                'elec_swave'        : f_elec_swave_interp,
+                'elec_swave_struct' : f_elec_swave_struct_interp
             }
         return glob_f_data
 
