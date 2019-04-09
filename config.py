@@ -341,6 +341,9 @@ def load_data(data_type):
             f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave))
             f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave_struct))
 
+            print(np.exp(f_phot_swave_struct_interp((log10eng[0]*1.001,phot_ln_rs))))
+            print(phot_ln_rs)
+            print(log10eng[0])
             glob_f_data = {
                 'phot_decay'        : f_phot_decay_interp,
                 'phot_swave'        : f_phot_swave_interp,
