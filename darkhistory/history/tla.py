@@ -124,10 +124,15 @@ def get_history(
     ):
         raise ValueError('Use either baseline_f or specify f manually.')
 
+    if baseline_f and (DM_process == 'swave'):
+        struct_bool = True
+    else:
+        struct_bool = False
+
     def _f_H_ion(rs, xHI, xHeI, xHeII):
         if baseline_f: 
             return phys.f_std(
-                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
                 channel='H ion'
             )
         if f_H_ion is None:
@@ -140,7 +145,7 @@ def get_history(
     def _f_H_exc(rs, xHI, xHeI, xHeII):
         if baseline_f: 
             return phys.f_std(
-                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
                 channel='exc'
             )
         if f_H_exc is None:
@@ -153,7 +158,7 @@ def get_history(
     def _f_heating(rs, xHI, xHeI, xHeII):
         if baseline_f: 
             return phys.f_std(
-                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
                 channel='heat'
             )
         if f_heating is None:
