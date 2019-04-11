@@ -46,10 +46,10 @@ def evolve(
     -----------
     in_spec_elec : :class:`.Spectrum`, optional
         Spectrum per injection event into electrons. ``in_spec_elec.rs``
-        of the :class:`.Spectrum` must be the initial condition. 
+        of the :class:`.Spectrum` must be the initial redshift. 
     in_spec_phot : :class:`.Spectrum`, optional
         Spectrum per injection event into photons. ``in_spec_phot.rs`` 
-        of the :class:`.Spectrum` must be the initial condition. 
+        of the :class:`.Spectrum` must be the initial redshift. 
     rate_func_N : function, optional
         Function returning number of injection events per volume per time. 
     rate_func_eng : function, optional
