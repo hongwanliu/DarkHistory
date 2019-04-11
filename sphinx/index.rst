@@ -41,7 +41,7 @@ The code can be downloaded as a ``.zip`` file from the `GitHub repository <https
 Data Files
 --------------------
 
-The data files that are necessary for DarkHistory to perform its calculations can be found on ?????. 
+The data files that are necessary for DarkHistory to perform its calculations can be found on `Dataverse <https://doi.org/10.7910/DVN/DUOUWA>`_. 
 
 Getting Started
 =======================================
