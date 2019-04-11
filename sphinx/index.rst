@@ -120,4 +120,4 @@ Indices and Tables
 .. [4] R. Diamanti, L. Lopez-Honorez, O. Mena, S. Palomares-Ruiz, and A. C. Vincent, JCAP **1402**, 017 (2014), 1308.2578.
 .. [5] L. Lopez-Honorez, O. Mena, S. Palomares-Ruiz, and A. C. Vincent, JCAP **1307**, 046 (2013), 1303.5094. 
 .. [6] V. Poulin, P. D. Serpico and J. Lesgourgues, JCAP **1512**, 041 (2015), 1508.01370. 
-.. [7] V. Poulin, J. Lesgourgues, and P. D. Serpico, JCAP **1703** 043 (2017), 1610.10051.
+.. [7] V. Poulin, J. Lesgourgues, and P. D. Serpico, JCAP **1703**, 043 (2017), 1610.10051.
