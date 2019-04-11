@@ -51,9 +51,9 @@ def evolve(
         Spectrum per injection event into photons. ``in_spec_phot.rs`` 
         of the :class:`.Spectrum` must be the initial redshift. 
     rate_func_N : function, optional
-        Function returning number of injection events per volume per time. 
+        Function returning number of injection events per volume per time, with redshift :math:`(1+z)` as an input.  
     rate_func_eng : function, optional
-        Function returning energy injected per volume per time. 
+        Function returning energy injected per volume per time, with redshift :math:`(1+z)` as an input. 
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. 
     sigmav : float, optional
