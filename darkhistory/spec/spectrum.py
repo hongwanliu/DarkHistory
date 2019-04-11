@@ -14,6 +14,8 @@ from scipy.interpolate import interp1d
 class Spectrum:
     """Structure for particle spectra.
 
+    For an example of how to use these objects, see `Example 1: Manipulating Spectra Part 1 - *Spectrum* <https://github.com/hongwanliu/DarkHistory/blob/development/examples/Example_%3F_Manipulating_Spectra_Part_1_Spectrum.ipynb>`_. 
+
     Parameters
     ----------
     eng : ndarray
