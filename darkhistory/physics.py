@@ -1315,6 +1315,20 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
     ind_dict = {'H ion' : 0, 'He ion' : 1, 'exc' : 2, 'heat' : 3, 'cont' : 4}
     ind = ind_dict[channel]
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
+
+    # nearest-neighbor extrapolation
+    if rs < 5.1:
+        rs = 5.1
+    #if rs < 4.004:
+    #    rs = 4.004001
+    elif rs > 3000:
+        rs = 3000
+
+    if Einj < 5e3:
+        Einj = 5.001e3
+    elif np.log10(Einj) > 12.601:
+        Einj = 10**(12.601)
+
     return np.exp(
         f_data_baseline((np.log10(Einj), np.log(rs)))
     )[ind]
