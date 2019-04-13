@@ -466,9 +466,6 @@ def alpha_recomb(T_m, species):
 
         conv_fac = 1.0e-4/kB
 
-        if T_m <= 0:
-            print(T_m)
-
         return (
             fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
             / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
@@ -697,9 +694,27 @@ def C_He(xHII, xHeII, rs, species):
 
         p_H = 1/(1 + a*gamma**b)
 
+
         # Numerator agrees with astro-ph/0703438, but not RECFAST.
-        C_He_triplet = A_He_23P1*(p_He + p_H)*np.exp(-E_ps/T)
-        C_He_triplet /= beta_ion(TCMB(rs), 'HeI_23s') + C_He_triplet
+        
+        # fac in variable names is np.exp(E_ps/T).
+
+        E_23s_inf = He_ion_eng - He_exc_eng['23s']
+
+        de_broglie_wavelength = (
+            c * 2*np.pi*hbar
+            / np.sqrt(2 * np.pi * me * T)
+        )
+
+        beta_ion_times_fac = (4/3)*(
+            (1/de_broglie_wavelength)**3
+            * np.exp((E_ps-E_23s_inf)/T) * alpha_recomb(T, 'HeI_23s')
+        )
+
+        C_He_triplet_numer_times_fac = A_He_23P1*(p_He + p_H)
+        C_He_triplet = C_He_triplet_numer_times_fac / (
+            beta_ion_times_fac + C_He_triplet_numer_times_fac
+        )
 
         return C_He_triplet
 

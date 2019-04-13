@@ -46,14 +46,14 @@ def evolve(
     -----------
     in_spec_elec : :class:`.Spectrum`, optional
         Spectrum per injection event into electrons. ``in_spec_elec.rs``
-        of the :class:`.Spectrum` must be the initial condition. 
+        of the :class:`.Spectrum` must be the initial redshift. 
     in_spec_phot : :class:`.Spectrum`, optional
         Spectrum per injection event into photons. ``in_spec_phot.rs`` 
-        of the :class:`.Spectrum` must be the initial condition. 
+        of the :class:`.Spectrum` must be the initial redshift. 
     rate_func_N : function, optional
-        Function returning number of injection events per volume per time. 
+        Function returning number of injection events per volume per time, with redshift :math:`(1+z)` as an input.  
     rate_func_eng : function, optional
-        Function returning energy injected per volume per time. 
+        Function returning energy injected per volume per time, with redshift :math:`(1+z)` as an input. 
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. 
     sigmav : float, optional
@@ -394,7 +394,7 @@ def evolve(
             deposited_heat = np.dot(
                 deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
             )
-            # High-energy deposition into continuum, *per baryon per dlnz*.
+            # High-energy deposition numerical error, *per baryon per dlnz*.
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
             )
@@ -596,6 +596,13 @@ def evolve(
         rs = next_rs
         dt = dlnz * coarsen_factor/phys.hubble(rs)
 
+    #########################################################################
+    #########################################################################
+    # END OF LOOP! END OF LOOP!                                             #
+    #########################################################################
+    #########################################################################
+
+
     if use_tqdm:
         pbar.close()
 
@@ -749,8 +756,10 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     highengdep_interp     = dep_tf_data['highengdep']
 
     if coarsen_factor > 1:
-        # rs_to_interpolate = rs
-        rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+        # Ensures that it doesn't fall off the edge. 
+        rs_to_interpolate = np.max(
+            (np.exp(np.log(rs) - dlnz * coarsen_factor/2), 4.)
+        )
     else:
         rs_to_interpolate = rs
 

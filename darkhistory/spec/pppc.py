@@ -56,7 +56,7 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     eng : ndarray
         The energy abscissa for the output spectrum (in eV). 
     pri : string
-        One of the available channels (see Notes). 
+        One of the available channels (see above). 
     sec : {'elec', 'phot'}
         The secondary spectrum to obtain. 
     decay : bool, optional

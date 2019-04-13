@@ -26,7 +26,7 @@ DarkHistory is a Python code package that calculates the global temperature and 
 
 5. *A new and more correct treatment of inverse Compton scattering (ICS)* for mildly relativistic and non-relativistic electrons; previous work in the literature has relied on approximate rates which are not always accurate.
 
-Due to these improvements, DarkHistory allows for rapid scans over many different prescriptions for reionization, either in the form of photoheating and photoionization rates, or a hard-coded background evolution for :math:`x_e`\ . The epoch of reionization is currently rather poorly constrained, making it important to understand the observational signatures of different scenarios, and the degree to which exotic energy injections might be separable from uncertainties in the reionization model. Previous attempts to model the effects of DM annihilation and decay into the reionization epoch have typically either assumed a fixed ionization history [3]_ -- requiring a slow re-computation of the cooling cascade if that history is changed [2]_ -- or performed a somewhat ad-hoc analytic approximation for the effect of a modified ionization fraction on the cooling of high-energy particles [4]_.
+Due to these improvements, DarkHistory allows for rapid scans over many different prescriptions for reionization, either in the form of photoheating and photoionization rates, or a hard-coded background evolution for :math:`x_e`\ . The epoch of reionization is currently rather poorly constrained, making it important to understand the observational signatures of different scenarios, and the degree to which exotic energy injections might be separable from uncertainties in the reionization model. Previous attempts to model the effects of DM annihilation and decay into the reionization epoch have typically either assumed a fixed ionization history [3]_ -- requiring a slow re-computation of the cooling cascade if that history is changed [2]_ -- or made an approximation for the effect of a modified ionization fraction on the cooling of high-energy particles [3]_ [4]_ [5]_ [6]_ [7]_.
 
 Installation
 =======================================
@@ -41,7 +41,7 @@ The code can be downloaded as a ``.zip`` file from the `GitHub repository <https
 Data Files
 --------------------
 
-The data files that are necessary for DarkHistory to perform its calculations can be found on ?????. 
+The data files that are necessary for DarkHistory to perform its calculations can be found on `Dataverse <https://doi.org/10.7910/DVN/DUOUWA>`_. 
 
 Getting Started
 =======================================
@@ -114,7 +114,10 @@ Indices and Tables
 
 .. rubric:: Footnotes
 
-.. [1] Cite past codes, CLASS etc.
-.. [2] Liu, Slatyer and Zavala, 2016
-.. [3] ExoClass
-.. [4] Aaron Vincent and co. 
+.. [1]  P. Stöcker, M. Krämer, J. Lesgourgues, and V. Poulin, JCAP **1803**, 018 (2018), 1801.01871.
+.. [2] H. Liu, T. R. Slatyer, and J. Zavala, Phys. Rev. **D94**, 063507 (2016), 1604.02457.
+.. [3] L. Lopez-Honorez, O. Mena, A. Moliné, S. Palomares-Ruiz, and A. C. Vincent, JCAP 1608, 004 (2016), 1603.06795.
+.. [4] R. Diamanti, L. Lopez-Honorez, O. Mena, S. Palomares-Ruiz, and A. C. Vincent, JCAP **1402**, 017 (2014), 1308.2578.
+.. [5] L. Lopez-Honorez, O. Mena, S. Palomares-Ruiz, and A. C. Vincent, JCAP **1307**, 046 (2013), 1303.5094. 
+.. [6] V. Poulin, P. D. Serpico and J. Lesgourgues, JCAP **1512**, 041 (2015), 1508.01370. 
+.. [7] V. Poulin, J. Lesgourgues, and P. D. Serpico, JCAP **1703**, 043 (2017), 1610.10051.
