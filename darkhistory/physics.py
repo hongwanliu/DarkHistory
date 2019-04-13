@@ -465,10 +465,7 @@ def alpha_recomb(T_m, species):
         # fudge_fac = 1.14
 
         conv_fac = 1.0e-4/kB
-
-        if T_m <= 0:
-            print(T_m)
-
+        
         return (
             fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
             / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
