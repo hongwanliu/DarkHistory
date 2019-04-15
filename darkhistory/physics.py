@@ -1256,6 +1256,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
 
     w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
     ne = xe*nH*rs**3
+    # ne = nB*rs**3
 
     eps_0 = 8.85418782e-12 # in SI units
 
