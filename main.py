@@ -756,10 +756,8 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     highengdep_interp     = dep_tf_data['highengdep']
 
     if coarsen_factor > 1:
-        # Ensures that it doesn't fall off the edge. 
-        rs_to_interpolate = np.max(
-            (np.exp(np.log(rs) - dlnz * coarsen_factor/2), 4.)
-        )
+        # rs_to_interpolate = rs
+        rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
     else:
         rs_to_interpolate = rs
 

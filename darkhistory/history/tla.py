@@ -395,13 +395,6 @@ def get_history(
         # print(rs, phys.peebles_C(xHII(yHII), rs))
 
         # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
-
-        # print('Values: ', rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
-        # print('Rates: ', rs, dT_dz(yHII, yHeII, yHeIII, T_m, rs),
-        #     dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
-        #     dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
-        #     dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs))
-
         return [
             dT_dz(yHII, yHeII, yHeIII, T_m, rs),
             dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
@@ -548,6 +541,8 @@ def get_history(
 
         T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
+        # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
+        
         return [
             dT_dz(yHII, yHeII, yHeIII, T_m, rs),
             dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
