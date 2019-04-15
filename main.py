@@ -355,13 +355,21 @@ def evolve(
         # Get the transfer functions corresponding to electron cooling. 
         # These are \bar{T}_\gamma, \bar{T}_e and \bar{R}_c. 
         if elec_processes:
+
+            if backreaction:
+                xHII_elec_cooling  = x_arr[-1, 0]
+                xHeII_elec_cooling = x_arr[-1, 1]
+            else:
+                xHII_elec_cooling  = phys.xHII_std(rs)
+                xHeII_elec_cooling = phys.xHeII_std(rs)
+
             (
                 ics_sec_phot_tf, elec_processes_lowengelec_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 continuum_loss, deposited_ICS_arr
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
-                    x_arr[-1,0], xHeII=x_arr[-1,1],
+                    xHII_elec_cooling, xHeII=xHeII_elec_cooling,
                     raw_thomson_tf=ics_thomson_ref_tf, 
                     raw_rel_tf=ics_rel_ref_tf, 
                     raw_engloss_tf=engloss_ref_tf,
