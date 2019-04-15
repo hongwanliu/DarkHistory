@@ -1270,7 +1270,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # must use the mass of the electron in eV m^2 s^-2.
     return prefac*ne*coulomb_log/(me/c**2*w)
 
-def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
+def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=True, channel=None):
     """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.
 
     Parameters
@@ -1317,14 +1317,16 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
 
     # nearest-neighbor extrapolation
-    if rs < 5.1:
-        rs = 5.1
-    #if rs < 4.004:
-    #    rs = 4.004001
+    #if hasattr(rs, "__len__"):
+    #    rs[rs<4.005] = 4.005
+    #    rs[rs>3000] = 3000
+    #else:
+    if rs < 4.005:
+        rs = 4.005
     elif rs > 3000:
         rs = 3000
 
-    if Einj < 5e3:
+    if Einj < 5.001e3:
         Einj = 5.001e3
     elif np.log10(Einj) > 12.601:
         Einj = 10**(12.601)
