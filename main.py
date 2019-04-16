@@ -488,6 +488,8 @@ def evolve(
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
         f_high = np.concatenate((f_high, [f_raw[1]]))
 
+        # print(f_low, f_high)
+
         # Save CMB upscattered rate and high-energy deposition rate.
         highengdep_grid = np.concatenate(
             (highengdep_grid, [highengdep_at_rs])
