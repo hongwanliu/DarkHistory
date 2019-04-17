@@ -335,8 +335,6 @@ def load_data(data_type):
             f_elec_decay        = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
             f_elec_swave        = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
             f_elec_swave_struct = pickle.load(open(data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
-            print(f_elec_decay.shape)
-            print(f_phot_decay.shape)
 
             f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
             f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_phot_swave))
