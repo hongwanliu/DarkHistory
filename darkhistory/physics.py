@@ -1333,9 +1333,6 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=True, channel=None):
             f_data_baseline((np.log10(Einj), np.log(rs)))[:,ind]
     )
 
-        else:
-            raise TypeError('invalid type for rs.')
-
 # Unused for now.
 
 
