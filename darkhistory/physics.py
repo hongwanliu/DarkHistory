@@ -1253,7 +1253,6 @@ def elec_heating_engloss_rate(eng, xe, rs):
 
     w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
     ne = xe*nH*rs**3
-    # ne = nB*rs**3
 
     eps_0 = 8.85418782e-12 # in SI units
 
@@ -1261,8 +1260,8 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2).
     prefac *= 100**2/ele**2
 
-    # zeta_e = 7.40e-11*nB*rs**3
     zeta_e = 7.40e-11*ne
+    # zeta_e = 7.40e-11*nB*rs**3
     coulomb_log = np.log(4*eng/zeta_e)
 
     # must use the mass of the electron in eV m^2 s^-2.
