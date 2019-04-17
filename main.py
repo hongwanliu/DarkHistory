@@ -390,19 +390,23 @@ def evolve(
                 elec_processes_lowengelec_spec*norm_fac(rs)
             )
 
-            # High-energy deposition into ionization, *per baryon per dlnz*. 
+            # High-energy deposition into ionization, 
+            # *per baryon in this step*. 
             deposited_ion  = np.dot(
                 deposited_ion_arr,  in_spec_elec.N*norm_fac(rs)
             )
-            # High-energy deposition into excitation, *per baryon per dlnz*.
+            # High-energy deposition into excitation, 
+            # *per baryon in this step*. 
             deposited_exc  = np.dot(
                 deposited_exc_arr,  in_spec_elec.N*norm_fac(rs)
             )
-            # High-energy deposition into heating, *per baryon per dlnz*.
+            # High-energy deposition into heating, 
+            # *per baryon in this step*. 
             deposited_heat = np.dot(
                 deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
             )
-            # High-energy deposition numerical error, *per baryon per dlnz*.
+            # High-energy deposition numerical error, 
+            # *per baryon in this step*. 
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
             )
@@ -483,6 +487,8 @@ def evolve(
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
         f_high = np.concatenate((f_high, [f_raw[1]]))
+
+        # print(f_low, f_high)
 
         # Save CMB upscattered rate and high-energy deposition rate.
         highengdep_grid = np.concatenate(

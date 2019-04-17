@@ -180,7 +180,7 @@ def getf_ion(photspec, norm_fac, n, method):
         tot_ion_eng = phys.rydberg * photspec.totN(
             bound_type='eng',
             bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
-        )
+        )[0]
         #tot_ion_eng = phys.rydberg*np.sum(
         #    photspec.N[photspec.eng > 13.6]
         #)

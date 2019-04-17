@@ -52,7 +52,7 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     Parameters
     ----------
     mDM : float
-        The mass of the annihilating dark matter particle (in eV). 
+        The mass of the annihilating/decaying dark matter particle (in eV). 
     eng : ndarray
         The energy abscissa for the output spectrum (in eV). 
     pri : string

@@ -545,8 +545,8 @@ def get_elec_cooling_tf(
                 print('injected energy: ', eng)
 
                 print(
-                    'Energy in low energy electrons: ',
-                    np.dot(sec_lowengelec_tf.grid_vals[i], eleceng)
+                    'Fraction of Energy in low energy electrons: ',
+                    np.dot(sec_lowengelec_tf.grid_vals[i], eleceng)/eng
                 )
 
                 # print('Energy in photons: ', 
@@ -556,29 +556,34 @@ def get_elec_cooling_tf(
                 # print('Continuum_engloss: ', cont_loss_ICS_vec[i])
                 
                 print(
-                    'Energy in photons - Continuum: ', (
-                        np.dot(sec_phot_tf.grid_vals[i], photeng)
+                    'Fraction of Energy in photons - Continuum: ', (
+                        np.dot(sec_phot_tf.grid_vals[i], photeng)/eng
                         # - cont_loss_ICS_vec[i]
                     )
                 )
 
                 print(
-                    'Deposited in ionization: ', deposited_ion_vec[i]
+                    'Fraction Deposited in ionization: ', 
+                    deposited_ion_vec[i]/eng
                 )
 
                 print(
-                    'Deposited in excitation: ', deposited_exc_vec[i]
+                    'Fraction Deposited in excitation: ', 
+                    deposited_exc_vec[i]/eng
                 )
 
                 print(
-                    'Deposited in heating: ', deposited_heat_vec[i]
+                    'Fraction Deposited in heating: ', 
+                    deposited_heat_vec[i]/eng
                 )
 
                 print(
                     'Energy is conserved up to (%): ',
                     conservation_check[i]/eng*100
                 )
-                print('Deposited in ICS (Numerical Error): ', deposited_ICS_vec[i])
+                print('Fraction Deposited in ICS (Numerical Error): ', 
+                    deposited_ICS_vec[i]/eng
+                )
                 
                 print(
                     'Energy conservation with deposited (%): ',

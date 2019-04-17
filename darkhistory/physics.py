@@ -466,9 +466,6 @@ def alpha_recomb(T_m, species):
 
         conv_fac = 1.0e-4/kB
 
-        if T_m <= 0:
-            print(T_m)
-
         return (
             fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
             / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
@@ -1256,6 +1253,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
 
     w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
     ne = xe*nH*rs**3
+    # ne = nB*rs**3
 
     eps_0 = 8.85418782e-12 # in SI units
 
