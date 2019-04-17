@@ -132,16 +132,19 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method):
     if((method == 'old') or (method=='helium') or (method == 'ion')):
         # All photons between 11.2eV and 13.6eV are deposited into excitation
         # partial binning
-        tot_excite_eng = (
-            photspec.toteng(
-                bound_type='eng',
-                bound_arr=np.array([phys.lya_eng,phys.rydberg])
-            )[0]
-        )
-        #tot_excite_eng = np.dot(
-        #    photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
-        #    photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
-        #)
+        partial_binning=False
+        if partial_binning:
+            tot_excite_eng = (
+                photspec.toteng(
+                    bound_type='eng',
+                    bound_arr=np.array([phys.lya_eng,phys.rydberg])
+                )[0]
+            )
+        else:
+            tot_excite_eng = np.dot(
+                photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
+                photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
+            )
         f_excite_HI = tot_excite_eng * norm_fac
     else:
         # Only photons in the 10.2eV bin participate in 1s->2p excitation.

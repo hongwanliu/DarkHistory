@@ -1313,25 +1313,32 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=True, channel=None):
     ind = ind_dict[channel]
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
 
-    # nearest-neighbor extrapolation
-    #if hasattr(rs, "__len__"):
-    #    rs[rs<4.005] = 4.005
-    #    rs[rs>3000] = 3000
-    #else:
-    if rs < 4.005:
-        rs = 4.005
-    elif rs > 3000:
-        rs = 3000
+    if isinstance(Einj, (int, float)):
+        # nearest-neighbor extrapolation
+        if Einj < 5.001e3:
+            Einj = 5.001e3
+        elif np.log10(Einj) > 12.601:
+            Einj = 10**(12.601)
 
-    if Einj < 5.001e3:
-        Einj = 5.001e3
-    elif np.log10(Einj) > 12.601:
-        Einj = 10**(12.601)
+        if isinstance(rs, (int, float)):
+            if rs < 4.017:
+                rs = 4.017
+            elif rs > 3000:
+                rs = 3000
 
-    return np.exp(
-        f_data_baseline((np.log10(Einj), np.log(rs)))
-    )[ind]
+            return np.exp(
+                f_data_baseline((np.log10(Einj), np.log(rs)))
+            )[ind]
+        elif hasattr(rs, "__len__"):
+            if isinstance(rs, list):
+                raise TypeError("Use a numpy.array instead of a list")
 
+            rs[rs<4.017] = 4.017
+            rs[rs>3000] = 3000
+
+            return np.exp(
+                    f_data_baseline((np.log10(Einj), np.log(rs)))[:,ind]
+            )
 
 # Unused for now.
 
