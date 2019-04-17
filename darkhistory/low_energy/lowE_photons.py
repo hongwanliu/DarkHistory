@@ -132,7 +132,7 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method):
     if((method == 'old') or (method=='helium') or (method == 'ion')):
         # All photons between 11.2eV and 13.6eV are deposited into excitation
         # partial binning
-        partial_binning=True
+        partial_binning=False
         if partial_binning:
             tot_excite_eng = (
                 photspec.toteng(
