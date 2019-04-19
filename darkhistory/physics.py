@@ -1267,7 +1267,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     # must use the mass of the electron in eV m^2 s^-2.
     return prefac*ne*coulomb_log/(me/c**2*w)
 
-def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=True, channel=None):
+def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
     """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.
 
     Parameters
@@ -1279,7 +1279,7 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=True, channel=None):
     inj_type : string
         Type of energy injection, either 'swave' or 'decay
     struct : bool
-        If True, include structure formation, if False assume no structure formation.  This option makes no difference for decays.
+        If *True*, include structure formation, if *False* assume no structure formation. Default is *False*. This option makes no difference for decays.
     """
 
     if (inj_particle != 'phot') and (inj_particle != 'elec'):
@@ -1326,8 +1326,12 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=True, channel=None):
     Einj[Einj<5.001e3] = 5.001e3
     Einj[Einj>10**12.6015] = 10**12.6015
 
-    rs[rs<4.017] = 4.017
+    if inj_particle != 'phot' or inj_type != 'swave':
+        rs[rs<4.017] = 4.017
+    else:
+        rs[rs<5.2] = 5.2
     rs[rs>3000] = 3000
+
 
     return np.exp(
             f_data_baseline((np.log10(Einj), np.log(rs)))[:,ind]
