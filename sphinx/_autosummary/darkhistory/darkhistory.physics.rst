@@ -106,6 +106,7 @@ Atomic and Optical Physics
    coll_ion_sec_elec_spec
    coll_ion_xsec
    elec_heating_engloss_rate
+   f_std
    
 .. rubric:: Footnotes
 
