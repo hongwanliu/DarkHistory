@@ -102,7 +102,7 @@ def evolve(
     * Dark matter annihilation, with a dark matter mass of 50 GeV, annihilation cross section 2e-26 cm\ :sup:`3` s\ :sup:`-1`, annihilating to :math:`b \\bar{b}`, solved without backreaction, a coarsening factor of 32 and the default structure formation boost: 
 
     >>> import darkhistory.physics as phys
-    >>> out = main.evolve(DM_process='swave', mDM=50e9, sigmav=2e-26, primary='b', start_rs=3000., struct_boost=phys.struct_boost_func())
+    >>> out = evolve(DM_process='swave', mDM=50e9, sigmav=2e-26, primary='b', start_rs=3000., struct_boost=phys.struct_boost_func())
 
     """
     
