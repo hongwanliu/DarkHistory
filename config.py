@@ -32,23 +32,27 @@ glob_f_data     = None
 
 class PchipInterpolator2D: 
 
-    """ 2D interpolation over PPPC4DMID raw data, using PCHIP method.
+    """ 2D interpolation over PPPC4DMID raw data, using the PCHIP method.
 
     Parameters
     -----------
     pri : string
-        Specifies primary annihilation channel. See below for list.
+        Specifies primary annihilation channel. See :func:`.get_pppc_spec` for the full list.
     sec : {'elec', 'phot'}
-        Specifies stable SM secondary to get the spectrum of.
+        Specifies which secondary spectrum to obtain (electrons/positrons or photons).
 
     Attributes
     ----------
     pri : string
-        Specifies primary annihilation channel. See below for list.
+        Specifies primary annihilation channel. See :func:`.get_pppc_spec` for the full list.
     sec : {'elec', 'phot'}
-        Specifies stable SM secondary to get the spectrum of.
+        Specifies which secondary spectrum to obtain (electrons/positrons or photons).
     get_val : function
-        Returns the interpolation value at (mDM_in_GeV, log10(K/mDM)) where K is the kinetic energy of the secondary.
+        Returns the interpolation value at (mDM, log10(K/mDM)) where mDM is the dark matter mass, and K is the kinetic energy of the secondary, both in GeV. 
+
+    Notes
+    -------
+    PCHIP stands for piecewise cubic hermite interpolating polynomial. This class was built to mimic the Mathematica interpolation of the PPPC4DMID data. 
 
     """
     
@@ -166,13 +170,20 @@ def load_data(data_type):
     ----------
     data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc'}
         Type of data to load. The options are: 
-        * *'binning'*: Default binning for all transfer functions; 
-        * *'dep_tf'*: Transfer functions for propagating photons and deposition into low-energy photons, low-energy electrons, high-energy deposition and upscattered CMB energy rate;
-        * *'ics_tf'*: Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
-        * *'struct'*: Structure formation boosts; 
-        * *'hist'*: Baseline ionization and temperature histories;
-        * *'f'*: f_c(z) fractions without back-reaction, and
-        * *'pppc'*: Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
+
+        - *'binning'* -- Default binning for all transfer functions;
+
+        - *'dep_tf'* -- Transfer functions for propagating photons and deposition into low-energy photons, low-energy electrons, high-energy deposition and upscattered CMB energy rate;
+
+        - *'ics_tf'* -- Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
+
+        - *'struct'* -- Structure formation boosts; 
+
+        - *'hist'* -- Baseline ionization and temperature histories;
+
+        - *'f'* -- f_c(z) fractions without back-reaction; and
+
+        - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
 
     Returns
@@ -412,29 +423,4 @@ def load_data(data_type):
 
         raise ValueError('invalid data_type.')
 
-
-# # Location of all data files. 
-
-# if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
-
-#     data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-#     #data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-#     # data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-
-#     if data_path == '' or not os.path.isdir(data_path):
-#         print('NOTE: enter data directory in config.py to avoid this step.')
-#         data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
-
-#     # # Default binning for photons and low-energy electrons. 
-
-#     binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
-
-#     photeng = binning[0]
-#     eleceng = binning[1]
-
-# else:
-
-#     data_path = ''
-#     photeng   = np.zeros(500)
-#     eleceng   = np.zeros(500)
 

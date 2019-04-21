@@ -55,16 +55,16 @@ DarkHistory is written in Python 3, and uses the following Python packages:
 * `Unofficial Jupyter Notebook Extensions 0.5.0 <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
 * `tqdm 4.31.1 <https://github.com/tqdm/tqdm>`_
 
-DarkHistory has been tested with the package versions shown above, and using different versions may result in unexpected behavior. We recommend users use `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install all of these packages with the recommended versions, users can simply do
+DarkHistory has been tested with the package versions shown above, and using different versions may result in unexpected behavior. We recommend using `Conda <https://conda.io/en/latest/>`_, which helps manage libraries, dependencies and environments. To install all of these packages with the recommended versions, users can simply do
 
 .. sourcecode:: bash
 
     $ conda config --add channels conda-forge
     $ conda install --file requirements.txt
 
-from the ``DarkHistory/`` directory. The user can also choose to install packages individually; the unofficial Jupyter notebook extensions must be installed from the ``conda-forge`` channel when using Conda.
+from the ``DarkHistory/`` directory. The user can also choose to install packages individually; the unofficial Jupyter notebook extensions must be installed from the ``conda-forge`` channel within Conda.
 
-Alternatively, if the user would like to use pip instead, installing all of the relevant packages can be done by the following command:
+Alternatively, if the user would like to use ``pip`` instead, installing all of the relevant packages can be done by the following command:
 
 .. sourcecode:: bash
 
