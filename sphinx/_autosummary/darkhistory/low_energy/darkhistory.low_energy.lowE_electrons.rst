@@ -13,12 +13,7 @@ darkhistory.low\_energy.lowE\_electrons
       compute_fs
       make_interpolator
    
-   
+.. rubric:: Footnotes
 
-   
-   
-   
-
-   
-   
+.. [1] C. Evoli et al., Mon. Not. Roy. Astron. Soc. 422, 420–433 (2012)
    

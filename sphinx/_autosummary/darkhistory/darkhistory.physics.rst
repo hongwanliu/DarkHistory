@@ -114,12 +114,3 @@ Atomic and Optical Physics
 
 .. [2] Tanabashi et al. (Particle Data Group), Phys. Rev. D 98, 030001 (2018).
 
-      
-
-   
-   
-   
-
-   
-   
-   

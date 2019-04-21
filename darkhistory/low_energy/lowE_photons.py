@@ -1,4 +1,6 @@
 """ Deposition of energy from low-energy photons
+
+    As detailed in section III.F.1 of the paper, low-energy photons (sub-3keV photons) may deposit their energy into the IGM through hydrogen/helium ionization, hydrogen excitation, and by contributing to continuum photons.  By contributing to continuum photons, we mean that a certain component of low-energy photons (sub-10.2eV photons) have insufficient energy to effectively interact with the IGM, so they just free-stream and can be thought of as an additional component of the CMB continuum.
   
 """
 
