@@ -12,14 +12,3 @@ darkhistory.low\_energy
    lowE_electrons
    lowE_photons
 
-   
-   
-   
-
-   
-   
-   
-
-   
-   
-   

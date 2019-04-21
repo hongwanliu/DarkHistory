@@ -1,3 +1,8 @@
+""" Total energy deposition from low-energy electrons and photons into the IGM.
+  
+  As detailed in Section III.F of the paper sub-3keV photons and electrons (dubbed low-energy photons and electrons) deposit their energy into the IGM in the form of hydrogen/helium ionization, hydrogen excitation, heat, or continuum photons, each of which corresponds to a channel, c.
+"""
+
 import sys
 sys.path.append("../..")
 

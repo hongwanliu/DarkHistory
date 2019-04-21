@@ -1,3 +1,9 @@
+""" Deposition of energy from low-energy electrons
+
+    As detailed in section III.F.2 of the paper, low-energy electrons (sub-3keV electrons) deposit their energy into the IGM through hydrogen/helium ionization, hydrogen excitation, heat, and continuum photons.  To calculate how much energy is deposited into each channel we use the MEDEA results [1]_ as described in the paragraph before Eq. (45) of the paper.
+  
+"""
+
 import sys
 sys.path.append("../..")
 
