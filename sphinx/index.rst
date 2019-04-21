@@ -81,7 +81,7 @@ After installation, users can specify the location of the downloaded data files,
 
 where ``/foo/bar`` is the directory in which the data files are stored. 
 
-Within the ``examples/`` directory of the repository are several Jupyter notebooks aimed at helping the user learn how to use DarkHistory. To begin, navigate to the ``DarkHistory/`` directory and ensure that you are in a Python 3 environment. If you are using Conda, please see the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>` for instructions on how to create a Python 3 environment. 
+Within the ``examples/`` directory of the repository are several Jupyter notebooks aimed at helping the user learn how to use DarkHistory. To begin, navigate to the ``DarkHistory/`` directory and ensure that you are in a Python 3 environment. If you are using Conda, please see the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ for instructions on how to create a Python 3 environment. 
 
 Next, execute the following line:
 
