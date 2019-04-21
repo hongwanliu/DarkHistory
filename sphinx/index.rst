@@ -48,36 +48,28 @@ Getting Started
 
 DarkHistory is written in Python 3, and uses the following Python packages: 
 
-* `Numpy <http://www.numpy.org/>`_
-* `Scipy <https://scipy.org/scipylib/index.html>`_
-* `Matplotlib <https://matplotlib.org/>`_
-* `Jupyter <https://jupyter.org/>`_
-* `Unofficial Jupyter Notebook Extensions <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
-* `tqdm <https://github.com/tqdm/tqdm>`_
+* `Numpy 1.6.2 <http://www.numpy.org/>`_
+* `Scipy 1.2.1 <https://scipy.org/scipylib/index.html>`_
+* `Matplotlib 3.0.3 <https://matplotlib.org/>`_
+* `Jupyter 1.0.0 <https://jupyter.org/>`_
+* `Unofficial Jupyter Notebook Extensions 0.5.0 <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
+* `tqdm 4.31.1 <https://github.com/tqdm/tqdm>`_
 
-We recommend users use `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install all of these packages, users can simply do
+DarkHistory has been tested with the package versions shown above, and using different versions may result in unexpected behavior. We recommend users use `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install all of these packages with the recommended versions, users can simply do
 
 .. sourcecode:: bash
-
+    $ conda config --add channels conda-forge
     $ conda install --file requirements.txt
 
-from the ``DarkHistory/`` directory. Alternatively, if the user would like to use pip instead, installing all of the relevant packages can be done by the following command:
+from the ``DarkHistory/`` directory. The user can also choose to install packages individually; the unofficial Jupyter notebook extensions must be installed from the ``conda-forge`` channel when using Conda.
+
+Alternatively, if the user would like to use pip instead, installing all of the relevant packages can be done by the following command:
 
 .. sourcecode:: bash
 
     $ pip install -r requirements.txt
 
-Within the ``examples/`` directory of the repository are several Jupyter notebooks aimed at helping the user learn how to use DarkHistory. To begin, navigate to the ``DarkHistory/`` directory and ensure that you are in a Python 3 environment. Next, execute the following line:
-
-.. sourcecode:: bash
-
-    $ jupyter notebook
-
-This should open a window showing a list of files and directories in the ``DarkHistory/`` directory. 
-
-Users should first run the Jupyter notebook labeled 'Example 0' in the ``examples/`` directory of the repository to check that all relevant packages have been downloaded, and that packages within DarkHistory can be correctly imported for use. 
-
-After running Example 0, users can specify the location of the downloaded data files, so that DarkHistory knows where they're stored. This is done by inserting the following line into ``config.py`` (found in the ``DarkHistory/`` directory): 
+After installation, users can specify the location of the downloaded data files, so that DarkHistory knows where they're stored. This is done by inserting the following line into ``config.py`` (found in the ``DarkHistory/`` directory): 
 
 .. sourcecode:: python
 
@@ -88,7 +80,15 @@ After running Example 0, users can specify the location of the downloaded data f
 
 where ``/foo/bar`` is the directory in which the data files are stored. 
 
-With this complete, the user should be able to run the rest of the examples to learn how to use this code. 
+Within the ``examples/`` directory of the repository are several Jupyter notebooks aimed at helping the user learn how to use DarkHistory. To begin, navigate to the ``DarkHistory/`` directory and ensure that you are in a Python 3 environment. If you are using Conda, please see the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>` for instructions on how to create a Python 3 environment. 
+
+Next, execute the following line:
+
+.. sourcecode:: bash
+
+    $ jupyter notebook
+
+This should open a window showing a list of files and directories in the ``DarkHistory/`` directory. The user should be able to run all of the examples in ``DarkHistory/examples/`` to learn how to use this code. 
 
 Getting Help
 =======================================
