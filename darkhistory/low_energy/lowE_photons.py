@@ -1,3 +1,7 @@
+""" Deposition of energy from low-energy photons
+  
+"""
+
 import sys
 sys.path.append("../..")
 
