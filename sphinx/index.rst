@@ -58,6 +58,7 @@ DarkHistory is written in Python 3, and uses the following Python packages:
 DarkHistory has been tested with the package versions shown above, and using different versions may result in unexpected behavior. We recommend users use `Conda <https://conda.io/en/latest/>`_, which helps users manage libraries, dependencies and environments. To install all of these packages with the recommended versions, users can simply do
 
 .. sourcecode:: bash
+
     $ conda config --add channels conda-forge
     $ conda install --file requirements.txt
 
