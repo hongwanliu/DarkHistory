@@ -36,6 +36,10 @@ class PchipInterpolator2D:
 
     Parameters
     -----------
+    coords_data : ndarray, size (M,N)
+    
+        
+    values_data : ndarray
     pri : string
         Specifies primary annihilation channel. See :func:`.get_pppc_spec` for the full list.
     sec : {'elec', 'phot'}
@@ -48,7 +52,7 @@ class PchipInterpolator2D:
     sec : {'elec', 'phot'}
         Specifies which secondary spectrum to obtain (electrons/positrons or photons).
     get_val : function
-        Returns the interpolation value at (mDM, log10(K/mDM)) where mDM is the dark matter mass, and K is the kinetic energy of the secondary, both in GeV. 
+        Returns the interpolation value at (coord, value) based 
 
     Notes
     -------
@@ -181,7 +185,7 @@ def load_data(data_type):
 
         - *'hist'* -- Baseline ionization and temperature histories;
 
-        - *'f'* -- f_c(z) fractions without back-reaction; and
+        - *'f'* -- :math:`f_c(z)` fractions without backreaction; and
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
