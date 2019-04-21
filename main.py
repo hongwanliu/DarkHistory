@@ -45,10 +45,10 @@ def evolve(
     Parameters
     -----------
     in_spec_elec : :class:`.Spectrum`, optional
-        Spectrum per injection event into electrons. ``in_spec_elec.rs``
+        Spectrum per injection event into electrons. *in_spec_elec.rs*
         of the :class:`.Spectrum` must be the initial redshift. 
     in_spec_phot : :class:`.Spectrum`, optional
-        Spectrum per injection event into photons. ``in_spec_phot.rs`` 
+        Spectrum per injection event into photons. *in_spec_phot.rs* 
         of the :class:`.Spectrum` must be the initial redshift. 
     rate_func_N : function, optional
         Function returning number of injection events per volume per time, with redshift :math:`(1+z)` as an input.  
@@ -57,52 +57,71 @@ def evolve(
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. 
     sigmav : float, optional
-        Thermally averaged cross section for ``DM_process == 'swave'``. 
+        Thermally averaged cross section for dark matter annihilation. 
     lifetime : float, optional
-        Decay lifetime for ``DM_process == 'decay'``.
+        Decay lifetime for dark matter decay.
     primary : string, optional
-        Primary channel of annihilation/decay. Refer to 
-        :data:`.pppc.chan_list` for complete list. Use ``'elec_delta'`` or ``'phot_delta'`` for delta function injections of a pair of photons/an electron-positron pair. 
+        Primary channel of annihilation/decay. See :func:`.get_pppc_spec` for complete list. Use *'elec_delta'* or *'phot_delta'* for delta function injections of a pair of photons/an electron-positron pair. 
     struct_boost : function, optional
         Energy injection boost factor due to structure formation.
     start_rs : float, optional
-        Starting redshift (1+z) to evolve from. Default is 1+z = 3000. 
-        Specify only for use with `DM_process` initialize. Otherwise, 
-        initialize `in_spec_elec.rs` and/or `in_spec_phot.rs` directly. 
+        Starting redshift :math:`(1+z)` to evolve from. Default is :math:`(1+z)` = 3000. Specify only for use with *DM_process*. Otherwise, initialize *in_spec_elec.rs* and/or *in_spec_phot.rs* directly. 
     end_rs : float, optional
-        Final redshift (1+z) to evolve to. Default is 1+z = 4. 
+        Final redshift :math:`(1+z)` to evolve to. Default is 1+z = 4. 
     reion_switch : bool
-        Reionization model included if true. 
+        Reionization model included if *True*, default is *False*. 
     helium_TLA : bool
-        If `True`, the TLA is solved with helium. 
+        If *True*, the TLA is solved with helium. Default is *False*.
     reion_rs : float, optional
-        Redshift (1+z) at which reionization effects turn on. 
+        Redshift :math:`(1+z)` at which reionization effects turn on. 
     photoion_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`.
+        Functions take redshift :math:`1+z` as input, return the photoionization rate in s\ :sup:`-1` of HI, HeI and HeII respectively. If not specified, defaults to :func:`.photoion_rate`.
     photoheat_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`.
+        Functions take redshift :math:`1+z` as input, return the photoheating rate in s\ :sup:`-1` of HI, HeI and HeII respectively. If not specified, defaults to :func:`.photoheat_rate`.
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.
     init_cond : tuple of floats
-        Specifies the initial (xH, xHe, Tm). Defaults to RECFAST if None.
+        Specifies the initial (xH, xHe, Tm). Defaults to :func:`std_Tm`, :func:`std_xHII` and:func:`std_xHeII` at the *start_rs*. 
     coarsen_factor : int
-        Coarsening to apply to the transfer function matrix.
+        Coarsening to apply to the transfer function matrix. Default is 1. 
     backreaction : bool
-        If False, uses the baseline TLA solution to calculate f_c(z). Default is True.
+        If *False*, uses the baseline TLA solution to calculate :math:`f_c(z)`. Default is True.
     mxstep : int, optional
-        The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint* for more information.
+        The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint()* for more information. Default is *1000*. 
     rtol : float, optional
-        The relative error of the solution. See *scipy.integrate.odeint* for more information.
+        The relative error of the solution. See *scipy.integrate.odeint()* for more information. Default is *1e-4*.
     use_tqdm : bool, optional
-        Uses tqdm if true.
+        Uses tqdm if *True*. Default is *True*. 
 
     Examples
     --------
 
-    * Dark matter annihilation, with a dark matter mass of 50 GeV, annihilation cross section 2e-26 cm\ :sup:`3` s\ :sup:`-1`, annihilating to :math:`b \\bar{b}`, solved without backreaction, a coarsening factor of 32 and the default structure formation boost: ::
+    1. *Dark matter annihilation* -- dark matter mass of 50 GeV, annihilation cross section :math:`2 \\times 10^{-26}` cm\ :sup:`3` s\ :sup:`-1`, annihilating to :math:`b \\bar{b}`, solved without backreaction, a coarsening factor of 32 and the default structure formation boost: ::
 
         import darkhistory.physics as phys
-        out = evolve(DM_process='swave', mDM=50e9, sigmav=2e-26, primary='b', start_rs=3000., struct_boost=phys.struct_boost_func())
+
+        out = evolve(
+            DM_process='swave', mDM=50e9, sigmav=2e-26, 
+            primary='b', start_rs=3000., 
+            backreaction=False,
+            struct_boost=phys.struct_boost_func()
+        )
+
+    2. *Dark matter decay* -- dark matter mass of 100 GeV, decay lifetime :math:`3 \\times 10^{25}` s, decaying to a pair of :math:`e^+e^-`, solved with backreaction, a coarsening factor of 16: ::
+
+        out = evolve(
+            DM_process='decay', mDM=1e8, lifetime=3e25,
+            primary='elec_delta', start_rs=3000.,
+            backreaction=True
+        ) 
+
+    See Also
+    ---------
+    :func:`.get_pppc_spec`
+    :func:`.struct_boost_func`
+    :func:`.photoion_rate`, :func:`.photoheat_rate`
+    :func:`.std_Tm`, :func:`.std_xHII` and :func:`.std_xHeII`
+
 
     """
     
