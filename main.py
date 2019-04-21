@@ -81,7 +81,7 @@ def evolve(
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.
     init_cond : tuple of floats
-        Specifies the initial (xH, xHe, Tm). Defaults to :func:`.std_Tm`, :func:`.std_xHII` and :func:`.std_xHeII` at the *start_rs*. 
+        Specifies the initial (xH, xHe, Tm). Defaults to :func:`.Tm_std`, :func:`.xHII_std` and :func:`.xHeII_std` at the *start_rs*. 
     coarsen_factor : int
         Coarsening to apply to the transfer function matrix. Default is 1. 
     backreaction : bool
@@ -122,8 +122,8 @@ def evolve(
     :func:`.struct_boost_func`
 
     :func:`.photoion_rate`, :func:`.photoheat_rate`
-    
-    :func:`.std_Tm`, :func:`.std_xHII` and :func:`.std_xHeII`
+
+    :func:`.Tm_std`, :func:`.xHII_std` and :func:`.xHeII_std`
 
 
     """
