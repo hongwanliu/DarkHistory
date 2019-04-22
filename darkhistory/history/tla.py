@@ -333,12 +333,14 @@ def get_history(
             if yHeII > 14 or yHeII < -14:
                 return 0
 
-            # Use the Saha values at high ionization. 
-            if xHeII(yHeII) > 0.99*chi: 
+            # # Use the Saha values at high ionization. 
+            # if xHeII(yHeII) > 0.995*chi: 
 
-                return (
-                    2/chi * np.cosh(yHeII)**2 * phys.d_xe_Saha_dz(rs, 'HeI')
-                )
+            #     # print(phys.d_xe_Saha_dz(rs, 'HeI'))
+
+            #     return (
+            #         2/chi * np.cosh(yHeII)**2 * phys.d_xe_Saha_dz(rs, 'HeI')
+            #     )
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
@@ -392,7 +394,7 @@ def get_history(
         #     dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
         #     dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
         # ])
-        # print(rs, phys.peebles_C(xHII(yHII), rs))
+        # # print(rs, phys.peebles_C(xHII(yHII), rs))
 
         # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
         return [
@@ -735,7 +737,7 @@ def get_history(
         if rs_reion_vec.size == 0:
             soln = odeint(
                 tla_before_reion, _init_cond, 
-                rs_before_reion_vec, mxstep = mxstep, tfirst=True
+                rs_before_reion_vec, mxstep = mxstep, rtol=rtol, tfirst=True
             )
             # soln = solve_ivp(
             #     tla_before_reion, 
@@ -746,7 +748,7 @@ def get_history(
         elif rs_before_reion_vec.size == 0:
             soln = odeint(
                 tla_reion, _init_cond, rs_reion_vec, 
-                mxstep = mxstep, tfirst=True
+                mxstep = mxstep, rtol=rtol, tfirst=True
             )
             # soln = solve_ivp(
             #     tla_reion, (rs_reion_vec[0], rs_reion_vec[-1]),

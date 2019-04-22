@@ -52,7 +52,7 @@ Some of the data files are several gigabytes in size, and are required when taki
 * The high-energy deposition transfer function, *highengdep_interp.raw*; and
 * Tabulated inverse Compton scattering transfer functions, *ics_thomson_ref_tf.raw*, *ics_thomson_ref_tf.raw* and *engloss_ref_tf.raw*. 
 
-Without these files, users *cannot* use the function :func:`main.evolve`, but can evaluate temperature and ionization histories using :func:`tla.get_history` using a tabulated set of :math:`f_c(z)` data. DarkHistory comes with its own tabulated set of :math:`f_c(z)` data for dark matter annihilation and decay into :math:`e^+e^-` and :math:`\gamma \gamma`.
+Without these files, users *cannot* use the function :func:`main.evolve`, but can evaluate temperature and ionization histories using :func:`.tla.get_history` using a tabulated set of :math:`f_c(z)` data. DarkHistory comes with its own tabulated set of :math:`f_c(z)` data for dark matter annihilation and decay into :math:`e^+e^-` and :math:`\gamma \gamma`.
 
 Getting Started
 =======================================
