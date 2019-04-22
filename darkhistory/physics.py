@@ -339,7 +339,7 @@ def struct_boost_func(model='einasto_with_subs', model_params=None):
 
     else:
 
-        struct_data = load_data('struct')[model]
+        struct_data = load_data('struct')['einasto_subs']
         log_struct_interp = interp1d(
             np.log(struct_data[:,0]), np.log(struct_data[:,1]),
             bounds_error=False, fill_value=(np.nan, 0.)
