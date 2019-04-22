@@ -404,7 +404,7 @@ def get_history(
         # ])
         # # print(rs, phys.peebles_C(xHII(yHII), rs))
 
-        print(rs, log_T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
+        #print(rs, log_T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
         return [
             dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs),
             dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs),
