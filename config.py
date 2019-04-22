@@ -17,8 +17,8 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-# data_path = '/Users/gregoryridgway/Downloads'
+#data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+data_path = '/Users/gregoryridgway/Downloads'
 # data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 # data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
