@@ -255,7 +255,9 @@ def get_history(
         inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
-        def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             xHI = 1 - xHII(yHII)
@@ -265,7 +267,7 @@ def get_history(
             adiabatic_cooling_rate = 2 * T_m/rs
 
 
-            return adiabatic_cooling_rate + (
+            return 1 / T_m * adiabatic_cooling_rate + 1 / T_m * (
                 phys.dtdz(rs)*(
                     compton_cooling_rate(
                         xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -275,7 +277,9 @@ def get_history(
             )/ (3/2 * nH * (1 + chi + xe))
 
 
-        def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             if 1 - xHII(yHII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
@@ -319,7 +323,9 @@ def get_history(
                 )
             )
 
-        def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             if not helium_TLA: 
 
@@ -375,7 +381,9 @@ def get_history(
                     / (phys.He_ion_eng * nH)
             )
 
-        def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dyHeIII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             if chi - xHeIII(yHeIII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
@@ -386,7 +394,7 @@ def get_history(
 
             return 0
 
-        T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
+        log_T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
         # print ([rs, 
         #     dT_dz(yHII, yHeII, yHeIII, T_m, rs),
@@ -398,10 +406,10 @@ def get_history(
 
         # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
         return [
-            dT_dz(yHII, yHeII, yHeIII, T_m, rs),
-            dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
-            dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
-            dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+            dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs),
+            dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs),
+            dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs),
+            dyHeIII_dz(yHII, yHeII, yHeIII, log_T_m, rs)
         ]
 
     def tla_reion(rs, var):
@@ -413,7 +421,9 @@ def get_history(
         inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
-        def dT_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             xHI = 1 - xHII(yHII)
@@ -457,12 +467,14 @@ def get_history(
                 )
             ) / (3/2 * nH * (1 + chi + xe))
 
-            return (
+            return 1 / T_m * (
                 adiabatic_cooling_rate + compton_rate 
                 + dm_heating_rate + reion_rate
             )
 
-        def dyHII_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             if 1 - xHII(yHII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
@@ -494,7 +506,9 @@ def get_history(
                 )
             )
 
-        def dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             if chi - xHeII(yHeII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
@@ -523,7 +537,9 @@ def get_history(
                     / (phys.He_ion_eng * nH)
             )
 
-        def dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs):
+        def dyHeIII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             if chi - xHeIII(yHeIII) < 1e-6 and rs < 100:
                 # At this point, leave at 1 - 1e-6
@@ -541,15 +557,15 @@ def get_history(
                 - xHeIII(yHeIII) * ne * reion.alphaA_recomb('HeIII', T_m)
             )
 
-        T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
+        log_T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
         # print(rs, T_m, xHII(yHII), xHeII(yHeII), xHeIII(yHeIII))
         
         return [
-            dT_dz(yHII, yHeII, yHeIII, T_m, rs),
-            dyHII_dz(yHII, yHeII, yHeIII, T_m, rs),
-            dyHeII_dz(yHII, yHeII, yHeIII, T_m, rs),
-            dyHeIII_dz(yHII, yHeII, yHeIII, T_m, rs)
+            dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs),
+            dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs),
+            dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs),
+            dyHeIII_dz(yHII, yHeII, yHeIII, log_T_m, rs)
         ]
 
     def tla_reion_fixed_xe(rs, var):
@@ -561,7 +577,9 @@ def get_history(
 
             return derivative(xe_reion_func, rs)
 
-        def dT_dz(T_m, rs):
+        def dlogT_dz(log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
 
             xe    = xe_reion_func(rs)
             xHII  = xe * (1. / (1. + chi))
@@ -573,7 +591,7 @@ def get_history(
             # This is the temperature loss per redshift. 
             adiabatic_cooling_rate = 2 * T_m/rs
 
-            return (
+            return 1 / T_m * (
                 adiabatic_cooling_rate
                 + (
                     phys.dtdz(rs)*(
@@ -583,9 +601,9 @@ def get_history(
                 ) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
             )
 
-        T_m = var
+        log_T_m = var
 
-        return dT_dz(T_m, rs)
+        return dlogT_dz(log_T_m, rs)
 
     if init_cond is None:
         rs_start = rs_vec[0]
@@ -615,7 +633,7 @@ def get_history(
         if init_cond[3] == 0:
             _init_cond[3] = 1e-12
 
-
+    _init_cond[0] = np.log(_init_cond[0])
     _init_cond[1] = np.arctanh(2*(_init_cond[1] - 0.5))
     _init_cond[2] = np.arctanh(2/chi * (_init_cond[2] - chi/2))
     _init_cond[3] = np.arctanh(2/chi *(_init_cond[3] - chi/2))
@@ -729,7 +747,10 @@ def get_history(
                     rs_vec[where_new_soln]
                 ) * (phys.chi / (1. + phys.chi))
 
-            return soln
+        # Convert from log_T_m to T_m
+        soln[:,0] = np.exp(soln[:,0])
+
+        return soln
 
     else:
         # Reionization model implemented. 
@@ -787,6 +808,7 @@ def get_history(
             # Stack the solutions. Remove the solution at 16.1.
             soln = np.vstack((soln_before_reion[:-1,:], soln_reion[1:,:]))
 
+    soln[:,0] = np.exp(soln[:,0])
     soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
     soln[:,2] = (
         chi/2 + chi/2*np.tanh(soln[:,2])
