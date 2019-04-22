@@ -18,7 +18,7 @@ from scipy.interpolate import RegularGridInterpolator
 # LOOK FOR THESE DATA FILES HERE. 
 
 #data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-data_path = '/Users/gregoryridgway/Downloads'
+data_path = '/Users/gregoryridgway/Downloads/dataverse_files'
 # data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 # data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
