@@ -735,7 +735,7 @@ def xe_Saha(rs, species):
         b  = rhs
         q  = -rhs
 
-        if rhs < 1e9:
+        if rhs < 1e8:
             
             xe = (-b + np.sqrt(b**2 - 4*a*q))/(2*a)
 
