@@ -14,7 +14,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss=0, method="old", separate_higheng=True):
+def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss=0, method='no_He', separate_higheng=True):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -36,10 +36,12 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         total amount of energy deposited by high energy particles into {H_ionization, H_excitation, heating, continuum} per baryon per time, in that order.
     cmbloss : float
         Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt. Default is zero.
-    method : {'old','helium','new'}
-        'old': All photons >= 13.6eV ionize hydrogen, within [10.2, 13.6)eV excite hydrogen, < 10.2eV are labelled continuum.
-        'helium': Same as 'old', but now photons >= 13.6 can ionize HeI and HeII also.
-        'new': Same as 'ion', but now [10.2, 13.6)eV photons treated more carefully.
+    method : {'no_He', 'He_recomb', 'He'}
+        Method for evaluating helium ionization. 
+
+        * *'no_He'* -- all ionization assigned to hydrogen;
+        * *'He_recomb'* -- all photoionized helium atoms recombine; and 
+        * *'He'* -- all photoionized helium atoms do not recombine. 
     separate_higheng : bool, optional
         If True, returns separate high energy deposition. 
 
@@ -58,7 +60,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
     # constructor, instead of simply a reference.
 
-    if method == 'old':
+    if method == 'no_He':
 
         ion_bounds = spectools.get_bounds_between(
             phot_spec.eng, phys.rydberg
@@ -116,7 +118,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         else:
             return f_low + f_high
 
-    elif method == 'helium':
+    elif method == 'He':
 
         # Neglect HeII photoionization. Photoionization rates.
         n = phys.nH*phot_spec.rs**3*x
@@ -216,7 +218,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         else:
             return f_low + f_high
 
-    elif method == 'helium_recomb':
+    elif method == 'He_recomb':
 
         # Neglect HeII photoionization. Photoionization rates.
         n = phys.nH*phot_spec.rs**3*x

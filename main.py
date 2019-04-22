@@ -36,7 +36,7 @@ def evolve(
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
-    compute_fs_method='old', mxstep=1000, rtol=1e-4,
+    compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True
 ):
     """
