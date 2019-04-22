@@ -9,7 +9,7 @@ DarkHistory
 Welcome to the DarkHistory page! Here, users will find installation instructions and detailed documentation of the code. 
 
 Announcements
-#######################################
+======================================
 
 **Please check this page frequently for new updates, as the code is still in its infancy!** 
 
