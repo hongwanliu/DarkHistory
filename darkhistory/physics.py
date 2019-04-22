@@ -694,9 +694,12 @@ def C_He(xHII, xHeII, rs, species):
 
         p_H = 1/(1 + a*gamma**b)
 
-        # Numerator agrees with astro-ph/0703438, but not RECFAST.
-        C_He_triplet = A_He_23P1*(p_He + p_H)*np.exp(-E_ps/T)
-        C_He_triplet /= beta_ion(TCMB(rs), 'HeI_23s') + C_He_triplet
+        if beta_ion(TCMB(rs), 'HeI_23s') == 0.:
+            return 1.
+        else:
+            # Numerator agrees with astro-ph/0703438, but not RECFAST.
+            C_He_triplet = A_He_23P1*(p_He + p_H)*np.exp(-E_ps/T)
+            C_He_triplet /= beta_ion(TCMB(rs), 'HeI_23s') + C_He_triplet
 
         return C_He_triplet
 

@@ -11,9 +11,12 @@ Welcome to the DarkHistory page! Here, users will find installation instructions
 Announcements
 ======================================
 
-**Please check this page frequently for new updates, as the code is still in its infancy!** 
+*Please check this page frequently for new updates, as the code is still in its infancy!*
 
-**2019-04-22** -- First release of DarkHistory. 
+*2019-04-22* -- First release of DarkHistory. 
+
+Table of Contents
+======================================
 
 .. contents:: Table of Contents
     :depth: 2
