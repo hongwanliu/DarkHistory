@@ -17,8 +17,8 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-#data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-data_path = '/Users/gregoryridgway/Downloads'
+data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+# data_path = '/Users/gregoryridgway/Downloads'
 # data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 # data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
@@ -310,12 +310,18 @@ def load_data(data_type):
 
         if glob_struct_data is None:
 
-            einasto_subs = np.loadtxt(
-                open(data_path+'/boost_Einasto_subs.txt', 'rb')
+            boost_data = np.loadtxt(
+                open(data_path+'/boost_data.txt', 'rb')
             )
+            # einasto_subs = np.loadtxt(
+            #     open(data_path+'/boost_Einasto_subs.txt', 'rb')
+            # )
 
             glob_struct_data = {
-                'einasto_subs' : einasto_subs
+                'einasto_subs'    : boost_data[:,[0,1]],
+                'einasto_no_subs' : boost_data[:,[0,2]],
+                'NFW_subs'        : boost_data[:,[0,3]],
+                'NFW_no_subs'     : boost_data[:,[0,4]] 
             }
 
         return glob_struct_data
