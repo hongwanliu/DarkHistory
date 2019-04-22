@@ -297,12 +297,12 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
 #         bounds_error=False, fill_value=(np.nan, 0.)
 #     )
 
-def struct_boost_func(model='einasto_with_subs', model_params=None):
+def struct_boost_func(model='einasto_subs', model_params=None):
     """Structure formation boost factor 1+B(z).
 
     Parameters
     ----------
-    model : {'einasto_with_subs', 'erfc'}
+    model : {'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc'}
         Model to use. See 1604.02457. 
     model_params : tuple of floats
         Model parameters (b_h, delta, z_h) for 'erfc' option. 
