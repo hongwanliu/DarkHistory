@@ -43,6 +43,17 @@ Data Files
 
 The data files that are necessary for DarkHistory to perform its calculations can be found on `Dataverse <https://doi.org/10.7910/DVN/DUOUWA>`_. 
 
+Using DarkHistory Without Backreaction or Spectral Information
+---------------------------------------------------------------
+
+Some of the data files are several gigabytes in size, and are required when taking into account backreaction, so that the actual spectrum of particles in the bath are important. Users can choose not to download the following files:
+
+* The propagating photon, low-energy photon and low-energy electron transfer functions, *highengphot_tf_interp.raw.zip*, *lowengphot_tf_interp.raw.zip*, *lowengelec_tf_interp.raw.zip*;
+* The high-energy deposition transfer function, *highengdep_interp.raw*; and
+* Tabulated inverse Compton scattering transfer functions, *ics_thomson_ref_tf.raw*, *ics_thomson_ref_tf.raw* and *engloss_ref_tf.raw*. 
+
+Without these files, users *cannot* use the function :func:`main.evolve`, but can evaluate temperature and ionization histories using :func:`tla.get_history` using a tabulated set of :math:`f_c(z)` data. DarkHistory comes with its own tabulated set of :math:`f_c(z)` data for dark matter annihilation and decay into :math:`e^+e^-` and :math:`\gamma \gamma`.
+
 Getting Started
 =======================================
 
