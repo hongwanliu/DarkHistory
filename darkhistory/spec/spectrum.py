@@ -833,7 +833,7 @@ class Spectrum:
         # Forces out_eng to be float, avoids strange problems with np.insert
         # below if out_eng is of type int. 
 
-        out_eng = out_eng.astype(float)
+        out_eng = out_eng
 
         first_bin_eng = np.exp(np.log(out_eng[0]) - (np.log(out_eng[1]) - np.log(out_eng[0])))
 

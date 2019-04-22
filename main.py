@@ -86,6 +86,8 @@ def evolve(
         Coarsening to apply to the transfer function matrix. Default is 1. 
     backreaction : bool
         If *False*, uses the baseline TLA solution to calculate :math:`f_c(z)`. Default is True.
+    compute_fs_method : {'no_He', 'He_recomb', 'He'}
+
     mxstep : int, optional
         The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint()* for more information. Default is *1000*. 
     rtol : float, optional

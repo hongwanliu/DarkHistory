@@ -469,7 +469,7 @@ class TransferFuncListArray:
             grid_vals = np.array(
                 np.stack([
                     np.stack(
-                        tflist.grid_vals for tflist in tflist_xHe_arr
+                        [tflist.grid_vals for tflist in tflist_xHe_arr]
                     ) for tflist_xHe_arr in tflist_arr
                 ]), 
                 ndmin = 5
