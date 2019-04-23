@@ -6,7 +6,7 @@
 DarkHistory
 #######################################
 
-Welcome to the DarkHistory page! Here, users will find installation instructions and detailed documentation of the code. 
+Welcome to the DarkHistory page! Here, users will find installation instructions and detailed documentation of the code. DarkHistory is described in a paper available at (referred to as Paper I in the examples). Please cite this paper if you use DarkHistory in a scientific publication.
 
 Announcements
 ======================================
