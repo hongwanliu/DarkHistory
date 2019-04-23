@@ -17,10 +17,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-# data_path = '/Users/gregoryridgway/Downloads/dataverse_files'
-# data_path = '/Users/gregoryridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-# data_path = '/Users/gridgway/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+data_path = '/foo/bar'
 
 # Global variables for data.
 glob_binning_data = None
@@ -29,7 +26,7 @@ glob_ics_tf_data  = None
 glob_struct_data  = None
 glob_hist_data    = None
 glob_pppc_data    = None
-glob_f_data     = None
+glob_f_data       = None
 
 class PchipInterpolator2D: 
 
