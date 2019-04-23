@@ -6,6 +6,9 @@
 DarkHistory
 #######################################
 
+.. contents:: Table of Contents
+    :depth: 2
+
 Welcome to the DarkHistory page! Here, users will find installation instructions and detailed documentation of the code. DarkHistory is described in `arXiv:1904.09296 <https://arxiv.org/abs/1904.09296>`_ (referred to as Paper I in the examples). Please cite this paper if you use DarkHistory in a scientific publication.
 
 Announcements
@@ -15,11 +18,6 @@ Announcements
 
 *2019-04-22* -- First release of DarkHistory. 
 
-Table of Contents
-======================================
-
-.. contents:: Table of Contents
-    :depth: 2
 
 What is DarkHistory?
 =======================================
