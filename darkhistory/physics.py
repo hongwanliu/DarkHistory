@@ -265,14 +265,14 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
 
     Parameters
     ----------
-    inj_type : {'swave', 'decay'}
+    inj_type : {'swave', 'pwave', 'decay'}
         Type of injection.
     rs : float
         The redshift of injection.
     mDM : float, optional
         DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ .
+        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . in the case of inj_type='pwave', sigmav = <sigma v>_ref, as in 1604.02457.
     lifetime : float, optional
         Decay lifetime in s.
 
@@ -287,6 +287,10 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         return rho_DM**2*rs**6*sigmav/mDM
     elif inj_type == 'decay':
         return rho_DM*rs**3/lifetime
+    elif inj_type == 'pwave':
+        sigma_1D_ref = 1e7 #in km/s
+        sigma_1D_B = 1e-11*c*(1/100)**0.5
+        return rho_DM**2*rs**8*sigmav/mDM*(sigma_1D_B/sigma_1D_ref)**2
 
 # Create interpolation with structure formation data. 
 # if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
@@ -302,7 +306,7 @@ def struct_boost_func(model='einasto_subs', model_params=None):
 
     Parameters
     ----------
-    model : {'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc'}
+    model : {'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc', 'pwave_NFW_no_subs'}
         Model to use. See 1604.02457. 
     model_params : tuple of floats
         Model parameters (b_h, delta, z_h) for 'erfc' option. 
@@ -443,7 +447,7 @@ def alpha_recomb(T_m, species):
     Parameters
     ----------
     T_m : float
-        The matter temperature.
+        The matter temperature (eV).
     species : {'HI', 'HeI_21s', 'HeI_23s'}
         The species of interest. 
 
@@ -1129,7 +1133,7 @@ def coll_ion_xsec(eng, species=None):
 
     return xsec
 
-def coll_ion_sec_elec_spec(in_eng, eng, species=None):
+def coll_ion_sec_elec_spec(in_eng, eng, species=None, method=0):
     """ Secondary electron spectrum after collisional ionization. 
 
     See 0910.4410.

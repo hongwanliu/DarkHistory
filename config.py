@@ -17,7 +17,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/foo/bar'
+data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
 
 # Global variables for data.
 glob_binning_data = None
@@ -315,10 +315,11 @@ def load_data(data_type):
             # )
 
             glob_struct_data = {
-                'einasto_subs'    : boost_data[:,[0,1]],
-                'einasto_no_subs' : boost_data[:,[0,2]],
-                'NFW_subs'        : boost_data[:,[0,3]],
-                'NFW_no_subs'     : boost_data[:,[0,4]] 
+                'einasto_subs'      : boost_data[:,[0,1]],
+                'einasto_no_subs'   : boost_data[:,[0,2]],
+                'NFW_subs'          : boost_data[:,[0,3]],
+                'NFW_no_subs'       : boost_data[:,[0,4]],
+                'pwave_NFW_no_subs' : boost_data[:,[0,5]]
             }
 
         return glob_struct_data
