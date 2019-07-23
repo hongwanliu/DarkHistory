@@ -16,7 +16,7 @@ Announcements
 
 *Please check this page frequently for new updates, as the code is still in its infancy!*
 
-*2019-04-22* -- First release of DarkHistory. 
+*2019-04-22* -- First release of DarkHistory (v1.0.0). 
 
 
 What is DarkHistory?
