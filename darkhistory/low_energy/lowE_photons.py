@@ -122,24 +122,25 @@ def kappa_DM(photspec, xe):
 
 #---- f_c functions ----#
 #continuum
-def getf_continuum(photspec, norm_fac):
+def getf_continuum(photspec, norm_fac, cross_check=False):
     # All photons below 10.2eV get deposited into the continuum
-    return photspec.toteng(
-        bound_type='eng',
-        bound_arr=np.array([photspec.eng[0],phys.lya_eng])
-    )[0] * norm_fac
-    #return np.dot(
-    #    photspec.N[photspec.eng < 10.2],
-    #    photspec.eng[photspec.eng < 10.2]*norm_fac
-    #)
+    if not cross_check:
+        return photspec.toteng(
+            bound_type='eng',
+            bound_arr=np.array([photspec.eng[0],phys.lya_eng])
+        )[0] * norm_fac
+    else:
+        return np.dot(
+            photspec.N[photspec.eng < 10.2],
+            photspec.eng[photspec.eng < 10.2]*norm_fac
+        )
 
 #excitation
-def getf_excitation(photspec, norm_fac, dt, xe, n, method):
+def getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check=False):
     if((method == 'old') or (method=='helium') or (method == 'ion')):
         # All photons between 11.2eV and 13.6eV are deposited into excitation
         # partial binning
-        partial_binning=False
-        if partial_binning:
+        if not cross_check:
             tot_excite_eng = (
                 photspec.toteng(
                     bound_type='eng',
@@ -174,7 +175,7 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method):
     return f_excite_HI
 
 #HI, HeI, HeII ionization
-def getf_ion(photspec, norm_fac, n, method):
+def getf_ion(photspec, norm_fac, n, method, cross_check=False):
     # The bin number containing 10.2eV
     lya_index = spectools.get_indx(photspec.eng, phys.lya_eng)
     # The bin number containing 13.6eV
@@ -183,13 +184,15 @@ def getf_ion(photspec, norm_fac, n, method):
     if method == 'old':
         # All photons above 13.6 eV deposit their 13.6eV into HI ionization
         #!!! The factor of 10 is probably unecessary
-        tot_ion_eng = phys.rydberg * photspec.totN(
-            bound_type='eng',
-            bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
-        )[0]
-        #tot_ion_eng = phys.rydberg*np.sum(
-        #    photspec.N[photspec.eng > 13.6]
-        #)
+        if not cross_check:
+            tot_ion_eng = phys.rydberg * photspec.totN(
+                bound_type='eng',
+                bound_arr=np.array([phys.rydberg, 10*photspec.eng[-1]])
+            )[0]
+        else:
+            tot_ion_eng = phys.rydberg*np.sum(
+                photspec.N[photspec.eng > 13.6]
+            )
         f_HI = tot_ion_eng * norm_fac
         f_HeI = 0
         f_HeII = 0
@@ -258,7 +261,7 @@ def getf_ion(photspec, norm_fac, n, method):
     return (f_HI, f_HeI, f_HeII)
 
 
-def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old'):
+def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old', cross_check=False):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited photons, resolve its energy into continuum photons,
@@ -294,8 +297,8 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old'):
     # norm_fac converts from total deposited energy to f_c(z) = (dE/dVdt)dep / (dE/dVdt)inj
     norm_fac = phys.nB * photspec.rs**3 / dt / dE_dVdt_inj
 
-    f_continuum = getf_continuum(photspec, norm_fac)
-    f_excite_HI = getf_excitation(photspec, norm_fac, dt, xe, n, method)
-    f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, n, method)
+    f_continuum = getf_continuum(photspec, norm_fac, cross_check)
+    f_excite_HI = getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check)
+    f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, n, method, cross_check)
 
     return np.array([f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII])

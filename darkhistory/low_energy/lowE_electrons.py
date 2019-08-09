@@ -18,7 +18,7 @@ abspath = os.path.abspath(__file__)
 dir_path = os.path.dirname(abspath)
 #dir_path = os.path.dirname(os.path.realpath(__file__))
 
-def make_interpolator(interp_type='2D'):
+def make_interpolator(interp_type='2D', cross_check=False):
     """Creates cubic splines that interpolate the Medea Data.  Stores them in globally defined variables so that these functions are only computed once
 
     Assumes that the data files are in the same directory as this script.
@@ -36,7 +36,6 @@ def make_interpolator(interp_type='2D'):
         The interpolating function (takes x_e and electron energy)
     """
 
-    cross_check=True
     if cross_check:
         engs = np.array([14., 30, 60, 100, 300, 3000])
     else:

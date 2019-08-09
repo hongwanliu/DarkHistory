@@ -14,7 +14,7 @@ from darkhistory.spec import spectools
 from darkhistory.low_energy import lowE_electrons
 from darkhistory.low_energy import lowE_photons
 
-def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss=0, method='no_He', separate_higheng=True):
+def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, cmbloss=0, method='no_He', separate_higheng=True, cross_check=False):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
     Given a spectrum of deposited electrons and photons, resolve their energy into
@@ -87,7 +87,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         tmp_elec_spec.N += ionized_elec.N
 
         f_phot = lowE_photons.compute_fs(
-            phot_spec, x, dE_dVdt_inj, dt, 'old'
+            phot_spec, x, dE_dVdt_inj, dt, 'old', cross_check
         )
         #print(phot_spec.rs, f_phot[0], phot_spec.toteng(), cmbloss, dE_dVdt_inj)
 
@@ -192,7 +192,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         tmp_elec_spec.N += (ionized_elec_HI.N + ionized_elec_HeI.N)
 
         f_phot = lowE_photons.compute_fs(
-            phot_spec, x, dE_dVdt_inj, dt, 'helium'
+            phot_spec, x, dE_dVdt_inj, dt, 'helium', cross_check
         )
         f_elec = lowE_electrons.compute_fs(
             MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
@@ -301,7 +301,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         # Every photon that photoionizes goes into hydrogen ionization now.
         # We can just use 'old' to do this computation.
         f_phot = lowE_photons.compute_fs(
-            phot_spec, x, dE_dVdt_inj, dt, 'old'
+            phot_spec, x, dE_dVdt_inj, dt, 'old', cross_check
         )
         f_elec = lowE_electrons.compute_fs(
             MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt

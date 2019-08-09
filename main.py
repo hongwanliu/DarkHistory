@@ -37,7 +37,7 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
-    use_tqdm=True
+    use_tqdm=True, cross_check=False
 ):
     """
     Main function computing histories and spectra. 
@@ -94,6 +94,8 @@ def evolve(
         The relative error of the solution. See *scipy.integrate.odeint()* for more information. Default is *1e-4*.
     use_tqdm : bool, optional
         Uses tqdm if *True*. Default is *True*. 
+    cross_check : bool, optional
+        If *True*, compare against 1604.02457 by using original MEDEA files, turning off partial binning, etc. Default is *False*.
 
     Examples
     --------
@@ -352,7 +354,7 @@ def evolve(
 
 
     # Object to help us interpolate over MEDEA results. 
-    MEDEA_interp = make_interpolator()
+    MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
 
     #########################################################################
     #########################################################################
@@ -514,7 +516,7 @@ def evolve(
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
-            highengdep_at_rs, method=compute_fs_method
+            highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
 
         # Save the f_c(z) values.
