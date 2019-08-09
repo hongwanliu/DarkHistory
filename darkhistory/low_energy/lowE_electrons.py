@@ -36,7 +36,7 @@ def make_interpolator(interp_type='2D'):
         The interpolating function (takes x_e and electron energy)
     """
 
-    cross_check=True
+    cross_check=False
     if cross_check:
         engs = np.array([14., 30, 60, 100, 300, 3000])
     else:
