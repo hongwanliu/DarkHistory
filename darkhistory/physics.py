@@ -36,7 +36,7 @@ alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in coulombs."""
-G = 6.6730e-8
+G = 6.67430e-8
 """Newton's Gravitational Constant in cm\ :sup:`3` g\ :sup:`-1` s\ :sup:`-2`\ ."""
 
 mass = {
