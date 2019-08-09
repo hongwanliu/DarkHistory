@@ -87,7 +87,10 @@ def DM_IGM_cooling_rate(mDM, T_matter, T_DM, V_pec, xHII, rs, xsec, fDM, n, part
             return 0
 
     mu_p = mDM*1.22*phys.mp/(mDM + 1.22*phys.mp)
-    xsec_p_0 = xsec/mu_p**2
+    if xsec == None:
+        xsec_0_p = None
+    else:
+        xsec_0_p = xsec/mu_p**2
 
     #u_th and r defined just after eqn. 13.  
     u_th_p = np.sqrt(T_matter/phys.mp + T_DM/mDM)
@@ -111,17 +114,14 @@ def DM_IGM_cooling_rate(mDM, T_matter, T_DM, V_pec, xHII, rs, xsec, fDM, n, part
         drag_cooling_term_DM_e = np.divide(phys.me*F_e, r_e, out=np.zeros_like(F_e), where=r_e!=0)
 
         #Eqn 2, Munoz and Loeb
-        alpha = 1/137
-        xi = np.log(9*T_matter**3/(4*phys.hbar**3*phys.c**3*np.pi*eps**2*alpha**3*xHII*phys.nH*rs**3))
+        xi = np.log(9*T_matter**3/(4*phys.hbar**3*phys.c**3*np.pi*eps**2*phys.alpha**3*xHII*phys.nH*rs**3))
 
         mu_p = mDM*phys.mp/(mDM + phys.mp)
         mu_e = mDM*phys.me/(mDM + phys.me)
 
-        xsec_0_p = 2*np.pi*alpha**2*eps**2*xi/mu_p**2*phys.hbar**2*phys.c**2
-        xsec_0_e = 2*np.pi*alpha**2*eps**2*xi/mu_e**2*phys.hbar**2*phys.c**2
+        xsec_0_p = 2*np.pi*phys.alpha**2*eps**2*xi/mu_p**2*phys.hbar**2*phys.c**2
+        xsec_0_e = 2*np.pi*phys.alpha**2*eps**2*xi/mu_e**2*phys.hbar**2*phys.c**2
 
-
-    if mcharge_switch:
         if particle_type == 'matter':
             rate_p = 2/(3*(1 + phys.nHe/phys.nH + xHII))*(fDM*phys.rho_DM*rs**3*phys.mp*xHII)/(mDM + phys.mp)**2*(
                     (xsec_0_p/u_th_p)*(
@@ -153,12 +153,6 @@ def DM_IGM_cooling_rate(mDM, T_matter, T_DM, V_pec, xHII, rs, xsec, fDM, n, part
     else:
         rate_e = 0
         if particle_type == 'matter':
-            #rate_p = 2/3*(
-            #    fDM*phys.rho_DM*rs**3/(1 + phys.nHe/phys.nH + xHII) * phys.mp/(mDM + phys.mp)**2 * xsec_/u_th_p * ( #xHII or xe?
-            #        np.sqrt(2/np.pi)*np.exp(-r_p**2/2)/u_th_p**2 * (T_DM - T_matter)
-            #        + drag_cooling_term_p
-            #    )
-            #)*phys.c
             rate_p = 2/3*(
                 fDM * phys.rho_DM*rs**3/1.08 * phys.mp/(mDM + phys.mp)**2 * xsec_p_0/u_th_p * (
                     np.sqrt(2/np.pi)*np.exp(-r_p**2/2)/u_th_p**2 * (T_DM - T_matter)
@@ -167,12 +161,6 @@ def DM_IGM_cooling_rate(mDM, T_matter, T_DM, V_pec, xHII, rs, xsec, fDM, n, part
             )*phys.c
 
         elif particle_type == 'DM':
-            #rate_p = 2/3*(
-            #    phys.nH*rs**3 * (mDM*phys.mp/(mDM + phys.mp)**2) * xsec/u_th_p * (
-            #        np.sqrt(2/np.pi)*np.exp(-r_p**2/2)/u_th_p**2 * (T_matter - T_DM)
-            #        + drag_cooling_term_DM_p
-            #    )
-            #)*phys.c
             rate_p = 2/3*(
                 phys.nH*rs**3 * (mDM*phys.mp/(mDM + phys.mp)**2) * xsec_p_0/u_th_p * (
                     np.sqrt(2/np.pi)*np.exp(-r_p**2/2)/u_th_p**2 * (T_matter - T_DM)
@@ -284,11 +272,14 @@ def get_history(
     else:
         struct_switch = False
 
-    if DM_process=='pwave' and dm_baryon_switch:
-        raise ValueError("No baseline f's generated for pwave models yet.")
+    #if DM_process=='pwave' and dm_baryon_switch:
+    #    raise ValueError("No baseline f's generated for pwave models yet.")
 
     if dm_baryon_switch and reion_switch:
         raise ValueError("Have not implemented DM/baryon scattering in the presence of reionization yet.")
+
+    if mcharge_switch:
+        dm_baryon_switch = True
 
     def _f_H_ion(rs, xHI, xHeI, xHeII):
         if baseline_f: 
@@ -337,14 +328,63 @@ def get_history(
         else:
             return f_He_ion
 
-    if (DM_process == 'swave' or DM_process == 'pwave')  and (sigmav is None or mDM is None):
+    if (DM_process == 'swave' or DM_process == 'pwave')  and ((sigmav is None and eps is None) or mDM is None):
         raise ValueError('sigmav, mDM must be specified for '+DM_process+'.')
     if DM_process == 'decay' and (lifetime is None or mDM is None):
         raise ValueError('lifetime, mDM must be specified for decay.')
-    if DM_process is not None and injection_rate is not None:
-        raise ValueError(
-            'cannot specify both DM_process and injection_rate.'
-        )
+    #if DM_process is not None and injection_rate is not None:
+    #    raise ValueError(
+    #        'cannot specify both DM_process and injection_rate.'
+    #    )
+
+    #Eqn 2, millicharged model
+    if mcharge_switch:
+        sigmav = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
+            np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
+        )*phys.hbar**2*phys.c**3 / 6
+
+    chi = phys.chi
+
+    # Initial Condition
+    if init_cond is None:
+        rs_start = rs_vec[0]
+        sigma_1D_over_c = 1e-11*(1e9/mDM)**0.5 * rs_start
+        if helium_TLA:
+            _init_cond = [
+                phys.Tm_std(rs_start), 
+                mDM * sigma_1D_over_c**2 / 3, #T_DM
+                0, #V_pec !!!
+                phys.xHII_std(rs_start), 
+                phys.xHeII_std(rs_start), 
+                1e-12
+            ]
+
+        else:
+            _init_cond = [
+                phys.Tm_std(rs_start), 
+                mDM * sigma_1D_over_c**2 / 3, #T_DM
+                0, #V_pec !!!
+                phys.xHII_std(rs_start), 
+                1e-12, 
+                1e-12
+            ]
+    else:
+        _init_cond = np.array(init_cond)
+
+        if init_cond[-3]   == 1:
+            _init_cond[-3] = 1 - 1e-12
+        if init_cond[-2]   == 0:
+            _init_cond[-2] = 1e-12
+        elif init_cond[-2] == chi:
+            _init_cond[-2] = (1. - 1e-12) * chi
+        if init_cond[-1]   == 0:
+            _init_cond[-1] = 1e-12
+
+    _init_cond[0] = np.log(_init_cond[0])
+    _init_cond[1] = np.log(_init_cond[1])
+    _init_cond[-3] = np.arctanh(2*(_init_cond[-3] - 0.5))
+    _init_cond[-2] = np.arctanh(2/chi * (_init_cond[-2] - chi/2))
+    _init_cond[-1] = np.arctanh(2/chi *(_init_cond[-1] - chi/2))
 
     # struct_boost should be defined to just return 1 if undefined.
     if struct_boost is None:
@@ -352,33 +392,19 @@ def get_history(
             return 1.
 
     def _injection_rate(rs):
-
-        if (DM_process == 'swave') or (DM_process == 'pwave'):
-            return (
-                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
-                * struct_boost(rs)
-            )
-        elif DM_process == 'decay':
-            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
-
+        if injection_rate is None:
+            return 0.
+        elif callable(injection_rate):
+            return injection_rate(rs)
         else:
-
-            if injection_rate is None:
-                return 0.
-            elif callable(injection_rate):
-                return injection_rate(rs)
-            else: 
-                return injection_rate
+            if (DM_process == 'swave') or (DM_process == 'pwave'):
+                return (
+                    f_DM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
+                    * struct_boost(rs)
+                )
+            elif DM_process == 'decay':
+                return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
         
-    chi = phys.chi
-
-    #Eqn 2, millicharged model
-    def sigmav_to_ee(eps_in):
-        alpha = 1/137
-        return (np.pi*alpha**2*eps_in**2)/mDM**2 *(
-            np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
-        )*phys.hbar**2*phys.c**3 / 6
-
     if reion_switch:
 
         if photoion_rate_func is None:
@@ -418,10 +444,10 @@ def get_history(
     def tla_before_reion(rs, var):
         # Returns an array of values for [dT/dz, dyHII/dz,
         # dyHeII/dz, dyHeIII/dz].
-        # var is the [T_m, T_DM, V_pec, xHII, xHeII, xHeIII] inputs.
+        # var is the [log_T_m, log_T_DM, V_pec, xHII, xHeII, xHeIII] inputs.
 
-        inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
+        inj_rate = _injection_rate(rs)
 
         def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, log_T_DM, V_pec, rs):
 
@@ -477,7 +503,34 @@ def get_history(
 
         def dV_pec_dz(yHII, yHeII, yHeIII, log_T_m, log_T_DM, V_pec, rs):
             
-            if dm_baryon_switch:
+            T_m = np.exp(log_T_m)
+            T_DM = np.exp(log_T_DM)
+            if V_pec == 0:
+                return 0
+            elif dm_baryon_switch or mcharge_switch:
+                if mcharge_switch:
+                    if eps == 0:
+                        return 0
+
+                    xi = np.log(9*T_m**3/(4*phys.hbar**3*phys.c**3*np.pi*eps**2*phys.alpha**3*xHII(yHII)*phys.nH*rs**3))
+
+                    mu_p = mDM*phys.mp/(mDM + phys.mp)
+                    mu_e = mDM*phys.me/(mDM + phys.me)
+
+                    xsec_0_p = 2*np.pi*phys.alpha**2*eps**2*xi/mu_p**2*phys.hbar**2*phys.c**2
+                    xsec_0_e = 2*np.pi*phys.alpha**2*eps**2*xi/mu_e**2*phys.hbar**2*phys.c**2
+                    
+                    u_th_e = np.sqrt(T_m/phys.me + T_DM/mDM)
+                    r_e = V_pec/u_th_e
+                    F_e = erf(r_e/np.sqrt(2)) - np.sqrt(2/np.pi)*r_e*np.exp(-r_e**2/2)
+
+                    D_e = (1 + fDM*phys.rho_DM/phys.rho_baryon)*(
+                          xsec_0_e*phys.me*xHII(yHII)*phys.nH*rs**3/(mDM + phys.me)*F_e/V_pec**2
+                    )*phys.c
+                else:
+                    xsec_0_p = xsec
+                    D_e = 0
+                    
                 T_m  = np.exp(log_T_m)
                 T_DM = np.exp(log_T_DM)
 
@@ -485,19 +538,17 @@ def get_history(
                 r_p = V_pec/u_th_p
                 F_p = erf(r_p/np.sqrt(2)) - np.sqrt(2/np.pi)*r_p*np.exp(-r_p**2/2)
 
-                if V_pec == 0:
-                    return 0
-                else:
+                D_p = (1 + fDM*phys.rho_DM/phys.rho_baryon)*(
+                      xsec_0_p*phys.mp*phys.nH*rs**3/(mDM + phys.mp)*F_p/V_pec**2
+                )*phys.c
 
-                    D = (1 + fDM*phys.rho_DM/phys.rho_baryon)*(
-                          xsec*phys.mp*phys.nH*rs**3/(mDM + phys.mp)*F_p/V_pec**2
-                    )*phys.c
-
-                    return -phys.dtdz(rs)*(
-                        - phys.hubble(rs)*V_pec - D
-                    )
+                return -phys.dtdz(rs)*(
+                    - phys.hubble(rs)*V_pec - D_p - D_e
+                )
             else:
                 return 0
+
+            
 
         def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, log_T_DM, V_pec, rs):
 
@@ -680,7 +731,7 @@ def get_history(
                 _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
             ) / (3/2 * nH * (1 + chi + xe))
             
-            dm_baryon_cooling_rate = switch*phys.dtdez(rs)*(
+            dm_baryon_cooling_rate = fDM*switch*phys.dtdez(rs)*(
                             DM_IGM_cooling_rate(
                             mDM, T_m, T_DM, V_pec, xe(y), rs,
                             xsec, fDM, n, particle_type='DM'
@@ -713,7 +764,7 @@ def get_history(
             
             T_m    = np.exp(log_T_m)
             T_DM   = np.exp(log_T_DM)
-            u_th_p = np.sqrt(T_matter/phys.mp + T_DM/mDM)
+            u_th_p = np.sqrt(T_m/phys.mp + T_DM/mDM)
             r_p    = V_pec/u_th_p
             F_p    = erf(r_p/np.sqrt(2)) - np.sqrt(2/np.pi)*r_p*np.exp(-r_p**2/2)
 
@@ -875,45 +926,6 @@ def get_history(
 
         return dlogT_dz(log_T_m, log_T_DM, V_pec, rs)
 
-    if init_cond is None:
-        rs_start = rs_vec[0]
-        sigma_1D_over_c = 1e-11*(1e9/mDM)**0.5 * rs_start
-        if helium_TLA:
-            _init_cond = [
-                phys.Tm_std(rs_start), 
-                mDM * sigma_1D_over_c**2 / 3, #T_DM
-                0, #V_pec !!!
-                phys.xHII_std(rs_start), 
-                phys.xHeII_std(rs_start), 
-                1e-12
-            ]
-
-        else:
-            _init_cond = [
-                phys.Tm_std(rs_start), 
-                mDM * sigma_1D_over_c**2 / 3, #T_DM
-                0, #V_pec !!!
-                phys.xHII_std(rs_start), 
-                1e-12, 
-                1e-12
-            ]
-    else:
-        _init_cond = np.array(init_cond)
-
-        if init_cond[-3]   == 1:
-            _init_cond[-3] = 1 - 1e-12
-        if init_cond[-2]   == 0:
-            _init_cond[-2] = 1e-12
-        elif init_cond[-2] == chi:
-            _init_cond[-2] = (1. - 1e-12) * chi
-        if init_cond[-1]   == 0:
-            _init_cond[-1] = 1e-12
-
-    _init_cond[0] = np.log(_init_cond[0])
-    _init_cond[1] = np.log(_init_cond[1])
-    _init_cond[-3] = np.arctanh(2*(_init_cond[-3] - 0.5))
-    _init_cond[-2] = np.arctanh(2/chi * (_init_cond[-2] - chi/2))
-    _init_cond[-1] = np.arctanh(2/chi *(_init_cond[-1] - chi/2))
 
     if reion_rs is None: 
         if photoion_rate_func is None and xe_reion_func is None:

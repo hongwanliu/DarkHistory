@@ -207,7 +207,7 @@ def evolve(
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
 
     elif((DM_process == 'swave') or (DM_process == 'pwave')):
-        if sigmav is None or start_rs is None:
+        if (sigmav is None and eps is None and not mcharge_switch) or start_rs is None:
             raise ValueError(
                 'sigmav and start_rs must be specified.'
             )
@@ -226,18 +226,45 @@ def evolve(
         if struct_boost is None:
             def struct_boost(rs):
                 return 1.
+        #Eqn 2, 1803.02804
+        if mcharge_switch:
+            if DM_process == 'pwave':
+                kappa = 1/6
+            elif DM_process == 'swave':
+                kappa = 1
+            sigmav = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
+                np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
+            )*phys.hbar**2*phys.c**3 * kappa
 
-        # Define the rate functions. 
-        def rate_func_N(rs):
-            return (
-                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
-                * struct_boost(rs) / (2*mDM)
-            )
-        def rate_func_eng(rs):
-            return (
-                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
-                * struct_boost(rs)
-            )
+        if dm_baryon_switch and (DM_process == 'pwave'):
+            # Define the rate functions. 
+            def rate_func_N(rs):
+                sigma_1D = 1e-11*(1e9/mDM)**0.5 # in units of c
+                fac = ((3*T_DM_func(rs)/mDM)/(sigma_1D * rs)**2 - 1.0)
+                return (
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
+                    * (struct_boost(rs) + fac) / (2*mDM)
+                )
+            def rate_func_eng(rs):
+                sigma_1D = 1e-11*(1e9/mDM)**0.5 # in units of c
+                fac = ((3*T_DM_func(rs)/mDM)/(sigma_1D * rs)**2 - 1.0)
+                return (
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
+                    * (struct_boost(rs) + fac)
+                )
+
+        else:
+            # Define the rate functions. 
+            def rate_func_N(rs):
+                return (
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
+                    * struct_boost(rs) / (2*mDM)
+                )
+            def rate_func_eng(rs):
+                return (
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
+                    * struct_boost(rs)
+                )
     
     #####################################
     # Input Checks                      #
@@ -273,7 +300,7 @@ def evolve(
         xHe_init   = phys.xHeII_std(start_rs)
         Tm_init    = phys.Tm_std(start_rs)
         T_DM_init  = mDM * (1e-11*(1e9/mDM)**0.5 * start_rs)**2 / 3
-        V_pec_init = 0
+        V_pec_init = 0*3e-5
     else:
         # User-specified.
         xH_init    = init_cond[0]
@@ -311,12 +338,9 @@ def evolve(
         )
 
     def rate_func_eng_unclustered(rs):
-        # The rate excluding structure formation for s-wave annihilation. 
+        # The rate excluding structure formation for annihilation. 
         # This is the correct normalization for f_c(z). 
-        if struct_boost is not None:
-            return rate_func_eng(rs)/struct_boost(rs)
-        else:
-            return rate_func_eng(rs)
+        return fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
 
 
     # If there are no electrons, we get a speed up by ignoring them. 
@@ -392,6 +416,9 @@ def evolve(
         #############################
         # First Step Special Cases  #
         #############################
+        def T_DM_func(rs):
+            return T_DM_arr[-1]
+
         if rs == start_rs:
             # Initialize the electron and photon arrays. 
             # These will carry the spectra produced by applying the
@@ -586,8 +613,9 @@ def evolve(
         # Solve the TLA for x, Tm for the *next* step.
         new_vals = tla_DM_baryon_scattering.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
-            mDM=mDM,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
+            DM_process=DM_process, mDM=mDM, sigmav=sigmav, lifetime=lifetime,
+            struct_boost=struct_boost, 
             injection_rate=rate_func_eng_unclustered,
             reion_switch=reion_switch, reion_rs=reion_rs,
             photoion_rate_func=photoion_rate_func,
