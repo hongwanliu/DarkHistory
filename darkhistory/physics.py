@@ -289,7 +289,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         return rho_DM*rs**3/lifetime
     elif inj_type == 'pwave':
         sigma_1D_ref = 1e7 #in km/s
-        sigma_1D_B = 1e-11*c*(1/100)**0.5
+        sigma_1D_B = 1e-11*c*(1e9/mDM)**0.5
         return rho_DM**2*rs**8*sigmav/mDM*(sigma_1D_B/sigma_1D_ref)**2
 
 # Create interpolation with structure formation data. 
