@@ -245,6 +245,9 @@ def evolve(
     if in_spec_elec.rs != in_spec_phot.rs:
         raise ValueError('Input spectra must have the same rs.')
 
+    if cross_check:
+        print('cross_check has been set to True -- No longer using all MEDEA files and no longer using partial-binning.')
+
     #####################################
     # Initialization                    #
     #####################################
