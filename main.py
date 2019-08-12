@@ -201,6 +201,10 @@ def evolve(
             raise ValueError(
                 'lifetime and start_rs must be specified.'
             )
+
+        # The decay rate is insensitive to structure formation
+        def struct_boost(rs):
+            return 1
         
         # Get spectra from PPPC.
         in_spec_elec = pppc.get_pppc_spec(
