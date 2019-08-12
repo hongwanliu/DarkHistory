@@ -999,7 +999,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
     else:
         return sum([ion_rate[atom] for atom in atoms])
 
-def coll_exc_xsec(eng, species=None):
+def coll_exc_xsec(eng, species=None, method = 'old'):
     """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
 
     See 0906.1197.
@@ -1010,68 +1010,78 @@ def coll_exc_xsec(eng, species=None):
         Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
+    method : {'old', 'MEDEA', 'new'}
+        if method == 'old', see 0906.1197; if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); if method == 'new', nothing yet
 
     Returns
     -------
     float or ndarray
         e-e collisional excitation cross section.
     """
-    if species == 'HI' or species == 'HeI':
+    if method == 'old':
+        if species == 'HI' or species == 'HeI':
 
-        if species == 'HI':
-            A_coeff = 0.5555
-            B_coeff = 0.2718
-            C_coeff = 0.0001
-            E_bind = rydberg
-            E_exc = lya_eng
-        elif species == 'HeI':
-            A_coeff = 0.1771
-            B_coeff = -0.0822
-            C_coeff = 0.0356
-            E_bind = He_ion_eng
-            E_exc  = He_exc_eng['23s']
+            if species == 'HI':
+                A_coeff = 0.5555
+                B_coeff = 0.2718
+                C_coeff = 0.0001
+                E_bind = rydberg
+                E_exc = lya_eng
+            elif species == 'HeI':
+                A_coeff = 0.1771
+                B_coeff = -0.0822
+                C_coeff = 0.0356
+                E_bind = He_ion_eng
+                E_exc  = He_exc_eng['23s']
 
-        prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
+            prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
 
-        xsec = prefac*(
-            A_coeff*np.log(eng/rydberg) + B_coeff + C_coeff*rydberg/eng
-        )
+            xsec = prefac*(
+                A_coeff*np.log(eng/rydberg) + B_coeff + C_coeff*rydberg/eng
+            )
 
-        try:
-            xsec[eng <= E_exc] *= 0
-        except:
-            if eng <= E_exc:
-                return 0
+            try:
+                xsec[eng <= E_exc] *= 0
+            except:
+                if eng <= E_exc:
+                    return 0
 
-        return xsec
+            return xsec
 
-    elif species == 'HeII':
+        elif species == 'HeII':
 
-        alpha = 3.22
-        beta = 0.357
-        gamma = 0.00157
-        delta = 1.59
-        eta = 0.764
-        E_exc = 4*lya_eng
+            alpha = 3.22
+            beta = 0.357
+            gamma = 0.00157
+            delta = 1.59
+            eta = 0.764
+            E_exc = 4*lya_eng
 
-        x = eng/E_exc
+            x = eng/E_exc
 
-        prefac = np.pi*bohr_rad**2/(16*x)
-        xsec = prefac*(
-            alpha*np.log(x) + beta*np.log(x)/x
-            + gamma + delta/x + eta/x**2
-        )
+            prefac = np.pi*bohr_rad**2/(16*x)
+            xsec = prefac*(
+                alpha*np.log(x) + beta*np.log(x)/x
+                + gamma + delta/x + eta/x**2
+            )
 
-        try:
-            xsec[eng <= E_exc] *= 0
-        except:
-            if eng <= E_exc:
-                return 0
+            try:
+                xsec[eng <= E_exc] *= 0
+            except:
+                if eng <= E_exc:
+                    return 0
 
-        return xsec
+            return xsec
 
+        else:
+            raise TypeError('invalid species.')
+    elif method == 'MEDEA':
+        
+
+    elif method == 'new':
+        raise ValueError('new method has not yet been implemented')
     else:
-        raise TypeError('invalid species.')
+        raise ValueError("Must pick method = {'old', 'MEDEA', or 'new'}")
 
 def coll_ion_xsec(eng, species=None):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
