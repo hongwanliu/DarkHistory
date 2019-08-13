@@ -1076,8 +1076,8 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
+        raise ValueError('MEDEA has not been implemented yet')
         
-
     elif method == 'new':
         raise ValueError('new method has not yet been implemented')
     else:
