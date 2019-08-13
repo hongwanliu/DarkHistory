@@ -201,6 +201,10 @@ def evolve(
             raise ValueError(
                 'lifetime and start_rs must be specified.'
             )
+
+        # The decay rate is insensitive to structure formation
+        def struct_boost(rs):
+            return 1
         
         # Get spectra from PPPC.
         in_spec_elec = pppc.get_pppc_spec(
@@ -244,6 +248,9 @@ def evolve(
 
     if in_spec_elec.rs != in_spec_phot.rs:
         raise ValueError('Input spectra must have the same rs.')
+
+    if cross_check:
+        print('cross_check has been set to True -- No longer using all MEDEA files and no longer using partial-binning.')
 
     #####################################
     # Initialization                    #

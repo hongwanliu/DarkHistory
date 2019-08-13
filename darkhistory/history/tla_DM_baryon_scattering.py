@@ -183,7 +183,7 @@ def get_history(
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4,
-    dm_baryon_switch=False, xsec=None, fDM=None, n=None, mcharge_switch=True, eps=0
+    dm_baryon_switch=False, xsec=None, fDM=None, n=None, mcharge_switch=False, eps=0
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -348,7 +348,7 @@ def get_history(
     # Initial Condition
     if init_cond is None:
         rs_start = rs_vec[0]
-        sigma_1D_over_c = 1e-11*(1e9/mDM)**0.5 * rs_start
+        sigma_1D_over_c = 1e-11*(1/100)**0.5 * rs_start
         if helium_TLA:
             _init_cond = [
                 phys.Tm_std(rs_start), 
@@ -392,9 +392,7 @@ def get_history(
             return 1.
 
     def _injection_rate(rs):
-        if injection_rate is None:
-            return 0.
-        elif callable(injection_rate):
+        if callable(injection_rate):
             return injection_rate(rs)
         else:
             if (DM_process == 'swave') or (DM_process == 'pwave'):
@@ -404,6 +402,8 @@ def get_history(
                 )
             elif DM_process == 'decay':
                 return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+            elif injection_rate is None:
+                return 0
         
     if reion_switch:
 
@@ -470,7 +470,7 @@ def get_history(
                 baryon_dm_cooling_rate = 0
 
 
-            return (1 / T_m * adiabatic_cooling_rate + 1/T_m * baryon_dm_cooling_rate + 1/T_m * (
+            dT = (1 / T_m * adiabatic_cooling_rate + 1/T_m * baryon_dm_cooling_rate + 1/T_m * (
                     phys.dtdz(rs)*(
                         compton_cooling_rate(
                             xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
@@ -479,6 +479,8 @@ def get_history(
                     )
                 )/ (3/2 * nH * (1 + chi + xe))
             )
+            #print(1/T_m * phys.dtdz(rs)*(compton_cooling_rate(xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs)/(3/2 * nH * (1 + chi + xe))))
+            return dT
 
         def dlogTDM_dz(yHII, yHeII, yHeIII, log_T_m, log_T_DM, V_pec, rs):
 
