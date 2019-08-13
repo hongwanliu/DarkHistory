@@ -39,7 +39,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True,
-    dm_baryon_switch=False, xsec=None, fDM=None, n=None, mcharge_switch=True, eps=0
+    dm_baryon_switch=False, xsec=None, fDM=1, n=None, mcharge_switch=False, eps=0
 ):
     """
     Main function computing histories and spectra. 
@@ -340,7 +340,8 @@ def evolve(
     def rate_func_eng_unclustered(rs):
         # The rate excluding structure formation for annihilation. 
         # This is the correct normalization for f_c(z). 
-        return fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
+        return rate_func_eng(rs)/struct_boost(rs)
+        #return fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
 
 
     # If there are no electrons, we get a speed up by ignoring them. 
@@ -625,6 +626,7 @@ def evolve(
             dm_baryon_switch=dm_baryon_switch, xsec=xsec, fDM=fDM, n=n, mcharge_switch=mcharge_switch, eps=eps
         )
         if np.any(np.isnan(new_vals)):
+            print('new_vals: ', new_vals)
             print('nan encountered, exiting.')
             break
 
