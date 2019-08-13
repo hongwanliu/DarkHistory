@@ -348,7 +348,7 @@ def get_history(
     # Initial Condition
     if init_cond is None:
         rs_start = rs_vec[0]
-        sigma_1D_over_c = 1e-11*(1e9/mDM)**0.5 * rs_start
+        sigma_1D_over_c = 1e-11*(1/100)**0.5 * rs_start
         if helium_TLA:
             _init_cond = [
                 phys.Tm_std(rs_start), 
@@ -392,9 +392,7 @@ def get_history(
             return 1.
 
     def _injection_rate(rs):
-        if injection_rate is None:
-            return 0.
-        elif callable(injection_rate):
+        if callable(injection_rate):
             return injection_rate(rs)
         else:
             if (DM_process == 'swave') or (DM_process == 'pwave'):
@@ -404,6 +402,8 @@ def get_history(
                 )
             elif DM_process == 'decay':
                 return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+            elif injection_rate is None:
+                return 0
         
     if reion_switch:
 

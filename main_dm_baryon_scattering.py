@@ -239,14 +239,14 @@ def evolve(
         if dm_baryon_switch and (DM_process == 'pwave'):
             # Define the rate functions. 
             def rate_func_N(rs):
-                sigma_1D = 1e-11*(1e9/mDM)**0.5 # in units of c
+                sigma_1D = 1e-11*(1/100)**0.5 # in units of c
                 fac = ((3*T_DM_func(rs)/mDM)/(sigma_1D * rs)**2 - 1.0)
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
                     * (struct_boost(rs) + fac) / (2*mDM)
                 )
             def rate_func_eng(rs):
-                sigma_1D = 1e-11*(1e9/mDM)**0.5 # in units of c
+                sigma_1D = 1e-11*(1/100)**0.5 # in units of c
                 fac = ((3*T_DM_func(rs)/mDM)/(sigma_1D * rs)**2 - 1.0)
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
@@ -299,7 +299,7 @@ def evolve(
         xH_init    = phys.xHII_std(start_rs)
         xHe_init   = phys.xHeII_std(start_rs)
         Tm_init    = phys.Tm_std(start_rs)
-        T_DM_init  = mDM * (1e-11*(1e9/mDM)**0.5 * start_rs)**2 / 3
+        T_DM_init  = mDM * (1e-11*(1/100)**0.5 * start_rs)**2 / 3 #This line is INCORRECT!!!
         V_pec_init = 0*3e-5
     else:
         # User-specified.
