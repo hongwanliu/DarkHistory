@@ -1285,18 +1285,29 @@ def elec_heating_engloss_rate(eng, xe, rs):
     return prefac*ne*coulomb_log/(me/c**2*w)
 
 def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
-    """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.
+    """energy deposition fraction into channel c, :math:`f_c(z)`, as a function of dark matter mass and redshift.
 
     Parameters
     ----------
     mDM : float
-        Dark matter mass
+        Dark matter mass in eV. 
+    rs : float or ndarray
+        Redshift in 1+z of interest.
     inj_particle : string
         Injected particle, either set to 'phot' for photons, or 'elec' for electrons.
     inj_type : string
-        Type of energy injection, either 'swave' or 'decay
+        Type of energy injection, either 'swave' or 'decay'. 
     struct : bool
         If *True*, include structure formation, if *False* assume no structure formation. Default is *False*. This option makes no difference for decays.
+    channel : {'H ion, 'cont', 'exc', 'heat', 'He ion'}
+        The relevant energy deposition channel :math:`c`.
+
+    Returns
+    -------
+    
+    ndarray
+        An array of :math:`f_c(z)` at the desired redshift points.
+
     """
 
     if (inj_particle != 'phot') and (inj_particle != 'elec'):
