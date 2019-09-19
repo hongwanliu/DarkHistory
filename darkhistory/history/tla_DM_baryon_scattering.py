@@ -183,7 +183,7 @@ def get_history(
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4,
-    dm_baryon_switch=False, xsec=None, fDM=None, n=None, mcharge_switch=False, eps=0
+    dm_baryon_switch=False, xsec=None, fDM=None, n=None, mcharge_switch=False, eps=0, z_td=None
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -243,6 +243,8 @@ def get_history(
         millicharge switch. If True, assume the scattering dark matter is millicharged.
     eps : float, optional
         fraction of electric charge contained in a millicharged DM particle.
+    z_td : float, optional
+        redshift of thermal decoupling.  For all redshifts after z_dec, turn off Coulomb energy exchange.
 
     Returns
     -------
@@ -404,7 +406,7 @@ def get_history(
                 return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
             elif injection_rate is None:
                 return 0
-        
+
     if reion_switch:
 
         if photoion_rate_func is None:
@@ -448,6 +450,11 @@ def get_history(
 
         nH = phys.nH*rs**3
         inj_rate = _injection_rate(rs)
+        fac_td = 1
+        if z_td is not None:
+            if 1+z_td >= rs:
+                fac_td=0
+
 
         def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, log_T_DM, V_pec, rs):
 
@@ -472,7 +479,7 @@ def get_history(
 
             dT = (1 / T_m * adiabatic_cooling_rate + 1/T_m * baryon_dm_cooling_rate + 1/T_m * (
                     phys.dtdz(rs)*(
-                        compton_cooling_rate(
+                        fac_td*compton_cooling_rate(
                             xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
                         )
                         + _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
