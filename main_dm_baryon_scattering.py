@@ -25,7 +25,7 @@ from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
 
-from darkhistory.history import tla
+#from darkhistory.history import tla
 from darkhistory.history import tla_DM_baryon_scattering
 
 def evolve(
@@ -39,7 +39,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True,
-    dm_baryon_switch=False, xsec=None, fDM=1, n=None, mcharge_switch=False, eps=0
+    dm_baryon_switch=False, xsec=None, fDM=1, n=None, mcharge_switch=False, eps=0, z_td=None
 ):
     """
     Main function computing histories and spectra. 
@@ -108,6 +108,8 @@ def evolve(
         millicharge switch. If True, assume the scattering dark matter is millicharged.
     eps : float, optional
         fraction of electric charge contained in a millicharged DM particle.
+    z_td : float optional
+        the redshift of thermal decoupling
 
     Examples
     --------
@@ -623,7 +625,7 @@ def evolve(
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
-            dm_baryon_switch=dm_baryon_switch, xsec=xsec, fDM=fDM, n=n, mcharge_switch=mcharge_switch, eps=eps
+            dm_baryon_switch=dm_baryon_switch, xsec=xsec, fDM=fDM, n=n, mcharge_switch=mcharge_switch, eps=eps, z_td=z_td
         )
         if np.any(np.isnan(new_vals)):
             print('new_vals: ', new_vals)
