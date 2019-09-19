@@ -87,9 +87,9 @@ def get_history(
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
     photoion_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
+        Functions take redshift 1+z as input, return the photoionization rate in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
     photoheat_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoheating rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
+        Functions take redshift 1+z as input, return the photoheating rate in eV s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.  
     helium_TLA : bool, optional
