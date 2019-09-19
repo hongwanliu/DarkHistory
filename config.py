@@ -343,36 +343,34 @@ def load_data(data_type):
 
         if glob_f_data is None:
 
-            phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
-            phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
-            elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
+            full_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
+            phot_ln_rs = np.array([np.log(3000) - 0.004*i for i in np.arange(1655)])
+            elec_ln_rs = np.array([np.log(3000) - 0.032*i for i in np.arange(207)])
 
             log10eng0 = 3.6989700794219966
             log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
             log10eng[-1] = 12.601505994846297
+            
+            labels = ['phot_decay', 'elec_decay',
+              'phot_swave_noStruct', 'elec_swave_noStruct',
+              'phot_swave_einasto', 'elec_swave_einasto',
+              'phot_swave_NFW', 'elec_swave_NFW',
+              'phot_pwave_NFW', 'elec_pwave_NFW']
 
-            f_phot_decay        = pickle.load(open(data_path+'/f_phot_decay_std.p', 'rb'))
-            f_phot_swave        = pickle.load(open(data_path+'/f_phot_swave_std.p', 'rb'))
-            f_phot_swave_struct = pickle.load(open(data_path+'/f_phot_swave_std_einasto_subs.p', 'rb'))
-            f_elec_decay        = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
-            f_elec_swave        = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
-            f_elec_swave_struct = pickle.load(open(data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
+            f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
 
-            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
-            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_phot_swave))
-            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_swave_struct))
-            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_decay))
-            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave))
-            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave_struct))
+            def label_to_rs(label):
+                if label == 'phot_pwave_NFW':
+                    return phot_ln_rs
+                elif label == 'elec_pwave_NFW':
+                    return elec_ln_rs
+                else:
+                    return full_ln_rs
 
-            glob_f_data = {
-                'phot_decay'        : f_phot_decay_interp,
-                'phot_swave'        : f_phot_swave_interp,
-                'phot_swave_struct' : f_phot_swave_struct_interp,
-                'elec_decay'        : f_elec_decay_interp,
-                'elec_swave'        : f_elec_swave_interp,
-                'elec_swave_struct' : f_elec_swave_struct_interp
-            }
+            glob_f_data = {label : RegularGridInterpolator(
+                (log10eng, np.flipud(label_to_rs(label))), np.log(f_data[label])
+            ) for label in labels}
+
         return glob_f_data
 
     elif data_type == 'pppc':
