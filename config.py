@@ -17,7 +17,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/gridgway/Downloads/dataverse_files'
+data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
 
 # Global variables for data.
 glob_binning_data = None
@@ -368,7 +368,7 @@ def load_data(data_type):
                     return full_ln_rs
 
             glob_f_data = {label : RegularGridInterpolator(
-                (log10eng, np.flipud(label_to_rs(label))), np.log(f_data[label])
+                (log10eng, np.flipud(label_to_rs(label))), np.flip(np.log(f_data[label]),1)
             ) for label in labels}
 
         return glob_f_data
