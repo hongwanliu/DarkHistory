@@ -124,13 +124,13 @@ def get_history(
     ):
         raise ValueError('Use either baseline_f or specify f manually.')
 
-    if baseline_f and (DM_process == 'swave'):
+    if baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave')):
         struct_bool = True
     else:
         struct_bool = False
 
     def _f_H_ion(rs, xHI, xHeI, xHeII):
-        if baseline_f: 
+        if baseline_f:
             return phys.f_std(
                 mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
                 channel='H ion'
@@ -192,13 +192,22 @@ def get_history(
 
     def _injection_rate(rs):
 
-        if DM_process == 'swave':
+        if DM_process == 'decay':
+            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+        elif DM_process == 'swave':
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
                 * struct_boost(rs)
             )
-        elif DM_process == 'decay':
-            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+        elif DM_process == 'pwave':
+            if baseline_f:
+                #The structure formation boost is already incorporated into the baseline_fs
+                return phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
+            else:
+                return (
+                    phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
+                    * struct_boost(rs)
+                )
 
         else:
 
