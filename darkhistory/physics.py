@@ -1002,7 +1002,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
 def coll_exc_xsec(eng, species=None, method = 'old'):
     """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
 
-    See 0906.1197.
+    see under method for references
 
     Parameters
     ----------
@@ -1083,7 +1083,7 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
     else:
         raise ValueError("Must pick method = {'old', 'MEDEA', or 'new'}")
 
-def coll_ion_xsec(eng, species=None):
+def coll_ion_xsec(eng, species=None, method='old'):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
 
     See 0906.1197.
@@ -1094,6 +1094,8 @@ def coll_ion_xsec(eng, species=None):
         Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
+    method : {'old', 'MEDEA', 'new'}
+        if method == 'old', see 0906.1197; if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); if method == 'new', nothing yet
 
     Returns
     -------
@@ -1102,48 +1104,52 @@ def coll_ion_xsec(eng, species=None):
 
     Notes
     -----
-    Returns the Arnaud and Rothenflug rate.
+    Returns the Arnaud and Rothenflug rate if method == 'old'.
 
     """
-    if species == 'HI':
-        A_coeff = 22.8
-        B_coeff = -12.0
-        C_coeff = 1.9
-        D_coeff = -22.6
-        ion_pot = rydberg
-    elif species == 'HeI':
-        A_coeff = 17.8
-        B_coeff = -11.0
-        C_coeff = 7.0
-        D_coeff = -23.2
-        ion_pot = He_ion_eng
-    elif species == 'HeII':
-        A_coeff = 14.4
-        B_coeff = -5.6
-        C_coeff = 1.9
-        D_coeff = -13.3
-        ion_pot = 4*rydberg
-    else:
-        raise TypeError('invalid species.')
 
-    u = eng/ion_pot
+    if method == 'old':
+        if species == 'HI':
+            A_coeff = 22.8
+            B_coeff = -12.0
+            C_coeff = 1.9
+            D_coeff = -22.6
+            ion_pot = rydberg
+        elif species == 'HeI':
+            A_coeff = 17.8
+            B_coeff = -11.0
+            C_coeff = 7.0
+            D_coeff = -23.2
+            ion_pot = He_ion_eng
+        elif species == 'HeII':
+            A_coeff = 14.4
+            B_coeff = -5.6
+            C_coeff = 1.9
+            D_coeff = -13.3
+            ion_pot = 4*rydberg
+        else:
+            raise TypeError('invalid species.')
 
-    prefac = 1e-14/(u*ion_pot**2)
+        u = eng/ion_pot
 
-    xsec = prefac*(
-        A_coeff*(1 - 1/u) + B_coeff*(1 - 1/u)**2
-        + C_coeff*np.log(u) + D_coeff*np.log(u)/u
-    )
+        prefac = 1e-14/(u*ion_pot**2)
 
-    try:
-        xsec[eng <= ion_pot] *= 0
-    except:
-        if eng <= ion_pot:
-            return 0
+        xsec = prefac*(
+            A_coeff*(1 - 1/u) + B_coeff*(1 - 1/u)**2
+            + C_coeff*np.log(u) + D_coeff*np.log(u)/u
+        )
+
+        try:
+            xsec[eng <= ion_pot] *= 0
+        except:
+            if eng <= ion_pot:
+                return 0
+    elif method == 'MEDEA':
+        raise TypeError('method = new not developed yet')
 
     return xsec
 
-def coll_ion_sec_elec_spec(in_eng, eng, species=None, method=0):
+def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     """ Secondary electron spectrum after collisional ionization. 
 
     See 0910.4410.
@@ -1156,6 +1162,8 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method=0):
         Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
+    method : {'old', 'MEDEA', 'new'}
+        if method == 'old', see 0906.1197; if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); if method == 'new', nothing yet
 
     Returns
     -------
@@ -1172,78 +1180,168 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method=0):
     from darkhistory.spec.spectrum import Spectrum
     from darkhistory.spec import spectools
 
-    if species == 'HI':
-        eps_i = 8.
-        ion_pot = rydberg
-    elif species == 'HeI':
-        eps_i = 15.8
-        ion_pot = He_ion_eng
-    elif species == 'HeII':
-        eps_i = 32.6
-        ion_pot = 4*rydberg
-    else:
-        raise TypeError('invalid species.')
+    if method == 'old':
+        if species == 'HI':
+            eps_i = 8.
+            ion_pot = rydberg
+        elif species == 'HeI':
+            eps_i = 15.8
+            ion_pot = He_ion_eng
+        elif species == 'HeII':
+            eps_i = 32.6
+            ion_pot = 4*rydberg
+        else:
+            raise TypeError('invalid species.')
 
-    if np.isscalar(in_eng):
-        low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
-        # This spectrum describes the lower energy electron only.
-        low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
-        # Normalize the spectrum to one electron.
+        if np.isscalar(in_eng):
+            low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
+            # This spectrum describes the lower energy electron only.
+            low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+            # Normalize the spectrum to one electron.
 
-        low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
-        if np.sum(low_eng_elec_dNdE) == 0:
-            # Either in_eng < in_pot, or the lowest bin lies
-            # above the halfway point, (in_eng - ion_pot)/2.
-            # Add to the lowest bin.
-            return np.zeros_like(eng)
+            low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
+            if np.sum(low_eng_elec_dNdE) == 0:
+                # Either in_eng < in_pot, or the lowest bin lies
+                # above the halfway point, (in_eng - ion_pot)/2.
+                # Add to the lowest bin.
+                return np.zeros_like(eng)
 
-        low_eng_elec_spec /= low_eng_elec_spec.totN()
+            low_eng_elec_spec /= low_eng_elec_spec.totN()
 
-        in_eng = np.array([in_eng])
+            in_eng = np.array([in_eng])
 
-        low_eng_elec_N = np.outer(
-            np.ones_like(in_eng), low_eng_elec_spec.N)
+            low_eng_elec_N = np.outer(
+                np.ones_like(in_eng), low_eng_elec_spec.N)
 
-        high_eng_elec_N = spectools.engloss_rebin_fast(
-            in_eng, eng + ion_pot, low_eng_elec_N, eng
-        )
+            high_eng_elec_N = spectools.engloss_rebin_fast(
+                in_eng, eng + ion_pot, low_eng_elec_N, eng
+            )
 
-        return np.squeeze(low_eng_elec_N + high_eng_elec_N)
+            return np.squeeze(low_eng_elec_N + high_eng_elec_N)
 
-    else:
+        else:
 
-        from darkhistory.spec.spectra import Spectra
+            from darkhistory.spec.spectra import Spectra
 
-        in_eng_mask = np.outer(in_eng, np.ones_like(eng))
-        eng_mask    = np.outer(np.ones_like(in_eng), eng)
+            in_eng_mask = np.outer(in_eng, np.ones_like(eng))
+            eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
-        low_eng_elec_dNdE = np.outer(
-            np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
-        )
+            low_eng_elec_dNdE = np.outer(
+                np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
+            )
 
-        low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
+            low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
 
-        # Normalize the spectrum to one electron.
-        low_eng_elec_spec = Spectra(
-            low_eng_elec_dNdE, eng=eng, in_eng=in_eng
-        )
+            # Normalize the spectrum to one electron.
+            low_eng_elec_spec = Spectra(
+                low_eng_elec_dNdE, eng=eng, in_eng=in_eng
+            )
 
-        totN_arr = low_eng_elec_spec.totN()
-        # Avoids divide by zero errors.
-        totN_arr[totN_arr == 0] = np.inf
+            totN_arr = low_eng_elec_spec.totN()
+            # Avoids divide by zero errors.
+            totN_arr[totN_arr == 0] = np.inf
 
-        low_eng_elec_spec /= totN_arr
+            low_eng_elec_spec /= totN_arr
 
-        if low_eng_elec_spec.spec_type == 'dNdE':
-            low_eng_elec_spec.switch_spec_type()
+            if low_eng_elec_spec.spec_type == 'dNdE':
+                low_eng_elec_spec.switch_spec_type()
 
-        low_eng_elec_N = low_eng_elec_spec.grid_vals
+            low_eng_elec_N = low_eng_elec_spec.grid_vals
 
-        high_eng_elec_N = spectools.engloss_rebin_fast(
-            in_eng, eng + ion_pot, low_eng_elec_N, eng
-        )
+            high_eng_elec_N = spectools.engloss_rebin_fast(
+                in_eng, eng + ion_pot, low_eng_elec_N, eng
+            )
+    elif method == 'MEDEA':
+        if species == 'HI':
+            B = rydberg
+            U = rydberg
+            a =  0
+            b = -0.022473
+            c =  1.1775
+            d = -0.46264
+            e =  0.089064
+            f =  0
+            Ni=  0.4343
+        elif species == 'HeI':
+            U = 39.51
+            B = He_ion_eng
+            a =  0
+            b =  0
+            c =  12.178
+            d = -29.585
+            e =  31.251
+            f = -12.175
+            Ni=  1.605
+        elif species == 'HeII':
+            eps_i = 32.6
+            ion_pot = 4*rydberg
+        else:
+            raise TypeError('invalid species.')
 
-        return low_eng_elec_N + high_eng_elec_N
+        if np.isscalar(in_eng):
+            low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
+            # This spectrum describes the lower energy electron only.
+            low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+            # Normalize the spectrum to one electron.
+
+            low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
+            if np.sum(low_eng_elec_dNdE) == 0:
+                # Either in_eng < in_pot, or the lowest bin lies
+                # above the halfway point, (in_eng - ion_pot)/2.
+                # Add to the lowest bin.
+                return np.zeros_like(eng)
+
+            low_eng_elec_spec /= low_eng_elec_spec.totN()
+
+            in_eng = np.array([in_eng])
+
+            low_eng_elec_N = np.outer(
+                np.ones_like(in_eng), low_eng_elec_spec.N)
+
+            high_eng_elec_N = spectools.engloss_rebin_fast(
+                in_eng, eng + ion_pot, low_eng_elec_N, eng
+            )
+
+            return np.squeeze(low_eng_elec_N + high_eng_elec_N)
+
+        else:
+
+            from darkhistory.spec.spectra import Spectra
+
+            in_eng_mask = np.outer(in_eng, np.ones_like(eng))
+            eng_mask    = np.outer(np.ones_like(in_eng), eng)
+
+            low_eng_elec_dNdE = np.outer(
+                np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
+            )
+
+            low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
+
+            # Normalize the spectrum to one electron.
+            low_eng_elec_spec = Spectra(
+                low_eng_elec_dNdE, eng=eng, in_eng=in_eng
+            )
+
+            totN_arr = low_eng_elec_spec.totN()
+            # Avoids divide by zero errors.
+            totN_arr[totN_arr == 0] = np.inf
+
+            low_eng_elec_spec /= totN_arr
+
+            if low_eng_elec_spec.spec_type == 'dNdE':
+                low_eng_elec_spec.switch_spec_type()
+
+            low_eng_elec_N = low_eng_elec_spec.grid_vals
+
+            high_eng_elec_N = spectools.engloss_rebin_fast(
+                in_eng, eng + ion_pot, low_eng_elec_N, eng
+            )
+    elif method == 'new':
+        raise TypeError('We have not developed the new method yet')
+        #if np.isscalar(in_eng):
+        #else:
+
+    return low_eng_elec_N + high_eng_elec_N
 
 
 def elec_heating_engloss_rate(eng, xe, rs):
@@ -1313,8 +1411,8 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
     if (inj_particle != 'phot') and (inj_particle != 'elec'):
         raise ValueError("inj_particle must either be 'phot' or 'elec'")
 
-    if (inj_type != 'decay') and (inj_type != 'swave'):
-        raise ValueError("inj_type must either be 'swave' or 'decay'")
+    if (inj_type != 'decay') and (inj_type != 'swave') and (inj_type != 'pwave'):
+        raise ValueError("inj_type must either be 'swave' or 'decay' or 'pwave'")
 
     if channel not in ['H ion', 'cont', 'exc', 'heat', 'He ion']:
         raise ValueError(
@@ -1332,14 +1430,17 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
         rs = np.array(rs)*1.
 
     struct_str = ''
-    if inj_type == 'swave':
+    if (inj_type == 'swave') or (inj_type == 'pwave'):
         if inj_particle == 'phot':
             Einj = mDM
         else:
             Einj = mDM - me
 
-        if struct:
-            struct_str = '_struct'
+        if inj_type == 'pwave':
+            struct_str = '_NFW'
+        else:
+            if struct:
+                struct_str = '_einasto'
     else:
         if inj_particle == 'phot':
             Einj = mDM/2

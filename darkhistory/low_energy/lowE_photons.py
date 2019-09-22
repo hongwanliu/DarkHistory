@@ -75,8 +75,8 @@ def get_kappa_2s(photspec):
 
     return kappa_2s
 
-def kappa_DM(photspec, xe):
-    """ Compute kappa_DM of the modified tla.
+def kappa_2p(photspec, xe):
+    """ Compute kappa_2p of the modified tla.
 
     Parameters
     ----------
@@ -85,8 +85,8 @@ def kappa_DM(photspec, xe):
 
     Returns
     -------
-    kappa_DM : float
-        The added photoionization rate due to products of DM.
+    kappa_2p : float
+        The added photoexcitation rate from the 1s to 2p state, due to photons injected by DM.
     """
     eng = photspec.eng
     rs = photspec.rs
