@@ -288,8 +288,13 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/lifetime
     elif inj_type == 'pwave':
+        #A reference 1D dispersion used to fix the prefactor in <sigma v>, 
+        # conventionally set to dispersion of WIMPS in Milky Way sized halo
         sigma_1D_ref = 1e7 #in km/s
-        sigma_1D_B = 1e-11*c*(1/100)**0.5
+
+        #1D dispersion of unclustered DM today
+        sigma_1D_B = 1e-11*c*(1e9/mDM)**0.5 # (GeV/mDM)**0.5
+
         return rho_DM**2*rs**8*sigmav/mDM*(sigma_1D_B/sigma_1D_ref)**2
 
 # Create interpolation with structure formation data. 
@@ -1086,7 +1091,10 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
 def coll_ion_xsec(eng, species=None, method='old'):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
 
-    See 0906.1197.
+    For the 'old' method, see 0906.1197.
+    For the 'MEDEA' method, see Mon. Not. R. Astron. Soc. 422, 420–433 (2012).
+    For the 'new' method, TBD.
+
 
     Parameters
     ----------
@@ -1144,7 +1152,54 @@ def coll_ion_xsec(eng, species=None, method='old'):
         except:
             if eng <= ion_pot:
                 return 0
+
     elif method == 'MEDEA':
+        if species == 'HI':
+            # Binding Energy
+            B = rydberg
+
+            # Average kinetic energy of electron in the atom's potential
+            U = rydberg
+
+            # Number of electrons in valence shell
+            N = 1
+            Ni = .4343
+            def D(t):
+                return -.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
+                    -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
+                )
+
+        elif species == 'HeI':
+            B  = He_ion_eng
+            U  = 39.51
+            N  = 2
+            Ni = 1.605
+            def D(t):
+                return 12.178/3*(1-((t+1)/2)**-3) - 29.585/4*(1-((t+1)/2)**-4) + (
+                    31.251/5*(1-((t+1)/2)**-5) - 12.175/6*(1-((t+1)/2)**-6)
+                )
+
+        elif species == 'HeII':
+            B = 4*Rydberg
+            U = 4*Rydberg
+            N = 1
+            Ni = .4343
+            def D(t):
+                return -.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
+                    -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
+                )
+
+        S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
+        t = eng/B
+        u = U/B
+        xsec = S/(t+u+1) * (D(t)*np.log(t) + (2 - Ni/N)*((t-1)/t - np.log(t)/(t+1)))
+        try:
+            xsec[eng <= B] *= 0
+        except:
+            if eng <= B:
+                return 0
+
+    else:
         raise TypeError('method = new not developed yet')
 
     return xsec
@@ -1268,13 +1323,15 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             S = 4 * np.pi * bohr_rad**2
 
             # Taylor coefficients of differential dipole oscillator strength for 
-            a =  0
-            b = -0.022473
-            c =  1.1775
-            d = -0.46264
-            e =  0.089064
-            f =  0
-            g =  0
+            def dfdw(w):
+                return -.022473*(w+1)**-2 + 1.1775*(w+1)**-3 - 0.046264*(w+1)**-4 + 0.089064*(w+1)**-5
+            #a =  0
+            #b = -0.022473
+            #c =  1.1775
+            #d = -0.46264
+            #e =  0.089064
+            #f =  0
+            #g =  0
             Ni=  0.4343
 
         elif species == 'HeI':
@@ -1282,23 +1339,30 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             U = 39.51
             N = 2
             S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
-            a =  0
-            b =  0
-            c =  12.178
-            d = -29.585
-            e =  31.251
-            f = -12.175
-            g =  0
+            #a =  0
+            #b =  0
+            #c =  12.178
+            #d = -29.585
+            #e =  31.251
+            #f = -12.175
+            #g =  0
+            def dfdw(w):
+                return 12.178*(w+1)**-3 - 29.585*(w+1)**-4 + 31.251*(w+1)**-5 - 12.175*(w+1)**-6
             Ni=  1.605
 
         elif species == 'HeII':
             B = 4*rydberg
+            Z = 2
+            def F(tt):
+                return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 np.log(tt)/(tt+1)])
+            def f(n,w):
+                (w+1)**-n
+            def ft(n,tt,w):
+                (tt-w)**-n
 
         else:
             raise TypeError('invalid species.')
 
-        def dfdw(w):
-            return a*(w+1)**-1 + b*(w+1)**-2 + c*(w+1)**-3 + d*(w+1)**-4 + e*(w+1)**-5 + f*(w+1)**-6 + g*(w+1)**-7
 
         t = in_eng/B
         w = eng/B
@@ -1306,13 +1370,23 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
         
         if np.isscalar(in_eng):
             # dsigma / dW, where W is the kinetic energy of the secondary (lower energy) electron
-            low_eng_elec_dNdE = (
-                S/(in_eng + U + 1)*(
-                    (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
-                    (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
-                    np.log(t)/(N*(w+1)) * dfdw(w)
+            if species != 'HeII':
+                low_eng_elec_dNdE = (
+                    S/(in_eng + U + 1)*(
+                        (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
+                        (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
+                        np.log(t)/(N*(w+1)) * dfdw(w)
+                    )
                 )
-            )
+            else:
+                tt = in_eng/Z**2/rydberg
+                F_array = F(tt)
+                summation = sum(
+                        np.array([(f(n,tt) + ft(n,tt,w)) * F_array[n-1] for n in [0,1,2]])
+                        )
+                lowengelec_dNdE = S*summation
+
+
 
             # This spectrum describes the lower energy electron only.
             low_eng_elec_dNdE[eng >= (in_eng - B)/2] = 0

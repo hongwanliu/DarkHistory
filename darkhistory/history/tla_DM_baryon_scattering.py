@@ -502,7 +502,8 @@ def get_history(
                 # This rate is temperature loss per redshift.
                 adiabatic_cooling_rate    = 2 * T_DM/rs
                 dm_baryon_cooling_rate = (phys.dtdz(rs) * DM_IGM_cooling_rate(
-                    mDM, T_m, T_DM, V_pec, xHII(yHII), rs, xsec, fDM, n, particle_type='DM', mcharge_switch=mcharge_switch, eps=eps
+                    mDM, T_m, T_DM, V_pec, xHII(yHII), rs, 
+                    xsec, fDM, n, particle_type='DM', mcharge_switch=mcharge_switch, eps=eps
                     )
                 )
 

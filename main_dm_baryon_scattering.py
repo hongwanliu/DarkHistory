@@ -234,6 +234,7 @@ def evolve(
                 kappa = 1/6
             elif DM_process == 'swave':
                 kappa = 1
+            # actually, sigmav/v_ref^2
             sigmav = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
                 np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
             )*phys.hbar**2*phys.c**3 * kappa
@@ -241,18 +242,18 @@ def evolve(
         if dm_baryon_switch and (DM_process == 'pwave'):
             # Define the rate functions. 
             def rate_func_N(rs):
-                sigma_1D = 1e-11*(1/100)**0.5 # in units of c
-                fac = ((3*T_DM_func(rs)/mDM)/(sigma_1D * rs)**2 - 1.0)
+                sigma_1D_B = 1e-11*(1e9/mDM)**0.5 # in units of c
+                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B * rs)**2
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
-                    * (struct_boost(rs) + fac) / (2*mDM)
+                    * (struct_boost(rs) + velocity_boost - 1) / (2*mDM)
                 )
             def rate_func_eng(rs):
-                sigma_1D = 1e-11*(1/100)**0.5 # in units of c
-                fac = ((3*T_DM_func(rs)/mDM)/(sigma_1D * rs)**2 - 1.0)
+                sigma_1D_B = 1e-11*(1e9/mDM)**0.5 # in units of c
+                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B * rs)**2
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
-                    * (struct_boost(rs) + fac)
+                    * (struct_boost(rs) + velocity_boost - 1)
                 )
 
         else:
