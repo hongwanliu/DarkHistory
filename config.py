@@ -17,7 +17,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
+data_path = '/Users/gridgway/Downloads/dataverse_files'
 
 # Global variables for data.
 glob_binning_data = None
@@ -343,14 +343,12 @@ def load_data(data_type):
 
         if glob_f_data is None:
 
-            full_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
-            phot_ln_rs = np.array([np.log(3000) - 0.004*i for i in np.arange(1655)])
-            elec_ln_rs = np.array([np.log(3000) - 0.032*i for i in np.arange(207)])
+            ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
 
             log10eng0 = 3.6989700794219966
             log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
             log10eng[-1] = 12.601505994846297
-            
+
             labels = ['phot_decay', 'elec_decay',
               'phot_swave_noStruct', 'elec_swave_noStruct',
               'phot_swave_einasto', 'elec_swave_einasto',
@@ -359,16 +357,8 @@ def load_data(data_type):
 
             f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
 
-            def label_to_rs(label):
-                if label == 'phot_pwave_NFW':
-                    return phot_ln_rs
-                elif label == 'elec_pwave_NFW':
-                    return elec_ln_rs
-                else:
-                    return full_ln_rs
-
             glob_f_data = {label : RegularGridInterpolator(
-                (log10eng, np.flipud(label_to_rs(label))), np.flip(np.log(f_data[label]),1)
+                (log10eng, np.flipud(ln_rs)), np.flip(np.log(f_data[label]),1)
             ) for label in labels}
 
         return glob_f_data
