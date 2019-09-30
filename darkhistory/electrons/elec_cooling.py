@@ -445,6 +445,7 @@ def get_elec_cooling_tf(
     deposited_heat_eng_arr *= fac_arr
     
     # Zero out deposition/ICS processes below loweng. 
+    #Change loweng to 10.2eV!!!  Then assign everything below 10.2 eV to heat.  Then get rid of sec_lowengelec_spec
     deposited_ICS_eng_arr[eleceng < loweng]  = 0
     deposited_exc_eng_arr[eleceng < loweng]  = 0
     deposited_ion_eng_arr[eleceng < loweng]  = 0
