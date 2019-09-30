@@ -157,6 +157,11 @@ def evolve(
     # Initialization for DM_process     #
     #####################################
 
+    if mcharge_switch:
+        if primary != 'elec_delta':
+            print('For the millicharged model, primary must be elec_delta!!!')
+            primary = 'elec_delta'
+
     # Load data.
     binning = load_data('binning')
     photeng = binning['phot']
@@ -248,13 +253,13 @@ def evolve(
             # Define the rate functions. 
             sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5
             def rate_func_N(rs):
-                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1
+                velocity_boost = ((3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1)
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav_ref)
                     * (struct_boost(rs) + velocity_boost) / (2*mDM)
                 )
             def rate_func_eng(rs):
-                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1
+                velocity_boost = ((3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1)
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav_ref) 
                     * (struct_boost(rs) + velocity_boost)

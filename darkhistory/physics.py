@@ -292,7 +292,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
 
         #A reference 1D dispersion used to fix the prefactor in <sigma v>, 
         # conventionally set to dispersion of WIMPS in Milky Way sized halo
-        sigma_1D_ref_over_c = 1e7/phys.c
+        sigma_1D_ref_over_c = 1e7/c
 
         #1D dispersion of unclustered DM today
         sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5
@@ -1356,7 +1356,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             B = 4*rydberg
             Z = 2
             def F(tt):
-                return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 np.log(tt)/(tt+1)])
+                return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 * np.log(tt)/(tt+1)])
             def f(n,w):
                 (w+1)**-n
             def ft(n,tt,w):
