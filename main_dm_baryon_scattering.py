@@ -59,7 +59,7 @@ def evolve(
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. 
     sigmav : float, optional
-        if 'swave,' Thermally averaged cross section for dark matter annihilation. If 'pwave,' Thermally averaged cross section for dark matter evaluated at a reference dispersion of sigma_1D_ref = 1e7.
+        if 'swave,' Thermally averaged cross section for dark matter annihilation. If 'pwave,' Thermally averaged cross section for dark matter evaluated at a reference dispersion of sigma_1D_ref = 1e7 cm/s.
     lifetime : float, optional
         Decay lifetime for dark matter decay.
     primary : string, optional
@@ -213,6 +213,10 @@ def evolve(
             raise ValueError(
                 'sigmav and start_rs must be specified.'
             )
+
+        # To make it easier to remember that sigmav actually means sigmav_ref for pwave
+        if DM_process == 'pwave':
+            sigmav_ref = sigmav
         
         # Get input spectra from PPPC. 
         in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
@@ -228,36 +232,36 @@ def evolve(
         if struct_boost is None:
             def struct_boost(rs):
                 return 1.
-        #Eqn 2, 1803.02804
         if mcharge_switch:
             if DM_process == 'pwave':
                 kappa = 1/6
             elif DM_process == 'swave':
                 kappa = 1
-            # actually, sigmav/v_ref^2
-            sigmav = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
+            
+            #Eqn 2, 1803.02804
+            v_ref_over_c_sq = (1e7/phys.c)**2
+            sigmav_ref = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
                 np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
-            )*phys.hbar**2*phys.c**3 * kappa
+            )*phys.hbar**2*phys.c**3 * kappa * v_ref_over_c_sq
 
         if dm_baryon_switch and (DM_process == 'pwave'):
             # Define the rate functions. 
+            sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5
             def rate_func_N(rs):
-                sigma_1D_B = 1e-11*(1e9/mDM)**0.5 # in units of c
-                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B * rs)**2
+                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1
                 return (
-                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
-                    * (struct_boost(rs) + velocity_boost - 1) / (2*mDM)
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav_ref)
+                    * (struct_boost(rs) + velocity_boost) / (2*mDM)
                 )
             def rate_func_eng(rs):
-                sigma_1D_B = 1e-11*(1e9/mDM)**0.5 # in units of c
-                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B * rs)**2
+                velocity_boost = (3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1
                 return (
-                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
-                    * (struct_boost(rs) + velocity_boost - 1)
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav_ref) 
+                    * (struct_boost(rs) + velocity_boost)
                 )
 
         else:
-            # Define the rate functions. 
+            # Define the rate functions.
             def rate_func_N(rs):
                 return (
                     fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)

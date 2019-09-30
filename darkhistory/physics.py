@@ -272,7 +272,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     mDM : float, optional
         DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . in the case of inj_type='pwave', sigmav = <sigma v>_ref, as in 1604.02457.
+        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . in the case of inj_type='pwave', sigmav = (sigma v)_ref, as in 1604.02457.
     lifetime : float, optional
         Decay lifetime in s.
 
@@ -288,14 +288,16 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/lifetime
     elif inj_type == 'pwave':
+        sigmav_ref = sigmav
+
         #A reference 1D dispersion used to fix the prefactor in <sigma v>, 
         # conventionally set to dispersion of WIMPS in Milky Way sized halo
-        sigma_1D_ref = 1e7 #in km/s
+        sigma_1D_ref_over_c = 1e7/phys.c
 
         #1D dispersion of unclustered DM today
-        sigma_1D_B = 1e-11*c*(1e9/mDM)**0.5 # (GeV/mDM)**0.5
+        sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5
 
-        return rho_DM**2*rs**8*sigmav/mDM*(sigma_1D_B/sigma_1D_ref)**2
+        return rho_DM**2*rs**8*sigmav_ref/mDM*(sigma_1D_B_over_c/sigma_1D_ref_over_c)**2
 
 # Create interpolation with structure formation data. 
 # if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
