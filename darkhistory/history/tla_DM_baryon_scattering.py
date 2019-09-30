@@ -399,7 +399,7 @@ def get_history(
         else:
             if (DM_process == 'swave') or (DM_process == 'pwave'):
                 return (
-                    f_DM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
                     * struct_boost(rs)
                 )
             elif DM_process == 'decay':
