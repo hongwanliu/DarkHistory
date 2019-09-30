@@ -341,20 +341,25 @@ def get_history(
 
     #Eqn 2, millicharged model
     if mcharge_switch:
+        kappa=1
+        if DM_process == 'pwave':
+            kappa = 1/6
         sigmav = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
             np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
-        )*phys.hbar**2*phys.c**3 / 6
+        )*phys.hbar**2*phys.c**3 * kappa
 
     chi = phys.chi
 
     # Initial Condition
     if init_cond is None:
         rs_start = rs_vec[0]
-        sigma_1D_over_c = 1e-11*(1/100)**0.5 * rs_start
+        # The initial DM temperature is arbitrary as far as T_DM(z) is concerned, 
+        # but is important for establishing the pwave velocity boost
+        sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5 * rs_start
         if helium_TLA:
             _init_cond = [
                 phys.Tm_std(rs_start), 
-                mDM * sigma_1D_over_c**2 / 3, #T_DM
+                mDM * sigma_1D_B_over_c**2 / 3, #T_DM
                 0, #V_pec !!!
                 phys.xHII_std(rs_start), 
                 phys.xHeII_std(rs_start), 
@@ -364,7 +369,7 @@ def get_history(
         else:
             _init_cond = [
                 phys.Tm_std(rs_start), 
-                mDM * sigma_1D_over_c**2 / 3, #T_DM
+                mDM * sigma_1D_B_over_c**2 / 3, #T_DM
                 0, #V_pec !!!
                 phys.xHII_std(rs_start), 
                 1e-12, 
@@ -502,7 +507,8 @@ def get_history(
                 # This rate is temperature loss per redshift.
                 adiabatic_cooling_rate    = 2 * T_DM/rs
                 dm_baryon_cooling_rate = (phys.dtdz(rs) * DM_IGM_cooling_rate(
-                    mDM, T_m, T_DM, V_pec, xHII(yHII), rs, xsec, fDM, n, particle_type='DM', mcharge_switch=mcharge_switch, eps=eps
+                    mDM, T_m, T_DM, V_pec, xHII(yHII), rs, 
+                    xsec, fDM, n, particle_type='DM', mcharge_switch=mcharge_switch, eps=eps
                     )
                 )
 
