@@ -1083,22 +1083,15 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
-        if (species == 'HeI') or (species == 'HeII'):
-            raise ValueError('MEDEA only treats 2s and 2p through 9p transitions')
-        elif species == 'HI':
-
-            try:
-                xsec[eng <= lya_eng] *= 0
-            except:
-                if eng <= lya_eng:
-                    return 0
+        if ((species != '2s') and ((species[-1] != 'p') and (int(species[0]) not in np.arange(2,11)))):
+            TypeError("Must specify 2s, 2p, 3p, ..., or 10p") 
         else:
-            ValueError('species can be HI, HeI, or HeII only)
+            return load_data('exc')[species](eng)*1e-16 # in units of cm^-2
         
     elif method == 'new':
-        raise ValueError('new method has not yet been implemented')
+        raise TypeError('new method has not yet been implemented')
     else:
-        raise ValueError("Must pick method = {'old', 'MEDEA', or 'new'}")
+        raise TypeError("Must pick method = {'old', 'MEDEA', or 'new'}")
 
 def coll_ion_xsec(eng, species=None, method='old'):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
