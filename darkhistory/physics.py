@@ -1083,7 +1083,17 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
-        raise ValueError('MEDEA has not been implemented yet')
+        if (species == 'HeI') or (species == 'HeII'):
+            raise ValueError('MEDEA only treats 2s and 2p through 9p transitions')
+        elif species == 'HI':
+
+            try:
+                xsec[eng <= lya_eng] *= 0
+            except:
+                if eng <= lya_eng:
+                    return 0
+        else:
+            ValueError('species can be HI, HeI, or HeII only)
         
     elif method == 'new':
         raise ValueError('new method has not yet been implemented')
@@ -1156,45 +1166,53 @@ def coll_ion_xsec(eng, species=None, method='old'):
                 return 0
 
     elif method == 'MEDEA':
-        if species == 'HI':
-            # Binding Energy
-            B = rydberg
+        if (species == 'HI') or (species == 'HeI'):
+            if species == 'HI':
+                # Binding Energy
+                B = rydberg
 
-            # Average kinetic energy of electron in the atom's potential
-            U = rydberg
+                # Average kinetic energy of electron in the atom's potential
+                U = rydberg
 
-            # Number of electrons in valence shell
-            N = 1
-            Ni = .4343
-            def D(t):
-                return -.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
-                    -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
-                )
+                # Number of electrons in valence shell
+                N = 1
+                Ni = .4343
+                def D(t):
+                    return -.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
+                        -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
+                    )
 
-        elif species == 'HeI':
-            B  = He_ion_eng
-            U  = 39.51
-            N  = 2
-            Ni = 1.605
-            def D(t):
-                return 12.178/3*(1-((t+1)/2)**-3) - 29.585/4*(1-((t+1)/2)**-4) + (
-                    31.251/5*(1-((t+1)/2)**-5) - 12.175/6*(1-((t+1)/2)**-6)
-                )
+            elif species == 'HeI':
+                B  = He_ion_eng
+                U  = 39.51
+                N  = 2
+                Ni = 1.605
+                def D(t):
+                    return 12.178/3*(1-((t+1)/2)**-3) - 29.585/4*(1-((t+1)/2)**-4) + (
+                        31.251/5*(1-((t+1)/2)**-5) - 12.175/6*(1-((t+1)/2)**-6)
+                    )
+            S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
+            t = eng/B
+            u = U/B
+            xsec = S/(t+u+1) * (D(t)*np.log(t) + (2 - Ni/N)*((t-1)/t - np.log(t)/(t+1)))
 
         elif species == 'HeII':
-            B = 4*Rydberg
-            U = 4*Rydberg
-            N = 1
-            Ni = .4343
-            def D(t):
-                return -.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
-                    -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
-                )
+            B = 4*rydberg
+            Z = 2
+            def F1(tt):
+                return -1.4332/(tt+1)**2
+            def F2(tt): 
+                return 1.4332/(tt+1)
+            def F3(tt):
+                return 0.5668 * np.log(tt)/(tt+1)
+            tt = eng/Z**2/rydberg
 
-        S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
-        t = eng/B
-        u = U/B
-        xsec = S/(t+u+1) * (D(t)*np.log(t) + (2 - Ni/N)*((t-1)/t - np.log(t)/(t+1)))
+            xsec = 4 * np.pi * bohr_rad**2/Z**4 * (F1(tt)*np.log(tt) + F2(tt)*(1-tt**-1) + F3(tt)*(1-tt**-2)/2)
+
+        else:
+            raise TypeError('invalid species.')
+
+
         try:
             xsec[eng <= B] *= 0
         except:
