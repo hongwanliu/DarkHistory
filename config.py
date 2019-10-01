@@ -12,6 +12,7 @@ import pickle
 from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
@@ -27,7 +28,7 @@ glob_struct_data  = None
 glob_hist_data    = None
 glob_pppc_data    = None
 glob_f_data       = None
-glob_exc_data       = None
+glob_exc_data     = None
 
 class PchipInterpolator2D: 
 
@@ -205,7 +206,7 @@ def load_data(data_type):
     global data_path
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
-    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, global_exc_data
+    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
@@ -425,7 +426,7 @@ def load_data(data_type):
 
             level_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
 
-            glob_exc_data = {level : interp1d(exc_data2['eng_'+level[-1]], exc_data2[level],
+            glob_exc_data = {level : interp1d(exc_data['eng_'+level[-1]], exc_data[level],
                 kind = 'cubic', bounds_error=False, fill_value=(0,0))
             for level in level_list}
 
