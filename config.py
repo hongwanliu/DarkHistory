@@ -188,7 +188,7 @@ def load_data(data_type):
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
-        - *'exc'* -- cross-sections for e- H(1s) -> e- H(2s) or e- H(np) where n is within 2 through 9.
+        - *'exc'* -- cross-sections for e- H(1s) -> e- H(2s) or e- H(np) where n is within 2 through 10.
 
 
     Returns
