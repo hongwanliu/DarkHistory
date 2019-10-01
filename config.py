@@ -17,7 +17,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/gridgway/Downloads/dataverse_files'
+data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
 
 # Global variables for data.
 glob_binning_data = None
@@ -27,6 +27,7 @@ glob_struct_data  = None
 glob_hist_data    = None
 glob_pppc_data    = None
 glob_f_data       = None
+glob_exc_data       = None
 
 class PchipInterpolator2D: 
 
@@ -170,7 +171,7 @@ def load_data(data_type):
 
     Parameters
     ----------
-    data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc'}
+    data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc', 'exc'}
         Type of data to load. The options are: 
 
         - *'binning'* -- Default binning for all transfer functions;
@@ -187,6 +188,8 @@ def load_data(data_type):
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
+        - *'exc'* -- cross-sections for e- H(1s) -> e- H(2s) or e- H(np) where n is within 2 through 9.
+
 
     Returns
     --------
@@ -202,7 +205,7 @@ def load_data(data_type):
     global data_path
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
-    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
+    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, global_exc_data
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
@@ -415,6 +418,18 @@ def load_data(data_type):
             glob_pppc_data = dlNdlxIEW_interp
 
         return glob_pppc_data
+    
+    elif data_type == 'exc':
+        if glob_exc_data == None:
+            exc_data = pickle.load(open(data_path+'/exc_xsec_data.p','rb'))
+
+            level_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+
+            glob_exc_data = {level : interp1d(exc_data2['eng_'+level[-1]], exc_data2[level],
+                kind = 'cubic', bounds_error=False, fill_value=(0,0))
+            for level in level_list}
+
+        return glob_exc_data
 
     else:
 
