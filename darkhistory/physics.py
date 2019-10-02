@@ -433,9 +433,17 @@ He_exc_eng = {
     '23s': 2*np.pi*hbar*c*159855.9745,
     '21s': 2*np.pi*hbar*c*166277.4403,
     '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
-    '21p': 2*np.pi*hbar*c*171134.8970
+    '21p': 2*np.pi*hbar*c*171134.8970,
+    '3p' : 23.087,
+    '4p' : 23.742,
+    '5p' : 24.046,
+    '6p' : 24.211,
+    '7p' : 24.311,
+    '8p' : 24.375,
+    '9p' : 24.420,
+    '10p': 24.452
 }
-"""HeI n=1 to n=2 excitation energies in eV."""
+"""HeI n=1 to n=2 excitation energies in eV, and n=1 to 3p through 10p"""
 
 A_He_21p = 1.798287e9    
 """Einstein coefficient for 2\ :sup:`1`\ p :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
