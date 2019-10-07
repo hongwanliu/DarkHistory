@@ -47,7 +47,7 @@ def get_history(
     rs_vec, init_cond=None, baseline_f=False,
     inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
     struct_boost=None, injection_rate=None, 
     reion_switch=False, reion_rs=None, reion_method='Puchwein',
     photoion_rate_func=None, photoheat_rate_func=None,
@@ -250,6 +250,10 @@ def get_history(
             photoheat_rate_HeI  = photoheat_rate_func[1]
             photoheat_rate_HeII = photoheat_rate_func[2]
 
+    fac_td = 1
+    if z_td is not None:
+        if 1+z_td >= rs:
+            fac_td=0
     # Define conversion functions between x and y. 
     def xHII(yHII):
             return 0.5 + 0.5*np.tanh(yHII)

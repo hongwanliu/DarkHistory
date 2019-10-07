@@ -295,7 +295,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
         sigma_1D_ref_over_c = 1e7/c
 
         #1D dispersion of unclustered DM today
-        sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5
+        sigma_1D_B_over_c = 1e-11*(1/100)**0.5
 
         return rho_DM**2*rs**8*sigmav_ref/mDM*(sigma_1D_B_over_c/sigma_1D_ref_over_c)**2
 

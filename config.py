@@ -366,6 +366,13 @@ def load_data(data_type):
                 (log10eng, np.flipud(ln_rs)), np.flip(np.log(f_data[label]),1)
             ) for label in labels}
 
+            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
+            #log10eng = np.array(data[:71*40:71,0])
+            #log10rs = np.array(data[:70,1])
+            #tmp=np.resize(data[:,2],(5,40,70))
+            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
+            #glob_f_data['phot_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
+
         return glob_f_data
 
     elif data_type == 'pppc':

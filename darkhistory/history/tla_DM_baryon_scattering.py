@@ -154,7 +154,7 @@ def DM_IGM_cooling_rate(mDM, T_matter, T_DM, V_pec, xHII, rs, xsec, fDM, n, part
         rate_e = 0
         if particle_type == 'matter':
             rate_p = 2/3*(
-                fDM * phys.rho_DM*rs**3/1.08 * phys.mp/(mDM + phys.mp)**2 * xsec_p_0/u_th_p * (
+                fDM * phys.rho_DM*rs**3/1.08 * phys.mp/(mDM + phys.mp)**2 * xsec_0_p/u_th_p * (
                     np.sqrt(2/np.pi)*np.exp(-r_p**2/2)/u_th_p**2 * (T_DM - T_matter)
                     + drag_cooling_term_p
                 )
@@ -162,7 +162,7 @@ def DM_IGM_cooling_rate(mDM, T_matter, T_DM, V_pec, xHII, rs, xsec, fDM, n, part
 
         elif particle_type == 'DM':
             rate_p = 2/3*(
-                phys.nH*rs**3 * (mDM*phys.mp/(mDM + phys.mp)**2) * xsec_p_0/u_th_p * (
+                phys.nH*rs**3 * (mDM*phys.mp/(mDM + phys.mp)**2) * xsec_0_p/u_th_p * (
                     np.sqrt(2/np.pi)*np.exp(-r_p**2/2)/u_th_p**2 * (T_matter - T_DM)
                     + drag_cooling_term_DM_p
                 )
@@ -344,9 +344,10 @@ def get_history(
         kappa=1
         if DM_process == 'pwave':
             kappa = 1/6
+        v_ref_sq = (1e7/phys.c)**2
         sigmav = (np.pi*phys.alpha**2*eps**2)/mDM**2 *(
             np.sqrt(1 - phys.me**2/mDM**2) * (1 + phys.me**2/(2*mDM**2))
-        )*phys.hbar**2*phys.c**3 * kappa
+        )*phys.hbar**2*phys.c**3 * kappa * v_ref_sq
 
     chi = phys.chi
 
@@ -355,7 +356,7 @@ def get_history(
         rs_start = rs_vec[0]
         # The initial DM temperature is arbitrary as far as T_DM(z) is concerned, 
         # but is important for establishing the pwave velocity boost
-        sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5 * rs_start
+        sigma_1D_B_over_c = 1e-11*(1/100)**0.5 * rs_start
         if helium_TLA:
             _init_cond = [
                 phys.Tm_std(rs_start), 
@@ -404,7 +405,7 @@ def get_history(
         else:
             if (DM_process == 'swave') or (DM_process == 'pwave'):
                 return (
-                    f_DM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
+                    fDM**2 * phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
                     * struct_boost(rs)
                 )
             elif DM_process == 'decay':
