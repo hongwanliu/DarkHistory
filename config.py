@@ -29,6 +29,7 @@ glob_hist_data    = None
 glob_pppc_data    = None
 glob_f_data       = None
 glob_exc_data     = None
+glob_reion_data   = None
 
 class PchipInterpolator2D: 
 
@@ -206,7 +207,7 @@ def load_data(data_type):
     global data_path
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
-    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data
+    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data, glob_reion_data
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
@@ -422,13 +423,30 @@ def load_data(data_type):
     
     elif data_type == 'exc':
         if glob_exc_data == None:
-            exc_data = pickle.load(open(data_path+'/exc_xsec_data.p','rb'))
+            species_list = ['HI', 'HeI']
+            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
+                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
+                    }
 
-            level_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+            state_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
 
-            glob_exc_data = {level : interp1d(exc_data['eng_'+level[-1]], exc_data[level],
-                kind = 'cubic', bounds_error=False, fill_value=(0,0))
-            for level in level_list}
+            def make_interpolator(x,y):
+                if (x is None) or (y is None):
+                    return None
+                else:
+                    return interp1d(x,y, kind='cubic', bounds_error=False, fill_value=(0,0))
+
+
+            glob_exc_data = {species: 
+                {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
+                for state in state_list}
+            for species in species_list}
+
+        return glob_exc_data
+
+    elif data_type == 'reion':
+        if glob_exc_data == None:
+            glob_exc_data = pickle.load(open('/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019/Onorbe_data.p','rb'))
 
         return glob_exc_data
 
