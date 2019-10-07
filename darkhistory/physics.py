@@ -1014,7 +1014,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
     else:
         return sum([ion_rate[atom] for atom in atoms])
 
-def coll_exc_xsec(eng, species=None, method = 'old'):
+def coll_exc_xsec(eng, species=None, method = 'old', state=None):
     """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
 
     see under method for references
@@ -1091,10 +1091,10 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
-        if ((species != '2s') and ((species[-1] != 'p') and (int(species[0]) not in np.arange(2,11)))):
+        if ((state != '2s') and ((state[-1] != 'p') and (int(state[0]) not in np.arange(2,11)))):
             TypeError("Must specify 2s, 2p, 3p, ..., or 10p") 
         else:
-            return load_data('exc')[species](eng)*1e-16 # in units of cm^-2
+            return load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
         
     elif method == 'new':
         raise TypeError('new method has not yet been implemented')
@@ -1179,9 +1179,9 @@ def coll_ion_xsec(eng, species=None, method='old'):
                 N = 1
                 Ni = .4343
                 def D(t):
-                    return -.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
+                    return (-.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
                         -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
-                    )
+                    ))/N
 
             elif species == 'HeI':
                 B  = He_ion_eng
@@ -1189,9 +1189,9 @@ def coll_ion_xsec(eng, species=None, method='old'):
                 N  = 2
                 Ni = 1.605
                 def D(t):
-                    return 12.178/3*(1-((t+1)/2)**-3) - 29.585/4*(1-((t+1)/2)**-4) + (
+                    return (12.178/3*(1-((t+1)/2)**-3) - 29.585/4*(1-((t+1)/2)**-4) + (
                         31.251/5*(1-((t+1)/2)**-5) - 12.175/6*(1-((t+1)/2)**-6)
-                    )
+                    ))/N
             S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
             t = eng/B
             u = U/B
@@ -1338,6 +1338,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
 
             # Average kinetic energy of electron in the atom's potential
             U = rydberg
+            u = U/B
 
             # Number of electrons in valence shell
             N = 1
@@ -1358,6 +1359,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
         elif species == 'HeI':
             B = He_ion_eng
             U = 39.51
+            u = U/B
             N = 2
             S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
             #a =  0
@@ -1374,28 +1376,32 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
         elif species == 'HeII':
             B = 4*rydberg
             Z = 2
+            S = 4 * np.pi * bohr_rad**2
             def F(tt):
                 return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 * np.log(tt)/(tt+1)])
             def f(n,w):
-                (w+1)**-n
+                return (w+1)**-n
             def ft(n,tt,w):
-                (tt-w)**-n
+                return (tt-w)**-n
 
         else:
             raise TypeError('invalid species.')
 
 
-        t = in_eng/B
         w = eng/B
-        u = U/B
-        
+
         if np.isscalar(in_eng):
             # dsigma / dW, where W is the kinetic energy of the secondary (lower energy) electron
             if species != 'HeII':
+                t = in_eng/B
+
+                # When t = w, this factor blows up, but w < t.
+                fac = np.divide(1,(t-w), out=np.zeros_like(w), where = w<=(t-1)/2)
+
                 low_eng_elec_dNdE = (
-                    S/(in_eng + U + 1)*(
-                        (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
-                        (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
+                    S/(t + u + 1)/B*(
+                        (Ni/N-2)/(t+1)*(1/(w+1) + fac)+
+                        (2-(Ni/N))*(1/(w+1)**2  + fac**2)+
                         np.log(t)/(N*(w+1)) * dfdw(w)
                     )
                 )
@@ -1403,11 +1409,9 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 tt = in_eng/Z**2/rydberg
                 F_array = F(tt)
                 summation = sum(
-                        np.array([(f(n,tt) + ft(n,tt,w)) * F_array[n-1] for n in [0,1,2]])
+                        np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
                         )
-                lowengelec_dNdE = S*summation
-
-
+                low_eng_elec_dNdE = S*summation
 
             # This spectrum describes the lower energy electron only.
             low_eng_elec_dNdE[eng >= (in_eng - B)/2] = 0
@@ -1420,7 +1424,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 # Add to the lowest bin.
                 return np.zeros_like(eng)
 
-            low_eng_elec_spec /= low_eng_elec_spec.totN()
+            #low_eng_elec_spec /= low_eng_elec_spec.totN()
 
             in_eng = np.array([in_eng])
 
@@ -1440,13 +1444,24 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             in_eng_mask = np.outer(in_eng, np.ones_like(eng))
             eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
-            low_eng_elec_dNdE = np.outer(
-                np.ones_like(in_eng), S/(in_eng + U/B + 1)*(
-                    (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
-                    (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
-                    np.log(t)/(N*(w+1)) * dfdw(w)
+            if species != 'HeII':
+                in_eng[in_eng > (in_eng - B)/2] = (in_eng - B)/2
+                print(eng)
+                low_eng_elec_dNdE = np.array([
+                    S/(t*B + U + B)*(
+                        (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
+                        (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
+                        np.log(t)/(N*(w+1)) * dfdw(w)
+                    ) for t in in_eng/B]
                 )
-            )
+            else:
+                tt_list = in_eng/Z**2/rydberg
+                low_eng_elec_dNdE = 0
+                #F_array = F(tt)
+                #summation = sum(
+                #        np.array([(f(n,tt) + ft(n,tt,w)) * F_array[n-1] for n in [0,1,2]])
+                #        )
+                #lowengelec_dNdE = S*summation
 
             low_eng_elec_dNdE[eng_mask >= (in_eng_mask - B)/2] = 0
 
@@ -1459,7 +1474,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             # Avoids divide by zero errors.
             totN_arr[totN_arr == 0] = np.inf
 
-            low_eng_elec_spec /= totN_arr
+            #low_eng_elec_spec /= totN_arr
 
             if low_eng_elec_spec.spec_type == 'dNdE':
                 low_eng_elec_spec.switch_spec_type()
