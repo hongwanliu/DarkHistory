@@ -251,7 +251,7 @@ def evolve(
 
         if dm_baryon_switch and (DM_process == 'pwave'):
             # Define the rate functions. 
-            sigma_1D_B_over_c = 1e-11*(1e9/mDM)**0.5
+            sigma_1D_B_over_c = 1e-11*(1/100)**0.5
             def rate_func_N(rs):
                 velocity_boost = ((3*T_DM_func(rs)/mDM)/(sigma_1D_B_over_c * rs)**2 - 1)
                 return (
