@@ -575,7 +575,7 @@ def evolve(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
             injection_rate=rate_func_eng_unclustered,
-            reion_switch=reion_switch, reion_rs=reion_rs, reion_method=reion_method, heat_switch,
+            reion_switch=reion_switch, reion_rs=reion_rs, reion_method=reion_method, heat_switch=heat_switch,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
