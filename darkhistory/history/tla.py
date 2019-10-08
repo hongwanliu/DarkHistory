@@ -49,7 +49,7 @@ def get_history(
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
     struct_boost=None, injection_rate=None, 
-    reion_switch=False, reion_rs=None, reion_method='Puchwein',
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -88,6 +88,8 @@ def get_history(
         Redshift 1+z at which reionization effects turn on.
     reion_method : {'Puchwein', 'early', 'middle', 'late'}, optional
         Specify which reionization model
+    heat_switch : True or False, optional
+        If True, include photoheating from reionization sources; if False, only include photoionization.
     photoion_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoionization rate in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
     photoheat_rate_func : tuple of functions, optional
@@ -451,7 +453,7 @@ def get_history(
             # The reionization rates and the Compton rate
             # are expressed in *energy loss* *per second*.
 
-            photoheat_total_rate = nH * (
+            photoheat_total_rate = heat_switch*nH * (
                 xHI * photoheat_rate_HI(rs)
                 + xHeI * photoheat_rate_HeI(rs)
                 + xHeII(yHeII) * photoheat_rate_HeII(rs)
