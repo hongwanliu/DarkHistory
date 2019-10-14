@@ -283,6 +283,20 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
 
     """
 
+    if inj_type == 'swave' or inj_type == 'pwave':
+
+        if sigmav is None:
+            raise ValueError('sigmav must be specified for inj_type \'swave\' or \'pwave\'')
+
+    if inj_type == 'decay':
+
+        if lifetime is None:
+            raise ValueError('lifetime must be specified for inj_type \'decay\'')
+
+    if mDM is None:
+
+        raise ValueError('Must specify dark matter mass.')
+
     if inj_type == 'swave':
         return rho_DM**2*rs**6*sigmav/mDM
     elif inj_type == 'decay':

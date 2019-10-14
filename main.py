@@ -163,7 +163,7 @@ def evolve(
 
 
     # Handle the case where a DM process is specified. 
-    if DM_process == 'swave':
+    if DM_process == 'swave' or DM_process == 'pwave':
         if sigmav is None or start_rs is None:
             raise ValueError(
                 'sigmav and start_rs must be specified.'
@@ -187,12 +187,12 @@ def evolve(
         # Define the rate functions. 
         def rate_func_N(rs):
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav)
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
                 * struct_boost(rs) / (2*mDM)
             )
         def rate_func_eng(rs):
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
                 * struct_boost(rs)
             )
 
