@@ -272,7 +272,7 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     mDM : float, optional
         DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . in the case of inj_type='pwave', sigmav = <sigma v>_ref, as in 1604.02457.
+        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . in the case of inj_type='pwave', sigmav = (sigma v)_ref, as in 1604.02457.
     lifetime : float, optional
         Decay lifetime in s.
 
@@ -302,9 +302,16 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     elif inj_type == 'decay':
         return rho_DM*rs**3/lifetime
     elif inj_type == 'pwave':
-        sigma_1D_ref = 1e7 #in km/s
-        sigma_1D_B = 1e-11*c*(1/100)**0.5
-        return rho_DM**2*rs**8*sigmav/mDM*(sigma_1D_B/sigma_1D_ref)**2
+        sigmav_ref = sigmav
+
+        #A reference 1D dispersion used to fix the prefactor in <sigma v>, 
+        # conventionally set to dispersion of WIMPS in Milky Way sized halo
+        sigma_1D_ref_over_c = 1e7/c
+
+        #1D dispersion of unclustered DM today
+        sigma_1D_B_over_c = 1e-11*(1/100)**0.5
+
+        return rho_DM**2*rs**8*sigmav_ref/mDM*(sigma_1D_B_over_c/sigma_1D_ref_over_c)**2
 
 # Create interpolation with structure formation data. 
 # if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
@@ -440,9 +447,17 @@ He_exc_eng = {
     '23s': 2*np.pi*hbar*c*159855.9745,
     '21s': 2*np.pi*hbar*c*166277.4403,
     '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
-    '21p': 2*np.pi*hbar*c*171134.8970
+    '21p': 2*np.pi*hbar*c*171134.8970,
+    '3p' : 23.087,
+    '4p' : 23.742,
+    '5p' : 24.046,
+    '6p' : 24.211,
+    '7p' : 24.311,
+    '8p' : 24.375,
+    '9p' : 24.420,
+    '10p': 24.452
 }
-"""HeI n=1 to n=2 excitation energies in eV."""
+"""HeI n=1 to n=2 excitation energies in eV, and n=1 to 3p through 10p"""
 
 A_He_21p = 1.798287e9    
 """Einstein coefficient for 2\ :sup:`1`\ p :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
@@ -1013,7 +1028,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
     else:
         return sum([ion_rate[atom] for atom in atoms])
 
-def coll_exc_xsec(eng, species=None, method = 'old'):
+def coll_exc_xsec(eng, species=None, method = 'old', state=None):
     """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
 
     see under method for references
@@ -1090,17 +1105,23 @@ def coll_exc_xsec(eng, species=None, method = 'old'):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
-        raise ValueError('MEDEA has not been implemented yet')
+        if ((state != '2s') and ((state[-1] != 'p') and (int(state[0]) not in np.arange(2,11)))):
+            TypeError("Must specify 2s, 2p, 3p, ..., or 10p") 
+        else:
+            return load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
         
     elif method == 'new':
-        raise ValueError('new method has not yet been implemented')
+        raise TypeError('new method has not yet been implemented')
     else:
-        raise ValueError("Must pick method = {'old', 'MEDEA', or 'new'}")
+        raise TypeError("Must pick method = {'old', 'MEDEA', or 'new'}")
 
 def coll_ion_xsec(eng, species=None, method='old'):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
 
-    See 0906.1197.
+    For the 'old' method, see 0906.1197.
+    For the 'MEDEA' method, see Mon. Not. R. Astron. Soc. 422, 420–433 (2012).
+    For the 'new' method, TBD.
+
 
     Parameters
     ----------
@@ -1158,7 +1179,62 @@ def coll_ion_xsec(eng, species=None, method='old'):
         except:
             if eng <= ion_pot:
                 return 0
+
     elif method == 'MEDEA':
+        if (species == 'HI') or (species == 'HeI'):
+            if species == 'HI':
+                # Binding Energy
+                B = rydberg
+
+                # Average kinetic energy of electron in the atom's potential
+                U = rydberg
+
+                # Number of electrons in valence shell
+                N = 1
+                Ni = .4343
+                def D(t):
+                    return (-.022473/2*(1-((t+1)/2)**-2) + 1.1775/3*(1-((t+1)/2)**-3) + (
+                        -0.46264/4*(1-((t+1)/2)**-4) + 0.089064/5*(1-((t+1)/2)**-5)
+                    ))/N
+
+            elif species == 'HeI':
+                B  = He_ion_eng
+                U  = 39.51
+                N  = 2
+                Ni = 1.605
+                def D(t):
+                    return (12.178/3*(1-((t+1)/2)**-3) - 29.585/4*(1-((t+1)/2)**-4) + (
+                        31.251/5*(1-((t+1)/2)**-5) - 12.175/6*(1-((t+1)/2)**-6)
+                    ))/N
+            S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
+            t = eng/B
+            u = U/B
+            xsec = S/(t+u+1) * (D(t)*np.log(t) + (2 - Ni/N)*((t-1)/t - np.log(t)/(t+1)))
+
+        elif species == 'HeII':
+            B = 4*rydberg
+            Z = 2
+            def F1(tt):
+                return -1.4332/(tt+1)**2
+            def F2(tt): 
+                return 1.4332/(tt+1)
+            def F3(tt):
+                return 0.5668 * np.log(tt)/(tt+1)
+            tt = eng/Z**2/rydberg
+
+            xsec = 4 * np.pi * bohr_rad**2/Z**4 * (F1(tt)*np.log(tt) + F2(tt)*(1-tt**-1) + F3(tt)*(1-tt**-2)/2)
+
+        else:
+            raise TypeError('invalid species.')
+
+
+        try:
+            xsec[eng <= B] *= 0
+        except:
+            if eng <= B:
+                return 0
+
+    else:
         raise TypeError('method = new not developed yet')
 
     return xsec
@@ -1166,7 +1242,9 @@ def coll_ion_xsec(eng, species=None, method='old'):
 def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     """ Secondary electron spectrum after collisional ionization. 
 
-    See 0910.4410.
+    For 'old' method, See 0910.4410.
+    For 'MEDEA' method, see Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954 OR Mon. Not. R. Astron. Soc. 422, 420–433 (2012)
+    For 'new' method, TBD
 
     Parameters
     ----------
@@ -1177,7 +1255,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
     method : {'old', 'MEDEA', 'new'}
-        if method == 'old', see 0906.1197; if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); if method == 'new', nothing yet
+        if method == 'old', see 0906.1197; if method == 'MEDEA', we follow the method used in the MEDEA code; if method == 'new', nothing yet
 
     Returns
     -------
@@ -1265,47 +1343,102 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             high_eng_elec_N = spectools.engloss_rebin_fast(
                 in_eng, eng + ion_pot, low_eng_elec_N, eng
             )
+
     elif method == 'MEDEA':
+        # See Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954
         if species == 'HI':
+            # Binding Energy
             B = rydberg
+
+            # Average kinetic energy of electron in the atom's potential
             U = rydberg
-            a =  0
-            b = -0.022473
-            c =  1.1775
-            d = -0.46264
-            e =  0.089064
-            f =  0
+            u = U/B
+
+            # Number of electrons in valence shell
+            N = 1
+            S = 4 * np.pi * bohr_rad**2
+
+            # Taylor coefficients of differential dipole oscillator strength for 
+            def dfdw(w):
+                return -.022473*(w+1)**-2 + 1.1775*(w+1)**-3 - 0.046264*(w+1)**-4 + 0.089064*(w+1)**-5
+            #a =  0
+            #b = -0.022473
+            #c =  1.1775
+            #d = -0.46264
+            #e =  0.089064
+            #f =  0
+            #g =  0
             Ni=  0.4343
+
         elif species == 'HeI':
-            U = 39.51
             B = He_ion_eng
-            a =  0
-            b =  0
-            c =  12.178
-            d = -29.585
-            e =  31.251
-            f = -12.175
+            U = 39.51
+            u = U/B
+            N = 2
+            S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
+            #a =  0
+            #b =  0
+            #c =  12.178
+            #d = -29.585
+            #e =  31.251
+            #f = -12.175
+            #g =  0
+            def dfdw(w):
+                return 12.178*(w+1)**-3 - 29.585*(w+1)**-4 + 31.251*(w+1)**-5 - 12.175*(w+1)**-6
             Ni=  1.605
+
         elif species == 'HeII':
-            eps_i = 32.6
-            ion_pot = 4*rydberg
+            B = 4*rydberg
+            Z = 2
+            S = 4 * np.pi * bohr_rad**2
+            def F(tt):
+                return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 * np.log(tt)/(tt+1)])
+            def f(n,w):
+                return (w+1)**-n
+            def ft(n,tt,w):
+                return (tt-w)**-n
+
         else:
             raise TypeError('invalid species.')
 
+
+        w = eng/B
+
         if np.isscalar(in_eng):
-            low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
+            # dsigma / dW, where W is the kinetic energy of the secondary (lower energy) electron
+            if species != 'HeII':
+                t = in_eng/B
+
+                # When t = w, this factor blows up, but w < t.
+                fac = np.divide(1,(t-w), out=np.zeros_like(w), where = w<=(t-1)/2)
+
+                low_eng_elec_dNdE = (
+                    S/(t + u + 1)/B*(
+                        (Ni/N-2)/(t+1)*(1/(w+1) + fac)+
+                        (2-(Ni/N))*(1/(w+1)**2  + fac**2)+
+                        np.log(t)/(N*(w+1)) * dfdw(w)
+                    )
+                )
+            else:
+                tt = in_eng/Z**2/rydberg
+                F_array = F(tt)
+                summation = sum(
+                        np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
+                        )
+                low_eng_elec_dNdE = S*summation
+
             # This spectrum describes the lower energy electron only.
-            low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+            low_eng_elec_dNdE[eng >= (in_eng - B)/2] = 0
             # Normalize the spectrum to one electron.
 
             low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
             if np.sum(low_eng_elec_dNdE) == 0:
                 # Either in_eng < in_pot, or the lowest bin lies
-                # above the halfway point, (in_eng - ion_pot)/2.
+                # above the halfway point, (in_eng - B)/2.
                 # Add to the lowest bin.
                 return np.zeros_like(eng)
 
-            low_eng_elec_spec /= low_eng_elec_spec.totN()
+            #low_eng_elec_spec /= low_eng_elec_spec.totN()
 
             in_eng = np.array([in_eng])
 
@@ -1313,7 +1446,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 np.ones_like(in_eng), low_eng_elec_spec.N)
 
             high_eng_elec_N = spectools.engloss_rebin_fast(
-                in_eng, eng + ion_pot, low_eng_elec_N, eng
+                in_eng, eng + B, low_eng_elec_N, eng
             )
 
             return np.squeeze(low_eng_elec_N + high_eng_elec_N)
@@ -1325,11 +1458,26 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             in_eng_mask = np.outer(in_eng, np.ones_like(eng))
             eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
-            low_eng_elec_dNdE = np.outer(
-                np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
-            )
+            if species != 'HeII':
+                in_eng[in_eng > (in_eng - B)/2] = (in_eng - B)/2
+                print(eng)
+                low_eng_elec_dNdE = np.array([
+                    S/(t*B + U + B)*(
+                        (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
+                        (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
+                        np.log(t)/(N*(w+1)) * dfdw(w)
+                    ) for t in in_eng/B]
+                )
+            else:
+                tt_list = in_eng/Z**2/rydberg
+                low_eng_elec_dNdE = 0
+                #F_array = F(tt)
+                #summation = sum(
+                #        np.array([(f(n,tt) + ft(n,tt,w)) * F_array[n-1] for n in [0,1,2]])
+                #        )
+                #lowengelec_dNdE = S*summation
 
-            low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
+            low_eng_elec_dNdE[eng_mask >= (in_eng_mask - B)/2] = 0
 
             # Normalize the spectrum to one electron.
             low_eng_elec_spec = Spectra(
@@ -1340,7 +1488,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             # Avoids divide by zero errors.
             totN_arr[totN_arr == 0] = np.inf
 
-            low_eng_elec_spec /= totN_arr
+            #low_eng_elec_spec /= totN_arr
 
             if low_eng_elec_spec.spec_type == 'dNdE':
                 low_eng_elec_spec.switch_spec_type()
@@ -1348,7 +1496,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             low_eng_elec_N = low_eng_elec_spec.grid_vals
 
             high_eng_elec_N = spectools.engloss_rebin_fast(
-                in_eng, eng + ion_pot, low_eng_elec_N, eng
+                in_eng, eng + B, low_eng_elec_N, eng
             )
     elif method == 'new':
         raise TypeError('We have not developed the new method yet')
@@ -1397,29 +1545,18 @@ def elec_heating_engloss_rate(eng, xe, rs):
     return prefac*ne*coulomb_log/(me/c**2*w)
 
 def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
-    """energy deposition fraction into channel c, :math:`f_c(z)`, as a function of dark matter mass and redshift.
+    """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.
 
     Parameters
     ----------
     mDM : float
-        Dark matter mass in eV. 
-    rs : float or ndarray
-        Redshift in 1+z of interest.
+        Dark matter mass
     inj_particle : string
         Injected particle, either set to 'phot' for photons, or 'elec' for electrons.
     inj_type : string
-        Type of energy injection, either 'swave' or 'decay'. 
+        Type of energy injection, either 'swave' or 'decay
     struct : bool
         If *True*, include structure formation, if *False* assume no structure formation. Default is *False*. This option makes no difference for decays.
-    channel : {'H ion, 'cont', 'exc', 'heat', 'He ion'}
-        The relevant energy deposition channel :math:`c`.
-
-    Returns
-    -------
-    
-    ndarray
-        An array of :math:`f_c(z)` at the desired redshift points.
-
     """
 
     if (inj_particle != 'phot') and (inj_particle != 'elec'):

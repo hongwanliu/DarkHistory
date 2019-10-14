@@ -47,9 +47,9 @@ def get_history(
     rs_vec, init_cond=None, baseline_f=False,
     inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
     struct_boost=None, injection_rate=None, 
-    reion_switch=False, reion_rs=None,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -86,6 +86,10 @@ def get_history(
         Reionization model included if True.
     reion_rs : float, optional
         Redshift 1+z at which reionization effects turn on.
+    reion_method : {'Puchwein', 'early', 'middle', 'late'}, optional
+        Specify which reionization model
+    heat_switch : True or False, optional
+        If True, include photoheating from reionization sources; if False, only include photoionization.
     photoion_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoionization rate in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
     photoheat_rate_func : tuple of functions, optional
@@ -224,9 +228,9 @@ def get_history(
 
         if photoion_rate_func is None:
 
-            photoion_rate_HI   = reion.photoion_rate('HI')
-            photoion_rate_HeI  = reion.photoion_rate('HeI')
-            photoion_rate_HeII = reion.photoion_rate('HeII')
+            photoion_rate_HI   = reion.photoion_rate('HI', reion_method)
+            photoion_rate_HeI  = reion.photoion_rate('HeI', reion_method)
+            photoion_rate_HeII = reion.photoion_rate('HeII', reion_method)
 
         else:
 
@@ -238,9 +242,9 @@ def get_history(
 
         if photoheat_rate_func is None:
 
-            photoheat_rate_HI   = reion.photoheat_rate('HI')
-            photoheat_rate_HeI  = reion.photoheat_rate('HeI')
-            photoheat_rate_HeII = reion.photoheat_rate('HeII')
+            photoheat_rate_HI   = reion.photoheat_rate('HI', reion_method)
+            photoheat_rate_HeI  = reion.photoheat_rate('HeI', reion_method)
+            photoheat_rate_HeII = reion.photoheat_rate('HeII', reion_method)
 
         else:
 
@@ -248,6 +252,10 @@ def get_history(
             photoheat_rate_HeI  = photoheat_rate_func[1]
             photoheat_rate_HeII = photoheat_rate_func[2]
 
+    fac_td = 1
+    if z_td is not None:
+        if 1+z_td >= rs:
+            fac_td=0
     # Define conversion functions between x and y. 
     def xHII(yHII):
             return 0.5 + 0.5*np.tanh(yHII)
@@ -274,7 +282,6 @@ def get_history(
 
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
-
 
             return 1 / T_m * adiabatic_cooling_rate + 1 / T_m * (
                 phys.dtdz(rs)*(
@@ -446,11 +453,12 @@ def get_history(
             # The reionization rates and the Compton rate
             # are expressed in *energy loss* *per second*.
 
-            photoheat_total_rate = nH * (
+            photoheat_total_rate = heat_switch*nH * (
                 xHI * photoheat_rate_HI(rs)
                 + xHeI * photoheat_rate_HeI(rs)
                 + xHeII(yHeII) * photoheat_rate_HeII(rs)
             )
+           # print(rs, xHI, xHeI, xHeII(yHeII), photoheat_total_rate)
 
             compton_rate = phys.dtdz(rs)*(
                 compton_cooling_rate(

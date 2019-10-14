@@ -33,7 +33,7 @@ def evolve(
     DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
     struct_boost=None,
     start_rs=None, end_rs=4, helium_TLA=False,
-    reion_switch=False, reion_rs=None,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
@@ -572,10 +572,10 @@ def evolve(
 
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
-            np.array([rs, next_rs]), init_cond=init_cond_TLA, 
+            np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
             injection_rate=rate_func_eng_unclustered,
-            reion_switch=reion_switch, reion_rs=reion_rs,
+            reion_switch=reion_switch, reion_rs=reion_rs, reion_method=reion_method, heat_switch=heat_switch,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,

@@ -12,12 +12,14 @@ import pickle
 from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
 data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+
 
 # Global variables for data.
 glob_binning_data = None
@@ -27,6 +29,8 @@ glob_struct_data  = None
 glob_hist_data    = None
 glob_pppc_data    = None
 glob_f_data       = None
+glob_exc_data     = None
+glob_reion_data   = None
 
 class PchipInterpolator2D: 
 
@@ -170,7 +174,7 @@ def load_data(data_type):
 
     Parameters
     ----------
-    data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc'}
+    data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc', 'exc'}
         Type of data to load. The options are: 
 
         - *'binning'* -- Default binning for all transfer functions;
@@ -187,6 +191,8 @@ def load_data(data_type):
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
+        - *'exc'* -- cross-sections for e- H(1s) -> e- H(2s) or e- H(np) where n is within 2 through 10.
+
 
     Returns
     --------
@@ -202,7 +208,7 @@ def load_data(data_type):
     global data_path
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
-    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
+    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data, glob_reion_data
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
@@ -361,6 +367,13 @@ def load_data(data_type):
                 (log10eng, np.flipud(ln_rs)), np.flip(np.log(f_data[label]),1)
             ) for label in labels}
 
+            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
+            #log10eng = np.array(data[:71*40:71,0])
+            #log10rs = np.array(data[:70,1])
+            #tmp=np.resize(data[:,2],(5,40,70))
+            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
+            #glob_f_data['phot_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
+
         return glob_f_data
 
     elif data_type == 'pppc':
@@ -415,6 +428,35 @@ def load_data(data_type):
             glob_pppc_data = dlNdlxIEW_interp
 
         return glob_pppc_data
+    
+    elif data_type == 'exc':
+        if glob_exc_data == None:
+            species_list = ['HI', 'HeI']
+            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
+                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
+                    }
+
+            state_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+
+            def make_interpolator(x,y):
+                if (x is None) or (y is None):
+                    return None
+                else:
+                    return interp1d(x,y, kind='cubic', bounds_error=False, fill_value=(0,0))
+
+
+            glob_exc_data = {species: 
+                {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
+                for state in state_list}
+            for species in species_list}
+
+        return glob_exc_data
+
+    elif data_type == 'reion':
+        if glob_exc_data == None:
+            glob_exc_data = pickle.load(open(data_path+'/Onorbe_data.p','rb'))
+
+        return glob_exc_data
 
     else:
 
