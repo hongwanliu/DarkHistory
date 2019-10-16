@@ -163,7 +163,7 @@ def evolve(
 
 
     # Handle the case where a DM process is specified. 
-    if DM_process == 'swave':
+    if DM_process == 'swave' or DM_process == 'pwave':
         if sigmav is None or start_rs is None:
             raise ValueError(
                 'sigmav and start_rs must be specified.'
@@ -187,12 +187,12 @@ def evolve(
         # Define the rate functions. 
         def rate_func_N(rs):
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav)
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
                 * struct_boost(rs) / (2*mDM)
             )
         def rate_func_eng(rs):
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
                 * struct_boost(rs)
             )
 
@@ -572,7 +572,7 @@ def evolve(
 
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
-            np.array([rs, next_rs]), init_cond=init_cond_TLA, 
+            np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
             injection_rate=rate_func_eng_unclustered,
             reion_switch=reion_switch, reion_rs=reion_rs, reion_method=reion_method, heat_switch=heat_switch,

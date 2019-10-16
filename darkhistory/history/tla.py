@@ -88,6 +88,8 @@ def get_history(
         Redshift 1+z at which reionization effects turn on.
     reion_method : {'Puchwein', 'early', 'middle', 'late'}, optional
         Specify which reionization model
+    heat_switch : True or False, optional
+        If True, include photoheating from reionization sources; if False, only include photoionization.
     photoion_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoionization rate in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
     photoheat_rate_func : tuple of functions, optional

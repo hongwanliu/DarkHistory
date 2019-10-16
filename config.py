@@ -18,7 +18,8 @@ from scipy.interpolate import interp1d
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
+data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+
 
 # Global variables for data.
 glob_binning_data = None
@@ -455,7 +456,7 @@ def load_data(data_type):
 
     elif data_type == 'reion':
         if glob_exc_data == None:
-            glob_exc_data = pickle.load(open('/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019/Onorbe_data.p','rb'))
+            glob_exc_data = pickle.load(open(data_path+'/Onorbe_data.p','rb'))
 
         return glob_exc_data
 
