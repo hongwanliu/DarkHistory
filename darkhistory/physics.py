@@ -494,8 +494,8 @@ def alpha_recomb(T_m, species):
     if species == 'HI':
 
         # Fudge factor recommended in 1011.3758
-        fudge_fac = 1.125
-        # fudge_fac = 1.14
+        # fudge_fac = 1.125
+        fudge_fac = 1.14
 
         conv_fac = 1.0e-4/kB
 
