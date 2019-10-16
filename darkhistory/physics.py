@@ -1578,6 +1578,8 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
         else:
             if struct:
                 struct_str = '_einasto'
+            else:
+                struct_str = '_noStruct'
     else:
         if inj_particle == 'phot':
             Einj = mDM/2
