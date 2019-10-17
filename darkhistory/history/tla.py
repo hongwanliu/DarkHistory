@@ -44,7 +44,7 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond=None, baseline_f=False,
+    rs_vec, init_cond=None, baseline_f=False, baseline_struct=False,
     inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
@@ -64,6 +64,8 @@ def get_history(
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
     baseline_f : bool
         If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
+    baseline_struct : bool
+        If True, uses the default structure formation with the baseline f values. Default is False.
     inj_particle : {'elec', 'phot'}, optional
         Specifies which set of f to use: electron/positron or photon. 
     f_H_ion : function or float, optional
@@ -128,7 +130,10 @@ def get_history(
     ):
         raise ValueError('Use either baseline_f or specify f manually.')
 
-    if baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave')):
+    if (
+        baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave')) 
+        and baseline_struct
+    ):
         struct_bool = True
     else:
         struct_bool = False
@@ -322,18 +327,22 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
+
             return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                 # Recombination processes. 
                 # Boltzmann factor is T_r, agrees with HyREC paper.
+                # Commented out lines to agree with ExoCLASS
                 - phys.peebles_C(xHII(yHII), rs) * (
                     phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     - 4*phys.beta_ion(phys.TCMB(rs), 'HI') * xHI
+                        # * np.exp(-phys.lya_eng/T_m)
                         * np.exp(-phys.lya_eng/phys.TCMB(rs))
                 )
                 # DM injection. Note that C = 1 at late times.
                 + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.rydberg * nH)
-                + (1 - phys.peebles_C(xHII(yHII), rs)) * (
+                # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
+                + (1. - phys.peebles_C(xHII(yHII), rs)) * (
                     _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.lya_eng * nH)
                 )
