@@ -42,6 +42,8 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
         * *'no_He'* -- all ionization assigned to hydrogen;
         * *'He_recomb'* -- all photoionized helium atoms recombine; and 
         * *'He'* -- all photoionized helium atoms do not recombine. 
+
+        Default is 'no_He'. 
     separate_higheng : bool, optional
         If True, returns separate high energy deposition. 
 
