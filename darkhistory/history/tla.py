@@ -97,7 +97,7 @@ def get_history(
     photoheat_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoheating rate in eV s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
     xe_reion_func : function, optional
-        Specifies a fixed ionization history after reion_rs.  
+        Specifies a fixed ionization history after reion_rs. The argument of this function should be a float. 
     helium_TLA : bool, optional
         Specifies whether to track helium before reionization. 
     f_He_ion : function or float, optional
@@ -718,7 +718,7 @@ def get_history(
             
             xe_no_reion = xHII_no_reion + xHeII_no_reion + xHeIII_no_reion
 
-            xe_reion    = xe_reion_func(rs_vec)
+            xe_reion    = np.array([xe_reion_func(rs) for rs in rs_vec])
             # Find where to solve the TLA. Must lie below reion_rs and 
             # have xe_reion > xe_no_reion.
 
@@ -736,10 +736,12 @@ def get_history(
             # Find the respective redshift arrays. 
             rs_above_std_xe_vec = rs_vec[where_new_soln]
             rs_below_std_xe_vec = rs_vec[~where_new_soln]
-            # Append the last redshift before reionization model. 
-            rs_above_std_xe_vec = np.insert(
-                rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
-            )
+            # Append the last redshift before reionization model, 
+            # if applicable.  
+            if rs_below_std_xe_vec.size > 0:
+                rs_above_std_xe_vec = np.insert(
+                    rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
+                )
 
             # Define the solution array. Get the entries from soln_no_reion.
             soln = np.zeros_like(soln_no_reion)
@@ -759,7 +761,14 @@ def get_history(
 
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:
-                init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
+
+                # If there are entries before reionization, take the 
+                # initial conditions from them. Otherwise, it is simply
+                # init_cond. 
+                if rs_below_std_xe_vec.size > 0:
+                    init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
+                else:
+                    init_cond_fixed_xe = _init_cond
                 soln_with_reion = odeint(
                     tla_reion_fixed_xe, init_cond_fixed_xe, 
                     rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol, 
@@ -768,11 +777,11 @@ def get_history(
                 # Remove the initial step, save to soln.
                 soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
                 # Put in the solutions for xHII and xHeII. 
-                soln[where_new_soln, 1] = xe_reion_func(
-                    rs_vec[where_new_soln]
+                soln[where_new_soln, 1] = np.array(
+                    [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
                 ) * (1. / (1. + phys.chi))
-                soln[where_new_soln, 2] = xe_reion_func(
-                    rs_vec[where_new_soln]
+                soln[where_new_soln, 2] = np.array(
+                    [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
                 ) * (phys.chi / (1. + phys.chi))
 
         # Convert from log_T_m to T_m
