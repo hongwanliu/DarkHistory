@@ -762,20 +762,21 @@ def get_history(
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:
 
-                # If there are entries before reionization, take the 
-                # initial conditions from them. Otherwise, it is simply
-                # init_cond. 
                 if rs_below_std_xe_vec.size > 0:
                     init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
                 else:
-                    init_cond_fixed_xe = _init_cond
+                    init_cond_fixed_xe = _init_cond[0]
+
                 soln_with_reion = odeint(
                     tla_reion_fixed_xe, init_cond_fixed_xe, 
                     rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol, 
                     tfirst=True
                 )
                 # Remove the initial step, save to soln.
-                soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
+                if rs_below_std_xe_vec.size > 0:
+                    soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
+                else:
+                    soln[where_new_soln, 0] = np.squeeze(soln_with_reion)
                 # Put in the solutions for xHII and xHeII. 
                 soln[where_new_soln, 1] = np.array(
                     [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
