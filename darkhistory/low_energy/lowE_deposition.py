@@ -16,8 +16,7 @@ from darkhistory.low_energy import lowE_photons
 
 def compute_fs(
     MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengdep, 
-    cmbloss=0, method='no_He', HeII_rs=0.999, 
-    separate_higheng=True, cross_check=False
+    cmbloss=0, method='no_He', separate_higheng=True, cross_check=False
 ):
     """ Compute f(z) fractions for continuum photons, photoexcitation of HI, and photoionization of HI, HeI, HeII
 
@@ -40,7 +39,7 @@ def compute_fs(
         total amount of energy deposited by high energy particles into {H_ionization, H_excitation, heating, continuum} per baryon per time, in that order.
     cmbloss : float
         Total amount of energy in upscattered photons that came from the CMB, per baryon per time, (1/n_B)dE/dVdt. Default is zero.
-    method : {'no_He', 'He_recomb', 'He'}
+    method : {'no_He', 'He_recomb', 'He', 'HeII'}
         Method for evaluating helium ionization. 
 
         * *'no_He'* -- all ionization assigned to hydrogen;
@@ -49,8 +48,6 @@ def compute_fs(
         * *'HeII'* -- all ionization assigned to HeII.
 
         Default is 'no_He'. 
-    HeII_rs : float
-        The redshift 1+z below which to use the 'HeII' method. 
     separate_higheng : bool, optional
         If True, returns separate high energy deposition. 
 
@@ -69,11 +66,7 @@ def compute_fs(
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
     # constructor, instead of simply a reference.
 
-    # Below the HeII_rs, we should use 'no_He' instead of 'HeII'. 
 
-    if elec_spec.rs > HeII_rs:
-
-        method = 'no_He'
 
     if method == 'no_He':
 
@@ -105,6 +98,8 @@ def compute_fs(
             phot_spec, x, dE_dVdt_inj, dt, 'old', cross_check
         )
         #print(phot_spec.rs, f_phot[0], phot_spec.toteng(), cmbloss, dE_dVdt_inj)
+
+        print('inside no_He: ', phot_spec.rs, x[0])
 
         f_elec = lowE_electrons.compute_fs(
             MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
@@ -370,9 +365,13 @@ def compute_fs(
 
         # Only compute the heating from the produced electrons. 
 
+        print('inside HeII: ', phot_spec.rs, x[0])
+
         f_elec = lowE_electrons.compute_fs(
-            MEDEA_interp, tmp_elec_spec, 1., dE_dVdt_inj, dt
+            MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
         )
+
+        print(f_elec)
 
         f_low = np.array([
             f_elec[2],

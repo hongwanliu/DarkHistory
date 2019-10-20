@@ -722,15 +722,20 @@ def get_history(
             # Find where to solve the TLA. Must lie below reion_rs and 
             # have xe_reion > xe_no_reion.
 
-            # Earliest redshift index where xe_reion > xe_no_reion. 
-            # min because redshift is in decreasing order.
-            where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
-            # Redshift index where rs_vec < reion_rs. 
-            where_rs = np.min(np.argwhere(rs_vec < reion_rs))
-            # Start at the later redshift, i.e. the larger index. 
-            where_start = np.max([where_xe, where_rs])
-            # Define the boolean mask.
-            where_new_soln = (np.arange(rs_vec.size) >= where_start)
+            if not np.all(xe_reion > xe_no_reion):
+                # Earliest redshift index where xe_reion > xe_no_reion. 
+                # min because redshift is in decreasing order.
+                where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
+                # Redshift index where rs_vec < reion_rs. 
+                where_rs = np.min(np.argwhere(rs_vec < reion_rs))
+                # Start at the later redshift, i.e. the larger index. 
+                where_start = np.max([where_xe, where_rs])
+                # Define the boolean mask.
+                where_new_soln = (np.arange(rs_vec.size) >= where_start)
+
+            else:
+
+                where_new_soln = (np.arange(rs_vec.size) >= 0)
 
 
             # Find the respective redshift arrays. 
