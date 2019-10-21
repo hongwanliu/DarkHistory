@@ -648,39 +648,42 @@ def evolve(
             xHII_to_interp  = x_arr[-1,0]
             xHeII_to_interp = x_arr[-1,1]
 
-        highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr = (
-            get_tf(
-                rs, xHII_to_interp, xHeII_to_interp, 
-                dlnz, coarsen_factor=coarsen_factor
-            )
-        )
-
-        # Get the spectra for the next step by applying the 
-        # transfer functions. 
-        highengdep_at_rs = np.dot(
-            np.swapaxes(highengdep_arr, 0, 1),
-            out_highengphot_specs[-1].N
-        )
-
-        highengphot_spec_at_rs = highengphot_tf.sum_specs(
-            out_highengphot_specs[-1]
-        )
-        
-        lowengphot_spec_at_rs  = lowengphot_tf.sum_specs(
-            out_highengphot_specs[-1]
-        )
-
-        lowengelec_spec_at_rs  = lowengelec_tf.sum_specs(
-            out_highengphot_specs[-1]
-        )
-
-
-        highengphot_spec_at_rs.rs = next_rs
-        lowengphot_spec_at_rs.rs  = next_rs
-        lowengelec_spec_at_rs.rs  = next_rs
-
         if next_rs > end_rs:
-            # Only save if next_rs < end_rs, since these are the x, Tm
+
+            # Only compute the transfer functions if next_rs > end_rs. 
+            # Otherwise, we won't be using them.
+
+            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr = (
+                get_tf(
+                    rs, xHII_to_interp, xHeII_to_interp, 
+                    dlnz, coarsen_factor=coarsen_factor
+                )
+            )
+
+            # Get the spectra for the next step by applying the 
+            # transfer functions. 
+            highengdep_at_rs = np.dot(
+                np.swapaxes(highengdep_arr, 0, 1),
+                out_highengphot_specs[-1].N
+            )
+
+            highengphot_spec_at_rs = highengphot_tf.sum_specs(
+                out_highengphot_specs[-1]
+            )
+            
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs(
+                out_highengphot_specs[-1]
+            )
+
+            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs(
+                out_highengphot_specs[-1]
+            )
+
+            highengphot_spec_at_rs.rs = next_rs
+            lowengphot_spec_at_rs.rs  = next_rs
+            lowengelec_spec_at_rs.rs  = next_rs
+
+            # Only save if next_rs > end_rs, since these are the x, Tm
             # values for the next redshift.
 
             # Save the x, Tm data for the next step in x_arr and Tm_arr.
@@ -700,6 +703,7 @@ def evolve(
         # Re-define existing variables. 
         rs = next_rs
         dt = dlnz * coarsen_factor/phys.hubble(rs)
+
 
     #########################################################################
     #########################################################################
