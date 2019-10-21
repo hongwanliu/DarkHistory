@@ -99,8 +99,6 @@ def compute_fs(
         )
         #print(phot_spec.rs, f_phot[0], phot_spec.toteng(), cmbloss, dE_dVdt_inj)
 
-        print('inside no_He: ', phot_spec.rs, x[0])
-
         f_elec = lowE_electrons.compute_fs(
             MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
         )
@@ -365,13 +363,9 @@ def compute_fs(
 
         # Only compute the heating from the produced electrons. 
 
-        print('inside HeII: ', phot_spec.rs, x[0])
-
         f_elec = lowE_electrons.compute_fs(
             MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
         )
-
-        print(f_elec)
 
         f_low = np.array([
             f_elec[2],
