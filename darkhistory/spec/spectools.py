@@ -69,9 +69,9 @@ def get_bounds_between(eng, E1, E2=None, bound_type='inc'):
     E1 : float
         Lower bound
     E2 : float, optional
-        Upper bound.  If None, E2 = max(bound of eng)
+        Upper bound.  If None, E2 = max(bound of eng). Default is None.
     bound_type : {'inc', 'exc'}, optional
-        if 'inc', E1 and E2 are part of the returned bounds. If 'exc', they are not.
+        if 'inc', E1 and E2 are part of the returned bounds. If 'exc', they are not. Default is 'inc'.
 
     Returns
     -------

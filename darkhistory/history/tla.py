@@ -44,7 +44,7 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond=None, baseline_f=False,
+    rs_vec, init_cond=None, baseline_f=False, baseline_struct=False,
     inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
@@ -64,6 +64,8 @@ def get_history(
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
     baseline_f : bool
         If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
+    baseline_struct : bool
+        If True, uses the default structure formation with the baseline f values. Default is False.
     inj_particle : {'elec', 'phot'}, optional
         Specifies which set of f to use: electron/positron or photon. 
     f_H_ion : function or float, optional
@@ -95,7 +97,7 @@ def get_history(
     photoheat_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoheating rate in eV s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
     xe_reion_func : function, optional
-        Specifies a fixed ionization history after reion_rs.  
+        Specifies a fixed ionization history after reion_rs. The argument of this function should be a float. 
     helium_TLA : bool, optional
         Specifies whether to track helium before reionization. 
     f_He_ion : function or float, optional
@@ -128,7 +130,10 @@ def get_history(
     ):
         raise ValueError('Use either baseline_f or specify f manually.')
 
-    if baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave')):
+    if (
+        baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave')) 
+        and baseline_struct
+    ):
         struct_bool = True
     else:
         struct_bool = False
@@ -322,18 +327,22 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
+
             return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                 # Recombination processes. 
                 # Boltzmann factor is T_r, agrees with HyREC paper.
+                # Commented out lines to agree with ExoCLASS
                 - phys.peebles_C(xHII(yHII), rs) * (
                     phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     - 4*phys.beta_ion(phys.TCMB(rs), 'HI') * xHI
+                        # * np.exp(-phys.lya_eng/T_m)
                         * np.exp(-phys.lya_eng/phys.TCMB(rs))
                 )
                 # DM injection. Note that C = 1 at late times.
                 + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.rydberg * nH)
-                + (1 - phys.peebles_C(xHII(yHII), rs)) * (
+                # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
+                + (1. - phys.peebles_C(xHII(yHII), rs)) * (
                     _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.lya_eng * nH)
                 )
@@ -709,28 +718,35 @@ def get_history(
             
             xe_no_reion = xHII_no_reion + xHeII_no_reion + xHeIII_no_reion
 
-            xe_reion    = xe_reion_func(rs_vec)
+            xe_reion    = np.array([xe_reion_func(rs) for rs in rs_vec])
             # Find where to solve the TLA. Must lie below reion_rs and 
             # have xe_reion > xe_no_reion.
 
-            # Earliest redshift index where xe_reion > xe_no_reion. 
-            # min because redshift is in decreasing order.
-            where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
-            # Redshift index where rs_vec < reion_rs. 
-            where_rs = np.min(np.argwhere(rs_vec < reion_rs))
-            # Start at the later redshift, i.e. the larger index. 
-            where_start = np.max([where_xe, where_rs])
-            # Define the boolean mask.
-            where_new_soln = (np.arange(rs_vec.size) >= where_start)
+            if not np.all(xe_reion > xe_no_reion):
+                # Earliest redshift index where xe_reion > xe_no_reion. 
+                # min because redshift is in decreasing order.
+                where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
+                # Redshift index where rs_vec < reion_rs. 
+                where_rs = np.min(np.argwhere(rs_vec < reion_rs))
+                # Start at the later redshift, i.e. the larger index. 
+                where_start = np.max([where_xe, where_rs])
+                # Define the boolean mask.
+                where_new_soln = (np.arange(rs_vec.size) >= where_start)
+
+            else:
+
+                where_new_soln = (np.arange(rs_vec.size) >= 0)
 
 
             # Find the respective redshift arrays. 
             rs_above_std_xe_vec = rs_vec[where_new_soln]
             rs_below_std_xe_vec = rs_vec[~where_new_soln]
-            # Append the last redshift before reionization model. 
-            rs_above_std_xe_vec = np.insert(
-                rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
-            )
+            # Append the last redshift before reionization model, 
+            # if applicable.  
+            if rs_below_std_xe_vec.size > 0:
+                rs_above_std_xe_vec = np.insert(
+                    rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
+                )
 
             # Define the solution array. Get the entries from soln_no_reion.
             soln = np.zeros_like(soln_no_reion)
@@ -750,20 +766,28 @@ def get_history(
 
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:
-                init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
+
+                if rs_below_std_xe_vec.size > 0:
+                    init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
+                else:
+                    init_cond_fixed_xe = _init_cond[0]
+
                 soln_with_reion = odeint(
                     tla_reion_fixed_xe, init_cond_fixed_xe, 
                     rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol, 
                     tfirst=True
                 )
                 # Remove the initial step, save to soln.
-                soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
+                if rs_below_std_xe_vec.size > 0:
+                    soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
+                else:
+                    soln[where_new_soln, 0] = np.squeeze(soln_with_reion)
                 # Put in the solutions for xHII and xHeII. 
-                soln[where_new_soln, 1] = xe_reion_func(
-                    rs_vec[where_new_soln]
+                soln[where_new_soln, 1] = np.array(
+                    [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
                 ) * (1. / (1. + phys.chi))
-                soln[where_new_soln, 2] = xe_reion_func(
-                    rs_vec[where_new_soln]
+                soln[where_new_soln, 2] = np.array(
+                    [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
                 ) * (phys.chi / (1. + phys.chi))
 
         # Convert from log_T_m to T_m
