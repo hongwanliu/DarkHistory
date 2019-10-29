@@ -171,20 +171,16 @@ def evolve(
     # If compute_fs_method is 'HeII', must be using instantaneous reionization. 
     if compute_fs_method == 'HeII':
 
-        if backreaction: 
+        #if backreaction: 
 
-            raise ValueError('\'HeII\' method cannot be used with backreaction.')
+        #    raise ValueError('\'HeII\' method cannot be used with backreaction.')
 
         print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
-    
             if rs < reion_rs:
-                
                 return 1. + phys.chi
-            
             else:
-                
                 return 0.
 
         xe_reion_func = xe_func
@@ -428,7 +424,7 @@ def evolve(
 
             if (
                 backreaction 
-                or (compute_fs_method == 'HeII' and rs <= reion_rs)
+                or (compute_fs_method == 'HeII' and not backreaction)# and rs <= reion_rs)
             ):
                 xHII_elec_cooling  = x_arr[-1, 0]
                 xHeII_elec_cooling = x_arr[-1, 1]
