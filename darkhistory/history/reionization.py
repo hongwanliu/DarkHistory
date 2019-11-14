@@ -136,7 +136,7 @@ def photoheat_rate(species, method='Puchwein'):
             raise TypeError('invalid species.')
     else:
         rs_vec = load_data('reion')[method]['rs']
-        rate_vec = load_data('reion')[method][species+'_heat']*1e12+1e-30
+        rate_vec = load_data('reion')[method][species+'_heat']
 
     def heat_rate(rs):
         log10_rate = np.interp(rs, rs_vec, np.log10(rate_vec))
