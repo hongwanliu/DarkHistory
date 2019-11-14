@@ -601,6 +601,12 @@ def get_history(
         # Returns an array of values for [dT/dz, dyHII/dz].]. 
         # var is the [temperature, xHII] input.
 
+        if injection_rate is not None:
+            inj_rate = injection_rate(rs)
+        else:
+            inj_rate = 0
+        nH = phys.nH*rs**3
+
         def dxe_dz(rs):
 
             return derivative(xe_reion_func, rs)
@@ -609,24 +615,55 @@ def get_history(
 
             T_m = np.exp(log_T_m)
 
-            xe    = xe_reion_func(rs)
-            xHII  = xe * (1. / (1. + chi))
-            xHeII = xe * (chi / (1. + chi)) 
-            xHI   = 1. - xHII
-            xHeI  = chi - xHeII
+            xe     = xe_reion_func(rs)
+            xHII   = xe * (1. / (1. + chi))
+            xHeII  = xe * (chi / (1. + chi)) 
+            xHeIII = 0
+            xHI    = 1. - xHII
+            xHeI   = chi - xHeII
 
-
-            # This is the temperature loss per redshift. 
+            # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
 
+            # The reionization rates and the Compton rate
+            # are expressed in *energy loss* *per second*.
+
+            photoheat_total_rate = heat_switch*nH * (
+                xHI * photoheat_rate_HI(rs)
+                + xHeI * photoheat_rate_HeI(rs)
+                + xHeII * photoheat_rate_HeII(rs)
+            )
+           # print(rs, xHI, xHeI, xHeII(yHeII), photoheat_total_rate)
+
+            compton_rate = phys.dtdz(rs)*(
+                compton_cooling_rate(
+                    xHII, xHeII, xHeIII, T_m, rs
+                )
+            ) / (3/2 * nH * (1 + chi + xe))
+
+            dm_heating_rate = phys.dtdz(rs)*(
+                _f_heating(rs, xHI, xHeI, xHeII) * inj_rate
+            ) / (3/2 * nH * (1 + chi + xe))
+
+            reion_rate = phys.dtdz(rs) * (
+                + photoheat_total_rate
+                + reion.recomb_cooling_rate(
+                    xHII, xHeII, xHeIII, T_m, rs
+                )
+                + reion.coll_ion_cooling_rate(
+                    xHII, xHeII, xHeIII, T_m, rs
+                )
+                + reion.coll_exc_cooling_rate(
+                    xHII, xHeII, xHeIII, T_m, rs
+                )
+                + reion.brem_cooling_rate(
+                    xHII, xHeII, xHeIII, T_m, rs
+                )
+            ) / (3/2 * nH * (1 + chi + xe))
+
             return 1 / T_m * (
-                adiabatic_cooling_rate
-                + (
-                    phys.dtdz(rs)*(
-                        compton_cooling_rate(xHII, xHeII, 0, T_m, rs)
-                        + _f_heating(rs, xHI, xHeI, 0) * _injection_rate(rs)
-                    )
-                ) / (3/2 * phys.nH*rs**3 * (1 + chi + xe))
+                adiabatic_cooling_rate + compton_rate 
+                + dm_heating_rate + reion_rate
             )
 
         log_T_m = var
