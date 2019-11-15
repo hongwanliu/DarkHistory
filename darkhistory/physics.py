@@ -483,7 +483,7 @@ def alpha_recomb(T_m, species):
     Returns
     -------
     float
-        Case-B recombination coefficient in cm\ :sup:`-3`\ s\ :sup:`-1`\ .
+        Case-B recombination coefficient in cm\ :sup:`3`\ s\ :sup:`-1`\ .
 
     Notes
     -----
