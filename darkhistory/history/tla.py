@@ -49,7 +49,7 @@ def get_history(
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
     struct_boost=None, injection_rate=None, 
-    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True, DeltaT = 0,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -616,6 +616,7 @@ def get_history(
             T_m = np.exp(log_T_m)
 
             xe     = xe_reion_func(rs)
+            ne     = xe * phys.nH * rs**3
             xHII   = xe * (1. / (1. + chi))
             xHeII  = xe * (chi / (1. + chi)) 
             xHeIII = 0
@@ -628,12 +629,40 @@ def get_history(
             # The reionization rates and the Compton rate
             # are expressed in *energy loss* *per second*.
 
-            photoheat_total_rate = heat_switch*nH * (
-                xHI * photoheat_rate_HI(rs)
-                + xHeI * photoheat_rate_HeI(rs)
-                + xHeII * photoheat_rate_HeII(rs)
-            )
-           # print(rs, xHI, xHeI, xHeII(yHeII), photoheat_total_rate)
+            #photoheat_total_rate = heat_switch*nH * (
+            #    xHI * photoheat_rate_HI(rs)
+            #    + xHeI * photoheat_rate_HeI(rs)
+            #    + xHeII * photoheat_rate_HeII(rs)
+            #)
+
+            #change in x due to reionization processes
+            abs_dxdz_not_re = -phys.dtdz(rs) * (
+                # DM injection. Note that C = 1 at late times.
+                _f_H_ion(rs, xHI, xHeI, xHeII) * (
+                    inj_rate / (phys.rydberg * nH)
+                )
+                + (1 - phys.peebles_C(xHII, rs)) * (
+                    _f_H_exc(rs, xHI, xHeI, xHeII) 
+                    * inj_rate / (phys.lya_eng * nH)
+                )
+                # Reionization rates.
+                + (
+                    # Photoionization.
+                    #xHI * photoion_rate_HI(rs)
+                    # Collisional ionization.
+                    xHI * ne * reion.coll_ion_rate('HI', T_m)
+                    # Recombination.
+                    - xHII * ne * reion.alphaA_recomb('HII', T_m)
+                )
+            )[0]
+            
+            # Assume that the heating rate due to reionization sources is proportional
+            # to the ionization rate due to reionization sources
+            abs_dxe_dz = -derivative(xe_reion_func,rs)
+            if abs_dxe_dz > abs_dxdz_not_re and xe == xe_reion_func(rs):
+                reion_heating = -DeltaT * (abs_dxe_dz-abs_dxdz_not_re)
+            else:
+                reion_heating = 0
 
             compton_rate = phys.dtdz(rs)*(
                 compton_cooling_rate(
@@ -645,9 +674,8 @@ def get_history(
                 _f_heating(rs, xHI, xHeI, xHeII) * inj_rate
             ) / (3/2 * nH * (1 + chi + xe))
 
-            reion_rate = phys.dtdz(rs) * (
-                + photoheat_total_rate
-                + reion.recomb_cooling_rate(
+            reion_cooling = phys.dtdz(rs) * (
+                reion.recomb_cooling_rate(
                     xHII, xHeII, xHeIII, T_m, rs
                 )
                 + reion.coll_ion_cooling_rate(
@@ -660,10 +688,11 @@ def get_history(
                     xHII, xHeII, xHeIII, T_m, rs
                 )
             ) / (3/2 * nH * (1 + chi + xe))
+            #print('reion_cooling, dm heat, reion_heat %0.3f, %0.3f, %0.3f' % (reion_cooling, dm_heating_rate, reion_heating))
 
             return 1 / T_m * (
                 adiabatic_cooling_rate + compton_rate 
-                + dm_heating_rate + reion_rate
+                + dm_heating_rate + reion_cooling + reion_heating
             )
 
         log_T_m = var
