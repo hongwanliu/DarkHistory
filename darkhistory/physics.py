@@ -1360,7 +1360,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
 
             # Taylor coefficients of differential dipole oscillator strength for 
             def dfdw(w):
-                return -.022473*(w+1)**-2 + 1.1775*(w+1)**-3 - 0.046264*(w+1)**-4 + 0.089064*(w+1)**-5
+                return -.022473*(w+1)**-2 + 1.1775*(w+1)**-3 - 0.46264*(w+1)**-4 + 0.089064*(w+1)**-5
             #a =  0
             #b = -0.022473
             #c =  1.1775
@@ -1388,9 +1388,9 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             Ni=  1.605
 
         elif species == 'HeII':
-            B = 4*rydberg
             Z = 2
-            S = 4 * np.pi * bohr_rad**2
+            B = Z**2 * rydberg
+            S = 4 * np.pi * bohr_rad**2 * (rydberg/B)**2
             def F(tt):
                 return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 * np.log(tt)/(tt+1)])
             def f(n,w):
@@ -1425,7 +1425,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 summation = sum(
                         np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
                         )
-                low_eng_elec_dNdE = S*summation
+                low_eng_elec_dNdE = S*summation/55
 
             # This spectrum describes the lower energy electron only.
             low_eng_elec_dNdE[eng >= (in_eng - B)/2] = 0
@@ -1459,8 +1459,22 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
             if species != 'HeII':
-                in_eng[in_eng > (in_eng - B)/2] = (in_eng - B)/2
-                print(eng)
+                #t = in_eng/B
+                #fac = np.transpose(np.array([
+                #        np.divide(1,_t-w, out=np.zeros_like(w), where = w<=(_t-1)/2)
+                #        for _t in t]))
+
+                #prefac = S/(t + u + 1)/B
+                #a1 = prefac * (Ni/N-2)/(t+1)
+                #b1 = 1/(w+1)
+                #low_eng_elec_dNdE = np.outer(b1, a1)
+                #low_eng_elec_dNdE += a1 * fac
+
+                #low_eng_elec_dNdE += np.outer(b1**2, prefac * (2-(Ni/N)))
+                #low_eng_elec_dNdE += prefac * (2-(Ni/N)) * fac**2
+
+                #low_eng_elec_dNdE += np.outer(dfdw(w)/(N*(w+1)), prefac * np.log(t))
+                #low_eng_elec_dNdE = low_eng_elec_dNdE.transpose()
                 low_eng_elec_dNdE = np.array([
                     S/(t*B + U + B)*(
                         (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
@@ -1470,15 +1484,15 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 )
             else:
                 tt_list = in_eng/Z**2/rydberg
-                low_eng_elec_dNdE = 0
-                #F_array = F(tt)
-                #summation = sum(
-                #        np.array([(f(n,tt) + ft(n,tt,w)) * F_array[n-1] for n in [0,1,2]])
-                #        )
-                #lowengelec_dNdE = S*summation
+                low_eng_elec_dNdE = np.zeros((in_eng.size, eng.size))
+                for i,tt in enumerate(tt_list):
+                    F_array = F(tt)
+                    summation = sum(
+                            np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
+                            )
+                    low_eng_elec_dNdE[i] = S*summation
 
             low_eng_elec_dNdE[eng_mask >= (in_eng_mask - B)/2] = 0
-
             # Normalize the spectrum to one electron.
             low_eng_elec_spec = Spectra(
                 low_eng_elec_dNdE, eng=eng, in_eng=in_eng
@@ -1488,7 +1502,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             # Avoids divide by zero errors.
             totN_arr[totN_arr == 0] = np.inf
 
-            #low_eng_elec_spec /= totN_arr
+            low_eng_elec_spec /= totN_arr
 
             if low_eng_elec_spec.spec_type == 'dNdE':
                 low_eng_elec_spec.switch_spec_type()
@@ -1498,6 +1512,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             high_eng_elec_N = spectools.engloss_rebin_fast(
                 in_eng, eng + B, low_eng_elec_N, eng
             )
+
     elif method == 'new':
         raise TypeError('We have not developed the new method yet')
         #if np.isscalar(in_eng):
