@@ -175,7 +175,7 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check=False):
     return f_excite_HI
 
 #HI, HeI, HeII ionization
-def getf_ion(photspec, norm_fac, n, method, cross_check=False):
+def getf_ion(photspec, norm_fac, dt, n, method, cross_check=False):
     # The bin number containing 10.2eV
     lya_index = spectools.get_indx(photspec.eng, phys.lya_eng)
     # The bin number containing 13.6eV
@@ -225,8 +225,6 @@ def getf_ion(photspec, norm_fac, n, method, cross_check=False):
         f_HeII = 0
 
     else:
-        # HL: Not sure if this code is right.......
-
         # Photons may also deposit their energy into HeI and HeII single ionization
 
         # Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
@@ -235,7 +233,7 @@ def getf_ion(photspec, norm_fac, n, method, cross_check=False):
 
         # Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
         ionHI, ionHeI, ionHeII = [
-            phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] 
+            phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] * phys.c * dt
             for i,channel in enumerate(['HI','HeI','HeII'])
         ]
 
@@ -245,19 +243,28 @@ def getf_ion(photspec, norm_fac, n, method, cross_check=False):
             ionHI[0] = 1
 
         # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
-        totList = ionHI + ionHeI + ionHeII + 1e-12
-        ionHI, ionHeI, ionHeII = [ 
-            llist/totList for llist in [ionHI, ionHeI, ionHeII] 
-        ]
+        totList = ionHI + ionHeI + ionHeII
 
-        f_HI, f_HeI, f_HeII = [
-            np.sum(ion_Ns * llist * norm_fac)
-            for llist in [
-                phys.rydberg*ionHI, 
-                phys.He_ion_eng*ionHeI, 
-                4*phys.rydberg*ionHeII
+        if totList > photspec.totN():
+            # If the expected number of photoionization events is much greater than the total number of photons, then all photons photoionize
+            ionHI, ionHeI, ionHeII = [ 
+                llist/totList for llist in [ionHI, ionHeI, ionHeII] 
             ]
-        ]
+
+            f_HI, f_HeI, f_HeII = [
+                np.sum(ion_Ns * llist * norm_fac)
+                for llist in [
+                    phys.rydberg*ionHI, 
+                    phys.He_ion_eng*ionHeI, 
+                    4*phys.rydberg*ionHeII
+                ]
+            ]
+        else:
+            #Otherwise, some of the photons freestream
+            raise ValueError('photoionization rate so low that some photons freestream -- this has not been implemented yet!')
+
+
+
     return (f_HI, f_HeI, f_HeII)
 
 
@@ -299,6 +306,6 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old', cross_check=False):
 
     f_continuum = getf_continuum(photspec, norm_fac, cross_check)
     f_excite_HI = getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check)
-    f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, n, method, cross_check)
+    f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, dt, n, method, cross_check)
 
     return np.array([f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII])

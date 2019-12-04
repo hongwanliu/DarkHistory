@@ -21,7 +21,10 @@ def photoion_rate(species, method = 'Puchwein'):
         Interpolating function which takes redshift as an argument, and returns the photoionization rate of the species in s^-1. See 1801.04931, and 1607.04218 for early/middle/late. 
     """
     if method == None:
-        return None
+        def ion_rate(rs):
+            return 0
+        return ion_rate
+
     if method == 'Puchwein':
         rs_vec = 1. + np.array([
             0, 0.0491, 0.101, 0.155, 0.211, 0.271, 0.333, 0.399, 0.468, 0.54, 
@@ -93,7 +96,10 @@ def photoheat_rate(species, method='Puchwein'):
         Interpolating function which takes redshift as an argument, and returns the photoheating rate of the species in s^-1. See 1801.04931 for Puchwein, and 1607.04218 for early/middle/late.
     """
     if method == None:
-        return None
+        def heat_rate(rs):
+            return 0
+        return heat_rate
+
     if method == 'Puchwein':
         rs_vec = 1. + np.array([
             0, 0.0491, 0.101, 0.155, 0.211, 0.271, 0.333, 0.399, 0.468, 0.54, 
