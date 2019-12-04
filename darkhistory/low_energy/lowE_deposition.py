@@ -66,7 +66,15 @@ def compute_fs(
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
     # constructor, instead of simply a reference.
 
-
+    ##checking to see if there's any difference when we forget to include sub-2eV electrons and 13.6eV to 15.6eV photons
+    #if elec_spec.spec_type == 'N':
+    #    elec_spec.N[elec_spec.eng<5]=0
+    #else:
+    #    elec_spec.dNdE[elec_spec.eng<5]=0
+    #if phot_spec.spec_type == 'N':
+    #    phot_spec.N[(phot_spec.eng>phys.rydberg) & (phot_spec.eng<phys.rydberg+5)] = 0
+    #else:
+    #    phot_spec.dNdE[phot_spec.eng>phys.rydberg & phot_spec.eng<phys.rydberg+5] = 0
 
     if method == 'no_He':
 
