@@ -375,7 +375,7 @@ def load_data(data_type):
             f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
 
             glob_f_data = {label : RegularGridInterpolator(
-                (log10eng, np.flipud(get_rs_arr(label))), np.flip(np.log(f_data[label]),1)
+                (log10eng, np.flipud(ln_rs)), np.flip(np.log(f_data[label]),1)
             ) for label in labels}
 
             #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
