@@ -177,17 +177,18 @@ def evolve(
         #print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
-            if rs < reion_rs:
-                return 1. + phys.chi
-            else:
-                return 0.
             if np.isscalar(rs):
                 if rs < reion_rs:
                     return 1. + phys.chi
                 else:
                     return 0.
+            else:
+                xe_list = np.zeros_like(rs)
+                xe_list[rs<reion_rs] = 1+phys.chi
+                xe_list[rs>reion_rs] = 0
+                return xe_list
 
-        #xe_reion_func = xe_func
+        xe_reion_func = xe_func
 
 
     # Handle the case where a DM process is specified. 
