@@ -241,7 +241,7 @@ def compute_fs(
 
         rates = np.array([
             n[i]*phys.photo_ion_xsec(phot_spec.eng, chan) 
-            for i,chan in enumerate(['HI', 'HeI'])
+            for i,chan in enumerate(['HI', 'HeI', 'HeII'])
         ])
 
         norm_prob = np.sum(rates, axis=0)
@@ -256,8 +256,9 @@ def compute_fs(
         ])
 
         # Spectra weighted by prob.
-        phot_spec_HI  = phot_spec*prob[0]
-        phot_spec_HeI = phot_spec*prob[1]
+        phot_spec_HI   = phot_spec*prob[0]
+        phot_spec_HeI  = phot_spec*prob[1]
+        phot_spec_HeII = phot_spec*prob[2]
 
         # Bin boundaries, including the lowest (13.6, 24.6) eV bin.
         ion_bounds_HI = spectools.get_bounds_between(
@@ -266,6 +267,9 @@ def compute_fs(
         ion_bounds_HeI = spectools.get_bounds_between(
             phot_spec.eng, phys.He_ion_eng
         )
+        ion_bounds_HeII = spectools.get_bounds_between(
+            phot_spec.eng, 4*phys.rydberg
+        )
 
         # Bin centers. 
         ion_engs_HI = np.exp(
@@ -273,6 +277,9 @@ def compute_fs(
         )
         ion_engs_HeI = np.exp(
             (np.log(ion_bounds_HeI[1:]) + np.log(ion_bounds_HeI[:-1]))/2
+        )
+        ion_engs_HeI = np.exp(
+            (np.log(ion_bounds_HeII[1:]) + np.log(ion_bounds_HeII[:-1]))/2
         )
 
         # Spectrum object containing secondary electron 
@@ -289,30 +296,43 @@ def compute_fs(
             rs=phot_spec.rs, spec_type='N'
         )
 
+        ionized_elec_HeII = Spectrum(
+            ion_engs_HeII,
+            phot_spec_HeI.totN(bound_type='eng', bound_arr=ion_bounds_HeII),
+            rs=phot_spec.rs, spec_type='N'
+        )
+
         # electron energy (photon energy - ionizing potential).
-        new_eng_HI  = ion_engs_HI  - phys.rydberg
-        new_eng_HeI = ion_engs_HeI - phys.He_ion_eng 
+        new_eng_HI   = ion_engs_HI  - phys.rydberg
+        new_eng_HeI  = ion_engs_HeI - phys.He_ion_eng 
+        new_eng_HeII = ion_engs_HeII - 4*phys.rydberg
 
         # change the Spectrum abscissa to the correct electron energy.
         ionized_elec_HI.shift_eng(new_eng_HI)
         ionized_elec_HeI.shift_eng(new_eng_HeI)
+        ionized_elec_HeII.shift_eng(new_eng_HeII)
         # rebin so that ionized_elec may be added to elec_spec.
         ionized_elec_HI.rebin(elec_spec.eng)
         ionized_elec_HeI.rebin(elec_spec.eng)
+        ionized_elec_HeII.rebin(elec_spec.eng)
 
         tmp_elec_spec = Spectrum(
             np.array(elec_spec.eng), np.array(elec_spec.N),
             rs=elec_spec.rs, spec_type='N' 
         )
 
-        tmp_elec_spec.N += (ionized_elec_HI.N + ionized_elec_HeI.N)
+        tmp_elec_spec.N += (ionized_elec_HI.N + ionized_elec_HeI.N + ionized_elec_HeII.N)
 
         # Every ionized helium recombines to produce an 11 eV electron. 
-        recomb_elec = spectools.rebin_N_arr(
+        recomb_elec_HeI = spectools.rebin_N_arr(
             np.array([phot_spec_HeI.totN()]), 
             np.array([phys.He_ion_eng - phys.rydberg]), elec_spec.eng
         )
-        tmp_elec_spec.N += recomb_elec.N
+        recomb_elec_HeII = spectools.rebin_N_arr(
+            np.array([phot_spec_HeII.totN()]), 
+            np.array([4*phys.rydberg - phys.rydberg]), elec_spec.eng
+        )
+        tmp_elec_spec.N += recomb_elec_HeI.N + recomb_elec_HeII.N
 
         # Every photon that photoionizes goes into hydrogen ionization now.
         # We can just use 'old' to do this computation.
