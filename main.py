@@ -173,21 +173,22 @@ def evolve(
 
         #if backreaction: 
 
-            #raise ValueError('\'HeII\' method cannot be used with backreaction.')
-
-        print('Using instantaneous reionization at 1+z = ', reion_rs)
+        #    raise ValueError('\'HeII\' method cannot be used with backreaction.')
+        #print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
-    
             if np.isscalar(rs):
                 if rs < reion_rs:
                     return 1. + phys.chi
                 else:
                     return 0.
+            else:
+                xe_list = np.zeros_like(rs)
+                xe_list[rs<reion_rs] = 1+phys.chi
+                xe_list[rs>reion_rs] = 0
+                return xe_list
 
-
-
-        #xe_reion_func = xe_func
+        xe_reion_func = xe_func
 
 
     # Handle the case where a DM process is specified. 
@@ -196,7 +197,6 @@ def evolve(
             raise ValueError(
                 'sigmav and start_rs must be specified.'
             )
-        
         # Get input spectra from PPPC. 
         in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
         in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
@@ -428,7 +428,7 @@ def evolve(
 
             if (
                 backreaction 
-                or (compute_fs_method == 'HeII' and rs <= reion_rs)
+                or (compute_fs_method == 'HeII' and not backreaction)# and rs <= reion_rs)
             ):
                 xHII_elec_cooling  = x_arr[-1, 0]
                 xHeII_elec_cooling = x_arr[-1, 1]

@@ -78,8 +78,13 @@ def compute_fs(
 
     if method == 'no_He':
 
+        if x[0]>.005:
+            ion_pot = phys.rydberg
+        else:
+            ion_pot = 4*phys.rydberg
+
         ion_bounds = spectools.get_bounds_between(
-            phot_spec.eng, phys.rydberg
+            phot_spec.eng, ion_pot
         )
         ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
@@ -90,7 +95,7 @@ def compute_fs(
             spec_type='N'
         )
 
-        new_eng = ion_engs - phys.rydberg
+        new_eng = ion_engs - ion_pot
         ionized_elec.shift_eng(new_eng)
 
         # rebin so that ionized_elec may be added to elec_spec
@@ -365,8 +370,9 @@ def compute_fs(
 
     elif method == 'HeII':
 
+        eng_threshold = 4*phys.rydberg
         ion_bounds = spectools.get_bounds_between(
-            phot_spec.eng, 4*phys.rydberg
+            phot_spec.eng, eng_threshold
         )
         ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
@@ -377,7 +383,7 @@ def compute_fs(
             spec_type='N'
         )
 
-        new_eng = ion_engs - 4*phys.rydberg
+        new_eng = ion_engs - eng_threshold
         ionized_elec.shift_eng(new_eng)
 
         # rebin so that ionized_elec may be added to elec_spec
