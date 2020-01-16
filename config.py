@@ -19,8 +19,8 @@ from scipy.interpolate import interp1d
 # LOOK FOR THESE DATA FILES HERE. 
 
 #data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-#data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019/'
-data_path = '/Users/gridgway/Downloads/dataverse_files/'
+data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019/'
+#data_path = '/Users/gridgway/Downloads/dataverse_files/'
 
 
 # Global variables for data.
@@ -375,8 +375,8 @@ def load_data(data_type):
             f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
 
             glob_f_data = {label : RegularGridInterpolator(
-                (log10eng, np.flipud(ln_rs)), np.flip(np.log(f_data[label]),1)
-            ) for label in labels}
+                (log10eng, np.flipud(get_rs_arr(label))), np.flip(np.log(f_data[label]),1)
+                ) for label in labels}
 
             #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
             #log10eng = np.array(data[:71*40:71,0])
