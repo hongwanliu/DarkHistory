@@ -174,7 +174,7 @@ def evolve(
         #if backreaction: 
 
         #    raise ValueError('\'HeII\' method cannot be used with backreaction.')
-        #print('Using instantaneous reionization at 1+z = ', reion_rs)
+        print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
             if np.isscalar(rs):
