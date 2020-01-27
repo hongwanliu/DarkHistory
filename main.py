@@ -177,16 +177,10 @@ def evolve(
         print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
-            if np.isscalar(rs):
-                if rs < reion_rs:
-                    return 1. + phys.chi
-                else:
-                    return 0.
-            else:
-                xe_list = np.zeros_like(rs)
-                xe_list[rs<reion_rs] = 1+phys.chi
-                xe_list[rs>reion_rs] = 0
-                return xe_list
+            rs = np.squeeze(np.array([rs]))
+            xHII = phys.xHII_std(rs)
+            xHII[rs<7] = 1
+            return xHII
 
         xe_reion_func = xe_func
 
@@ -428,7 +422,7 @@ def evolve(
 
             if (
                 backreaction 
-                or (compute_fs_method == 'HeII' and not backreaction)# and rs <= reion_rs)
+                or (compute_fs_method == 'HeII' and rs <= reion_rs)
             ):
                 xHII_elec_cooling  = x_arr[-1, 0]
                 xHeII_elec_cooling = x_arr[-1, 1]
