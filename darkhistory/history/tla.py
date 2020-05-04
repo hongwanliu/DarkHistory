@@ -49,7 +49,7 @@ def get_history(
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
     struct_boost=None, injection_rate=None, 
-    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True, DeltaT = 0,
+    reion_switch=False, reion_rs=None, reion_method=None, heat_switch=False, DeltaT = 0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
     mxstep = 1000, rtol=1e-4
@@ -659,10 +659,15 @@ def get_history(
             # Assume that the heating rate due to reionization sources is proportional
             # to the ionization rate due to reionization sources
             abs_dxe_dz = -derivative(xe_reion_func,rs)
-            if abs_dxe_dz > abs_dxdz_not_re and xe == xe_reion_func(rs):
+            if abs_dxe_dz > abs_dxdz_not_re and xe == xe_reion_func(rs) and heat_switch:
                 reion_heating = -DeltaT * (abs_dxe_dz-abs_dxdz_not_re)
             else:
                 reion_heating = 0
+
+            # If the universe is reionized, the non-equilibrium photoheating rate
+            # is replaced by this photoheating rate
+            if xe>(1+phys.chi)*0.99 and heat_switch:
+                reion_heating = reion.HI_post_reion_photoheating(alpha_bk, T_m, rs) * phys.dtdz(rs)
 
             compton_rate = phys.dtdz(rs)*(
                 compton_cooling_rate(
@@ -689,6 +694,12 @@ def get_history(
                 )
             ) / (3/2 * nH * (1 + chi + xe))
             #print('reion_cooling, dm heat, reion_heat %0.3f, %0.3f, %0.3f' % (reion_cooling, dm_heating_rate, reion_heating))
+
+            #if rs<7.25:
+            #    if(xe>(1+phys.chi)*0.99):
+            #        print('EQ: ', rs, alpha_bk, T_m, reion_heating)
+            #    else:
+            #        print(rs, T_m, reion_heating)
 
             return 1 / T_m * (
                 adiabatic_cooling_rate + compton_rate 
