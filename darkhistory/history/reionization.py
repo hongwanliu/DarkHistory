@@ -365,3 +365,34 @@ def brem_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 				* (xHII + xHeII + 4*xHeIII)
 		)
 	)
+
+def HI_post_reion_photoheating(alpha, T, rs):
+    """ Photoheating rate in a reionized universe, see 1511.05992
+
+    Parameters
+    ----------
+    alpha : float
+            UV background spectral index, J_nu ~ nu^-alpha.
+    T     : float
+            Tmperature of the IGM.
+    rs    : float
+            Redshift (1+z).
+
+    Returns
+    -------
+    float
+            Photoheating rate in a fully (HI and HeI) ionized universe eV s^-1. See Eq (7) of arXiv:1511.05992.
+
+    """
+    nH = phys.nH * rs**3 
+
+    #ionization threshold for HI and HeI
+    ion_engs     = np.array([phys.rydberg, phys.He_ion_eng])
+    #power-law approximation for ionization cross section for HI and HeI, sigma_i(nu) ~ nu^-xsec_powers[i]
+    xsec_powers  = np.array([2.8,1.7])
+    #n_i/n_H after reionization for HI and HeI
+    fractions    = np.array([1, phys.chi])
+    #case-A recombination coefficients for HII and HeII
+    caseA_coeffs = np.array([alphaA_recomb('HII', T)[0], alphaA_recomb('HeII', T)[0]])
+
+    return np.sum(ion_engs * fractions * caseA_coeffs / (xsec_powers - 1 + alpha)) * nH/3
