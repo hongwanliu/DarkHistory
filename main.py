@@ -33,7 +33,7 @@ def evolve(
     DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
     struct_boost=None,
     start_rs=None, end_rs=4, helium_TLA=False,
-    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True, DeltaT=0,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
@@ -286,6 +286,7 @@ def evolve(
         # Default to baseline
         xH_init  = phys.xHII_std(start_rs)
         xHe_init = phys.xHeII_std(start_rs)
+        #xHeIII_init = phys.xHeII_std(start_rs)
         Tm_init  = phys.Tm_std(start_rs)
     else:
         # User-specified.
@@ -546,6 +547,9 @@ def evolve(
                     phys.xHeII_std(rs)
             ])
 
+
+        if x_vec_for_f[0] == 0:
+            x_vec_for_f[0]= 1e-12
         if compute_fs_method == 'HeII' and rs > reion_rs:
 
             # For 'HeII', stick with 'no_He' until after 
@@ -615,7 +619,7 @@ def evolve(
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
             injection_rate=rate_func_eng_unclustered,
             reion_switch=reion_switch, reion_rs=reion_rs, 
-            reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT,
+            reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
