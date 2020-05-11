@@ -229,7 +229,7 @@ def compute_fs(
         tmp_elec_spec.N += (ionized_elec_HI.N + ionized_elec_HeI.N + ionized_elec_HeII.N)
 
         f_phot = lowE_photons.compute_fs(
-            phot_spec, x, dE_dVdt_inj, dt, 'helium', cross_check
+            phot_spec, x, dE_dVdt_inj, dt, 'ion', cross_check
         )
         f_elec = lowE_electrons.compute_fs(
             MEDEA_interp, tmp_elec_spec, 1-x[0], dE_dVdt_inj, dt
