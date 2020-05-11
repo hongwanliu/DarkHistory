@@ -287,6 +287,7 @@ def get_history(
 
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
+            #print('DM before: ', _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate/(3/2 * nH * (1 + chi + xe))*phys.dtdz(rs))
 
             return 1 / T_m * adiabatic_cooling_rate + 1 / T_m * (
                 phys.dtdz(rs)*(
@@ -601,10 +602,7 @@ def get_history(
         # Returns an array of values for [dT/dz, dyHII/dz].]. 
         # var is the [temperature, xHII] input.
 
-        if injection_rate is not None:
-            inj_rate = injection_rate(rs)
-        else:
-            inj_rate = 0
+        inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
 
         def dxe_dz(rs):
@@ -678,6 +676,7 @@ def get_history(
             dm_heating_rate = phys.dtdz(rs)*(
                 _f_heating(rs, xHI, xHeI, xHeII) * inj_rate
             ) / (3/2 * nH * (1 + chi + xe))
+            #print('DM after: ', dm_heating_rate, inj_rate)
 
             reion_cooling = phys.dtdz(rs) * (
                 reion.recomb_cooling_rate(
