@@ -212,7 +212,7 @@ def getf_ion(photspec, norm_fac, dt, n, method, cross_check=False):
             np.divide(
                 rate, norm_prob, 
                 out = np.zeros_like(photspec.eng),
-                where=(photspec.eng > phys.rydberg)
+                where=(norm_prob > 0)
             ) for rate in rates
         ])
 
@@ -226,43 +226,61 @@ def getf_ion(photspec, norm_fac, dt, n, method, cross_check=False):
 
     else:
         # Photons may also deposit their energy into HeI and HeII single ionization
+        # !!! Not utilizing partial binning!
+        rates = np.array([
+            n[i]*phys.photo_ion_xsec(photspec.eng, chan) 
+            for i,chan in enumerate(['HI', 'HeI', 'HeII'])
+        ])
 
-        # Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
-        ion_bounds = spectools.get_bounds_between(photspec.eng, phys.rydberg)
-        ion_Ns = photspec.totN(bound_type='eng', bound_arr=ion_bounds)
+        norm_prob = np.sum(rates, axis=0)
 
-        # Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
-        ionHI, ionHeI, ionHeII = [
-            phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] * phys.c * dt
-            for i,channel in enumerate(['HI','HeI','HeII'])
-        ]
+        prob = np.array([
+            np.divide(
+                rate, norm_prob, 
+                out = np.zeros_like(photspec.eng),
+                where=(norm_prob > 0)
+            ) for rate in rates
+        ])
 
-        # The first energy might be less than 13.6, meaning no photo-ionization.
-        # The photons in this box are hopefully all between 13.6 and 24.6, so they can only ionize H
-        if photspec.eng[ryd_index] < phys.rydberg:
-            ionHI[0] = 1
+        ion_eng_H    = phys.rydberg    * np.sum(prob[0] * photspec.N)
+        ion_eng_HeI  = phys.He_ion_eng * np.sum(prob[1] * photspec.N)
+        ion_eng_HeII = 4*phys.rydberg  * np.sum(prob[2] * photspec.N)
 
-        # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
-        totList = ionHI + ionHeI + ionHeII
+        f_HI   = ion_eng_H    * norm_fac
+        f_HeI  = ion_eng_HeI  * norm_fac
+        f_HeII = ion_eng_HeII * norm_fac
 
-        if totList > photspec.totN():
-            # If the expected number of photoionization events is much greater than the total number of photons, then all photons photoionize
-            ionHI, ionHeI, ionHeII = [ 
-                llist/totList for llist in [ionHI, ionHeI, ionHeII] 
-            ]
+        ## Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
+        #ion_bounds = spectools.get_bounds_between(photspec.eng, phys.rydberg)
+        #ion_Ns = photspec.totN(bound_type='eng', bound_arr=ion_bounds)
 
-            f_HI, f_HeI, f_HeII = [
-                np.sum(ion_Ns * llist * norm_fac)
-                for llist in [
-                    phys.rydberg*ionHI, 
-                    phys.He_ion_eng*ionHeI, 
-                    4*phys.rydberg*ionHeII
-                ]
-            ]
-        else:
-            #Otherwise, some of the photons freestream
-            raise ValueError('photoionization rate so low that some photons freestream -- this has not been implemented yet!')
+        ## Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
+        #ionHI, ionHeI, ionHeII = [
+        #    phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] * phys.c * dt
+        #    for i,channel in enumerate(['HI','HeI','HeII'])
+        #]
 
+        ## The first energy might be less than 13.6, meaning no photo-ionization.
+        ## The photons in this box are hopefully all between 13.6 and 24.6, so they can only ionize H
+        #if photspec.eng[ryd_index] < phys.rydberg:
+        #    ionHI[0] = 1
+
+        ## Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
+        #totList = ionHI + ionHeI + ionHeII
+
+        ## If the expected number of photoionization events is much greater than the total number of photons, then all photons photoionize
+        #ionHI, ionHeI, ionHeII = [ 
+        #    llist/totList for llist in [ionHI, ionHeI, ionHeII] 
+        #]
+
+        #f_HI, f_HeI, f_HeII = [
+        #    np.sum(ion_Ns * llist * norm_fac)
+        #    for llist in [
+        #        phys.rydberg*ionHI, 
+        #        phys.He_ion_eng*ionHeI, 
+        #        4*phys.rydberg*ionHeII
+        #    ]
+        #]
 
 
     return (f_HI, f_HeI, f_HeII)
