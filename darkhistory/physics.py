@@ -923,6 +923,17 @@ def Tm_std(rs):
 
     return _Tm_std(rs)
 
+    # For redshifts above 3000, assume full coupling to the CMB temperature
+    #if isinstance(rs,np.float):
+    #    if rs > 3e3:
+    #        return TCMB(rs)
+    #    else:
+    #        return _Tm_std(rs)
+    #else:
+    #    Tm_list = TCMB(rs)
+    #    Tm_list[rs<3e3] = _Tm_std(rs)
+    #    return Tm_list
+
 
 # Atomic Cross-Sections
 
