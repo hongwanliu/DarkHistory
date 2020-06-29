@@ -24,6 +24,7 @@ from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
+from darkhistory.low_energy.lowE_photons import propagating_lowE_photons_fracs
 
 from darkhistory.history import tla
 
@@ -494,7 +495,8 @@ def evolve(
             )
             positronium_phot_spec.switch_spec_type('N')
 
-        # Add injected photons + photons from injected electrons
+
+        # Add injected photons + photons from injected electrons + unabsorbed ionizing photons
         # to the photon spectrum that got propagated forward. 
         if elec_processes:
             highengphot_spec_at_rs += (
@@ -503,8 +505,28 @@ def evolve(
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
+        # Compute the fraction of ionizing photons that free stream within this step
+        if (reion_switch == True) & (rs < start_rs):
+            # If reionization is complete, set the residual fraction of neutral atoms to their measured value
+            if x_arr[-1,0] == 1:
+                x_arr[-1,0] = 1-10**(-4.4)
+            if x_arr[-1,1] == phys.chi:
+                x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
+
+            lowEprop_mask = propagating_lowE_photons_fracs(
+                lowengphot_spec_at_rs, np.array([1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]), dt
+            )
+        else:
+            lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
+
+        # Add this fraction to the propagating photons
+        highengphot_spec_at_rs += lowEprop_mask * lowengphot_spec_at_rs
+
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
+
+        # Get rid of the lowenergy photons that weren't absorbed -- they're in highengphot now
+        lowengphot_spec_at_rs = (1-lowEprop_mask) * lowengphot_spec_at_rs
 
         #####################################################################
         #####################################################################
@@ -548,8 +570,8 @@ def evolve(
             ])
 
 
-        if x_vec_for_f[0] == 0:
-            x_vec_for_f[0]= 1e-12
+        #if x_vec_for_f[0] == 0:
+        #    x_vec_for_f[0]= 1e-12
         if compute_fs_method == 'HeII' and rs > reion_rs:
 
             # For 'HeII', stick with 'no_He' until after 
@@ -557,7 +579,7 @@ def evolve(
 
             f_raw = compute_fs(
                 MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                x_vec_for_f, rate_func_eng(rs), dt,
                 highengdep_at_rs, method='no_He', cross_check=cross_check
             )
 
@@ -565,7 +587,7 @@ def evolve(
 
             f_raw = compute_fs(
                 MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                x_vec_for_f, rate_func_eng(rs), dt,
                 highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
             )
 
@@ -617,7 +639,7 @@ def evolve(
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
-            injection_rate=rate_func_eng_unclustered,
+            injection_rate=rate_func_eng,
             reion_switch=reion_switch, reion_rs=reion_rs, 
             reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
             photoion_rate_func=photoion_rate_func,
