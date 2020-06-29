@@ -327,3 +327,35 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old', cross_check=False):
     f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, dt, n, method, cross_check)
 
     return np.array([f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII])
+
+def propagating_lowE_photons_fracs(photspec, x, dt):
+    """ Of the low energy photons, compute the fraction that did NOT get absorbed
+
+    Given a spectrum of deposited photons...
+
+    Parameters
+    ----------
+    photspec : Spectrum object
+        spectrum of photons. spec.toteng() should return energy per baryon.
+    x : list of floats
+        number of (HI, HeI) divided by nH at redshift photspec.rs
+    dt : float
+        time in seconds over which these photons were deposited.
+
+    Returns
+    -------
+    ndarray
+        Returns fraction of photons that freestream through a time step with energy bins between 13.6eV and 54.4eV.  Photons in other bins are assumed to be absorbed.
+    """
+    n = phys.nH*photspec.rs**3*x
+
+    ratios = np.array([
+        n[i]*phys.photo_ion_xsec(photspec.eng, chan) * phys.c * dt
+        for i,chan in enumerate(['HI', 'HeI'])
+    ])
+
+
+    prop_fracs = np.exp(-np.sum(ratios, axis=0))
+    prop_fracs[photspec.eng>=54.4] = 0
+    prop_fracs[photspec.eng<=13.6] = 0
+    return prop_fracs
