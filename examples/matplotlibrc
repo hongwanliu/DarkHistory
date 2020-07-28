@@ -2,9 +2,9 @@ figure.figsize : 6.2, 6.2
 
 text.usetex : True
 # font.family : STIXGeneral
-#font.family : serif
+font.family : serif
 #font.serif  : Palatino
-# mathtext.fontset : stix
+mathtext.fontset : stix
 
 # Need this for proper alignment in legends with LaTeX.
 text.latex.preview : False
