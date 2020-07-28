@@ -427,6 +427,8 @@ width_2s1s_H = 8.22458
 """Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
+HI_exc_eng = {'2s' : lya_eng, '2p' : lya_eng, '3p' : 12.094, '4p' : 12.755, '5p' : 13.061, '6p' : 13.228, '7p' : 13.328, '8p' : 13.393, '9p' : 13.438, '10p' : 13.470}
+"""HI n=1 to n=2s and 2p through 10p excitation energies in eV"""
 
 #########################################
 # Helium                                #
@@ -1116,10 +1118,25 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
+
         if ((state != '2s') and ((state[-1] != 'p') and (int(state[0]) not in np.arange(2,11)))):
+
             TypeError("Must specify 2s, 2p, 3p, ..., or 10p") 
+
         else:
-            return load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
+
+            # If eng is a number, make it an np.ndarray
+            if isinstance(eng, float):
+                eng = np.array([eng])
+
+            # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
+            # threshold energy
+            exc_eng = {'HI': HI_exc_eng, 'HeI': He_exc_eng}
+
+            exc_xsec = load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
+            exc_xsec[eng<exc_eng[species][state]] = 0
+
+            return exc_xsec
         
     elif method == 'new':
         raise TypeError('new method has not yet been implemented')
