@@ -8,6 +8,7 @@ tau_inc = 0.25
 import sys
 sys.path.append("..")
 sys.path.append("../..")
+print(sys.path)
 
 import numpy as np
 import copy
@@ -34,24 +35,27 @@ DM_process   = sys.argv[2] #'decay' or 'pwave
 reion_method = sys.argv[3] #'FlexKnot_early', 'FlexKnot_late', 'Tanh_early', 'Tanh_late'
 constr_str   = sys.argv[4] #'conservative' or 'photoheated1' or 'photoheated2'
 #output_dir   = sys.argv[5] #Try '../Lya_data/'
-output_dir = '/zfs/gridgway/Lya_constraints/data_dump/'
-input_dir = '/zfs/gridgway/Lya_constraints/'
+output_dir = '/Users/gregoryridgway/Desktop/Junk/'
 
 print('LET IT BEGIN')
 if constr_str == 'conservative':
     heat_switch = False
     guess_offset = -np.log10(2)
+    min_DeltaT = 0
     print("deriving 'conservative' constraints")
+
 elif constr_str == 'photoheated1':
     heat_switch = True
     min_DeltaT = 0
     guess_offset = 0
     print("deriving 'photoheated1' constraints")
-elif:
+
+elif constr_str == 'photoheated2':
     heat_switch = True
     min_DeltaT = 2e4*phys.kB
     guess_offset = np.log10(2)
     print("deriving 'photoheated2' constraints")
+
 else:
     print('Invalid constr_str, exiting...')
     sys.exit()
@@ -64,7 +68,7 @@ reion_strings = np.array(
 
 def make_reion_interp_func(string, He_bump=False):
     Planck_data = []
-    with open(input_dir+'Planck_'+string+'.csv') as csvfile:
+    with open('Planck_reion_models/Planck_'+string+'.csv') as csvfile:
         reader = csv.reader(csvfile)
         reader = csv.reader(csvfile)
         for row in reader:
@@ -169,7 +173,7 @@ def get_chisq(var, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, N
     return sum((terp(default_data[0])-default_data[1][0])**2/default_data[1][1]**2)
 
 #Given alpha, optimize DeltaT
-def optimize_DeltaT(alpha, tol, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, None], DM_process='decay', min_DeltaT=min_DeltaT):
+def optimize_DeltaT(alpha, tol, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, None], DM_process='decay', min_DeltaT=0):
     def f(DeltaT):
         return get_chisq([DeltaT,alpha], mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process)
 
@@ -267,7 +271,7 @@ def make_fs(hist, pkl = False):
 max_chisq = 10.1522
 def find_param_guess(mDM, log10guess, inc, data, heat_switch=False, 
                      reion_method='FlexKnot_early',pri = 'elec', DM_process='decay',
-                     DeltaT=24665*phys.kB, alpha_bk=0.57):
+                     DeltaT=24665*phys.kB, alpha_bk=0.57, min_DeltaT = 0):
     """
     Parameters
     ----------
@@ -355,8 +359,7 @@ def find_param_guess(mDM, log10guess, inc, data, heat_switch=False,
         else:
             fs = make_fs(base_hist)
             alpha_list = np.arange(-0.5,1.5,0.1)
-            if 
-            data = find_optimum(alpha_list, init=18, mDM=mDM, lifetime=param, sigmav=param, fs=fs, DM_process=DM_process, min_DeltaT=min_DeltaT))
+            data = find_optimum(alpha_list, init=18, mDM=mDM, lifetime=param, sigmav=param, fs=fs, DM_process=DM_process, min_DeltaT=min_DeltaT)
             chisq = data[1][-1]
         
         chisq_list.append(chisq)
@@ -412,7 +415,7 @@ for i, log10mDM in enumerate(log10m):
 
             max_chisq_list[i], tmp_chisq_list, tmp_param_list  = find_param_guess(
                 mDM, log10guess, tau_inc, default_data, heat_switch=heat_switch,
-                reion_method=reion_method, pri=pri, DM_process=DM_process
+                reion_method=reion_method, pri=pri, DM_process=DM_process, min_DeltaT=min_DeltaT
             )
 
             data[0][i] = tmp_chisq_list
