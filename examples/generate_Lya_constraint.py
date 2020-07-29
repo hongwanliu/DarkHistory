@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Set to False for robust constraints, set to true for photoheating
-heat_switch=False
 m_inc   = 0.1
 tau_inc = 0.25
 
@@ -34,18 +32,26 @@ import config
 pri          = sys.argv[1] #'elec' or 'phot'
 DM_process   = sys.argv[2] #'decay' or 'pwave
 reion_method = sys.argv[3] #'FlexKnot_early', 'FlexKnot_late', 'Tanh_early', 'Tanh_late'
-constr_str   = sys.argv[4] #'robust' or 'photoheat'
+constr_str   = sys.argv[4] #'conservative' or 'photoheated1' or 'photoheated2'
 #output_dir   = sys.argv[5] #Try '../Lya_data/'
 output_dir = '/zfs/gridgway/Lya_constraints/data_dump/'
 input_dir = '/zfs/gridgway/Lya_constraints/'
 
 print('LET IT BEGIN')
-if constr_str == 'robust':
+if constr_str == 'conservative':
     heat_switch = False
-    print('deriving robust constraints')
-elif constr_str == 'photoheat':
+    guess_offset = -np.log10(2)
+    print("deriving 'conservative' constraints")
+elif constr_str == 'photoheated1':
     heat_switch = True
-    print('deriving photoheating constraints')
+    min_DeltaT = 0
+    guess_offset = 0
+    print("deriving 'photoheated1' constraints")
+elif:
+    heat_switch = True
+    min_DeltaT = 2e4*phys.kB
+    guess_offset = np.log10(2)
+    print("deriving 'photoheated2' constraints")
 else:
     print('Invalid constr_str, exiting...')
     sys.exit()
@@ -125,7 +131,9 @@ default_data = [
 
 # ### Previous Constraints
 
-old_constraints = pickle.load(open(input_dir+'compiled_data.p','rb'))
+#old_constraints = pickle.load(open(input_dir+'compiled_data.p','rb'))
+log10m_forGuesses = {'phot': np.arange(4.01, 12.76, m_inc), 'elec': np.arange(6.01, 12.76, m_inc)}
+guess_funcs = pickle.load(open('guess_funcs.p', 'rb'))
 
 # ### Functions for photoheating constraints
 
@@ -161,22 +169,22 @@ def get_chisq(var, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, N
     return sum((terp(default_data[0])-default_data[1][0])**2/default_data[1][1]**2)
 
 #Given alpha, optimize DeltaT
-def optimize_DeltaT(alpha, tol, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, None], DM_process='decay'):
+def optimize_DeltaT(alpha, tol, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, None], DM_process='decay', min_DeltaT=min_DeltaT):
     def f(DeltaT):
         return get_chisq([DeltaT,alpha], mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process)
 
     return optimize.minimize_scalar(
-        f, method='bounded', bounds=[0*phys.kB, 5e4*phys.kB], options={'xatol': tol}
+        f, method='bounded', bounds=[min_DeltaT, 5e4*phys.kB], options={'xatol': tol}
     )
 
-def find_optimum(alpha_list, init, tol=0.5, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, None], DM_process='decay', output=False):
+def find_optimum(alpha_list, init, tol=0.5, mDM=None, lifetime=None, sigmav=None, fs=[None, None, None, None], DM_process='decay', output=False, min_DeltaT=0):
     datums = [None for a in alpha_list]
     check_above = False
     check_below = False
 
     #Initialization Step
     j = init
-    out = optimize_DeltaT(alpha_list[j], tol, mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process)
+    out = optimize_DeltaT(alpha_list[j], tol, mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process, min_DeltaT=min_DeltaT)
     datums[j] = [alpha_list[j], out['x']/phys.kB, out['fun']]
     count = 0
     
@@ -188,7 +196,7 @@ def find_optimum(alpha_list, init, tol=0.5, mDM=None, lifetime=None, sigmav=None
             check_below = True
 
         j = j+1
-        out = optimize_DeltaT(alpha_list[j], tol, mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process)
+        out = optimize_DeltaT(alpha_list[j], tol, mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process, min_DeltaT=min_DeltaT)
         datums[j] = [alpha_list[j], out['x']/phys.kB, out['fun']]
         if output:
             print(datums[j])
@@ -206,7 +214,7 @@ def find_optimum(alpha_list, init, tol=0.5, mDM=None, lifetime=None, sigmav=None
     #Search lower alpha
     while not check_below:
         j = j-1
-        out = optimize_DeltaT(alpha_list[j], tol, mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process)
+        out = optimize_DeltaT(alpha_list[j], tol, mDM=mDM, lifetime=lifetime, sigmav=sigmav, fs=fs, DM_process = DM_process, min_DeltaT=min_DeltaT)
         datums[j] = [alpha_list[j], out['x']/phys.kB, out['fun']]
 
         if output:
@@ -335,10 +343,10 @@ def find_param_guess(mDM, log10guess, inc, data, heat_switch=False,
             struct_boost=struct_boost
         )
         f_interps = make_fs(base_hist, pkl=True)
-        pickle.dump(f_interps, open(
-            output_dir+'/fs/mainEvolveOutput_FreeStream_'+reion_method+'_'+pri+'_'+DM_process
-            +'log10mDM'+log10m_str+'_log10param'+log10param_str+'.dat','wb'
-        ))
+        #pickle.dump(f_interps, open(
+        #    output_dir+'/fs/mainEvolveOutput_FreeStream_'+reion_method+'_'+pri+'_'+DM_process
+        #    +'log10mDM'+log10m_str+'_log10param'+log10param_str+'.dat','wb'
+        #))
         if not heat_switch:
             Tm_interp = interp1d(base_hist['rs'], base_hist['Tm']/phys.kB*1e-4)
             diff = Tm_interp(data[0]) - data[1][0]
@@ -347,7 +355,8 @@ def find_param_guess(mDM, log10guess, inc, data, heat_switch=False,
         else:
             fs = make_fs(base_hist)
             alpha_list = np.arange(-0.5,1.5,0.1)
-            data = find_optimum(alpha_list, init=10, mDM=mDM, lifetime=param, sigmav=param, fs=fs, DM_process=DM_process)
+            if 
+            data = find_optimum(alpha_list, init=18, mDM=mDM, lifetime=param, sigmav=param, fs=fs, DM_process=DM_process, min_DeltaT=min_DeltaT))
             chisq = data[1][-1]
         
         chisq_list.append(chisq)
@@ -386,16 +395,20 @@ for i, log10mDM in enumerate(log10m):
                 reion_str = reion_method
 
             if DM_process == 'decay':
-                param_str = 'taus'
-                fac = 0
+                #param_str = 'taus'
+                #fac = 0
+                sign = 1
             else:
-                param_str = 'sigmav_over_ms'
-                fac = log10mDM - 9
+                #param_str = 'sigmav_over_ms'
+                #fac = log10mDM - 9
+                sign = -1
 
-            string = pri+'_'+DM_process+'_'+reion_str
-            log10guess = interp1d(old_constraints[string]['log10m'],
-                old_constraints[string][param_str]
-            )(log10mDM) + fac
+            #string = pri+'_'+DM_process+'_'+reion_str
+            string = pri+'_'+DM_process
+            log10guess = guess_funcs[string](log10mDM) + sign*guess_offset
+            #log10guess = interp1d(old_constraints[string]['log10m'],
+            #    old_constraints[string][param_str]
+            #)(log10mDM) + fac
 
             max_chisq_list[i], tmp_chisq_list, tmp_param_list  = find_param_guess(
                 mDM, log10guess, tau_inc, default_data, heat_switch=heat_switch,
