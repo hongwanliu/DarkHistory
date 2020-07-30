@@ -299,7 +299,7 @@ def compute_fs(
         ion_engs_HeI = np.exp(
             (np.log(ion_bounds_HeI[1:]) + np.log(ion_bounds_HeI[:-1]))/2
         )
-        ion_engs_HeI = np.exp(
+        ion_engs_HeII = np.exp(
             (np.log(ion_bounds_HeII[1:]) + np.log(ion_bounds_HeII[:-1]))/2
         )
 
@@ -319,7 +319,7 @@ def compute_fs(
 
         ionized_elec_HeII = Spectrum(
             ion_engs_HeII,
-            phot_spec_HeI.totN(bound_type='eng', bound_arr=ion_bounds_HeII),
+            phot_spec_HeII.totN(bound_type='eng', bound_arr=ion_bounds_HeII),
             rs=phot_spec.rs, spec_type='N'
         )
 
