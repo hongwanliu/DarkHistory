@@ -36,8 +36,7 @@ def evolve(
     DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
     struct_boost=None,
     start_rs=None, end_rs=4, helium_TLA=False,
-    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True, DeltaT=0,
-    equibheat_switch = False, alpha_J=0, #MODIFIED
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
@@ -178,19 +177,13 @@ def evolve(
         #if backreaction: 
 
         #    raise ValueError('\'HeII\' method cannot be used with backreaction.')
-        #print('Using instantaneous reionization at 1+z = ', reion_rs)
+        print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
-            if np.isscalar(rs):
-                if rs < reion_rs:
-                    return 1. + phys.chi
-                else:
-                    return 0.
-            else:
-                xe_list = np.zeros_like(rs)
-                xe_list[rs<reion_rs] = 1+phys.chi
-                xe_list[rs>reion_rs] = 0
-                return xe_list
+            rs = np.squeeze(np.array([rs]))
+            xHII = phys.xHII_std(rs)
+            xHII[rs<7] = 1
+            return xHII
 
         xe_reion_func = xe_func
 
@@ -296,8 +289,7 @@ def evolve(
         # Default to baseline
         xH_init  = phys.xHII_std(start_rs)
         xHe_init = phys.xHeII_std(start_rs)
-        #xHeIII_init = 0
-        xHeIII_init = 1e-12 #MODIFIED
+        #xHeIII_init = phys.xHeII_std(start_rs)
         Tm_init  = phys.Tm_std(start_rs)
     else:
         # User-specified.
@@ -506,7 +498,8 @@ def evolve(
             )
             positronium_phot_spec.switch_spec_type('N')
 
-        # Add injected photons + photons from injected electrons
+
+        # Add injected photons + photons from injected electrons + unabsorbed ionizing photons
         # to the photon spectrum that got propagated forward. 
         if elec_processes:
             highengphot_spec_at_rs += (
@@ -516,34 +509,16 @@ def evolve(
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
         # Compute the fraction of ionizing photons that free stream within this step
-        if (reion_switch == True) & (rs < reion_rs):
+        if (reion_switch == True) & (rs < start_rs):
             # If reionization is complete, set the residual fraction of neutral atoms to their measured value
-            # if x_arr[-1,0] == 1:
-            # if x_arr[-1,0] > 1-10**(-4.4):
-            if xe_reion_func(rs)/(1+phys.chi) > 1-10**(-4.4):
+            if x_arr[-1,0] == 1:
                 x_arr[-1,0] = 1-10**(-4.4)
-            # if x_arr[-1,1] == phys.chi:
+            if x_arr[-1,1] == phys.chi:
                 x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
-
-            recomb_switch = False
-            if recomb_switch:
-                # All of the photons above 54.4eV get absorbed by HeII, all HeII instantly recombine,
-                # so the number of recombined photon
-                #ne = xe_reion_func(rs) * phys.nH * rs**3
-                ne = (2*x_arr[-1,-1] * x_arr[-1,1] + x_arr[-1,0]) * phys.nH * rs**3
-                factor = x_arr[-1,-1] * ne * reion.alphaA_recomb('HeIII', Tm_arr[-1]) * dt
-                if factor > 20:
-                    recomb_frac = 1
-                else:
-                    recomb_frac = 1-np.exp(-factor)
-
-                ind = sum(lowengphot_spec_at_rs.eng < 4*phys.rydberg)-1
-                lowengphot_spec_at_rs.N[ind] += recomb_frac * phys.nH*rs**3 * x_arr[-1, -1] / (phys.nB*rs**3)
 
             lowEprop_mask = propagating_lowE_photons_fracs(
                 lowengphot_spec_at_rs, np.array([1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]), dt
             )
-
         else:
             lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
 
@@ -597,6 +572,9 @@ def evolve(
                     phys.xHeII_std(rs)
             ])
 
+
+        #if x_vec_for_f[0] == 0:
+        #    x_vec_for_f[0]= 1e-12
         if compute_fs_method == 'HeII' and rs > reion_rs:
 
             # For 'HeII', stick with 'no_He' until after 
@@ -604,7 +582,7 @@ def evolve(
 
             f_raw = compute_fs(
                 MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                x_vec_for_f, rate_func_eng(rs), dt,
                 highengdep_at_rs, method='no_He', cross_check=cross_check
             )
 
@@ -612,7 +590,7 @@ def evolve(
 
             f_raw = compute_fs(
                 MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                x_vec_for_f, rate_func_eng(rs), dt,
                 highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
             )
 
@@ -664,10 +642,9 @@ def evolve(
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
-            injection_rate=rate_func_eng_unclustered,
+            injection_rate=rate_func_eng,
             reion_switch=reion_switch, reion_rs=reion_rs, 
-            reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT,
-            equibheat_switch = equibheat_switch, alpha_J = alpha_J, #MODIFIED
+            reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
