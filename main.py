@@ -290,6 +290,7 @@ def evolve(
         xH_init  = phys.xHII_std(start_rs)
         xHe_init = phys.xHeII_std(start_rs)
         #xHeIII_init = phys.xHeII_std(start_rs)
+        xHeIII_init = 1e-12
         Tm_init  = phys.Tm_std(start_rs)
     else:
         # User-specified.
