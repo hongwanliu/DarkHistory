@@ -629,13 +629,24 @@ def get_history(
 
             T_m = np.exp(log_T_m)
 
-            xe     = xe_reion_func(rs)
-            ne     = xe * phys.nH * rs**3
-            xHII   = xe * (1. / (1. + chi))
-            xHeII  = xe * (chi / (1. + chi)) 
-            xHeIII = 0
-            xHI    = 1. - xHII
-            xHeI   = chi - xHeII
+            #MODIFIED >>>>
+            #if 1 + chi - xe_reion_func(rs) < 0.01 and rs < 100:
+            if xe_reion_func(rs)/(1+phys.chi) > 1-10**(-4.4) and rs < 100:
+                ## At this point, leave at 1 - 10**(-4.4)
+                xe     = xe_reion_func(rs) + xHeIII(yHeIII)
+                ne     = xe * phys.nH * rs**3
+                xHII   = 1. 
+                xHeII  = chi - xHeIII(yHeIII)
+                xHI    = 1-10**(-4.4)
+                xHeI   = phys.chi*(1 - 10**(-4.4))
+            else: #MODIFIED
+                xe     = xe_reion_func(rs)
+                ne     = xe * phys.nH * rs**3
+                xHII   = xe * (1. / (1. + chi))
+                xHeII  = xe * (chi / (1. + chi))
+                xHI    = 1. - xHII
+                xHeI   = chi - xHeII
+            #MODIFIED <<<<
 
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
@@ -668,7 +679,7 @@ def get_history(
                     # Recombination.
                     - xHII * ne * reion.alphaA_recomb('HII', T_m)
                 )
-            )[0]
+            )#[0] #MODIFIED
             
             # Assume that the heating rate due to reionization sources is proportional
             # to the ionization rate due to reionization sources
