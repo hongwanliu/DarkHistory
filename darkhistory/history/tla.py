@@ -635,10 +635,10 @@ def get_history(
                 ## At this point, leave at 1 - 10**(-4.4)
                 xe     = xe_reion_func(rs) + xHeIII(yHeIII)
                 ne     = xe * phys.nH * rs**3
-                xHII   = 1. 
-                xHeII  = chi - xHeIII(yHeIII)
-                xHI    = 1-10**(-4.4)
-                xHeI   = phys.chi*(1 - 10**(-4.4))
+                xHII   = 1.-10**(-4.4) 
+                xHeII  = chi*(1-10**(-4.4)) - xHeIII(yHeIII)
+                xHI    = 10**(-4.4)
+                xHeI   = phys.chi*(10**(-4.4))
             else: #MODIFIED
                 xe     = xe_reion_func(rs)
                 ne     = xe * phys.nH * rs**3
@@ -696,7 +696,7 @@ def get_history(
 
             compton_rate = phys.dtdz(rs)*(
                 compton_cooling_rate(
-                    xHII, xHeII, xHeIII, T_m, rs
+                    xHII, xHeII, xHeIII(yHeIII), T_m, rs
                 )
             ) / (3/2 * nH * (1 + chi + xe))
 
@@ -707,16 +707,16 @@ def get_history(
 
             reion_cooling = phys.dtdz(rs) * (
                 reion.recomb_cooling_rate(
-                    xHII, xHeII, xHeIII, T_m, rs
+                    xHII, xHeII, xHeIII(yHeIII), T_m, rs
                 )
                 + reion.coll_ion_cooling_rate(
-                    xHII, xHeII, xHeIII, T_m, rs
+                    xHII, xHeII, xHeIII(yHeIII), T_m, rs
                 )
                 + reion.coll_exc_cooling_rate(
-                    xHII, xHeII, xHeIII, T_m, rs
+                    xHII, xHeII, xHeIII(yHeIII), T_m, rs
                 )
                 + reion.brem_cooling_rate(
-                    xHII, xHeII, xHeIII, T_m, rs
+                    xHII, xHeII, xHeIII(yHeIII), T_m, rs
                 )
             ) / (3/2 * nH * (1 + chi + xe))
             #print('reion_cooling, dm heat, reion_heat %0.3f, %0.3f, %0.3f' % (reion_cooling, dm_heating_rate, reion_heating))
@@ -743,10 +743,10 @@ def get_history(
                 ## At this point, leave at 1 - 10**(-4.4)
                 xe     = xe_reion_func(rs) + xHeIII(yHeIII)
                 ne     = xe * phys.nH * rs**3
-                xHII   = 1.
-                xHeII  = chi - xHeIII(yHeIII) 
-                xHI    = 1-10**(-4.4)
-                xHeI   = phys.chi*(1 - 10**(-4.4))
+                xHII   = 1.-10**(-4.4) 
+                xHeII  = chi*(1-10**(-4.4)) - xHeIII(yHeIII)
+                xHI    = 10**(-4.4)
+                xHeI   = phys.chi*(10**(-4.4))
                 DMcontribution = _f_He_ion(rs, xHI, xHeI, xHeII) * inj_rate / (phys.He_ion_eng * nH) #MODIFIED
             else: #MODIFIED
                 xe     = xe_reion_func(rs)
