@@ -12,12 +12,16 @@ import pickle
 from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 
 
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
+#data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019/'
+data_path = '/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
+#data_path = '/Users/wenze/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
+
 
 # Global variables for data.
 glob_binning_data = None
@@ -27,6 +31,8 @@ glob_struct_data  = None
 glob_hist_data    = None
 glob_pppc_data    = None
 glob_f_data       = None
+glob_exc_data     = None
+glob_reion_data   = None
 
 class PchipInterpolator2D: 
 
@@ -170,7 +176,7 @@ def load_data(data_type):
 
     Parameters
     ----------
-    data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc'}
+    data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc', 'exc'}
         Type of data to load. The options are: 
 
         - *'binning'* -- Default binning for all transfer functions;
@@ -187,6 +193,8 @@ def load_data(data_type):
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
 
+        - *'exc'* -- cross-sections for e- H(1s) -> e- H(2s) or e- H(np) where n is within 2 through 10.
+
 
     Returns
     --------
@@ -202,7 +210,7 @@ def load_data(data_type):
     global data_path
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
-    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
+    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data, glob_reion_data
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
@@ -343,36 +351,47 @@ def load_data(data_type):
 
         if glob_f_data is None:
 
-            phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
-            phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
-            elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
+            ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
+            ln_rs_phot_pwave = np.array([np.log(3000) - 0.004*i for i in np.arange(1655)])
+            ln_rs_elec_pwave = np.array([np.log(3000) - 0.032*i for i in np.arange(207)])
+            def get_rs_arr(label):
+                if   label == 'phot_pwave_NFW':
+                    return ln_rs_phot_pwave
+                elif label == 'elec_pwave_NFW':
+                    return ln_rs_elec_pwave
+                else:
+                    return ln_rs
 
             log10eng0 = 3.6989700794219966
             log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
             log10eng[-1] = 12.601505994846297
 
-            f_phot_decay        = pickle.load(open(data_path+'/f_phot_decay_std.p', 'rb'))
-            f_phot_swave        = pickle.load(open(data_path+'/f_phot_swave_std.p', 'rb'))
-            f_phot_swave_struct = pickle.load(open(data_path+'/f_phot_swave_std_einasto_subs.p', 'rb'))
-            f_elec_decay        = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
-            f_elec_swave        = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
-            f_elec_swave_struct = pickle.load(open(data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
+            labels = ['phot_decay', 'elec_decay',
+              'phot_swave_noStruct', 'elec_swave_noStruct',
+              'phot_swave_einasto', 'elec_swave_einasto',
+              'phot_swave_NFW', 'elec_swave_NFW',
+              'phot_pwave_NFW', 'elec_pwave_NFW']
 
-            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
-            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_phot_swave))
-            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_swave_struct))
-            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_decay))
-            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave))
-            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave_struct))
+            f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
 
-            glob_f_data = {
-                'phot_decay'        : f_phot_decay_interp,
-                'phot_swave'        : f_phot_swave_interp,
-                'phot_swave_struct' : f_phot_swave_struct_interp,
-                'elec_decay'        : f_elec_decay_interp,
-                'elec_swave'        : f_elec_swave_interp,
-                'elec_swave_struct' : f_elec_swave_struct_interp
-            }
+            glob_f_data = {label : RegularGridInterpolator(
+                (log10eng, np.flipud(get_rs_arr(label))), np.flip(np.log(f_data[label]),1)
+                ) for label in labels}
+
+            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
+            #log10eng = np.array(data[:71*40:71,0])
+            #log10rs = np.array(data[:70,1])
+            #tmp=np.resize(data[:,2],(5,40,70))
+            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
+            #glob_f_data['phot_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
+
+            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_electron_decay.dat", delimiter=',')
+            #log10eng = np.array(data[:71*40:71,0])
+            #log10rs = np.array(data[:70,1])
+            #tmp=np.resize(data[:,2],(5,40,70))
+            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
+            #glob_f_data['elec_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
+
         return glob_f_data
 
     elif data_type == 'pppc':
@@ -427,6 +446,35 @@ def load_data(data_type):
             glob_pppc_data = dlNdlxIEW_interp
 
         return glob_pppc_data
+    
+    elif data_type == 'exc':
+        if glob_exc_data == None:
+            species_list = ['HI', 'HeI']
+            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
+                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
+                    }
+
+            state_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+
+            def make_interpolator(x,y):
+                if (x is None) or (y is None):
+                    return None
+                else:
+                    return interp1d(x,y, kind='cubic', bounds_error=False, fill_value=(0,0))
+
+
+            glob_exc_data = {species: 
+                {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
+                for state in state_list}
+            for species in species_list}
+
+        return glob_exc_data
+
+    elif data_type == 'reion':
+        if glob_exc_data == None:
+            glob_exc_data = pickle.load(open(data_path+'/Onorbe_data.p','rb'))
+
+        return glob_exc_data
 
     else:
 
