@@ -75,8 +75,8 @@ def get_kappa_2s(photspec):
 
     return kappa_2s
 
-def kappa_DM(photspec, xe):
-    """ Compute kappa_DM of the modified tla.
+def kappa_2p(photspec, xe):
+    """ Compute kappa_2p of the modified tla.
 
     Parameters
     ----------
@@ -85,8 +85,8 @@ def kappa_DM(photspec, xe):
 
     Returns
     -------
-    kappa_DM : float
-        The added photoionization rate due to products of DM.
+    kappa_2p : float
+        The added photoexcitation rate from the 1s to 2p state, due to photons injected by DM.
     """
     eng = photspec.eng
     rs = photspec.rs
@@ -119,7 +119,6 @@ def kappa_DM(photspec, xe):
         kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*(1-xe)*Lambda/4
     )/(3*x1s_times_R_Lya/4 + (1-xe)*Lambda/4)
 
-
 #---- f_c functions ----#
 #continuum
 def getf_continuum(photspec, norm_fac, cross_check=False):
@@ -137,7 +136,7 @@ def getf_continuum(photspec, norm_fac, cross_check=False):
 
 #excitation
 def getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check=False):
-    if((method == 'old') or (method=='helium') or (method == 'ion')):
+    if((method == 'old') or (method=='helium') or (method == 'ion')) or (method == 'full'): #MODIFIED
         # All photons between 11.2eV and 13.6eV are deposited into excitation
         # partial binning
         if not cross_check:
@@ -158,7 +157,7 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check=False):
         # 1s->2s transition handled more carefully.
 
         # Convenient variables
-        kappa = kappa_DM(photspec, xe)
+        kappa = kappa_DM(photspec, xe) #MODIFIED
 
         # Added this line since rate_2p1s_times_x1s function was removed.
         rate_2p1s_times_x1s = (
@@ -175,7 +174,7 @@ def getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check=False):
     return f_excite_HI
 
 #HI, HeI, HeII ionization
-def getf_ion(photspec, norm_fac, n, method, cross_check=False):
+def getf_ion(photspec, norm_fac, dt, n, method, cross_check=False):
     # The bin number containing 10.2eV
     lya_index = spectools.get_indx(photspec.eng, phys.lya_eng)
     # The bin number containing 13.6eV
@@ -225,17 +224,15 @@ def getf_ion(photspec, norm_fac, n, method, cross_check=False):
         f_HeII = 0
 
     else:
-        # HL: Not sure if this code is right.......
-
         # Photons may also deposit their energy into HeI and HeII single ionization
-
+         
         # Bin boundaries of photon spectrum capable of photoionization, and number of photons in those bounds.
         ion_bounds = spectools.get_bounds_between(photspec.eng, phys.rydberg)
         ion_Ns = photspec.totN(bound_type='eng', bound_arr=ion_bounds)
 
         # Probability of being absorbed within time step dt in channel a is P_a = \sigma(E)_a n_a c*dt
         ionHI, ionHeI, ionHeII = [
-            phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] 
+            phys.photo_ion_xsec(photspec.eng[ryd_index:],channel) * n[i] * phys.c * dt
             for i,channel in enumerate(['HI','HeI','HeII'])
         ]
 
@@ -245,19 +242,22 @@ def getf_ion(photspec, norm_fac, n, method, cross_check=False):
             ionHI[0] = 1
 
         # Relative likelihood of photoionization of HI is then P_HI/sum(P_a)
-        totList = ionHI + ionHeI + ionHeII + 1e-12
-        ionHI, ionHeI, ionHeII = [ 
-            llist/totList for llist in [ionHI, ionHeI, ionHeII] 
-        ]
+        totList = ionHI + ionHeI + ionHeII
 
-        f_HI, f_HeI, f_HeII = [
-            np.sum(ion_Ns * llist * norm_fac)
-            for llist in [
-                phys.rydberg*ionHI, 
-                phys.He_ion_eng*ionHeI, 
-                4*phys.rydberg*ionHeII
-            ]
-        ]
+	    # If the expected number of photoionization events is much greater than the total number of photons, then all photons photoionize
+        ionHI, ionHeI, ionHeII = [ #MODIFIED
+            llist/totList for llist in [ionHI, ionHeI, ionHeII] #MODIFIED
+        ]#MODIFIED
+	    
+        f_HI, f_HeI, f_HeII = [#MODIFIED
+            np.sum(ion_Ns * llist * norm_fac)#MODIFIED
+            for llist in [#MODIFIED
+                phys.rydberg*ionHI, #MODIFIED
+                phys.He_ion_eng*ionHeI, #MODIFIED
+                4*phys.rydberg*ionHeII#MODIFIED
+            ]#MODIFIED
+        ]#MODIFIED
+
     return (f_HI, f_HeI, f_HeII)
 
 
@@ -299,6 +299,38 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old', cross_check=False):
 
     f_continuum = getf_continuum(photspec, norm_fac, cross_check)
     f_excite_HI = getf_excitation(photspec, norm_fac, dt, xe, n, method, cross_check)
-    f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, n, method, cross_check)
-
+    f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, dt, n, method, cross_check)
+     
     return np.array([f_continuum, f_excite_HI, f_HI, f_HeI, f_HeII])
+
+def propagating_lowE_photons_fracs(photspec, x, dt):
+    """ Of the low energy photons, compute the fraction that did NOT get absorbed
+
+    Given a spectrum of deposited photons...
+
+    Parameters
+    ----------
+    photspec : Spectrum object
+        spectrum of photons. spec.toteng() should return energy per baryon.
+    x : list of floats
+        number of (HI, HeI) divided by nH at redshift photspec.rs
+    dt : float
+        time in seconds over which these photons were deposited.
+
+    Returns
+    -------
+    ndarray
+        Returns fraction of photons that freestream through a time step with energy bins between 13.6eV and 54.4eV.  Photons in other bins are assumed to be absorbed.
+    """
+    n = phys.nH*photspec.rs**3*x
+
+    ratios = np.array([
+        n[i]*phys.photo_ion_xsec(photspec.eng, chan) * phys.c * dt
+        for i,chan in enumerate(['HI', 'HeI'])
+    ])
+
+
+    prop_fracs = np.exp(-np.sum(ratios, axis=0))
+    prop_fracs[photspec.eng>=54.4] = 0
+    prop_fracs[photspec.eng<=13.6] = 0
+    return prop_fracs

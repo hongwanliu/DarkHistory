@@ -18,12 +18,15 @@ from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
 from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
+from darkhistory.spec import spectools
+import darkhistory.history.reionization as reion
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
+from darkhistory.low_energy.lowE_photons import propagating_lowE_photons_fracs
 
 from darkhistory.history import tla
 
@@ -33,7 +36,8 @@ def evolve(
     DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
     struct_boost=None,
     start_rs=None, end_rs=4, helium_TLA=False,
-    reion_switch=False, reion_rs=None,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=True, DeltaT=0,
+    equibheat_switch = False, alpha_J=0, #MODIFIED
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
@@ -86,8 +90,15 @@ def evolve(
         Coarsening to apply to the transfer function matrix. Default is 1. 
     backreaction : bool
         If *False*, uses the baseline TLA solution to calculate :math:`f_c(z)`. Default is True.
-    compute_fs_method : {'no_He', 'He_recomb', 'He'}
+    compute_fs_method : {'no_He', 'He_recomb', 'He', 'HeII'}
+        Method for evaluating helium ionization. 
 
+        * *'no_He'* -- all ionization assigned to hydrogen;
+        * *'He_recomb'* -- all photoionized helium atoms recombine; and 
+        * *'He'* -- all photoionized helium atoms do not recombine;
+        * *'HeII'* -- all ionization assigned to HeII.
+
+        Default is 'no_He'.
     mxstep : int, optional
         The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint()* for more information. Default is *1000*. 
     rtol : float, optional
@@ -131,7 +142,7 @@ def evolve(
 
 
     """
-    
+
     #########################################################################
     #########################################################################
     # Input                                                                 #
@@ -161,14 +172,35 @@ def evolve(
     ics_rel_ref_tf      = ics_tf_data['rel']
     engloss_ref_tf      = ics_tf_data['engloss']
 
+    # If compute_fs_method is 'HeII', must be using instantaneous reionization. 
+    if compute_fs_method == 'HeII':
+
+        #if backreaction: 
+
+        #    raise ValueError('\'HeII\' method cannot be used with backreaction.')
+        #print('Using instantaneous reionization at 1+z = ', reion_rs)
+
+        def xe_func(rs):
+            if np.isscalar(rs):
+                if rs < reion_rs:
+                    return 1. + phys.chi
+                else:
+                    return 0.
+            else:
+                xe_list = np.zeros_like(rs)
+                xe_list[rs<reion_rs] = 1+phys.chi
+                xe_list[rs>reion_rs] = 0
+                return xe_list
+
+        xe_reion_func = xe_func
+
 
     # Handle the case where a DM process is specified. 
-    if DM_process == 'swave':
+    if DM_process == 'swave' or DM_process == 'pwave':
         if sigmav is None or start_rs is None:
             raise ValueError(
                 'sigmav and start_rs must be specified.'
             )
-        
         # Get input spectra from PPPC. 
         in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
         in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
@@ -187,12 +219,12 @@ def evolve(
         # Define the rate functions. 
         def rate_func_N(rs):
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav)
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav)
                 * struct_boost(rs) / (2*mDM)
             )
         def rate_func_eng(rs):
             return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
+                phys.inj_rate(DM_process, rs, mDM=mDM, sigmav=sigmav) 
                 * struct_boost(rs)
             )
 
@@ -264,6 +296,8 @@ def evolve(
         # Default to baseline
         xH_init  = phys.xHII_std(start_rs)
         xHe_init = phys.xHeII_std(start_rs)
+        #xHeIII_init = 0
+        xHeIII_init = 1e-12 #MODIFIED
         Tm_init  = phys.Tm_std(start_rs)
     else:
         # User-specified.
@@ -338,7 +372,7 @@ def evolve(
     #########################################################################
 
     # Initialize the arrays that will contain x and Tm results. 
-    x_arr  = np.array([[xH_init, xHe_init]])
+    x_arr  = np.array([[xH_init, xHe_init, xHeIII_init]]) #MODIFIED
     Tm_arr = np.array([Tm_init])
 
     # Initialize Spectra objects to contain all of the output spectra.
@@ -398,9 +432,13 @@ def evolve(
         # These are \bar{T}_\gamma, \bar{T}_e and \bar{R}_c. 
         if elec_processes:
 
-            if backreaction:
+            if (
+                backreaction 
+                or (compute_fs_method == 'HeII' and not backreaction)# and rs <= reion_rs)
+            ):
                 xHII_elec_cooling  = x_arr[-1, 0]
                 xHeII_elec_cooling = x_arr[-1, 1]
+                xHeIII_elec_cooling = x_arr[-1, 2] #MODIFIED
             else:
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
@@ -477,8 +515,46 @@ def evolve(
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
+        # Compute the fraction of ionizing photons that free stream within this step
+        if (reion_switch == True) & (rs < reion_rs):
+            # If reionization is complete, set the residual fraction of neutral atoms to their measured value
+            # if x_arr[-1,0] == 1:
+            # if x_arr[-1,0] > 1-10**(-4.4):
+            if xe_reion_func(rs)/(1+phys.chi) > 1-10**(-4.4):
+                x_arr[-1,0] = 1-10**(-4.4)
+            # if x_arr[-1,1] == phys.chi:
+                x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
+
+            recomb_switch = False
+            if recomb_switch:
+                # All of the photons above 54.4eV get absorbed by HeII, all HeII instantly recombine,
+                # so the number of recombined photon
+                #ne = xe_reion_func(rs) * phys.nH * rs**3
+                ne = (2*x_arr[-1,-1] * x_arr[-1,1] + x_arr[-1,0]) * phys.nH * rs**3
+                factor = x_arr[-1,-1] * ne * reion.alphaA_recomb('HeIII', Tm_arr[-1]) * dt
+                if factor > 20:
+                    recomb_frac = 1
+                else:
+                    recomb_frac = 1-np.exp(-factor)
+
+                ind = sum(lowengphot_spec_at_rs.eng < 4*phys.rydberg)-1
+                lowengphot_spec_at_rs.N[ind] += recomb_frac * phys.nH*rs**3 * x_arr[-1, -1] / (phys.nB*rs**3)
+
+            lowEprop_mask = propagating_lowE_photons_fracs(
+                lowengphot_spec_at_rs, np.array([1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]), dt
+            )
+
+        else:
+            lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
+
+        # Add this fraction to the propagating photons
+        highengphot_spec_at_rs += lowEprop_mask * lowengphot_spec_at_rs
+
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
+
+        # Get rid of the lowenergy photons that weren't absorbed -- they're in highengphot now
+        lowengphot_spec_at_rs = (1-lowEprop_mask) * lowengphot_spec_at_rs
 
         #####################################################################
         #####################################################################
@@ -507,8 +583,9 @@ def evolve(
             ])
 
         # Values of (xHI, xHeI, xHeII) to use for computing f.
-        if backreaction:
-            # Use the previous values with backreaction.
+        if backreaction or (compute_fs_method == 'HeII' and rs <= reion_rs):
+            # Use the previous values with backreaction, or if we are using
+            # the HeII method after the reionization redshift. 
             x_vec_for_f = np.array(
                 [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
             )
@@ -520,11 +597,24 @@ def evolve(
                     phys.xHeII_std(rs)
             ])
 
-        f_raw = compute_fs(
-            MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-            x_vec_for_f, rate_func_eng_unclustered(rs), dt,
-            highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
-        )
+        if compute_fs_method == 'HeII' and rs > reion_rs:
+
+            # For 'HeII', stick with 'no_He' until after 
+            # reionization kicks in.
+
+            f_raw = compute_fs(
+                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                highengdep_at_rs, method='no_He', cross_check=cross_check
+            )
+
+        else:
+
+            f_raw = compute_fs(
+                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
+            )
 
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
@@ -567,21 +657,23 @@ def evolve(
         # Initial conditions for the TLA, (Tm, xHII, xHeII, xHeIII). 
         # This is simply the last set of these variables. 
         init_cond_TLA = np.array(
-            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
+            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], x_arr[-1,2]] #MODIFIED
         )
 
-        # Solve the TLA for x, Tm for the *next* step. 
+        # Solve the TLA for x, Tm for the *next* step.
         new_vals = tla.get_history(
-            np.array([rs, next_rs]), init_cond=init_cond_TLA, 
+            np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
             injection_rate=rate_func_eng_unclustered,
-            reion_switch=reion_switch, reion_rs=reion_rs,
+            reion_switch=reion_switch, reion_rs=reion_rs, 
+            reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT,
+            equibheat_switch = equibheat_switch, alpha_J = alpha_J, #MODIFIED
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
-
+        
         #####################################################################
         #####################################################################
         # Photon Cooling Transfer Functions                                 #
@@ -590,7 +682,10 @@ def evolve(
 
 
         # Get the transfer functions for this step.
-        if not backreaction:
+        if (
+            not backreaction 
+            and not (compute_fs_method == 'HeII' and rs <= reion_rs)
+        ):
             # Interpolate using the baseline solution.
             xHII_to_interp  = phys.xHII_std(rs)
             xHeII_to_interp = phys.xHeII_std(rs)
@@ -598,40 +693,44 @@ def evolve(
             # Interpolate using the current xHII, xHeII values.
             xHII_to_interp  = x_arr[-1,0]
             xHeII_to_interp = x_arr[-1,1]
-
-        highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr = (
-            get_tf(
-                rs, xHII_to_interp, xHeII_to_interp, 
-                dlnz, coarsen_factor=coarsen_factor
-            )
-        )
-
-        # Get the spectra for the next step by applying the 
-        # transfer functions. 
-        highengdep_at_rs = np.dot(
-            np.swapaxes(highengdep_arr, 0, 1),
-            out_highengphot_specs[-1].N
-        )
-
-        highengphot_spec_at_rs = highengphot_tf.sum_specs(
-            out_highengphot_specs[-1]
-        )
-        
-        lowengphot_spec_at_rs  = lowengphot_tf.sum_specs(
-            out_highengphot_specs[-1]
-        )
-
-        lowengelec_spec_at_rs  = lowengelec_tf.sum_specs(
-            out_highengphot_specs[-1]
-        )
-
-
-        highengphot_spec_at_rs.rs = next_rs
-        lowengphot_spec_at_rs.rs  = next_rs
-        lowengelec_spec_at_rs.rs  = next_rs
+            xHeIII_to_interp= x_arr[-1,2] #MODIFIED
 
         if next_rs > end_rs:
-            # Only save if next_rs < end_rs, since these are the x, Tm
+
+            # Only compute the transfer functions if next_rs > end_rs. 
+            # Otherwise, we won't be using them.
+
+            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr = (
+                get_tf(
+                    rs, xHII_to_interp, xHeII_to_interp, 
+                    dlnz, coarsen_factor=coarsen_factor
+                )
+            )
+
+            # Get the spectra for the next step by applying the 
+            # transfer functions. 
+            highengdep_at_rs = np.dot(
+                np.swapaxes(highengdep_arr, 0, 1),
+                out_highengphot_specs[-1].N
+            )
+
+            highengphot_spec_at_rs = highengphot_tf.sum_specs(
+                out_highengphot_specs[-1]
+            )
+            
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs(
+                out_highengphot_specs[-1]
+            )
+
+            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs(
+                out_highengphot_specs[-1]
+            )
+
+            highengphot_spec_at_rs.rs = next_rs
+            lowengphot_spec_at_rs.rs  = next_rs
+            lowengelec_spec_at_rs.rs  = next_rs
+
+            # Only save if next_rs > end_rs, since these are the x, Tm
             # values for the next redshift.
 
             # Save the x, Tm data for the next step in x_arr and Tm_arr.
@@ -640,7 +739,7 @@ def evolve(
             if helium_TLA:
                 # Append the calculated xHe to x_arr. 
                 x_arr  = np.append(
-                        x_arr,  [[new_vals[-1,1], new_vals[-1,2]]], axis=0
+                        x_arr,  [[new_vals[-1,1], new_vals[-1,2], new_vals[-1,3]]], axis=0 #MODIFIED
                     )
             else:
                 # Append the baseline solution value. 
@@ -651,6 +750,7 @@ def evolve(
         # Re-define existing variables. 
         rs = next_rs
         dt = dlnz * coarsen_factor/phys.hubble(rs)
+
 
     #########################################################################
     #########################################################################
