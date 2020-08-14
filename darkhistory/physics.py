@@ -1283,7 +1283,9 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
     method : {'old', 'MEDEA', 'new'}
-        if method == 'old', see 0906.1197; if method == 'MEDEA', we follow the method used in the MEDEA code; if method == 'new', nothing yet
+        if method == 'old', see Shull, Astrophysical Journal, 234:761-764, 1979 December 1; 
+        if method == 'MEDEA', we follow the method used in the MEDEA code, which is the 'old' method; 
+        if method == 'new', nothing yet
 
     Returns
     -------
@@ -1300,7 +1302,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     from darkhistory.spec.spectrum import Spectrum
     from darkhistory.spec import spectools
 
-    if method == 'old':
+    if (method == 'old') | (method == 'MEDEA'):
         if species == 'HI':
             eps_i = 8.
             ion_pot = rydberg
@@ -1314,6 +1316,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             raise TypeError('invalid species.')
 
         if np.isscalar(in_eng):
+            # See Shull (1979) eqn A1
             low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
             # This spectrum describes the lower energy electron only.
             low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
@@ -1346,6 +1349,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             in_eng_mask = np.outer(in_eng, np.ones_like(eng))
             eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
+            # See Shull (1979) eqn A1
             low_eng_elec_dNdE = np.outer(
                 np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
             )
