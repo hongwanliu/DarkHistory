@@ -393,6 +393,6 @@ def HI_post_reion_photoheating(alpha, T, rs):
     #n_i/n_H after reionization for HI and HeI
     fractions    = np.array([1, phys.chi])
     #case-A recombination coefficients for HII and HeII
-    caseA_coeffs = np.array([alphaA_recomb('HII', T)[0], alphaA_recomb('HeII', T)[0]])
+    caseA_coeffs = np.array([alphaA_recomb('HII', T), alphaA_recomb('HeII', T)])
 
     return np.sum(ion_engs * fractions * caseA_coeffs / (xsec_powers - 1 + alpha)) * nH/3
