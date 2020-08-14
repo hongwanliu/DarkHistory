@@ -775,9 +775,9 @@ def get_history(
 
             temp = 2/chi * np.cosh(yHeIII)**2 * phys.dtdz(rs) * (
                 # Photoionization of HeII into HeIII.
-                  xHeII * photoion_rate_HeII(rs)
+                  #xHeII * photoion_rate_HeII(rs)
                 # Collisional ionization of HeII into HeIII.
-                + xHeII * ne * reion.coll_ion_rate('HeII', T_m)
+                xHeII * ne * reion.coll_ion_rate('HeII', T_m)
                 # Recombination of HeIII into HeII.
                 - xHeIII(yHeIII) * ne * reion.alphaA_recomb('HeIII', T_m)
                 # DM contribution #MODIFIED
