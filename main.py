@@ -18,6 +18,8 @@ from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
 from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
+from darkhistory.spec import spectools
+import darkhistory.history.reionization as reion
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
@@ -35,7 +37,7 @@ def evolve(
     struct_boost=None,
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
-    photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
+    photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None, HeIIIcheck_switch=False,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False
@@ -287,7 +289,7 @@ def evolve(
         # Default to baseline
         xH_init  = phys.xHII_std(start_rs)
         xHe_init = phys.xHeII_std(start_rs)
-        #xHeIII_init = phys.xHeII_std(start_rs)
+        xHeIII_init = 1e-12#phys.xHeII_std(start_rs)
         Tm_init  = phys.Tm_std(start_rs)
     else:
         # User-specified.
@@ -362,7 +364,7 @@ def evolve(
     #########################################################################
 
     # Initialize the arrays that will contain x and Tm results. 
-    x_arr  = np.array([[xH_init, xHe_init]])
+    x_arr  = np.array([[xH_init, xHe_init, xHeIII_init]])
     Tm_arr = np.array([Tm_init])
 
     # Initialize Spectra objects to contain all of the output spectra.
@@ -386,6 +388,9 @@ def evolve(
 
     # Object to help us interpolate over MEDEA results. 
     MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
+
+    # Implementation of the theta function from Eq. 2 of the paper
+    zstar_switch = False
 
     #########################################################################
     #########################################################################
@@ -428,6 +433,7 @@ def evolve(
             ):
                 xHII_elec_cooling  = x_arr[-1, 0]
                 xHeII_elec_cooling = x_arr[-1, 1]
+                xHeIII_elec_cooling = x_arr[-1, 2]
             else:
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
@@ -506,16 +512,34 @@ def evolve(
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
         # Compute the fraction of ionizing photons that free stream within this step
-        if (reion_switch == True) & (rs < start_rs):
+        if (reion_switch == True) & (rs < reion_rs):
             # If reionization is complete, set the residual fraction of neutral atoms to their measured value
             if x_arr[-1,0] == 1:
                 x_arr[-1,0] = 1-10**(-4.4)
             if x_arr[-1,1] == phys.chi:
                 x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
 
+            if HeIIIcheck_switch:
+                # All of the photons above 54.4eV get absorbed by HeII, all HeII instantly recombine,
+                # so the number of recombined photon
+                #ne = xe_reion_func(rs) * phys.nH * rs**3
+                ne = x_arr[-1,2] * phys.nH * rs**3
+                factor = x_arr[-1,2] * ne * reion.alphaA_recomb('HeIII', Tm_arr[-1]) * dt
+                if factor > 20:
+                    recomb_frac = 1
+                else:
+                    recomb_frac = 1-np.exp(-factor)
+
+                ind = sum(lowengphot_spec_at_rs.eng < 4*phys.rydberg)-1
+                lowengphot_spec_at_rs.N[ind] += recomb_frac * phys.nH*rs**3 * x_arr[-1, 2] / (phys.nB*rs**3)
+                #ion_bounds_HeII = spectools.get_bounds_between(phot_spec.eng, 4*phys.rydberg)
+                #lowengphot_spec_at_rs.N[ind] += lowengphot_spec_at_rs.totN(bound_type='eng', bound_arr=ion_bounds_HeII)
+
+
             lowEprop_mask = propagating_lowE_photons_fracs(
                 lowengphot_spec_at_rs, np.array([1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]), dt
             )
+
         else:
             lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
 
@@ -559,7 +583,7 @@ def evolve(
             # Use the previous values with backreaction, or if we are using
             # the HeII method after the reionization redshift. 
             x_vec_for_f = np.array(
-                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
+                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 2]]
             )
         else:
             # Use baseline values if no backreaction. 
@@ -632,11 +656,12 @@ def evolve(
         # Initial conditions for the TLA, (Tm, xHII, xHeII, xHeIII). 
         # This is simply the last set of these variables. 
         init_cond_TLA = np.array(
-            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
+            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], x_arr[-1,2]]
         )
 
+
         # Solve the TLA for x, Tm for the *next* step. 
-        new_vals = tla.get_history(
+        zstar_switch, new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
             injection_rate=rate_func_eng,
@@ -644,9 +669,14 @@ def evolve(
             reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
-            xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+            xe_reion_func=xe_reion_func, helium_TLA=helium_TLA, zstar_switch=zstar_switch, HeIIIcheck_switch=HeIIIcheck_switch,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
+
+        # If Planck's reionization curve ever surpasses get_history's x_e, 
+        # Throw the zstar_switch -- xe = Planck's curve from here on out
+        #if local_switch == True:
+        #    zstar_switch = True
 
         #####################################################################
         #####################################################################
@@ -667,6 +697,7 @@ def evolve(
             # Interpolate using the current xHII, xHeII values.
             xHII_to_interp  = x_arr[-1,0]
             xHeII_to_interp = x_arr[-1,1]
+            xHeIII_to_interp= x_arr[-1,2]
 
         if next_rs > end_rs:
 
@@ -712,7 +743,7 @@ def evolve(
             if helium_TLA:
                 # Append the calculated xHe to x_arr. 
                 x_arr  = np.append(
-                        x_arr,  [[new_vals[-1,1], new_vals[-1,2]]], axis=0
+                        x_arr,  [[new_vals[-1,1], new_vals[-1,2], new_vals[-1,3]]], axis=0 #MODIFIED
                     )
             else:
                 # Append the baseline solution value. 
