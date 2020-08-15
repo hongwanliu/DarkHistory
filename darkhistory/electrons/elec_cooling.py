@@ -22,7 +22,7 @@ def get_elec_cooling_tf(
     eleceng, photeng, rs, xHII, xHeII=0, 
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
-    ics_engloss_data=None, 
+    ics_engloss_data=None, loweng=3000,
     check_conservation_eng = False, verbose=False
 ):
 
@@ -53,6 +53,8 @@ def get_elec_cooling_tf(
         Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy. If None, the function calculates this. Default is None.
     ics_engloss_data : EnglossRebinData
         An `EnglossRebinData` object which stores rebinning information (based on ``eleceng`` and ``photeng``) for speed. Default is None.
+    loweng : float
+        sets the boundary between
     check_conservation_eng : bool
         If True, lower=True, checks for energy conservation. Default is False.
     verbose : bool
@@ -99,63 +101,50 @@ def get_elec_cooling_tf(
     raw_rel_tf     = ics_tf['rel']
     raw_engloss_tf = ics_tf['engloss']
 
+    # atoms that take part in electron cooling process through ionization/exciation
+    atoms = ['HI', 'HeI', 'HeII']
+    exc_potentials = {'HI': phys.lya_eng, 'HeI': phys.He_exc_eng['23s'], 'HeII': 4*phys.lya_eng}
+    ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
+
     if coll_ion_sec_elec_specs is None:
 
         # Compute the (normalized) collisional ionization spectra.
-        coll_ion_sec_elec_specs = (
-            phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HI'),
-            phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeI'),
-            phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeII')
-        )
+        coll_ion_sec_elec_specs = {species : phys.coll_ion_sec_elec_spec(eleceng, eleceng, species=species) for species in atoms}
 
     if coll_exc_sec_elec_specs is None:
+
+        # Make empty dictionaries
+        coll_exc_sec_elec_specs = {}
+        coll_exc_sec_elec_tf =  {}
 
         # Compute the (normalized) collisional excitation spectra.
         id_mat = np.identity(eleceng.size)
 
         # Electron with energy eleceng produces a spectrum with one particle
-        # of energy eleceng - phys.lya.eng. Similar for helium. 
-        coll_exc_sec_elec_tf_HI = tf.TransFuncAtRedshift(
-            np.squeeze(id_mat[:, np.where(eleceng > phys.lya_eng)]),
-            in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-            eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
-            dlnz = -1, spec_type = 'N'
-        )
+        # of energy eleceng - exc_potential.
+        for species in atoms:
+            exc_pot = exc_potentials[species]
+            coll_exc_sec_elec_tf[species] = tf.TransFuncAtRedshift(
+                np.squeeze(id_mat[:, np.where(eleceng > exc_pot)]),
+                in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+                eng = eleceng[eleceng > exc_pot] - exc_pot,
+                dlnz = -1, spec_type = 'N'
+            )
 
-        coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
-            np.squeeze(
-                id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]
-            ),
-            in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-            eng = (
-                eleceng[eleceng > phys.He_exc_eng['23s']] 
-                - phys.He_exc_eng['23s']
-            ), 
-            dlnz = -1, spec_type = 'N'
-        )
+            # Rebin the data so that the spectra stored above now have an abscissa
+            # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
+            coll_exc_sec_elec_tf[species].rebin(eleceng)
 
-        coll_exc_sec_elec_tf_HeII = tf.TransFuncAtRedshift(
-            np.squeeze(id_mat[:, np.where(eleceng > 4*phys.lya_eng)]),
-            in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-            eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
-            dlnz = -1, spec_type = 'N'
-        )
+            # Put them in a dictionary
+            coll_exc_sec_elec_specs[species] = coll_exc_sec_elec_tf[species].grid_vals
 
-        # Rebin the data so that the spectra stored above now have an abscissa
-        # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
-        coll_exc_sec_elec_tf_HI.rebin(eleceng)
-        coll_exc_sec_elec_tf_HeI.rebin(eleceng)
-        coll_exc_sec_elec_tf_HeII.rebin(eleceng)
-
-        # Put them in a tuple.
-        coll_exc_sec_elec_specs = (
-            coll_exc_sec_elec_tf_HI.grid_vals,
-            coll_exc_sec_elec_tf_HeI.grid_vals,
-            coll_exc_sec_elec_tf_HeII.grid_vals
-        )
-
-    # Set the electron fraction. 
+    # Set the electron fraction and number densities
     xe = xHII + xHeII
+    ns = {
+        'HI' : (1 - xHII)*phys.nH*rs**3,
+        'HeI': (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3,
+        'HeII': xHeII*phys.nH*rs**3
+    }
     
     # v/c of electrons
     beta_ele = np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
@@ -219,98 +208,35 @@ def get_elec_cooling_tf(
     deposited_ICS_vec = np.zeros_like(eleceng)
     
     #########################
-    # Collisional Excitation  
+    # Collisional Excitation and Ionization
     #########################
 
+    rate_vec = {'exc' : {}, 'ion' : {}}
+    elec_tf = {'exc' : {}, 'ion' : {}}
+    coll_xsec = {'exc': phys.coll_exc_xsec, 'ion': phys.coll_ion_xsec}
+    sec_specs = {'exc': coll_exc_sec_elec_specs, 'ion': coll_ion_sec_elec_specs}
 
-    # Collisional excitation rates.
-    rate_vec_exc_HI = (
-        (1 - xHII)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
-    )
-    
-    rate_vec_exc_HeI = (
-        (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
-    )
-    
-    rate_vec_exc_HeII = (
-        xHeII*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
-    )
-
-    # Normalized electron spectrum after excitation.
-    elec_exc_HI_tf = tf.TransFuncAtRedshift(
-        rate_vec_exc_HI[:, np.newaxis]*coll_exc_sec_elec_specs[0],
-        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-        eng = eleceng, dlnz = -1, spec_type  = 'N'
-    )
-
-    elec_exc_HeI_tf = tf.TransFuncAtRedshift(
-        rate_vec_exc_HeI[:, np.newaxis]*coll_exc_sec_elec_specs[1],
-        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-        eng = eleceng, dlnz = -1, spec_type  = 'N'
-    )
-
-    elec_exc_HeII_tf = tf.TransFuncAtRedshift(
-        rate_vec_exc_HeII[:, np.newaxis]*coll_exc_sec_elec_specs[2],
-        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-        eng = eleceng, dlnz = -1, spec_type  = 'N'
-    )
+    for process in ['exc', 'ion']:
+        for i, species in enumerate(atoms):
+            # Collisional excitation or ionization rates.
+            rate_vec[process][species] = ns[species] * coll_xsec[process](eleceng, species=species) * beta_ele * phys.c
+            
+            # Normalized electron spectrum after excitation or ionization.
+            elec_tf[process][species] = tf.TransFuncAtRedshift(
+                rate_vec[process][species][:, np.newaxis]*sec_specs[process][species],
+                in_eng = eleceng, rs = rs*np.ones_like(eleceng),
+                eng = eleceng, dlnz = -1, spec_type  = 'N'
+            )
    
-    # Deposited energy for excitation.
+    # Deposited energy for excitation or ionization
     deposited_exc_vec = np.zeros_like(eleceng)
-
-
-    #########################
-    # Collisional Ionization  
-    #########################
-
-    # Collisional ionization rates.
-    rate_vec_ion_HI = (
-        (1 - xHII)*phys.nH*rs**3 
-        * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
-    )
-    
-    rate_vec_ion_HeI = (
-        (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3 
-        * phys.coll_ion_xsec(eleceng, species='HeI') * beta_ele * phys.c
-    )
-    
-    rate_vec_ion_HeII = (
-        xHeII*phys.nH*rs**3
-        * phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
-    )
-
-    # Normalized secondary electron spectra after ionization.
-    elec_spec_ion_HI   = (
-        rate_vec_ion_HI[:,np.newaxis]   * coll_ion_sec_elec_specs[0]
-    )
-    elec_spec_ion_HeI  = (
-        rate_vec_ion_HeI[:,np.newaxis]  * coll_ion_sec_elec_specs[1]
-    )
-    elec_spec_ion_HeII = (
-        rate_vec_ion_HeII[:,np.newaxis] * coll_ion_sec_elec_specs[2]
-    )
-
-    # Construct TransFuncAtRedshift objects.
-    elec_ion_HI_tf = tf.TransFuncAtRedshift(
-        elec_spec_ion_HI, in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
-        eng = eleceng, dlnz = -1, spec_type = 'N'
-    )
-    elec_ion_HeI_tf = tf.TransFuncAtRedshift(
-        elec_spec_ion_HeI, in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
-        eng = eleceng, dlnz = -1, spec_type = 'N'
-    )
-    elec_ion_HeII_tf = tf.TransFuncAtRedshift(
-        elec_spec_ion_HeII, in_eng = eleceng, rs = rs*np.ones_like(eleceng), 
-        eng = eleceng, dlnz = -1, spec_type = 'N'
-    )
-
-    # Deposited energy for ionization.
     deposited_ion_vec = np.zeros_like(eleceng)
 
-     #############################################
+    #############################################
     # Heating
     #############################################
     
+    #!!! CHECK units of this function
     dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs)
     
     deposited_heat_vec = np.zeros_like(eleceng)
@@ -345,7 +271,6 @@ def get_elec_cooling_tf(
     #############################################
 
     # Low and high energy boundaries
-    loweng = 3000
     eleceng_high = eleceng[eleceng > loweng]
     eleceng_high_ind = np.arange(eleceng.size)[eleceng > loweng]
     eleceng_low = eleceng[eleceng <= loweng]
@@ -375,12 +300,12 @@ def get_elec_cooling_tf(
     # Secondary scattered electron spectrum.
     sec_elec_spec_N_arr = (
         elec_ICS_tf.grid_vals
-        + elec_exc_HI_tf.grid_vals 
-        + elec_exc_HeI_tf.grid_vals 
-        + elec_exc_HeII_tf.grid_vals
-        + elec_ion_HI_tf.grid_vals 
-        + elec_ion_HeI_tf.grid_vals 
-        + elec_ion_HeII_tf.grid_vals
+        + elec_tf['exc']['HI'].grid_vals 
+        + elec_tf['exc']['HeI'].grid_vals 
+        + elec_tf['exc']['HeII'].grid_vals 
+        + elec_tf['ion']['HI'].grid_vals 
+        + elec_tf['ion']['HeI'].grid_vals 
+        + elec_tf['ion']['HeII'].grid_vals 
         + elec_heat_spec_grid
     )
     
@@ -405,18 +330,14 @@ def get_elec_cooling_tf(
     continuum_engloss_arr[eleceng > 20*phys.me - phys.me] = 0
     
     # Deposited excitation array.
-    deposited_exc_eng_arr = (
-        phys.lya_eng*np.sum(elec_exc_HI_tf.grid_vals, axis=1)
-        + phys.He_exc_eng['23s']*np.sum(elec_exc_HeI_tf.grid_vals, axis=1)
-        + 4*phys.lya_eng*np.sum(elec_exc_HeII_tf.grid_vals, axis=1)
-    )
+    deposited_exc_eng_arr = np.sum([
+        exc_potentials[species]*np.sum(elec_tf['exc'][species].grid_vals, axis=1) 
+    for species in atoms], axis=0)
     
     # Deposited ionization array.
-    deposited_ion_eng_arr = (
-        phys.rydberg*np.sum(elec_ion_HI_tf.grid_vals, axis=1)/2
-        + phys.He_ion_eng*np.sum(elec_ion_HeI_tf.grid_vals, axis=1)/2
-        + 4*phys.rydberg*np.sum(elec_ion_HeII_tf.grid_vals, axis=1)/2
-    )
+    deposited_ion_eng_arr = np.sum([
+        ion_potentials[species]*np.sum(elec_tf['ion'][species].grid_vals, axis=1)/2 
+    for species in atoms], axis=0)
 
     # Deposited heating array.
     deposited_heat_eng_arr = dE_heat_dt

@@ -791,55 +791,38 @@ def get_elec_cooling_data(eleceng, photeng):
         electron spectrum. 
     """
 
+    # atoms that take part in electron cooling process through ionization/exciation
+    atoms = ['HI', 'HeI', 'HeII']
+    exc_potentials = {'HI': phys.lya_eng, 'HeI': phys.He_exc_eng['23s'], 'HeII': 4*phys.lya_eng}
+    ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
+
     # Compute the (normalized) collisional ionization spectra.
-    coll_ion_sec_elec_specs = (
-        phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HI'),
-        phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeI'),
-        phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeII')
-    )
+    coll_ion_sec_elec_specs = {species : phys.coll_ion_sec_elec_spec(eleceng, eleceng, species=species) for species in atoms}
+
+    # Make empty dictionaries
+    coll_exc_sec_elec_specs = {}
+    coll_exc_sec_elec_tf =  {}
+
     # Compute the (normalized) collisional excitation spectra.
     id_mat = np.identity(eleceng.size)
 
     # Electron with energy eleceng produces a spectrum with one particle
-    # of energy eleceng - phys.lya.eng. Similar for helium. 
-    coll_exc_sec_elec_tf_HI = tf.TransFuncAtRedshift(
-        np.squeeze(id_mat[:, np.where(eleceng > phys.lya_eng)]),
-        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-        eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
-        dlnz = -1, spec_type = 'N'
-    )
+    # of energy eleceng - exc_potential.
+    for species in atoms:
+        exc_pot = exc_potentials[species]
+        coll_exc_sec_elec_tf[species] = tf.TransFuncAtRedshift(
+            np.squeeze(id_mat[:, np.where(eleceng > exc_pot)]),
+            in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+            eng = eleceng[eleceng > exc_pot] - exc_pot,
+            dlnz = -1, spec_type = 'N'
+        )
 
-    coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
-        np.squeeze(
-            id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]
-        ),
-        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-        eng = (
-            eleceng[eleceng > phys.He_exc_eng['23s']] 
-            - phys.He_exc_eng['23s']
-        ), 
-        dlnz = -1, spec_type = 'N'
-    )
+        # Rebin the data so that the spectra stored above now have an abscissa
+        # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
+        coll_exc_sec_elec_tf[species].rebin(eleceng)
 
-    coll_exc_sec_elec_tf_HeII = tf.TransFuncAtRedshift(
-        np.squeeze(id_mat[:, np.where(eleceng > 4*phys.lya_eng)]),
-        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-        eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
-        dlnz = -1, spec_type = 'N'
-    )
-
-    # Rebin the data so that the spectra stored above now have an abscissa
-    # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
-    coll_exc_sec_elec_tf_HI.rebin(eleceng)
-    coll_exc_sec_elec_tf_HeI.rebin(eleceng)
-    coll_exc_sec_elec_tf_HeII.rebin(eleceng)
-
-    # Put them in a tuple.
-    coll_exc_sec_elec_specs = (
-        coll_exc_sec_elec_tf_HI.grid_vals,
-        coll_exc_sec_elec_tf_HeI.grid_vals,
-        coll_exc_sec_elec_tf_HeII.grid_vals
-    )
+        # Put them in a dictionary
+        coll_exc_sec_elec_specs[species] = coll_exc_sec_elec_tf[species].grid_vals
 
     # Store the ICS rebinning data for speed. Contains information
     # that makes converting an energy loss spectrum to a scattered
