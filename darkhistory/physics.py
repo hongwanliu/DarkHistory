@@ -427,7 +427,11 @@ width_2s1s_H = 8.22458
 """Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
 bohr_rad     = (hbar*c) / (me*alpha)
 """Bohr radius in cm."""
-HI_exc_eng = {'2s' : lya_eng, '2p' : lya_eng, '3p' : 12.094, '4p' : 12.755, '5p' : 13.061, '6p' : 13.228, '7p' : 13.328, '8p' : 13.393, '9p' : 13.438, '10p' : 13.470}
+HI_exc_eng = {'2s' : lya_eng, '2p' : lya_eng, 
+        '3p' : 12.094, '4p' : 12.755, '5p' : 13.061, 
+        '6p' : 13.228, '7p' : 13.328, '8p' : 13.393, 
+        '9p' : 13.438, '10p' : 13.470}
+#See Stone, Kim, and Desclaux, [J. Res. Natl. Inst. Stand. Technol. 107, 327–337 (2002)]
 """HI n=1 to n=2s and 2p through 10p excitation energies in eV"""
 
 #########################################
@@ -446,18 +450,24 @@ He_exc_lambda = {
 """HeI n=1 to n=2 excitation wavelength in cm."""
 
 He_exc_eng = {
+    #n^(2S+1)L
     '23s': 2*np.pi*hbar*c*159855.9745,
     '21s': 2*np.pi*hbar*c*166277.4403,
     '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
     '21p': 2*np.pi*hbar*c*171134.8970,
-    '3p' : 23.087,
-    '4p' : 23.742,
-    '5p' : 24.046,
-    '6p' : 24.211,
-    '7p' : 24.311,
-    '8p' : 24.375,
-    '9p' : 24.420,
-    '10p': 24.452
+    #nl^(2S+1)L, n is the excited state of the excited electron, 
+    #l is its orbital angular momentum, 
+    #(2S+1) is the total spin multiplicity, 
+    #and L is the total angular momentum of the two electrons.
+    '2p1P' : 21.218,
+    '3p1P' : 23.087,
+    '4p1P' : 23.742,
+    '5p1P' : 24.046,
+    '6p1P' : 24.211,
+    '7p1P' : 24.311,
+    '8p1P' : 24.375,
+    '9p1P' : 24.420,
+    '10p1P': 24.452
 }
 """HeI n=1 to n=2 excitation energies in eV, and n=1 to 3p through 10p"""
 
@@ -1053,7 +1063,9 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
     method : {'old', 'MEDEA', 'new'}
-        if method == 'old', see 0906.1197; if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); if method == 'new', nothing yet
+        if method == 'old', see 0906.1197; 
+        if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); 
+        if method == 'new', nothing yet
 
     Returns
     -------
@@ -1119,9 +1131,13 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
 
-        if ((state != '2s') and ((state[-1] != 'p') and (int(state[0]) not in np.arange(2,11)))):
+        if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') and (int(state[0]) not in np.arange(2,11)))):
 
-            TypeError("Must specify 2s, 2p, 3p, ..., or 10p") 
+            TypeError("Must specify 2s, 2p, 3p, ..., or 10p, for HI excitation") 
+
+        elif (species == 'HeI') and ((state[1:] != 'p1P') and (int(state[0]) not in np.arange(2,11))):
+
+            TypeError("Must specify 2p1P, 3p1P, ..., or 10p1P for HeI excitation") 
 
         else:
 
@@ -1131,10 +1147,47 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
             # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
             # threshold energy
-            exc_eng = {'HI': HI_exc_eng, 'HeI': He_exc_eng}
+            exc_eng  = {'HI': HI_exc_eng, 'HeI': He_exc_eng}
+            bind_eng = {'HI': rydberg,    'HeI': He_ion_eng}
+
+            #!!! CHECK must include relativistic corrections at E>10keV
+            #Parameters for high energy limit, ordered from 2p to 10p
+            a_params = {
+                'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,  .004919,  .003237,  .002246,  .001623],
+                'HeI': [ .165601,  .041611,  .016111,  .008298,  .004740,  .002963,  .001975,  .001383,  .001006]
+            } 
+            b_params = {
+                'HI':  [ .271785,  .060202,  .022984,  .011243,  .006348,  .003939,  .002550,  .001824,  .001323],
+                'HeI': [-.076942, -.018087, -.007040, -.003475, -.001972, -.001227, -.000816, -.000570, -.000414]
+            }
+            c_params = {
+                'HI':  [ .000112, -.019775, -.009279, -.004880, -.002853, -.001806, -.001213, -.000854, -.000623],
+                'HeI': [ .033306,  .002104, -.000045, -.000228, -.000194, -.000146, -.000108, -.000080, -.000061]
+            }
+
+            fsc_HeI  = [ .2583,    .07061,   .02899,   .01466,   .00844,   .00529,   .00354,   .00248,   .00181]
+            facc_HeI = [ .2762,    .07343,   .02986,   .01504,   .00863,   .00541,   .00361,   .00253,   .00184]
+
+            # Eqn (5) of Kim, Stone, Desclaux (2002)
+            def xsec_asympt(species, state, KE):
+                ind = int(state[0])-2
+                if species == 'HeI':
+                    f_ratio = facc_HeI[ind]/fsc_HeI[ind]
+                else:
+                    if state == '2s':
+                        return np.zeros_like(KE)
+                    f_ratio = 1.
+
+                factor = (a_params[species][ind] * np.log(KE/rydberg) 
+                        + b_params[species][ind]
+                        + c_params[species][ind] * rydberg/KE)*f_ratio
+
+                return 4*np.pi*bohr_rad**2*rydberg/(KE + bind_eng[species] + exc_eng[species][state]) * factor
+
 
             exc_xsec = load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
             exc_xsec[eng<exc_eng[species][state]] = 0
+            exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
 
             return exc_xsec
         
