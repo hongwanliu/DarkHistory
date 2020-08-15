@@ -271,14 +271,14 @@ def get_elec_cooling_tf(
     #############################################
 
     # Low and high energy boundaries
-    eleceng_high = eleceng[eleceng > loweng]
-    eleceng_high_ind = np.arange(eleceng.size)[eleceng > loweng]
-    eleceng_low = eleceng[eleceng <= loweng]
-    eleceng_low_ind  = np.arange(eleceng.size)[eleceng <= loweng]
+    eleceng_high = eleceng[eleceng >= loweng]
+    eleceng_high_ind = np.arange(eleceng.size)[eleceng >= loweng]
+    eleceng_low = eleceng[eleceng < loweng]
+    eleceng_low_ind  = np.arange(eleceng.size)[eleceng < loweng]
 
 
-    if eleceng_low.size == 0:
-        raise TypeError('Energy abscissa must contain a low energy bin below 3 keV.')
+    #if eleceng_low.size == 0:
+    #    raise TypeError('Energy abscissa must contain a low energy bin below 3 keV.')
 
     # Empty containers for quantities.
     # Final secondary photon spectrum.
@@ -370,7 +370,7 @@ def get_elec_cooling_tf(
     deposited_ICS_eng_arr[eleceng < loweng]  = 0
     deposited_exc_eng_arr[eleceng < loweng]  = 0
     deposited_ion_eng_arr[eleceng < loweng]  = 0
-    deposited_heat_eng_arr[eleceng < loweng] = 0
+    deposited_heat_eng_arr[eleceng < loweng] = eleceng[eleceng<loweng]
     
     continuum_engloss_arr[eleceng < loweng]  = 0
     
