@@ -101,15 +101,24 @@ def get_elec_cooling_tf(
     raw_rel_tf     = ics_tf['rel']
     raw_engloss_tf = ics_tf['engloss']
 
-    # atoms that take part in electron cooling process through ionization/exciation
+    # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
-    exc_potentials = {'HI': phys.lya_eng, 'HeI': phys.He_exc_eng['23s'], 'HeII': 4*phys.lya_eng}
+    # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
+    exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 
+            'HeI', 'HeII'] 
+
+    #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
+
+    exc_potentials         = phys.HI_exc_eng.copy()
+    exc_potentials['HeI']  = phys.He_exc_eng['23s']
+    exc_potentials['HeII'] = 4*phys.lya_eng
 
     if coll_ion_sec_elec_specs is None:
 
         # Compute the (normalized) collisional ionization spectra.
-        coll_ion_sec_elec_specs = {species : phys.coll_ion_sec_elec_spec(eleceng, eleceng, species=species) for species in atoms}
+        coll_ion_sec_elec_specs = {species : phys.coll_ion_sec_elec_spec(eleceng, eleceng, species=species) 
+                for species in atoms}
 
     if coll_exc_sec_elec_specs is None:
 
@@ -122,9 +131,9 @@ def get_elec_cooling_tf(
 
         # Electron with energy eleceng produces a spectrum with one particle
         # of energy eleceng - exc_potential.
-        for species in atoms:
-            exc_pot = exc_potentials[species]
-            coll_exc_sec_elec_tf[species] = tf.TransFuncAtRedshift(
+        for exc in exc_types:
+            exc_pot = exc_potentials[exc]
+            coll_exc_sec_elec_tf[exc] = tf.TransFuncAtRedshift(
                 np.squeeze(id_mat[:, np.where(eleceng > exc_pot)]),
                 in_eng = eleceng, rs = -1*np.ones_like(eleceng),
                 eng = eleceng[eleceng > exc_pot] - exc_pot,
@@ -133,10 +142,10 @@ def get_elec_cooling_tf(
 
             # Rebin the data so that the spectra stored above now have an abscissa
             # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
-            coll_exc_sec_elec_tf[species].rebin(eleceng)
+            coll_exc_sec_elec_tf[exc].rebin(eleceng)
 
             # Put them in a dictionary
-            coll_exc_sec_elec_specs[species] = coll_exc_sec_elec_tf[species].grid_vals
+            coll_exc_sec_elec_specs[exc] = coll_exc_sec_elec_tf[exc].grid_vals
 
     # Set the electron fraction and number densities
     xe = xHII + xHeII
@@ -211,25 +220,44 @@ def get_elec_cooling_tf(
     # Collisional Excitation and Ionization
     #########################
 
-    rate_vec = {'exc' : {}, 'ion' : {}}
     elec_tf = {'exc' : {}, 'ion' : {}}
     coll_xsec = {'exc': phys.coll_exc_xsec, 'ion': phys.coll_ion_xsec}
     sec_specs = {'exc': coll_exc_sec_elec_specs, 'ion': coll_ion_sec_elec_specs}
 
     for process in ['exc', 'ion']:
         for i, species in enumerate(atoms):
-            # Collisional excitation or ionization rates.
-            rate_vec[process][species] = ns[species] * coll_xsec[process](eleceng, species=species) * beta_ele * phys.c
-            
-            # Normalized electron spectrum after excitation or ionization.
-            elec_tf[process][species] = tf.TransFuncAtRedshift(
-                rate_vec[process][species][:, np.newaxis]*sec_specs[process][species],
-                in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-                eng = eleceng, dlnz = -1, spec_type  = 'N'
-            )
-   
+
+            # If we're not looking at Hydrogen excitation, then don't worry about different excited states
+            if not ((process == 'exc') & (species == 'HI')):
+                # Collisional excitation or ionization rates.
+                rate_vec = ns[species] * coll_xsec[process](eleceng, species=species) * beta_ele * phys.c
+
+                # Normalized electron spectrum after excitation or ionization.
+                elec_tf[process][species] = tf.TransFuncAtRedshift(
+                    rate_vec[:, np.newaxis]*sec_specs[process][species],
+                    in_eng = eleceng, rs = rs*np.ones_like(eleceng),
+                    eng = eleceng, dlnz = -1, spec_type  = 'N'
+                )
+
+            # If we're considering Hydrogen excitation, keep track of all l=p states to 10p, and also 2s
+            else:
+                for exc in exc_types[:-2]:
+                    rate_vec = ns[species] * coll_xsec[process](
+                            eleceng, species=species, method='MEDEA', state=exc
+                    ) * beta_ele * phys.c
+                    #if exc == '2p': #!!!FIX
+                    #    rate_vec = ns[species] * coll_xsec[process](
+                    #            eleceng, species='HI', method='old'
+                    #    ) * beta_ele * phys.c/4
+
+                    elec_tf[process][exc] = tf.TransFuncAtRedshift(
+                        rate_vec[:, np.newaxis]*sec_specs[process][exc],
+                        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
+                        eng = eleceng, dlnz = -1, spec_type  = 'N'
+                    )
+
     # Deposited energy for excitation or ionization
-    deposited_exc_vec = np.zeros_like(eleceng)
+    deposited_exc_vec = {exc : np.zeros_like(eleceng) for exc in exc_types}
     deposited_ion_vec = np.zeros_like(eleceng)
 
     #############################################
@@ -297,15 +325,12 @@ def get_elec_cooling_tf(
     # Continuum energy loss rate per electron, dU_CMB/dt.
     CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
     
+    
     # Secondary scattered electron spectrum.
     sec_elec_spec_N_arr = (
         elec_ICS_tf.grid_vals
-        + elec_tf['exc']['HI'].grid_vals 
-        + elec_tf['exc']['HeI'].grid_vals 
-        + elec_tf['exc']['HeII'].grid_vals 
-        + elec_tf['ion']['HI'].grid_vals 
-        + elec_tf['ion']['HeI'].grid_vals 
-        + elec_tf['ion']['HeII'].grid_vals 
+        + np.sum([elec_tf['exc'][exc].grid_vals     for exc     in exc_types], axis=0)
+        + np.sum([elec_tf['ion'][species].grid_vals for species in atoms], axis=0)
         + elec_heat_spec_grid
     )
     
@@ -330,14 +355,17 @@ def get_elec_cooling_tf(
     continuum_engloss_arr[eleceng > 20*phys.me - phys.me] = 0
     
     # Deposited excitation array.
-    deposited_exc_eng_arr = np.sum([
-        exc_potentials[species]*np.sum(elec_tf['exc'][species].grid_vals, axis=1) 
-    for species in atoms], axis=0)
+    deposited_exc_eng_arr = {}
+    for exc in exc_types:
+        deposited_exc_eng_arr[exc] = exc_potentials[exc]*np.sum(elec_tf['exc'][exc].grid_vals, axis=1) 
+
+    # Deposited H ionization array.
+    deposited_H_ion_eng_arr = ion_potentials['HI']*np.sum(elec_tf['ion']['HI'].grid_vals, axis=1)/2 
     
-    # Deposited ionization array.
-    deposited_ion_eng_arr = np.sum([
+    # Deposited He ionization array.
+    deposited_He_ion_eng_arr = np.sum([
         ion_potentials[species]*np.sum(elec_tf['ion'][species].grid_vals, axis=1)/2 
-    for species in atoms], axis=0)
+    for species in ['HeI', 'HeII']], axis=0)
 
     # Deposited heating array.
     deposited_heat_eng_arr = dE_heat_dt
@@ -350,8 +378,9 @@ def get_elec_cooling_tf(
         + np.dot(sec_phot_spec_N_arr, photeng)
         - continuum_engloss_arr
         + deposited_ICS_eng_arr
-        + deposited_exc_eng_arr
-        + deposited_ion_eng_arr
+        + np.sum([deposited_exc_eng_arr[exc] for exc in exc_types], axis=0)
+        + deposited_H_ion_eng_arr
+        + deposited_He_ion_eng_arr
         + deposited_heat_eng_arr
     )
 
@@ -361,15 +390,19 @@ def get_elec_cooling_tf(
     sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
     continuum_engloss_arr  *= fac_arr
     deposited_ICS_eng_arr  *= fac_arr
-    deposited_exc_eng_arr  *= fac_arr
-    deposited_ion_eng_arr  *= fac_arr
+    for exc in exc_types:
+        deposited_exc_eng_arr[exc]  *= fac_arr
+    deposited_H_ion_eng_arr  *= fac_arr
+    deposited_He_ion_eng_arr  *= fac_arr
     deposited_heat_eng_arr *= fac_arr
     
     # Zero out deposition/ICS processes below loweng. 
     #Change loweng to 10.2eV!!!  Then assign everything below 10.2 eV to heat.  Then get rid of sec_lowengelec_spec
     deposited_ICS_eng_arr[eleceng < loweng]  = 0
-    deposited_exc_eng_arr[eleceng < loweng]  = 0
-    deposited_ion_eng_arr[eleceng < loweng]  = 0
+    for exc in exc_types:
+        deposited_exc_eng_arr[exc][eleceng < loweng]  = 0
+    deposited_H_ion_eng_arr[eleceng < loweng]  = 0
+    deposited_He_ion_eng_arr[eleceng < loweng]  = 0
     deposited_heat_eng_arr[eleceng < loweng] = eleceng[eleceng<loweng]
     
     continuum_engloss_arr[eleceng < loweng]  = 0
@@ -392,13 +425,18 @@ def get_elec_cooling_tf(
         np.identity(eleceng.size) - sec_elec_spec_N_arr,
         deposited_ICS_eng_arr, lower=True, check_finite=False
     )
-    deposited_exc_vec  = solve_triangular(
+    for exc in exc_types:
+        deposited_exc_vec[exc]  = solve_triangular(
+            np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+            deposited_exc_eng_arr[exc], lower=True, check_finite=False
+        )
+    deposited_H_ion_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_exc_eng_arr, lower=True, check_finite=False
+        deposited_H_ion_eng_arr, lower=True, check_finite=False
     )
-    deposited_ion_vec  = solve_triangular(
+    deposited_He_ion_vec  = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
-        deposited_ion_eng_arr, lower=True, check_finite=False
+        deposited_He_ion_eng_arr, lower=True, check_finite=False
     )
     deposited_heat_vec = solve_triangular(
         np.identity(eleceng.size) - sec_elec_spec_N_arr, 
@@ -450,8 +488,9 @@ def get_elec_cooling_tf(
             - np.dot(sec_lowengelec_tf.grid_vals, eleceng)
             # + cont_loss_ICS_vec
             - np.dot(sec_phot_tf.grid_vals, photeng)
-            - deposited_exc_vec
-            - deposited_ion_vec
+            - np.sum([deposited_exc_vec for exc in exc_types], axis=0)
+            - deposited_He_ion_vec
+            - deposited_H_ion_vec
             - deposited_heat_vec
         )
 
@@ -486,13 +525,13 @@ def get_elec_cooling_tf(
 
                 print(
                     'Fraction Deposited in ionization: ', 
-                    deposited_ion_vec[i]/eng
+                    (deposited_H_ion_vec[i] + deposited_He_ion_vec[i])/eng
                 )
-
-                print(
-                    'Fraction Deposited in excitation: ', 
-                    deposited_exc_vec[i]/eng
-                )
+                for exc in exc_types:
+                    print(
+                        'Fraction Deposited in excitation '+exc+': ', 
+                        deposited_exc_vec[exc][i]/eng
+                    )
 
                 print(
                     'Fraction Deposited in heating: ', 
@@ -518,7 +557,7 @@ def get_elec_cooling_tf(
 
     return (
         sec_phot_tf, sec_lowengelec_tf,
-        deposited_ion_vec, deposited_exc_vec, deposited_heat_vec,
+        {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
         cont_loss_ICS_vec, deposited_ICS_vec
     )
 
