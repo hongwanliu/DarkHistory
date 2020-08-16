@@ -1131,7 +1131,7 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
 
-        if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') and (int(state[0]) not in np.arange(2,11)))):
+        if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') or (int(state[:-1]) not in np.arange(2,11)))):
 
             TypeError("Must specify 2s, 2p, 3p, ..., or 10p, for HI excitation") 
 
