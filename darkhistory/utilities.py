@@ -397,28 +397,49 @@ class Interpolator2D:
         else:
             return np.exp(np.squeeze(self.interp_func([np.log(val0), np.log(val1)])))
 
-    def get_vals(self, val0, vals1):
+    def get_vals(self, val0, val1):
 
         # xe must lie between these values.
-        if val0 > self.arr0[-1]:
-            val0 = self.arr0[-1]
-        if val0 < self.arr0[0]:
-            val0 = self.arr0[0]
+        if isinstance(val0,float):
+            if val0 > self.arr0[-1]:
+                val0 = self.arr0[-1]
+            if val0 < self.arr0[0]:
+                val0 = self.arr0[0]
 
-        vals1 = np.array(vals1)
-        vals1[vals1 > self.arr1[-1]] = self.arr1[-1]
-        vals1[vals1 < self.arr1[0]] = self.arr1[0]
+            val1 = np.array(val1)
+            val1[val1 > self.arr1[-1]] = self.arr1[-1]
+            val1[val1 < self.arr1[0]] = self.arr1[0]
 
-        # points = np.transpose([val0 * np.ones_like(vals1), vals1])
+            # points = np.transpose([val0 * np.ones_like(vals1), vals1])
 
-        if not self.logInterp:
-            points = np.transpose(
-                [val0 * np.ones_like(vals1), vals1]
-            )
-            return self.interp_func(points)
+            if not self.logInterp:
+                points = np.transpose(
+                    [val0 * np.ones_like(val1), val1]
+                )
+                return np.squeeze(self.interp_func(points))
+            else:
+                points = np.transpose([val0 * np.ones_like(val1), val1])
+                return np.squeeze(np.exp(self.interp_func(np.log(points))))
         else:
-            points = np.transpose([val0 * np.ones_like(vals1), vals1])
-            return np.exp(self.interp_func(np.log(points)))
+            if val1 > self.arr1[-1]:
+                val1 = self.arr1[-1]
+            if val1 < self.arr1[0]:
+                val1 = self.arr1[0]
+
+            val0 = np.array(val0)
+            val0[val0 > self.arr0[-1]] = self.arr0[-1]
+            val0[val0 < self.arr0[0]] = self.arr0[0]
+
+            # points = np.transpose([val0 * np.ones_like(vals1), vals1])
+
+            if not self.logInterp:
+                points = np.transpose(
+                    [val0, val1 * np.ones_like(val0)]
+                )
+                return np.squeeze(self.interp_func(points))
+            else:
+                points = np.transpose([val0, val1 * np.ones_like(val0)])
+                return np.squeeze(np.exp(self.interp_func(np.log(points))))
 
 
 
