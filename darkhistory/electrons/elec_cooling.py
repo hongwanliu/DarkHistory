@@ -106,6 +106,10 @@ def get_elec_cooling_tf(
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
     exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 
             'HeI', 'HeII'] 
+    # Probability for a state to decay down to 2p, see Hirata astro-ph/0507102v2
+    Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
+      '4p': 0.2609,'5p': 0.3078,'6p': 0.3259,
+      '7p': 0.3353,'8p': 0.3410,'9p': 0.3448,'10p': 0.3476}
 
     #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
@@ -459,6 +463,10 @@ def get_elec_cooling_tf(
         np.identity(eleceng.size) - sec_highengelec_N_arr,
         sec_lowengelec_N_arr, lower=True, check_finite=False
     )
+
+    # Account for the energy that went into excitation but ended up in continuum photons.
+    #spec_2s1s = spectools.discretize(photeng,phys.dLam2s_dnu)
+
 
     # Subtract continuum from sec_phot_specs. After this point, 
     # sec_phot_specs will contain the *distortions* to the CMB. 
