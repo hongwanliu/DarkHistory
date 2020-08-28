@@ -30,7 +30,8 @@ mass_threshold = {
     'g': 0., 'gamma' : 0., 'h': phys.mass['h'],
     'nu_e': 0., 'nu_mu' : 0., 'nu_tau': 0.,
     'VV_to_4e'   : 2*phys.mass['e'], 'VV_to_4mu' : 2*phys.mass['mu'], 
-    'VV_to_4tau' : 2*phys.mass['tau']
+    'VV_to_4tau' : 2*phys.mass['tau'],
+    'pi': phys.mass['pi']
 }
 
 def get_pppc_spec(mDM, eng, pri, sec, decay=False):
@@ -44,6 +45,7 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
     - Quarks:  ``q, c, b, t``
     - Gauge bosons: ``gamma, g, W_L, W_T, W, Z_L, Z_T, Z``
     - Higgs: ``h``
+    - Mesons: ``pi``
 
     ``elec_delta`` and ``phot_delta`` assumes annihilation or decay to two electrons and photons respectively with no EW corrections or ISR/FSR. 
 
@@ -130,7 +132,63 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
         else:
             raise ValueError('invalid sec.')
-    
+
+    # Spectrum of electrons from decay/annihilation to muons 
+    if pri == 'mu':
+        # Useful masses
+        me = phys.me
+        mu = phys.mass['mu']
+        # Lorentz gamma from boosting from muon rest frame to DM rest frame
+        if not decay:
+            y = mDM/mu
+        else:
+            y = mDM/2/mu
+        # Formula for dNdE of muons decaying to electrons, 
+        # boosted to the dark matter frame
+        dNdE_mu = 16*np.sqrt(eng**2 - phys.me**2)/mu**2 * (
+            2/3 * (-5 + 2*y**2) * me**2/mu**2
+            + 3*y * (1 + me**2/mu**2) * eng/mu
+            + 4/3 * (1 - 4*y**2) * eng**2/mu**2
+        )
+        if sec == 'elec':
+            return Spectrum(
+                eng, dNdE_mu, spec_type='dNdE'
+            )
+        if sec == 'phot':
+            return Spectrum(
+                eng, np.zeros_like(eng), spec_type='dNdE'
+            )
+
+    # Spectrum of electrons from decay/annihilation to charged pions    
+    if pri == 'pi':
+        # Useful masses
+        me = phys.me
+        mu = phys.mass['mu']
+        mp = phys.mass['pi']
+        # Lorentz gamma from boosting from muon rest frame to pion rest frame
+        y1 = (mp**2 + mu**2)/(2*mp*mu)
+        # Lorentz gamma from boosting from pion rest frame to DM rest frame
+        if not decay:
+            y2 = mDM/mp
+        else:
+            y2 = mDM/2/mp
+        # Formula for dNdE of muons decaying to electrons, 
+        # boosted to the dark matter frame
+        dNdE_pi = 16*np.sqrt(eng**2 - phys.me**2)/mu**2 * (
+            2/9 * (-13 - 2*y1**2 - 2*y2**2 + 8*y1**2*y2**2) * me**2/mu**2
+            + 3*y1*y2 * (1 + me**2/mu**2) * eng/mu
+            - 4/9 * (1 - 4*y1**2) * (1 - 4*y2**2) * eng**2/mu**2
+        )
+        if sec == 'elec':
+            return Spectrum(
+                eng, dNdE_pi, spec_type='dNdE'
+            )
+        if sec == 'phot':
+            return Spectrum(
+                eng, np.zeros_like(eng), spec_type='dNdE'
+            )
+
+
     log10x = np.log10(eng/_mDM)
 
     # Refine the binning so that the spectrum is accurate. 
