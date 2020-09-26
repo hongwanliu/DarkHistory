@@ -23,7 +23,8 @@ def get_elec_cooling_tf(
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
     ics_engloss_data=None, loweng=3000,
-    check_conservation_eng = False, verbose=False
+    check_conservation_eng = False, verbose=False,
+    method='MEDEA'
 ):
 
     """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
@@ -104,8 +105,12 @@ def get_elec_cooling_tf(
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-    exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 
-            'HeI', 'HeII'] 
+    if method == 'AcharyaKhatri':
+        exc_types  = ['2s', '2p', '3p',
+                'HeI', 'HeII'] 
+    else:
+        exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 
+                'HeI', 'HeII'] 
     # Probability for a state to decay down to 2p, see Hirata astro-ph/0507102v2
     Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
       '4p': 0.2609,'5p': 0.3078,'6p': 0.3259,
@@ -247,7 +252,7 @@ def get_elec_cooling_tf(
             else:
                 for exc in exc_types[:-2]:
                     rate_vec = ns[species] * coll_xsec[process](
-                            eleceng, species=species, method='MEDEA', state=exc
+                            eleceng, species=species, method=method, state=exc
                     ) * beta_ele * phys.c
                     #if exc == '2p': #!!!FIX
                     #    rate_vec = ns[species] * coll_xsec[process](

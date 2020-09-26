@@ -1130,7 +1130,6 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
         else:
             raise TypeError('invalid species.')
     elif method == 'MEDEA':
-
         if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') or (int(state[:-1]) not in np.arange(2,11)))):
 
             TypeError("Must specify 2s, 2p, 3p, ..., or 10p, for HI excitation") 
@@ -1190,11 +1189,80 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
             exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
 
             return exc_xsec
-        
+    
+    elif method == 'AcharyaKhatri':
+        if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') or (int(state[:-1]) not in np.arange(2,11)))):
+
+            TypeError("Must specify 2s, 2p, 3p, ..., or 10p, for HI excitation") 
+
+        elif (species == 'HeI') and ((state[1:] != 'p1P') and (int(state[0]) not in np.arange(2,11))):
+
+            TypeError("Must specify 2p1P, 3p1P, ..., or 10p1P for HeI excitation") 
+
+        else:
+
+            # If eng is a number, make it an np.ndarray
+            if isinstance(eng, float):
+                eng = np.array([eng])
+
+            # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
+            # threshold energy
+            exc_eng  = {'HI': HI_exc_eng, 'HeI': He_exc_eng}
+            bind_eng = {'HI': rydberg,    'HeI': He_ion_eng}
+
+            #!!! CHECK must include relativistic corrections at E>10keV
+            #Parameters for high energy limit, ordered from 2p to 10p
+            a_params = {
+                'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,  .004919,  .003237,  .002246,  .001623],
+                'HeI': [ .165601,  .041611,  .016111,  .008298,  .004740,  .002963,  .001975,  .001383,  .001006]
+            } 
+            b_params = {
+                'HI':  [ .271785,  .060202,  .022984,  .011243,  .006348,  .003939,  .002550,  .001824,  .001323],
+                'HeI': [-.076942, -.018087, -.007040, -.003475, -.001972, -.001227, -.000816, -.000570, -.000414]
+            }
+            c_params = {
+                'HI':  [ .000112, -.019775, -.009279, -.004880, -.002853, -.001806, -.001213, -.000854, -.000623],
+                'HeI': [ .033306,  .002104, -.000045, -.000228, -.000194, -.000146, -.000108, -.000080, -.000061]
+            }
+
+            fsc_HeI  = [ .2583,    .07061,   .02899,   .01466,   .00844,   .00529,   .00354,   .00248,   .00181]
+            facc_HeI = [ .2762,    .07343,   .02986,   .01504,   .00863,   .00541,   .00361,   .00253,   .00184]
+
+            def xsec_asympt(species, state, KE):
+                ind = int(state[0])-2
+                if species == 'HI':
+                    # Bethe approximation
+                    if state == '2s':
+                        return 4*np.pi*bohr_rad**2/KE*13.6*(0.12 - 0.31*13.6/KE)
+                        #return np.zeros_like(KE)
+                    elif state == '2p':
+                        return 4*np.pi*bohr_rad**2/KE*13.6*(0.55*np.log(4*KE/13.6) - 0.55*0.9 + 0.21*13.6/KE)
+                    elif state == '3p':
+                        return 4*np.pi*bohr_rad**2/KE*13.6*(8.9e-2*(np.log(4*KE/13.6)-0.27))
+                else:
+                    f_ratio = 1.
+
+                factor = (a_params[species][ind] * np.log(KE/rydberg) 
+                        + b_params[species][ind]
+                        + c_params[species][ind] * rydberg/KE)*f_ratio
+
+                # Eqn (5) of Kim, Stone, Desclaux (2002)
+                return 4*np.pi*bohr_rad**2*rydberg/(KE + bind_eng[species] + exc_eng[species][state]) * factor
+
+            exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng) # in units of cm^2
+            exc_xsec[eng<exc_eng[species][state]] = 0
+            # CCC cross-sections end around 1 keV
+            if species == 'HI':
+                exc_xsec[eng>999] = xsec_asympt(species, state, eng[eng>999])
+            else:
+                exc_xsec[eng>900] = xsec_asympt(species, state, eng[eng>900])
+
+            return exc_xsec
+    
     elif method == 'new':
         raise TypeError('new method has not yet been implemented')
     else:
-        raise TypeError("Must pick method = {'old', 'MEDEA', or 'new'}")
+        raise TypeError("Must pick method = {'old', 'MEDEA', 'AcharyaKhatri', or 'new'}")
 
 def coll_ion_xsec(eng, species=None, method='old'):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
