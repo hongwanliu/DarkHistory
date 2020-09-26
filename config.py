@@ -460,7 +460,7 @@ def load_data(data_type):
                 if (x is None) or (y is None):
                     return None
                 else:
-                    return interp1d(x,y, kind='cubic', bounds_error=False, fill_value=(0,0))
+                    return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
 
             glob_exc_data = {species: 
