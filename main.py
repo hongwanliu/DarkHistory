@@ -18,11 +18,13 @@ from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
 from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
+from   darkhistory.spec.spectools import discretize
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
 from darkhistory.low_energy.lowE_deposition import compute_fs
+from darkhistory.low_energy.lowE_deposition import get_ionized_elec
 from darkhistory.low_energy.lowE_electrons import make_interpolator
 from darkhistory.low_energy.lowE_photons import propagating_lowE_photons_fracs
 
@@ -332,7 +334,7 @@ def evolve(
 
 
     # If there are no electrons, we get a speed up by ignoring them. 
-    elec_processes = False
+    elec_processes = True
     if in_spec_elec.totN() > 0:
         elec_processes = True
 
@@ -354,6 +356,9 @@ def evolve(
             coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
             ics_engloss_data
         ) = get_elec_cooling_data(eleceng, photeng)
+
+        #Spectrum of photons emitted from 2s -> 1s de-excitation
+        spec_2s1s = generate_spec_2s1s(photeng)
 
     #########################################################################
     #########################################################################
@@ -418,6 +423,7 @@ def evolve(
         #####################################################################
         #####################################################################
 
+        x_at_rs = np.array([1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]])
         # Get the transfer functions corresponding to electron cooling. 
         # These are \bar{T}_\gamma, \bar{T}_e and \bar{R}_c. 
         if elec_processes:
@@ -435,7 +441,8 @@ def evolve(
             (
                 ics_sec_phot_tf, elec_processes_lowengelec_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
-                continuum_loss, deposited_ICS_arr
+                continuum_loss, deposited_ICS_arr, deexc_phot_spectra,
+                deposited_Lya_arr
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
                     xHII_elec_cooling, xHeII=xHeII_elec_cooling,
@@ -444,7 +451,8 @@ def evolve(
                     raw_engloss_tf=engloss_ref_tf,
                     coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
                     coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
-                    ics_engloss_data=ics_engloss_data
+                    ics_engloss_data=ics_engloss_data,
+                    spec_2s1s = spec_2s1s
                 )
 
             # Apply the transfer function to the input electron spectrum. 
@@ -461,13 +469,16 @@ def evolve(
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
-            deposited_ion  = np.dot(
-                deposited_ion_arr,  in_spec_elec.N*norm_fac(rs)
+            deposited_H_ion  = np.dot(
+                deposited_ion_arr['H'],  in_spec_elec.N*norm_fac(rs)
+            )
+            deposited_He_ion  = np.dot(
+                deposited_ion_arr['He'],  in_spec_elec.N*norm_fac(rs)
             )
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
-            deposited_exc  = np.dot(
-                deposited_exc_arr,  in_spec_elec.N*norm_fac(rs)
+            deposited_Lya  = np.dot(
+                deposited_Lya_arr,  in_spec_elec.N*norm_fac(rs)
             )
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
@@ -488,6 +499,11 @@ def evolve(
             # per injection event.
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
 
+            # secondary photon spectrum from deexcitation of atoms 
+            # that were collisionally excited by electrons
+            ionized_elec = get_ionized_elec(in_spec_phot, eleceng, x_at_rs, method='He')
+            deexc_phot_spec = deexc_phot_spectra.sum_specs(in_spec_elec+lowengelec_spec_at_rs+ionized_elec)
+
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
             positronium_phot_spec = pos.weighted_photon_spec(photeng) * (
@@ -496,12 +512,14 @@ def evolve(
             positronium_phot_spec.switch_spec_type('N')
 
 
-        # Add injected photons + photons from injected electrons + unabsorbed ionizing photons
+        # Add injected photons + photons from injected electrons + photons from atomic de-excitations
         # to the photon spectrum that got propagated forward. 
         if elec_processes:
             highengphot_spec_at_rs += (
                 in_spec_phot + ics_phot_spec + positronium_phot_spec
             ) * norm_fac(rs)
+            tmp_sum = in_spec_phot + ics_phot_spec + positronium_phot_spec
+            lowengphot_spec_at_rs += deexc_phot_spec*norm_fac(rs)
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -513,20 +531,20 @@ def evolve(
             if x_arr[-1,1] == phys.chi:
                 x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
 
-            lowEprop_mask = propagating_lowE_photons_fracs(
-                lowengphot_spec_at_rs, np.array([1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]), dt
-            )
+            lowEprop_mask = propagating_lowE_photons_fracs(lowengphot_spec_at_rs, x_at_rs, dt)
         else:
             lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
 
         # Add this fraction to the propagating photons
         highengphot_spec_at_rs += lowEprop_mask * lowengphot_spec_at_rs
 
-        # Set the redshift correctly. 
-        highengphot_spec_at_rs.rs = rs
 
         # Get rid of the lowenergy photons that weren't absorbed -- they're in highengphot now
         lowengphot_spec_at_rs = (1-lowEprop_mask) * lowengphot_spec_at_rs
+
+        # Set the redshift correctly. 
+        highengphot_spec_at_rs.rs = rs
+        lowengphot_spec_at_rs.rs = rs
 
         #####################################################################
         #####################################################################
@@ -548,8 +566,9 @@ def evolve(
         if elec_processes:
             # High-energy deposition from input electrons. 
             highengdep_at_rs += np.array([
-                deposited_ion/dt,
-                deposited_exc/dt,
+                deposited_H_ion/dt,
+                #!!!deposited_He_ion/dt,
+                deposited_Lya/dt,
                 deposited_heat/dt,
                 deposited_ICS/dt
             ])
@@ -768,6 +787,19 @@ def evolve(
 
     return data
 
+# This speeds up the code if main.evolve is used more than once
+spec_2s1s = None
+def generate_spec_2s1s(photeng):
+    global spec_2s1s
+    if spec_2s1s != None:
+        return spec_2s1s
+    else:
+        # !!! (Is this off by a factor of h?) 
+        # A discretized form of the spectrum of 2-photons emitted in the
+        # 2s->1s de-excitation process.
+        spec_2s1s = discretize(photeng,phys.dLam2s_dnu)
+        return spec_2s1s
+
 def get_elec_cooling_data(eleceng, photeng):
     """
     Returns electron cooling data for use in :func:`main.evolve`.
@@ -791,15 +823,22 @@ def get_elec_cooling_data(eleceng, photeng):
         electron spectrum. 
     """
 
-    # atoms that take part in electron cooling process through ionization/exciation
+    # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
-    exc_potentials = {'HI': phys.lya_eng, 'HeI': phys.He_exc_eng['23s'], 'HeII': 4*phys.lya_eng}
+    # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
+    exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 'HeI', 'HeII']
+
+    #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
+
+    exc_potentials         = phys.HI_exc_eng.copy()
+    exc_potentials['HeI']  = phys.He_exc_eng['23s']
+    exc_potentials['HeII'] = 4*phys.lya_eng
 
     # Compute the (normalized) collisional ionization spectra.
     coll_ion_sec_elec_specs = {species : phys.coll_ion_sec_elec_spec(eleceng, eleceng, species=species) for species in atoms}
 
-    # Make empty dictionaries
+   # Make empty dictionaries
     coll_exc_sec_elec_specs = {}
     coll_exc_sec_elec_tf =  {}
 
@@ -808,9 +847,9 @@ def get_elec_cooling_data(eleceng, photeng):
 
     # Electron with energy eleceng produces a spectrum with one particle
     # of energy eleceng - exc_potential.
-    for species in atoms:
-        exc_pot = exc_potentials[species]
-        coll_exc_sec_elec_tf[species] = tf.TransFuncAtRedshift(
+    for exc in exc_types:
+        exc_pot = exc_potentials[exc]
+        coll_exc_sec_elec_tf[exc] = tf.TransFuncAtRedshift(
             np.squeeze(id_mat[:, np.where(eleceng > exc_pot)]),
             in_eng = eleceng, rs = -1*np.ones_like(eleceng),
             eng = eleceng[eleceng > exc_pot] - exc_pot,
@@ -819,10 +858,10 @@ def get_elec_cooling_data(eleceng, photeng):
 
         # Rebin the data so that the spectra stored above now have an abscissa
         # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
-        coll_exc_sec_elec_tf[species].rebin(eleceng)
+        coll_exc_sec_elec_tf[exc].rebin(eleceng)
 
         # Put them in a dictionary
-        coll_exc_sec_elec_specs[species] = coll_exc_sec_elec_tf[species].grid_vals
+        coll_exc_sec_elec_specs[exc] = coll_exc_sec_elec_tf[exc].grid_vals
 
     # Store the ICS rebinning data for speed. Contains information
     # that makes converting an energy loss spectrum to a scattered
