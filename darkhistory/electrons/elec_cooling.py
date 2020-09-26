@@ -11,6 +11,7 @@ import darkhistory.spec.spectools as spectools
 from config import load_data
 
 from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.spectra import Spectra
 
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.ics.ics_engloss_spectrum import engloss_spec
@@ -22,7 +23,7 @@ def get_elec_cooling_tf(
     eleceng, photeng, rs, xHII, xHeII=0, 
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
-    ics_engloss_data=None, loweng=3000,
+    ics_engloss_data=None, loweng=3000, spec_2s1s=None,
     check_conservation_eng = False, verbose=False
 ):
 
@@ -117,6 +118,10 @@ def get_elec_cooling_tf(
     exc_potentials         = phys.HI_exc_eng.copy()
     exc_potentials['HeI']  = phys.He_exc_eng['23s']
     exc_potentials['HeII'] = 4*phys.lya_eng
+
+
+    if spec_2s1s == None:
+        spec_2s1s = spectools.discretize(photeng,phys.dLam2s_dnu)
 
     if coll_ion_sec_elec_specs is None:
 
@@ -464,8 +469,38 @@ def get_elec_cooling_tf(
         sec_lowengelec_N_arr, lower=True, check_finite=False
     )
 
-    # Account for the energy that went into excitation but ended up in continuum photons.
-    #spec_2s1s = spectools.discretize(photeng,phys.dLam2s_dnu)
+    #Allow all of the dexcited states to produce secondary photons
+    #First add all of the n -> 2 photons to the secondary photon spectrum
+
+    #!!! Assume single photon ejection for n -> 2 transitions, which
+    #isn't true for n>3
+    #!!! What about other excited states?
+    deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
+    deexc_engs = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
+    deexc_grid = np.zeros((deexc_engs.size, eleceng.size))
+
+    for i, state in enumerate(deexc_states):
+        #array of photons that are produced
+        deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
+
+    deexc_phot_spectra = Spectra(
+        spec_arr = deexc_grid.transpose(), eng=deexc_engs,
+        rebin_eng=photeng, in_eng=eleceng, spec_type='N', 
+        rs=np.ones_like(eleceng)*rs
+    )
+
+    #Figure out the proportion of electrons that ended up in 2s,
+    # and multiply the total number by the 2s-1s two-photon spectrum
+    deposited_Lya_vec = np.zeros_like(deposited_exc_vec['2p'])
+    for i, state in enumerate(Ps):
+        # Number of electrons that end up in 2s
+        N_exc = deposited_exc_vec[state]/phys.HI_exc_eng[state]*(1-Ps[state])
+        deexc_phot_spectra._grid_vals += np.outer(N_exc, spec_2s1s.N)
+
+        # Make sure that deposited_exc_arr only contains the atoms in the 2p state
+        deposited_Lya_vec += (
+            deposited_exc_vec[state] * Ps[state] * phys.lya_eng/phys.HI_exc_eng[state]
+        )
 
 
     # Subtract continuum from sec_phot_specs. After this point, 
@@ -566,7 +601,7 @@ def get_elec_cooling_tf(
     return (
         sec_phot_tf, sec_lowengelec_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
-        cont_loss_ICS_vec, deposited_ICS_vec
+        cont_loss_ICS_vec, deposited_ICS_vec, deexc_phot_spectra, deposited_Lya_vec
     )
 
 
