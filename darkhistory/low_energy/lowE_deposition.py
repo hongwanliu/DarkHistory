@@ -77,29 +77,7 @@ def compute_fs(
     #    phot_spec.dNdE[phot_spec.eng>phys.rydberg & phot_spec.eng<phys.rydberg+5] = 0
 
     if method == 'no_He':
-
-        if x[0]>.005:
-            ion_pot = phys.rydberg
-        else:
-            ion_pot = 4*phys.rydberg
-
-        ion_bounds = spectools.get_bounds_between(
-            phot_spec.eng, ion_pot
-        )
-        ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
-
-        ionized_elec = Spectrum(
-            ion_engs,
-            phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
-            rs=phot_spec.rs,
-            spec_type='N'
-        )
-
-        new_eng = ion_engs - ion_pot
-        ionized_elec.shift_eng(new_eng)
-
-        # rebin so that ionized_elec may be added to elec_spec
-        ionized_elec.rebin(elec_spec.eng)
+        ionized_elec = get_ionized_elec(phot_spec, elec_spec.eng, x, method=method)
 
         tmp_elec_spec = Spectrum(
             np.array(elec_spec.eng), np.array(elec_spec.N), 
@@ -141,92 +119,14 @@ def compute_fs(
 
     elif method == 'He':
 
-        n = phys.nH*phot_spec.rs**3*x
-
-        rates = np.array([
-            n[i]*phys.photo_ion_xsec(phot_spec.eng, chan) 
-            for i,chan in enumerate(['HI', 'HeI', 'HeII'])
-        ])
-
-        norm_prob = np.sum(rates, axis=0)
-
-        # Probability of photoionizing HI vs. HeI.
-        prob = np.array([
-            np.divide(
-                rate, norm_prob, 
-                out = np.zeros_like(phot_spec.eng),
-                #where=(phot_spec.eng > phys.rydberg)
-                where = norm_prob>0
-            ) for rate in rates
-        ])
-
-        # Spectra weighted by prob.
-        phot_spec_HI   = phot_spec*prob[0]
-        phot_spec_HeI  = phot_spec*prob[1]
-        phot_spec_HeII = phot_spec*prob[2]
-
-        # Bin boundaries, including the lowest (13.6, 24.6) eV bin.
-        ion_bounds_HI   = spectools.get_bounds_between(
-            phot_spec.eng, phys.rydberg
-        )
-        ion_bounds_HeI  = spectools.get_bounds_between(
-            phot_spec.eng, phys.He_ion_eng
-        )
-        ion_bounds_HeII = spectools.get_bounds_between(
-            phot_spec.eng, 4*phys.rydberg
-        )
-
-        # Bin centers. 
-        ion_engs_HI   = np.exp(
-            (np.log(ion_bounds_HI[1:]) + np.log(ion_bounds_HI[:-1]))/2
-        )
-        ion_engs_HeI  = np.exp(
-            (np.log(ion_bounds_HeI[1:]) + np.log(ion_bounds_HeI[:-1]))/2
-        )
-        ion_engs_HeII = np.exp(
-            (np.log(ion_bounds_HeII[1:]) + np.log(ion_bounds_HeII[:-1]))/2
-        )
-
-        # Spectrum object containing secondary electron 
-        # from ionization. 
-        ionized_elec_HI   = Spectrum(
-            ion_engs_HI,
-            phot_spec_HI.totN(bound_type='eng', bound_arr=ion_bounds_HI),
-            rs=phot_spec.rs, spec_type='N'
-        )
-
-        ionized_elec_HeI  = Spectrum(
-            ion_engs_HeI,
-            phot_spec_HeI.totN(bound_type='eng', bound_arr=ion_bounds_HeI),
-            rs=phot_spec.rs, spec_type='N'
-        )
-
-        ionized_elec_HeII = Spectrum(
-            ion_engs_HeII,
-            phot_spec_HeII.totN(bound_type='eng', bound_arr=ion_bounds_HeII),
-            rs=phot_spec.rs, spec_type='N'
-        )
-
-        # electron energy (photon energy - ionizing potential).
-        new_eng_HI   = ion_engs_HI   - phys.rydberg
-        new_eng_HeI  = ion_engs_HeI  - phys.He_ion_eng 
-        new_eng_HeII = ion_engs_HeII - 4*phys.rydberg 
-
-        # change the Spectrum abscissa to the correct electron energy.
-        ionized_elec_HI.shift_eng(new_eng_HI)
-        ionized_elec_HeI.shift_eng(new_eng_HeI)
-        ionized_elec_HeII.shift_eng(new_eng_HeII)
-        # rebin so that ionized_elec may be added to elec_spec.
-        ionized_elec_HI.rebin(elec_spec.eng)
-        ionized_elec_HeI.rebin(elec_spec.eng)
-        ionized_elec_HeII.rebin(elec_spec.eng)
+        ionized_elec = get_ionized_elec(phot_spec, eleceng.eng, x, method=method)
 
         tmp_elec_spec = Spectrum(
             np.array(elec_spec.eng), np.array(elec_spec.N),
             rs=elec_spec.rs, spec_type='N' 
         )
 
-        tmp_elec_spec.N += (ionized_elec_HI.N + ionized_elec_HeI.N + ionized_elec_HeII.N)
+        tmp_elec_spec.N += ionized_elec.N
 
         f_phot = lowE_photons.compute_fs(
             phot_spec, x, dE_dVdt_inj, dt, 'ion', cross_check
@@ -386,24 +286,7 @@ def compute_fs(
 
     elif method == 'HeII':
 
-        eng_threshold = 4*phys.rydberg
-        ion_bounds = spectools.get_bounds_between(
-            phot_spec.eng, eng_threshold
-        )
-        ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
-
-        ionized_elec = Spectrum(
-            ion_engs,
-            phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
-            rs=phot_spec.rs,
-            spec_type='N'
-        )
-
-        new_eng = ion_engs - eng_threshold
-        ionized_elec.shift_eng(new_eng)
-
-        # rebin so that ionized_elec may be added to elec_spec
-        ionized_elec.rebin(elec_spec.eng)
+        ionized_elec = get_ionized_elec(phot_spec, eleceng.eng, x, method=method)
 
         tmp_elec_spec = Spectrum(
             np.array(elec_spec.eng), np.array(elec_spec.N), 
@@ -436,8 +319,175 @@ def compute_fs(
         else:
             return f_low + f_high
 
+    else: 
 
+        raise TypeError('invalid method.')
+
+
+
+def get_ionized_elec(phot_spec, eleceng, x, method='He'):
+    """ Compute spectrum of photoionized electrons of HI, HeI, HeII
+
+    Given a spectrum of deposited electrons and photons, resolve their energy into
+    H ionization, and ionization, H excitation, heating, and continuum photons in that order.
+
+    Parameters
+     ----------
+    phot_spec : Spectrum object
+        spectrum of photons. Assumed to be in dNdE mode. spec.totN() should return number *per baryon*.
+    eleceng : ndarray
+        abscissa of energies for electron spectrum
+    x : list of floats
+        number of (HI, HeI, HeII) divided by nH at redshift photon_spectrum.rs
+    method : {'no_He', 'He_recomb', 'He', 'HeII'}
+        Method for evaluating helium ionization. 
+
+        * *'no_He'* -- all ionization assigned to hydrogen, or HeI if hydrogen reionization has completed;
+        * *'He_recomb'* -- all photoionized helium atoms recombine; and 
+        * *'He'* -- all photoionized helium atoms do not recombine;
+        * *'HeII'* -- all ionization assigned to HeII.
+
+        Default is 'no_He'. 
+    separate_higheng : bool, optional
+        If True, returns separate high energy deposition. 
+
+    Returns
+    -------
+    Spectrum of photoionized electrons
+    """
+
+    if method == 'no_He':
+
+        if x[0]>.005:
+            ion_pot = phys.rydberg
+        else:
+            ion_pot = 4*phys.rydberg
+
+        ion_bounds = spectools.get_bounds_between(
+            phot_spec.eng, ion_pot
+        )
+        ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
+
+        ionized_elec = Spectrum(
+            ion_engs,
+            phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
+            rs=phot_spec.rs,
+            spec_type='N'
+        )
+
+        new_eng = ion_engs - ion_pot
+        ionized_elec.shift_eng(new_eng)
+
+        # rebin so that ionized_elec may be added to elec_spec
+        ionized_elec.rebin(eleceng)
+
+    elif (method == 'He') or (method == 'He_recomb'):
+
+        n = phys.nH*phot_spec.rs**3*x
+
+        rates = np.array([
+            n[i]*phys.photo_ion_xsec(phot_spec.eng, chan) 
+            for i,chan in enumerate(['HI', 'HeI', 'HeII'])
+        ])
+
+        norm_prob = np.sum(rates, axis=0)
+
+        # Probability of photoionizing HI vs. HeI.
+        prob = np.array([
+            np.divide(
+                rate, norm_prob, 
+                out = np.zeros_like(phot_spec.eng),
+                #where=(phot_spec.eng > phys.rydberg)
+                where = norm_prob>0
+            ) for rate in rates
+        ])
+
+        # Spectra weighted by prob.
+        phot_spec_HI   = phot_spec*prob[0]
+        phot_spec_HeI  = phot_spec*prob[1]
+        phot_spec_HeII = phot_spec*prob[2]
+
+        # Bin boundaries, including the lowest (13.6, 24.6) eV bin.
+        ion_bounds_HI   = spectools.get_bounds_between(
+            phot_spec.eng, phys.rydberg
+        )
+        ion_bounds_HeI  = spectools.get_bounds_between(
+            phot_spec.eng, phys.He_ion_eng
+        )
+        ion_bounds_HeII = spectools.get_bounds_between(
+            phot_spec.eng, 4*phys.rydberg
+        )
+
+        # Bin centers. 
+        ion_engs_HI   = np.exp(
+            (np.log(ion_bounds_HI[1:]) + np.log(ion_bounds_HI[:-1]))/2
+        )
+        ion_engs_HeI  = np.exp(
+            (np.log(ion_bounds_HeI[1:]) + np.log(ion_bounds_HeI[:-1]))/2
+        )
+        ion_engs_HeII = np.exp(
+            (np.log(ion_bounds_HeII[1:]) + np.log(ion_bounds_HeII[:-1]))/2
+        )
+
+        # Spectrum object containing secondary electron 
+        # from ionization. 
+        ionized_elec_HI   = Spectrum(
+            ion_engs_HI,
+            phot_spec_HI.totN(bound_type='eng', bound_arr=ion_bounds_HI),
+            rs=phot_spec.rs, spec_type='N'
+        )
+
+        ionized_elec_HeI  = Spectrum(
+            ion_engs_HeI,
+            phot_spec_HeI.totN(bound_type='eng', bound_arr=ion_bounds_HeI),
+            rs=phot_spec.rs, spec_type='N'
+        )
+
+        ionized_elec_HeII = Spectrum(
+            ion_engs_HeII,
+            phot_spec_HeII.totN(bound_type='eng', bound_arr=ion_bounds_HeII),
+            rs=phot_spec.rs, spec_type='N'
+        )
+
+        # electron energy (photon energy - ionizing potential).
+        new_eng_HI   = ion_engs_HI   - phys.rydberg
+        new_eng_HeI  = ion_engs_HeI  - phys.He_ion_eng 
+        new_eng_HeII = ion_engs_HeII - 4*phys.rydberg 
+
+        # change the Spectrum abscissa to the correct electron energy.
+        ionized_elec_HI.shift_eng(new_eng_HI)
+        ionized_elec_HeI.shift_eng(new_eng_HeI)
+        ionized_elec_HeII.shift_eng(new_eng_HeII)
+        # rebin so that ionized_elec may be added to elec_spec.
+        ionized_elec_HI.rebin(eleceng)
+        ionized_elec_HeI.rebin(eleceng)
+        ionized_elec_HeII.rebin(eleceng)
+
+        ionized_elec = ionized_elec_HI + ionized_elec_HeI + ionized_elec_HeII
+
+    elif method == 'HeII':
+
+        eng_threshold = 4*phys.rydberg
+        ion_bounds = spectools.get_bounds_between(
+            phot_spec.eng, eng_threshold
+        )
+        ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
+
+        ionized_elec = Spectrum(
+            ion_engs,
+            phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
+            rs=phot_spec.rs,
+            spec_type='N'
+        )
+
+        new_eng = ion_engs - eng_threshold
+        ionized_elec.shift_eng(new_eng)
+
+        # rebin so that ionized_elec may be added to elec_spec
+        ionized_elec.rebin(eleceng)
 
     else: 
 
         raise TypeError('invalid method.')
+
+    return ionized_elec

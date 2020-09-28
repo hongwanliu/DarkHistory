@@ -1391,7 +1391,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
 def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     """ Secondary electron spectrum after collisional ionization. 
 
-    For 'old' method, See 0910.4410.
+    For 'old' method, See 0910.4410 --> Shull, Astrophysical Journal, 234:761-764, 1979 December 1
     For 'MEDEA' method, see Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954 OR Mon. Not. R. Astron. Soc. 422, 420–433 (2012)
     For 'new' method, TBD
 
@@ -1428,28 +1428,35 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             eps_i = 8.
             ion_pot = rydberg
         elif species == 'HeI':
-            eps_i = 15.8
+            eps_i = 12.8 #15.8
             ion_pot = He_ion_eng
         elif species == 'HeII':
-            eps_i = 32.6
+            eps_i = 27 #32.6
             ion_pot = 4*rydberg
         else:
             raise TypeError('invalid species.')
 
         if np.isscalar(in_eng):
-            # See Shull (1979) eqn A1
-            low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.1)
-            # This spectrum describes the lower energy electron only.
-            low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
-            # Normalize the spectrum to one electron.
-
-            low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
-            if np.sum(low_eng_elec_dNdE) == 0:
-                # Either in_eng < in_pot, or the lowest bin lies
-                # above the halfway point, (in_eng - ion_pot)/2.
-                # Add to the lowest bin.
+            # If the input energy is below threshold return zeros.
+            if in_eng < ion_pot:
                 return np.zeros_like(eng)
 
+            # See Shull (1979) eqn A1
+            low_eng_elec_dNdE = 1/(1 + (eng/eps_i)**2.0) #2.1
+            # This spectrum describes the lower energy electron only.
+            low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+
+            if np.sum(low_eng_elec_dNdE) == 0:
+                # The lowest bin lies above the halfway point, (in_eng - ion_pot)/2.
+                # All electrons are now counted in the lowest bin.
+                #!!!
+                tot_elec_N = np.zeros_like(eng)
+                tot_elec_N[0] = 2.
+                return np.outer(np.ones_like(in_eng), tot_elec_N)
+
+            low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
+
+            # Normalize the spectrum to one electron.
             low_eng_elec_spec /= low_eng_elec_spec.totN()
 
             in_eng = np.array([in_eng])
@@ -1472,10 +1479,15 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
 
             # See Shull (1979) eqn A1
             low_eng_elec_dNdE = np.outer(
-                np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.1)
+                np.ones_like(in_eng), 1/(1 + (eng/eps_i)**2.0) #2.1
             )
 
             low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
+
+            # These input energies lie above the halfway point, (in_eng - ion_pot)/2.
+            # We will treat the lowest bin as an underflow bin (see end of this if statement block)
+            #!!!
+            zero_mask = (np.sum(low_eng_elec_dNdE, axis=1) == 0) & (in_eng>ion_pot)
 
             # Normalize the spectrum to one electron.
             low_eng_elec_spec = Spectra(
@@ -1496,6 +1508,10 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             high_eng_elec_N = spectools.engloss_rebin_fast(
                 in_eng, eng + ion_pot, low_eng_elec_N, eng
             )
+
+            #underflow bin
+            low_eng_elec_N[zero_mask,0]=1. #eleceng[0]/eleceng[zero_mask]
+            high_eng_elec_N[zero_mask,0]=1.
 
     elif method == 'MEDEA':
         # See Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954
@@ -1693,24 +1709,22 @@ def elec_heating_engloss_rate(eng, xe, rs):
 
     Notes
     -------
-    See 0910.4410 for the expression. The units have e^2/r being in units of energy, so to convert to SI, we insert 1/(4*pi*eps_0)^2.
+    See 0910.4410 for the expression. 
+    The units are orinally from Spitzer's 1962 textbook, cgs-emu,
+    so that e^2/r is in units of energy (statcoulombs), 
+    so to convert to SI, we insert 1/(4*pi*eps_0)^2 and use that e^2/(4*pi*eps_0) = alpha
     """
 
-    w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
-    ne = xe*nH*rs**3
+    w = np.sqrt(1 - 1/(1 + eng/me)**2)
+    ne = xe*nH*rs**3 * (hbar*c)**3
 
-    eps_0 = 8.85418782e-12 # in SI units
-
-    prefac = 4*np.pi*ele**4/(4*np.pi*eps_0)**2
-    # prefac is now in SI units (J^2 m^2). Convert to (eV^2 cm^2).
-    prefac *= 100**2/ele**2
-
-    zeta_e = 7.40e-11*ne
-    # zeta_e = 7.40e-11*nB*rs**3
-    coulomb_log = np.log(4*eng/zeta_e)
+    prefac = 4*np.pi*alpha**2
+    #zeta_e = 7.40e-11*ne/(hbar*c)**3 # Must be in units of cm^-3)
+    #coulomb_log = np.log(4*eng/zeta_e)
+    coulomb_log = np.log(4*eng * (4*np.pi*alpha*ne/me)**(-1/2))
 
     # must use the mass of the electron in eV m^2 s^-2.
-    return prefac*ne*coulomb_log/(me/c**2*w)
+    return prefac*ne*coulomb_log/(me*w) / hbar
 
 def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
     """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.

@@ -460,7 +460,6 @@ def load_data(data_type):
                 else:
                     return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
-
             glob_exc_data = {species: 
                 {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
                 for state in state_list}
