@@ -40,10 +40,10 @@ G = 6.6730e-8
 """Newton's Gravitational Constant in cm\ :sup:`3` g\ :sup:`-1` s\ :sup:`-2`\ ."""
 
 mass = {
-    'e' : me,         'mu': 105.6583745e6, 'tau': 1776.86e6,
-    'c' : 1.275e9  ,  'b' :   4.18e9,        't': 173.1e9,
-    'W' : 80.379e9  , 'Z' :  91.1876e9,      'h': 125.18e9,
-    'pi': 139.57061e6
+    'e' : me,          'mu'  : 105.6583745e6, 'tau': 1776.86e6,
+    'c' : 1.275e9  ,   'b'   :   4.18e9,        't': 173.1e9,
+    'W' : 80.379e9  ,  'Z'   :  91.1876e9,      'h': 125.18e9,
+    'pi': 139.57039e6, 'pi0' : 134.9768e6
 }
 """Masses of Standard Model particles."""
 thomson_xsec = 6.652458734e-25
