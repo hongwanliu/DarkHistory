@@ -175,20 +175,25 @@ def get_elec_cooling_tf(
 
     # Photon transfer function for single primary electron single scattering.
     # This is dN/(dE dt), dt = 1 s.
+    # 2->2 process:
+    #   -eleceng is incoming electron energy
+    #   -we don't care about incoming photon, we averaged over blackbody
+    #   -photeng is outgoing photon energy
+    #   -What's the outgoing electron energy?  Dunno, because we could have had
+    #    any CMB photon in the initial state !!!
     phot_ICS_tf = ics_spec(
         eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf
     )
 
-    # Downcasting speeds up np.dot
-    phot_ICS_tf._grid_vals = phot_ICS_tf.grid_vals.astype('float64')
-
     # Energy loss transfer function for single primary electron
     # single scattering. This is dN/(dE dt), dt = 1 s.
+    # -   Similar to the above, but now we keep track of the final electron energy !!!
     engloss_ICS_tf = engloss_spec(
         eleceng, photeng, T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
 
     # Downcasting speeds up np.dot
+    phot_ICS_tf._grid_vals = phot_ICS_tf.grid_vals.astype('float64')
     engloss_ICS_tf._grid_vals = engloss_ICS_tf.grid_vals.astype('float64')
 
     # Switch the spectra type here to type 'N'.
@@ -216,6 +221,9 @@ def get_elec_cooling_tf(
             engloss_ICS_tf.grid_vals
         )
     else:
+        # A specialized function: takes the energy loss spectrum and knows how to rebin into eleceng
+        # Turns out that it is basically a delta function in the original in_eng bin (only 1s worth of scattering occurred)
+        # and the rest goes usually into the lower neighbor's bin !!!
         elec_ICS_tf._grid_vals = spectools.engloss_rebin_fast(
             eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
         )
@@ -272,35 +280,61 @@ def get_elec_cooling_tf(
     #############################################
     # Heating
     #############################################
-    
-    #!!! CHECK units of this function
+
     dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs)
-    
     deposited_heat_vec = np.zeros_like(eleceng)
 
-    # new_eleceng = eleceng - dE_heat_dt
+    MEDEA_heat=False
+    if MEDEA_heat:
+        rate_vec = dE_heat_dt/eleceng*20
+        #rate_vec=np.ones_like(eleceng)
+        # Electron with energy eleceng produces a spectrum with one particle
+        # of energy eleceng*.95
+        heat_sec_elec_tf = tf.TransFuncAtRedshift(
+            id_mat,
+            in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+            eng = eleceng*.95,
+            dlnz = -1, spec_type = 'N'
+        )
 
-    # if not np.all(new_eleceng[1:] > eleceng[:-1]):
-    #     utils.compare_arr([new_eleceng, eleceng])
-    #     raise ValueError('heating loss is too large: smaller time step required.')
+        #low_sec_elec_tf += tf.TransFuncAtRedshift(
+        #    id_mat,
+        #    in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+        #    eng = eleceng*.05,
+        #    dlnz = -1, spec_type = 'N'
+        #)
 
-    # # After the check above, we can define the spectra by
-    # # manually assigning slightly less than 1 particle along
-    # # diagonal, and a small amount in the bin below. 
+        # Rebin the data so that the spectra stored above now have an abscissa
+        # of eleceng again (instead of eleceng*.95)
+        heat_sec_elec_tf.rebin(eleceng)
+        elec_heat_spec_grid = rate_vec[:, np.newaxis]*heat_sec_elec_tf._grid_vals
+        #elec_heat_spec_grid = heat_sec_elec_tf._grid_vals
+    else:
 
-    # # N_n-1 E_n-1 + N_n E_n = E_n - dE_dt
-    # # N_n-1 + N_n = 1
-    # # therefore, (1 - N_n) E_n-1 - (1 - N_n) E_n = - dE_dt
-    # # i.e. N_n = 1 + dE_dt/(E_n-1 - E_n)
+        # new_eleceng = eleceng - dE_heat_dt
 
-    elec_heat_spec_grid = np.identity(eleceng.size)
-    elec_heat_spec_grid[0,0] -= dE_heat_dt[0]/eleceng[0]
-    elec_heat_spec_grid[1:, 1:] += np.diag(
-        dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
-    )
-    elec_heat_spec_grid[1:, :-1] -= np.diag(
-        dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
-    )
+        # if not np.all(new_eleceng[1:] > eleceng[:-1]):
+        #     utils.compare_arr([new_eleceng, eleceng])
+        #     raise ValueError('heating loss is too large: smaller time step required.')
+
+        # # After the check above, we can define the spectra by
+        # # manually assigning slightly less than 1 particle along
+        # # diagonal, and a small amount in the bin below. 
+
+        # # N_n-1 E_n-1 + N_n E_n = E_n - dE_dt
+        # # N_n-1 + N_n = 1
+        # # therefore, (1 - N_n) E_n-1 - (1 - N_n) E_n = - dE_dt
+        # # i.e. N_n = 1 + dE_dt/(E_n-1 - E_n)
+
+        elec_heat_spec_grid = np.identity(eleceng.size)
+        elec_heat_spec_grid[0,0] -= dE_heat_dt[0]/eleceng[0]
+        elec_heat_spec_grid[1:, 1:] += np.diag(
+            dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
+        )
+        elec_heat_spec_grid[1:, :-1] -= np.diag(
+            dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
+        )
+    #print(elec_heat_spec_grid)
 
 
     #############################################
@@ -345,18 +379,31 @@ def get_elec_cooling_tf(
     
     # Secondary photon spectrum (from ICS). 
     sec_phot_spec_N_arr = phot_ICS_tf.grid_vals
+    # !!! Consider possibility of adding atomic transition photons here!!!
     
     # Deposited ICS array.
     deposited_ICS_eng_arr = (
+        #Total amount of energy of the electrons that got scattered
         np.sum(elec_ICS_tf.grid_vals, axis=1)*eleceng
+
+        #Total amount of energy in the secondary electron spectrum
         - np.dot(elec_ICS_tf.grid_vals, eleceng)
+        # The difference is the amount of energy that the electron lost
+        # through scattering, and that should be equal to the energy gained by photons
+
+        # This is -[the energy gained by photons]
+        # (Total amount of energy in the upscattered photons - the energy these photons started with)
         - (np.dot(sec_phot_spec_N_arr, photeng) - CMB_upscatter_eng_rate)
     )
+    # This is only non-zero due to numerical errors. Luckily it is very small.
 
     # Energy loss is not taken into account for eleceng > 20*phys.me
     deposited_ICS_eng_arr[eleceng > 20*phys.me - phys.me] -= ( 
         CMB_upscatter_eng_rate
     )
+    # !!! A legacy of Tracy's code: For electrons with a boost of 20 or more
+    # We pretend the initial CMB photon had zero energy.  To do this, get rid of 
+    # CMB_upscatter_eng.
 
     # Continuum energy loss array.
     continuum_engloss_arr = CMB_upscatter_eng_rate*np.ones_like(eleceng)
@@ -420,6 +467,7 @@ def get_elec_cooling_tf(
     
     # Scattered low energy and high energy electrons. 
     # Needed for final low energy electron spectra.
+    #!!! Try getting rid of this
     sec_lowengelec_N_arr = np.identity(eleceng.size)
     sec_lowengelec_N_arr[eleceng >= loweng] = 0
     sec_lowengelec_N_arr[eleceng_high_ind[0]:, :eleceng_high_ind[0]] += sec_elec_spec_N_arr[eleceng_high_ind[0]:, :eleceng_high_ind[0]]
@@ -495,7 +543,7 @@ def get_elec_cooling_tf(
     for i, state in enumerate(Ps):
         # Number of electrons that end up in 2s
         N_exc = deposited_exc_vec[state]/phys.HI_exc_eng[state]*(1-Ps[state])
-        deexc_phot_spectra._grid_vals += np.outer(N_exc, spec_2s1s.N)
+        deexc_phot_spectra._grid_vals += np.outer(N_exc, spec_2s1s.N*2) #Factor of 2 --> 2 photon emission
 
         # Make sure that deposited_exc_arr only contains the atoms in the 2p state
         deposited_Lya_vec += (
@@ -531,14 +579,17 @@ def get_elec_cooling_tf(
             - np.dot(sec_lowengelec_tf.grid_vals, eleceng)
             # + cont_loss_ICS_vec
             - np.dot(sec_phot_tf.grid_vals, photeng)
-            - np.sum([deposited_exc_vec for exc in exc_types], axis=0)
+            - np.sum([deposited_exc_vec[exc] for exc in exc_types], axis=0)
             - deposited_He_ion_vec
             - deposited_H_ion_vec
             - deposited_heat_vec
+            - deposited_ICS_vec
         )
 
-        if np.any(np.abs(conservation_check/eleceng) > 0.1):
+        if np.any(np.abs(conservation_check/eleceng) > 1e-5):
             failed_conservation_check = True
+        #else:
+        #    print('NICE')
 
         if verbose or failed_conservation_check:
 

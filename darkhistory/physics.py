@@ -1656,7 +1656,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     coulomb_log = np.log(4*eng * (4*np.pi*alpha*ne/me)**(-1/2))
 
     # must use the mass of the electron in eV m^2 s^-2.
-    return prefac*ne*coulomb_log/(me*w) / hbar
+    return prefac*ne*coulomb_log/(me*w) / hbar #*xe**.05
 
 def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
     """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.
