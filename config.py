@@ -18,10 +18,7 @@ from scipy.interpolate import interp1d
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-#data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
-data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019/'
-#data_path = '/Users/gridgway/Downloads/dataverse_files/'
-
+data_path = '/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
 
 # Global variables for data.
 glob_binning_data = None
@@ -448,7 +445,8 @@ def load_data(data_type):
         return glob_pppc_data
     
     elif data_type == 'exc':
-        if glob_exc_data == None:
+        if 1+1==2:
+#        if glob_exc_data == None:
             species_list = ['HI', 'HeI']
             exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
                     'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
@@ -462,6 +460,29 @@ def load_data(data_type):
                 else:
                     return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
+            glob_exc_data = {species: 
+                {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
+                for state in state_list}
+            for species in species_list}
+
+        return glob_exc_data
+
+    elif data_type == 'exc_AcharyaKhatri':
+#        if glob_exc_data == None:
+        if 1+1==2:
+            #CCC cross-sections in units of cm^2
+            species_list = ['HI', 'HeI']
+            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb')),
+                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data_CCC.p','rb'))
+                    }
+
+            state_list = ['2s', '2p', '3p']
+
+            def make_interpolator(x,y):
+                if (x is None) or (y is None):
+                    return None
+                else:
+                    return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
             glob_exc_data = {species: 
                 {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
