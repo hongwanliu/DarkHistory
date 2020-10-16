@@ -40,9 +40,10 @@ G = 6.6730e-8
 """Newton's Gravitational Constant in cm\ :sup:`3` g\ :sup:`-1` s\ :sup:`-2`\ ."""
 
 mass = {
-    'e': me,         'mu': 105.6583745e6, 'tau': 1776.86e6,
-    'c': 1.275e9  ,  'b' :   4.18e9,        't': 173.1e9,
-    'W': 80.379e9  , 'Z' :  91.1876e9,      'h': 125.18e9
+    'e' : me,          'mu'  : 105.6583745e6, 'tau': 1776.86e6,
+    'c' : 1.275e9  ,   'b'   :   4.18e9,        't': 173.1e9,
+    'W' : 80.379e9  ,  'Z'   :  91.1876e9,      'h': 125.18e9,
+    'pi': 139.57039e6, 'pi0' : 134.9768e6
 }
 """Masses of Standard Model particles."""
 thomson_xsec = 6.652458734e-25
@@ -1682,37 +1683,37 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
 
 #     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
 
-# def get_dLam2s_dnu():
-#     """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
+def get_dLam2s_dnu():
+    """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
 
-#     nu is the frequency of the more energetic photon.
-#     To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
+    nu is the frequency of the more energetic photon.
+    To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
 
-#     Parameters
-#     ----------
+    Parameters
+    ----------
 
-#     Returns
-#     -------
-#     Lam : ndarray
-#         Decay rate per nu.
-#     """
-#     coeff = 9 * alpha**6 * rydberg /(
-#         2**10 * 2 * np.pi * hbar
-#     )
-#     #print(coeff)
+    Returns
+    -------
+    Lam : ndarray
+        Decay rate per nu.
+    """
+    coeff = 9 * alpha**6 * rydberg /(
+        2**10 * 2 * np.pi * hbar
+    )
+    #print(coeff)
 
-#     # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
-#     # interpolating points come from Spitzer and Greenstein, 1951
-#     y = np.arange(0, 1.05, .05)
-#     psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
-#                    4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
+    # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
+    # interpolating points come from Spitzer and Greenstein, 1951
+    y = np.arange(0, 1.05, .05)
+    psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
+                   4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
 
-#     # evaluation outside of interpolation window yields 0.
-#     f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
-#     def dLam2s_dnu(nu):
-#         return coeff * f(nu/lya_freq) * width_2s1s_H/8.26548398114 / lya_freq
+    # evaluation outside of interpolation window yields 0.
+    f = interp1d(y, psi, kind='cubic', fill_value=(0,0))
+    def dLam2s_dnu(nu):
+        return coeff * f(nu/lya_freq) * width_2s1s_H/8.26548398114 / lya_freq
 
-#     return dLam2s_dnu
+    return dLam2s_dnu
 
 
 # # CMB
