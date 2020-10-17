@@ -56,14 +56,18 @@ def boost_elec_spec(y, spec, Ecut=None):
     """
     # Boost velocity
     b = np.sqrt(1-(1/y**2))
+
+    # Total energy
+    toteng = spec.eng + phys.me
+
     # Momentum of electron from energy
     def p(e):
         return np.sqrt(e**2 - phys.me**2)
     
     new_dNdE = np.zeros_like(spec.dNdE)
-    integrand = interp1d(spec.eng, spec.dNdE/p(spec.eng), kind='linear', bounds_error=False, fill_value=0.)
+    integrand = interp1d(toteng, spec.dNdE/p(toteng), kind='linear', bounds_error=False, fill_value=0.)
 
-    for i, E in enumerate(spec.eng):
+    for i, E in enumerate(toteng):
         # Limits of integration
         if Ecut is None:
             Emax = y * (E + b*p(E))
@@ -181,63 +185,70 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
 
     # Spectrum of electrons from decay/annihilation to muons 
     if pri == 'mu':
-        # Useful masses
-        me = phys.me
-        mu = phys.mass['mu']
-        # Electron momentum
-        pmu = np.sqrt(eng**2 - phys.me**2)
-        # Lorentz gamma from boosting from muon rest frame to DM rest frame
-        if not decay:
-            y = mDM/mu
-        else:
-            y = mDM/2/mu
-
-        # Formula for dNdE of electrons in muon rest frame
-        dNdE_rest = 8*pmu/mu**2 * ( 2*eng/mu * (3-4*eng/mu) + phys.me**2/mu**2 * (6*eng/mu - 4) )
-        dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
-        dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
-
-        # dNdE of electrons boosted to the dark matter frame
-        dNdE_DM = boost_elec_spec(y, dNdE_rest, Ecut=(mu**2 + me**2)/(2*mu))
-
         if sec == 'elec':
+            # Useful masses
+            me = phys.me
+            mu = phys.mass['mu']
+
+            # eng is kinetic energy, eleceng is total energy, KE + me
+            eleceng = eng + phys.me
+            # Electron momentum
+            pmu = np.sqrt(eleceng**2 - phys.me**2)
+            # Lorentz gamma from boosting from muon rest frame to DM rest frame
+            if not decay:
+                y = mDM/mu
+            else:
+                y = mDM/2/mu
+
+            # Formula for dNdE of electrons in muon rest frame
+            dNdE_rest = 8*pmu/mu**2 * ( 2*eleceng/mu * (3-4*eleceng/mu) + phys.me**2/mu**2 * (6*eleceng/mu - 4) )
+            dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
+            dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
+
+            # dNdE of electrons boosted to the dark matter frame
+            dNdE_DM = boost_elec_spec(y, dNdE_rest, Ecut=(mu**2 + me**2)/(2*mu))
+
             return dNdE_DM
-        if sec == 'phot':
+
+        elif sec == 'phot':
             return Spectrum(
                 eng, np.zeros_like(eng), spec_type='dNdE'
             )
 
     # Spectrum of electrons from decay/annihilation to charged pions    
     if pri == 'pi':
-        # Useful masses
-        me = phys.me
-        mu = phys.mass['mu']
-        mp = phys.mass['pi']
-        # Electron momentum
-        pmu = np.sqrt(eng**2 - phys.me**2)
-        # Lorentz gamma from boosting from muon rest frame to pion rest frame
-        y1 = (mp**2 + mu**2)/(2*mp*mu)
-        # Lorentz gamma from boosting from pion rest frame to DM rest frame
-        if not decay:
-            y2 = mDM/mp
-        else:
-            y2 = mDM/2/mp
-
-        # Formula for dNdE of electrons in muon rest frame
-        dNdE_rest = 8*pmu/mu**2 * ( 
-                        2*eng/mu * (3-4*eng/mu) + phys.me**2/mu**2 * (6*eng/mu - 4) )
-        dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
-        dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
-
-        # dNdE of electrons boosted to the pion frame
-        dNdE_pi = boost_elec_spec(y1, dNdE_rest, Ecut=(mu**2 + me**2)/(2*mu))
-        # dNdE of electrons boosted to the dark matter frame
-        next_cut = eng[np.where(dNdE_pi.dNdE==0)[0][1]]
-        dNdE_DM = boost_elec_spec(y2, dNdE_pi, next_cut)
-
         if sec == 'elec':
+            # Useful masses
+            me = phys.me
+            mu = phys.mass['mu']
+            mp = phys.mass['pi']
+            # eng is kinetic energy, eleceng is total energy, KE + m
+            eleceng = eng + phys.me
+            # Electron momentum
+            pmu = np.sqrt(toteng**2 - phys.me**2)
+            # Lorentz gamma from boosting from muon rest frame to pion rest frame
+            y1 = (mp**2 + mu**2)/(2*mp*mu)
+            # Lorentz gamma from boosting from pion rest frame to DM rest frame
+            if not decay:
+                y2 = mDM/mp
+            else:
+                y2 = mDM/2/mp
+
+            # Formula for dNdE of electrons in muon rest frame
+            dNdE_rest = 8*pmu/mu**2 * ( 
+                            2*eleceng/mu * (3-4*eleceng/mu) + phys.me**2/mu**2 * (6*eleceng/mu - 4) )
+            dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
+            dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
+
+            # dNdE of electrons boosted to the pion frame
+            dNdE_pi = boost_elec_spec(y1, dNdE_rest, Ecut=(mu**2 + me**2)/(2*mu))
+            # dNdE of electrons boosted to the dark matter frame
+            next_cut = eng[np.where(dNdE_pi.dNdE==0)[0][1]]
+            dNdE_DM = boost_elec_spec(y2, dNdE_pi, next_cut)
+
             return dNdE_DM
-        if sec == 'phot':
+
+        elif sec == 'phot':
             return Spectrum(
                 eng, np.zeros_like(eng), spec_type='dNdE'
             )
