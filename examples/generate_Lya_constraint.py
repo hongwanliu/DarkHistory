@@ -297,6 +297,10 @@ def find_param_guess(mDM, log10guess, inc, data, heat_switch=False,
         if DM_process=='pwave':
             sign=-1.0
             struct_boost = phys.struct_boost_func(model='pwave_NFW_no_subs')
+        elif DM_process=='swave':
+            sign=-1.0
+            struct_boost = phys.struct_boost_func(model='einasto_subs')
+            # 'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc'
         else:
             sign = 1.0
             struct_boost = None 
@@ -382,8 +386,11 @@ def find_param_guess(mDM, log10guess, inc, data, heat_switch=False,
 
 if pri=='phot':
     log10m = np.arange(4.01, 12.76, m_inc)
-else:
+elif pri=='elec':
     log10m = np.arange(6.01, 12.76, m_inc)
+elif (pri=='mu') | (pri=='pi') | (pri=='pi0'):
+    log10m = np.arange(8.51, 12.76, m_inc)
+
 max_chisq_list = np.zeros_like(log10m)
 data = [[None for k in max_chisq_list], [None for k in max_chisq_list]]
 for i, log10mDM in enumerate(log10m):
