@@ -23,7 +23,8 @@ def get_elec_cooling_tf(
     eleceng, photeng, rs, xHII, xHeII=0, 
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
-    ics_engloss_data=None, loweng=3000, spec_2s1s=None,
+    ics_engloss_data=None, #loweng=3000, 
+    spec_2s1s=None,
     check_conservation_eng = False, verbose=False
 ):
 
@@ -297,7 +298,7 @@ def get_elec_cooling_tf(
                     rate_vec = ns[species] * coll_xsec[process](
                             eleceng, species=species, method=method, state=exc
                     ) * beta_ele * phys.c
-                    #if exc == '2p': #!!!FIX
+                   #if exc == '2p': #!!!FIX
                     #    rate_vec = ns[species] * coll_xsec[process](
                     #            eleceng, species='HI', method='old'
                     #    ) * beta_ele * phys.c/4
@@ -307,7 +308,13 @@ def get_elec_cooling_tf(
                         in_eng = eleceng, rs = rs*np.ones_like(eleceng),
                         eng = eleceng, dlnz = -1, spec_type  = 'N'
                     )
-
+                    if (exc[0] == '2'):
+                        #print(exc, rate_vec[45]*10.2, coll_xsec[process](eleceng, species=species, method=method, state=exc)[45])
+                        print(elec_tf[process][exc].totN()[45]*10.2)
+                    if (exc[0] == '3'):
+                        #print(exc, rate_vec[45]*13.6*8/9, coll_xsec[process](eleceng, species=species, method=method, state=exc)[45])
+                        print(elec_tf[process][exc].totN()[45]*13.6*8/9)
+ 
 
     deposited_exc_vec = {exc : np.zeros_like(eleceng) for exc in exc_types}
     deposited_ion_vec = np.zeros_like(eleceng)
@@ -376,11 +383,12 @@ def get_elec_cooling_tf(
     # Initialization of secondary spectra 
     #############################################
 
-    # Low and high energy boundaries
-    eleceng_high = eleceng[eleceng >= loweng]
-    eleceng_high_ind = np.arange(eleceng.size)[eleceng >= loweng]
-    eleceng_low = eleceng[eleceng < loweng]
-    eleceng_low_ind  = np.arange(eleceng.size)[eleceng < loweng]
+    # !!! Delete
+    ## Low and high energy boundaries
+    #eleceng_high = eleceng[eleceng >= loweng]
+    #eleceng_high_ind = np.arange(eleceng.size)[eleceng >= loweng]
+    #eleceng_low = eleceng[eleceng < loweng]
+    #eleceng_low_ind  = np.arange(eleceng.size)[eleceng < loweng]
 
 
     #if eleceng_low.size == 0:
@@ -393,12 +401,14 @@ def get_elec_cooling_tf(
         rs = rs*np.ones_like(eleceng), eng = photeng,
         dlnz = -1, spec_type = 'N'
     )
-    # Final secondary low energy electron spectrum.
-    sec_lowengelec_tf = tf.TransFuncAtRedshift(
-        np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = eleceng,
-        dlnz = -1, spec_type = 'N'
-    )
+
+    #!!! Delete
+    ## Final secondary low energy electron spectrum.
+    #sec_lowengelec_tf = tf.TransFuncAtRedshift(
+    #    np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
+    #    rs = rs*np.ones_like(eleceng), eng = eleceng,
+    #    dlnz = -1, spec_type = 'N'
+    #)
 
     # Continuum energy loss rate per electron, dU_CMB/dt.
     CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
@@ -488,30 +498,37 @@ def get_elec_cooling_tf(
         deposited_He_ion_eng_arr  *= fac_arr
         deposited_heat_eng_arr *= fac_arr
     
+    #!!! Delete
     # Zero out deposition/ICS processes below loweng. 
     #Change loweng to 10.2eV!!!  Then assign everything below 10.2 eV to heat.  Then get rid of sec_lowengelec_spec
-    deposited_ICS_eng_arr[eleceng < loweng]  = 0
-    for exc in exc_types:
-        deposited_exc_eng_arr[exc][eleceng < loweng]  = 0
-    deposited_H_ion_eng_arr[eleceng < loweng]  = 0
-    deposited_He_ion_eng_arr[eleceng < loweng]  = 0
-    deposited_heat_eng_arr[eleceng < loweng] = eleceng[eleceng<loweng]
+    #mask = eleceng < loweng
+    #print(deposited_ICS_eng_arr[mask],
+    #        deposited_H_ion_eng_arr[mask],
+    #        deposited_He_ion_eng_arr[mask], '\n',
+    #        deposited_heat_eng_arr[mask])
+    #deposited_ICS_eng_arr[eleceng < loweng]  = 0
+    #for exc in exc_types:
+    #    deposited_exc_eng_arr[exc][eleceng < loweng]  = 0
+    #deposited_H_ion_eng_arr[eleceng < loweng]  = 0
+    #deposited_He_ion_eng_arr[eleceng < loweng]  = 0
+    ##deposited_heat_eng_arr[eleceng < loweng] = eleceng[eleceng<loweng]
     
-    continuum_engloss_arr[eleceng < loweng]  = 0
+    #continuum_engloss_arr[eleceng < loweng]  = 0
     
-    sec_phot_spec_N_arr[eleceng < loweng] = 0
+    #sec_phot_spec_N_arr[eleceng < loweng] = 0
     
-    # Scattered low energy and high energy electrons. 
-    # Needed for final low energy electron spectra.
-    #!!! Try getting rid of this
-    sec_lowengelec_N_arr = np.identity(eleceng.size)
-    sec_lowengelec_N_arr[eleceng >= loweng] = 0
-    sec_lowengelec_N_arr[eleceng_high_ind[0]:, :eleceng_high_ind[0]] += sec_elec_spec_N_arr[eleceng_high_ind[0]:, :eleceng_high_ind[0]]
+    #!!! Delete
+    ## Scattered low energy and high energy electrons. 
+    ## Needed for final low energy electron spectra.
+    ##!!! Try getting rid of this
+    #sec_lowengelec_N_arr = np.identity(eleceng.size)
+    #sec_lowengelec_N_arr[eleceng >= loweng] = 0
+    #sec_lowengelec_N_arr[eleceng_high_ind[0]:, :eleceng_high_ind[0]] += sec_elec_spec_N_arr[eleceng_high_ind[0]:, :eleceng_high_ind[0]]
 
-    sec_highengelec_N_arr = np.zeros_like(sec_elec_spec_N_arr)
-    sec_highengelec_N_arr[:, eleceng_high_ind[0]:] = (
-        sec_elec_spec_N_arr[:, eleceng_high_ind[0]:]
-    )
+    #sec_highengelec_N_arr = np.zeros_like(sec_elec_spec_N_arr)
+    #sec_highengelec_N_arr[:, eleceng_high_ind[0]:] = (
+    #    sec_elec_spec_N_arr[:, eleceng_high_ind[0]:]
+    #)
     
     # T = E.T + Prompt
     deposited_ICS_vec  = solve_triangular(
@@ -546,12 +563,13 @@ def get_elec_cooling_tf(
         sec_phot_spec_N_arr, lower=True, check_finite=False
     )
     
-    # Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
-    # T : high energy e produced (sec_highengelec_N_arr). 
-    sec_lowengelec_specs = solve_triangular(
-        np.identity(eleceng.size) - sec_highengelec_N_arr,
-        sec_lowengelec_N_arr, lower=True, check_finite=False
-    )
+    #!!! Delete
+    ## Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
+    ## T : high energy e produced (sec_highengelec_N_arr). 
+    #sec_lowengelec_specs = solve_triangular(
+    #    np.identity(eleceng.size) - sec_highengelec_N_arr,
+    #    sec_lowengelec_N_arr, lower=True, check_finite=False
+    #)
 
     #Allow all of the dexcited states to produce secondary photons
     #First add all of the n -> 2 photons to the secondary photon spectrum
@@ -607,7 +625,8 @@ def get_elec_cooling_tf(
     # transfer function.
 
     sec_phot_tf._grid_vals = sec_phot_specs - upscattered_CMB_grid
-    sec_lowengelec_tf._grid_vals = sec_lowengelec_specs
+    #!!! Delete
+    #sec_lowengelec_tf._grid_vals = sec_lowengelec_specs
 
     # Conservation checks.
     failed_conservation_check = False
@@ -616,7 +635,7 @@ def get_elec_cooling_tf(
 
         conservation_check = (
             eleceng
-            - np.dot(sec_lowengelec_tf.grid_vals, eleceng)
+            #- np.dot(sec_lowengelec_tf.grid_vals, eleceng)
             # + cont_loss_ICS_vec
             - np.dot(sec_phot_tf.grid_vals, photeng)
             - np.sum([deposited_exc_vec[exc] for exc in exc_types], axis=0)
@@ -639,10 +658,11 @@ def get_elec_cooling_tf(
                 print('rs: ', rs)
                 print('injected energy: ', eng)
 
-                print(
-                    'Fraction of Energy in low energy electrons: ',
-                    np.dot(sec_lowengelec_tf.grid_vals[i], eleceng)/eng
-                )
+                #!!! Delete
+                #print(
+                #    'Fraction of Energy in low energy electrons: ',
+                #    np.dot(sec_lowengelec_tf.grid_vals[i], eleceng)/eng
+                #)
 
                 # print('Energy in photons: ', 
                 #     np.dot(sec_phot_tf.grid_vals[i], photeng)
@@ -690,7 +710,7 @@ def get_elec_cooling_tf(
                 raise RuntimeError('Conservation of energy failed.')
 
     return (
-        sec_phot_tf, sec_lowengelec_tf,
+        sec_phot_tf, #sec_lowengelec_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
         cont_loss_ICS_vec, deposited_ICS_vec, deexc_phot_spectra, deposited_Lya_vec
     )
