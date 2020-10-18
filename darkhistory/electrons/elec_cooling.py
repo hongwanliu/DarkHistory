@@ -292,6 +292,9 @@ def get_elec_cooling_tf(
                     eng = eleceng, dlnz = -1, spec_type  = 'N'
                 )
 
+                if (process == 'ion') & (species == 'HI'):
+                    print(elec_tf[process][species].totN()[45]*13.6/2, '\n')
+
             # If we're considering Hydrogen excitation, keep track of all l=p states to 10p, and also 2s
             else:
                 for exc in exc_types[:-2]:
@@ -457,15 +460,14 @@ def get_elec_cooling_tf(
     
     # Deposited excitation array.
     for exc in exc_types:
-        deposited_exc_eng_arr[exc] += exc_potentials[exc]*np.sum(elec_tf['exc'][exc].grid_vals, axis=1) 
+        deposited_exc_eng_arr[exc] += exc_potentials[exc]*elec_tf['exc'][exc].totN()#np.sum(elec_tf['exc'][exc].grid_vals, axis=1) 
 
     # Deposited H ionization array.
-    deposited_H_ion_eng_arr = ion_potentials['HI']*np.sum(elec_tf['ion']['HI'].grid_vals, axis=1)/2 
+    deposited_H_ion_eng_arr = ion_potentials['HI']*elec_tf['ion']['HI'].totN()/2
     
     # Deposited He ionization array.
-    #if method == 'Ach
     deposited_He_ion_eng_arr = np.sum([
-        ion_potentials[species]*np.sum(elec_tf['ion'][species].grid_vals, axis=1)/2 
+        ion_potentials[species]*elec_tf['ion'][species].totN()/2 
     for species in ['HeI', 'HeII']], axis=0)
 
     # Deposited heating array.
@@ -484,6 +486,17 @@ def get_elec_cooling_tf(
             + deposited_H_ion_eng_arr
             + deposited_He_ion_eng_arr
             + deposited_heat_eng_arr
+        )
+
+        print(
+            deposited_exc_eng_arr['2s'][45],
+            deposited_exc_eng_arr['2p'][45],
+            deposited_exc_eng_arr['3p'][45],
+            deposited_H_ion_eng_arr[45],
+            deposited_He_ion_eng_arr[45],
+            deposited_heat_eng_arr[45],
+            np.dot(sec_elec_spec_N_arr, eleceng)[45],
+            toteng_no_self_scatter_arr[45]
         )
 
         fac_arr = eleceng/toteng_no_self_scatter_arr
@@ -532,34 +545,34 @@ def get_elec_cooling_tf(
     
     # T = E.T + Prompt
     deposited_ICS_vec  = solve_triangular(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr,
+        id_mat - sec_elec_spec_N_arr,
         deposited_ICS_eng_arr, lower=True, check_finite=False
     )
     for exc in exc_types:
         deposited_exc_vec[exc]  = solve_triangular(
-            np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+            id_mat - sec_elec_spec_N_arr, 
             deposited_exc_eng_arr[exc], lower=True, check_finite=False
         )
     deposited_H_ion_vec  = solve_triangular(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+        id_mat - sec_elec_spec_N_arr, 
         deposited_H_ion_eng_arr, lower=True, check_finite=False
     )
     deposited_He_ion_vec  = solve_triangular(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+        id_mat - sec_elec_spec_N_arr, 
         deposited_He_ion_eng_arr, lower=True, check_finite=False
     )
     deposited_heat_vec = solve_triangular(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+        id_mat - sec_elec_spec_N_arr, 
         deposited_heat_eng_arr, lower=True, check_finite=False
     )
     
     cont_loss_ICS_vec = solve_triangular(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+        id_mat - sec_elec_spec_N_arr, 
         continuum_engloss_arr, lower=True, check_finite=False
     )
     
     sec_phot_specs = solve_triangular(
-        np.identity(eleceng.size) - sec_elec_spec_N_arr, 
+        id_mat - sec_elec_spec_N_arr, 
         sec_phot_spec_N_arr, lower=True, check_finite=False
     )
     
