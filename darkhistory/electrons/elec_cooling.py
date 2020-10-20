@@ -24,7 +24,8 @@ def get_elec_cooling_tf(
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
     ics_engloss_data=None, loweng=3000, spec_2s1s=None,
-    check_conservation_eng = False, verbose=False
+    check_conservation_eng = False, verbose=False,
+    method='MEDEA'
 ):
 
     """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
@@ -527,7 +528,10 @@ def get_elec_cooling_tf(
     #!!! Assume single photon ejection for n -> 2 transitions, which
     #isn't true for n>3
     #!!! What about other excited states?
-    deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
+    if method == 'AcharyaKhatri':
+        deexc_states = np.array(['3p'])
+    else:
+        deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
     deexc_engs = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
     deexc_grid = np.zeros((deexc_engs.size, eleceng.size))
 
