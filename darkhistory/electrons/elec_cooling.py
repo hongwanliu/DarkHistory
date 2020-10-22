@@ -369,7 +369,7 @@ def get_elec_cooling_tf(
         # # N_n-1 E_n-1 + N_n E_n = E_n - dE_dt
         # # N_n-1 + N_n = 1
         # # therefore, (1 - N_n) E_n-1 - (1 - N_n) E_n = - dE_dt
-        # # i.e. N_n = 1 + dE_dt/(E_n-1 - E_n)
+        # # i.e. N_n = 1 - dE_dt/(E_n - E_n-1)
 
         elec_heat_spec_grid = np.identity(eleceng.size)
         elec_heat_spec_grid[0,0] -= dE_heat_dt[0]/eleceng[0]
@@ -457,10 +457,13 @@ def get_elec_cooling_tf(
     continuum_engloss_arr = CMB_upscatter_eng_rate*np.ones_like(eleceng)
     # Energy loss is not taken into account for eleceng > 20*phys.me
     continuum_engloss_arr[eleceng > 20*phys.me - phys.me] = 0
+
+    #!!! ICS modifications below
+    ICS_engloss_arr = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(T)
     
     # Deposited excitation array.
     for exc in exc_types:
-        deposited_exc_eng_arr[exc] += exc_potentials[exc]*elec_tf['exc'][exc].totN()#np.sum(elec_tf['exc'][exc].grid_vals, axis=1) 
+        deposited_exc_eng_arr[exc] += exc_potentials[exc]*elec_tf['exc'][exc].totN()
 
     # Deposited H ionization array.
     deposited_H_ion_eng_arr = ion_potentials['HI']*elec_tf['ion']['HI'].totN()/2
@@ -473,14 +476,16 @@ def get_elec_cooling_tf(
     # Deposited heating array.
     deposited_heat_eng_arr += dE_heat_dt
     
-    if True:
+    no_self_scatter = True
+    if no_self_scatter:
         # Remove self-scattering, re-normalize. 
         np.fill_diagonal(sec_elec_spec_N_arr, 0)
         
         toteng_no_self_scatter_arr = (
             np.dot(sec_elec_spec_N_arr, eleceng)
-            + np.dot(sec_phot_spec_N_arr, photeng)
-            - continuum_engloss_arr
+            #+ np.dot(sec_phot_spec_N_arr, photeng)
+            #- continuum_engloss_arr
+            + ICS_engloss_arr #!!! ICS modification
             + deposited_ICS_eng_arr
             + np.sum([deposited_exc_eng_arr[exc] for exc in exc_types], axis=0)
             + deposited_H_ion_eng_arr
@@ -488,22 +493,26 @@ def get_elec_cooling_tf(
             + deposited_heat_eng_arr
         )
 
-        print(
-            deposited_exc_eng_arr['2s'][45],
-            deposited_exc_eng_arr['2p'][45],
-            deposited_exc_eng_arr['3p'][45],
-            deposited_H_ion_eng_arr[45],
-            deposited_He_ion_eng_arr[45],
-            deposited_heat_eng_arr[45],
-            np.dot(sec_elec_spec_N_arr, eleceng)[45],
-            toteng_no_self_scatter_arr[45]
-        )
+    tind = 0
+    print(
+        deposited_exc_eng_arr['2s'][tind],
+        deposited_exc_eng_arr['2p'][tind],
+        deposited_exc_eng_arr['3p'][tind],
+        deposited_H_ion_eng_arr[tind],
+        deposited_He_ion_eng_arr[tind],
+        deposited_heat_eng_arr[tind],
+        np.dot(sec_elec_spec_N_arr, eleceng)[tind],
+        np.dot(sec_phot_spec_N_arr, photeng)[tind]-continuum_engloss_arr[tind] + deposited_ICS_eng_arr[tind]
+        #toteng_no_self_scatter_arr[tind]
+    )
 
+    if no_self_scatter:
         fac_arr = eleceng/toteng_no_self_scatter_arr
         
         sec_elec_spec_N_arr *= fac_arr[:, np.newaxis]
-        sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
-        continuum_engloss_arr  *= fac_arr
+        #sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
+        #continuum_engloss_arr  *= fac_arr
+        ICS_engloss_arr        *= fac_arr #!!! ICS modification
         deposited_ICS_eng_arr  *= fac_arr
         for exc in exc_types:
             deposited_exc_eng_arr[exc]  *= fac_arr
@@ -543,39 +552,56 @@ def get_elec_cooling_tf(
     #    sec_elec_spec_N_arr[:, eleceng_high_ind[0]:]
     #)
     
-    # T = E.T + Prompt
+    # T = N.T + Prompt
+    #tind=45
+    #print((id_mat - sec_elec_spec_N_arr)[tind][:tind+1])
+    #print(sec_elec_spec_N_arr[tind][:tind+1])
+    #print(np.sum(sec_elec_spec_N_arr, axis=1))
+    #print(deposited_heat_eng_arr)
+    #sec_elec_spec_N_arr[sec_elec_spec_N_arr<1e-8] = 0.
+    inv_mat = id_mat - sec_elec_spec_N_arr
+
     deposited_ICS_vec  = solve_triangular(
-        id_mat - sec_elec_spec_N_arr,
-        deposited_ICS_eng_arr, lower=True, check_finite=False
+        inv_mat,
+        deposited_ICS_eng_arr, lower=True, check_finite=False, unit_diagonal=True
     )
+
     for exc in exc_types:
         deposited_exc_vec[exc]  = solve_triangular(
-            id_mat - sec_elec_spec_N_arr, 
-            deposited_exc_eng_arr[exc], lower=True, check_finite=False
+            inv_mat, 
+            deposited_exc_eng_arr[exc], lower=True, check_finite=False, unit_diagonal=True
         )
+
     deposited_H_ion_vec  = solve_triangular(
-        id_mat - sec_elec_spec_N_arr, 
-        deposited_H_ion_eng_arr, lower=True, check_finite=False
+        inv_mat, 
+        deposited_H_ion_eng_arr, lower=True, check_finite=False, unit_diagonal=True
     )
+
     deposited_He_ion_vec  = solve_triangular(
-        id_mat - sec_elec_spec_N_arr, 
-        deposited_He_ion_eng_arr, lower=True, check_finite=False
+        inv_mat, 
+        deposited_He_ion_eng_arr, lower=True, check_finite=False, unit_diagonal=True
     )
+
     deposited_heat_vec = solve_triangular(
-        id_mat - sec_elec_spec_N_arr, 
-        deposited_heat_eng_arr, lower=True, check_finite=False
+        inv_mat, 
+        deposited_heat_eng_arr, lower=True, check_finite=False, unit_diagonal=True
     )
-    
+
     cont_loss_ICS_vec = solve_triangular(
-        id_mat - sec_elec_spec_N_arr, 
-        continuum_engloss_arr, lower=True, check_finite=False
+        inv_mat, 
+        continuum_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
     )
-    
+
     sec_phot_specs = solve_triangular(
-        id_mat - sec_elec_spec_N_arr, 
-        sec_phot_spec_N_arr, lower=True, check_finite=False
+        inv_mat, 
+        sec_phot_spec_N_arr, lower=True, check_finite=False, unit_diagonal=True
     )
     
+
+    ICS_engloss_vec = solve_triangular(
+        inv_mat, ICS_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
+    )
+
     #!!! Delete
     ## Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
     ## T : high energy e produced (sec_highengelec_N_arr). 
@@ -638,6 +664,7 @@ def get_elec_cooling_tf(
     # transfer function.
 
     sec_phot_tf._grid_vals = sec_phot_specs - upscattered_CMB_grid
+    
     #!!! Delete
     #sec_lowengelec_tf._grid_vals = sec_lowengelec_specs
 
@@ -650,7 +677,8 @@ def get_elec_cooling_tf(
             eleceng
             #- np.dot(sec_lowengelec_tf.grid_vals, eleceng)
             # + cont_loss_ICS_vec
-            - np.dot(sec_phot_tf.grid_vals, photeng)
+            #- np.dot(sec_phot_tf.grid_vals, photeng)
+            - ICS_engloss_vec #!!! ICS modification
             - np.sum([deposited_exc_vec[exc] for exc in exc_types], axis=0)
             - deposited_He_ion_vec
             - deposited_H_ion_vec
@@ -685,7 +713,8 @@ def get_elec_cooling_tf(
                 
                 print(
                     'Fraction of Energy in photons - Continuum: ', (
-                        np.dot(sec_phot_tf.grid_vals[i], photeng)/eng
+                        ICS_engloss_vec[i] #ICS modification
+                        #np.dot(sec_phot_tf.grid_vals[i], photeng)/eng
                         # - cont_loss_ICS_vec[i]
                     )
                 )
@@ -723,9 +752,10 @@ def get_elec_cooling_tf(
                 raise RuntimeError('Conservation of energy failed.')
 
     return (
-        sec_phot_tf, #sec_lowengelec_tf,
+        sec_phot_tf, inv_mat, #sec_lowengelec_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
-        cont_loss_ICS_vec, deposited_ICS_vec, deexc_phot_spectra, deposited_Lya_vec
+        ICS_engloss_vec, #cont_loss_ICS_vec, deposited_ICS_vec, 
+        deexc_phot_spectra, deposited_Lya_vec
     )
 
 
