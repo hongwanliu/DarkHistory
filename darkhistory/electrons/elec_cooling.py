@@ -141,13 +141,14 @@ def get_elec_cooling_tf(
     # collisional atomic cross-sections
     coll_xsec = {'exc': phys.coll_exc_xsec, 'ion': phys.coll_ion_xsec}
 
-    # collisional excitation rates
+    # get_species -- a convenience function
     def get_sp(exc):
         if exc[:2] == 'He':
             return exc
         else:
             return 'HI'
 
+    # collisional excitation rates
     exc_rates = {exc: ns[get_sp(exc)] * beta_ele * phys.c *
             coll_xsec['exc'](eleceng, species=get_sp(exc), method=method, state=exc) for exc in exc_types}
 
@@ -193,7 +194,8 @@ def get_elec_cooling_tf(
             deposited_heat_eng_arr += coll_exc_sec_elec_tf[exc].eng_underflow * exc_rates[exc]
 
             # Each non-zero underflow bin counts as one excitation
-            deposited_exc_eng_arr[exc] += np.sum((coll_exc_sec_elec_tf[exc].eng_underflow>0)*1.0) * exc_rates[exc] * exc_potentials[exc]
+            deposited_exc_eng_arr[exc] += np.sum(
+                    (coll_exc_sec_elec_tf[exc].eng_underflow>0)*1.0) * exc_rates[exc] * exc_potentials[exc]
 
             # Rebin the data so that the spectra stored above now have an abscissa
             # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
@@ -291,9 +293,6 @@ def get_elec_cooling_tf(
                     in_eng = eleceng, rs = rs*np.ones_like(eleceng),
                     eng = eleceng, dlnz = -1, spec_type  = 'N'
                 )
-
-                if (process == 'ion') & (species == 'HI'):
-                    print(elec_tf[process][species].totN()[45]*13.6/2, '\n')
 
             # If we're considering Hydrogen excitation, keep track of all l=p states to 10p, and also 2s
             else:
@@ -414,7 +413,9 @@ def get_elec_cooling_tf(
     #)
 
     # Continuum energy loss rate per electron, dU_CMB/dt.
-    CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(T)
+    CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(phys.TCMB(rs))
+    
+    ##!!! take the prompt photons - thomson*c*normalized blackbody, compare to dE_ICS_dt
     
     
     # Secondary scattered electron spectrum.
@@ -459,7 +460,15 @@ def get_elec_cooling_tf(
     continuum_engloss_arr[eleceng > 20*phys.me - phys.me] = 0
 
     #!!! ICS modifications below
-    ICS_engloss_arr = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(T)
+    dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
+    ICS_engloss_arr = dE_ICS_dt
+    elec_heat_spec_grid[0,0] -= dE_ICS_dt[0]/eleceng[0]
+    elec_heat_spec_grid[1:, 1:] += np.diag(
+        dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
+    )
+    elec_heat_spec_grid[1:, :-1] -= np.diag(
+        dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
+    )
     
     # Deposited excitation array.
     for exc in exc_types:
