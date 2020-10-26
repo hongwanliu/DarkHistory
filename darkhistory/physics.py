@@ -1206,7 +1206,8 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
                 else:
                     exc_xsec[eng>900] = xsec_asympt(species, state, eng[eng>900])
 
-                exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
+                # !!! Bad extrapolation
+                #exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
 
             return exc_xsec
     
@@ -1428,7 +1429,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 # All electrons are now counted in the lowest bin.
                 #!!!
                 tot_elec_N = np.zeros_like(eng)
-                tot_elec_N[0] = 2.
+                tot_elec_N[0] = (in_eng-rydberg)/eng[0]
                 return np.outer(np.ones_like(in_eng), tot_elec_N)
 
             low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
@@ -1487,8 +1488,8 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             )
 
             #underflow bin
-            low_eng_elec_N[zero_mask,0]=1. #eleceng[0]/eleceng[zero_mask]
-            high_eng_elec_N[zero_mask,0]=1.
+            low_eng_elec_N[zero_mask,0]= (in_eng[zero_mask]-rydberg)/eng[0]
+            #high_eng_elec_N[zero_mask,0]=1.
 
     elif method == 'MEDEA':
         # See Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954
