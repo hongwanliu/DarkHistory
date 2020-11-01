@@ -452,43 +452,46 @@ def evolve(
                     coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
                     coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                     ics_engloss_data=ics_engloss_data,
-                    spec_2s1s = spec_2s1s
+                    spec_2s1s = spec_2s1s,
+                    loweng=eleceng[0]
                 )
 
             # Apply the transfer function to the input electron spectrum. 
+            ionized_elec = get_ionized_elec(in_spec_phot, eleceng, x_at_rs, method='He')
+            tot_spec_elec = in_spec_elec+lowengelec_spec_at_rs+ionized_elec
 
             # Low energy electrons from electron cooling, per injection event.
             elec_processes_lowengelec_spec = (
-                elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
+                elec_processes_lowengelec_tf.sum_specs(tot_spec_elec)
             )
 
             # Add this to lowengelec_at_rs. 
-            lowengelec_spec_at_rs += (
+            lowengelec_spec_at_rs = (
                 elec_processes_lowengelec_spec*norm_fac(rs)
             )
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
             deposited_H_ion  = np.dot(
-                deposited_ion_arr['H'],  in_spec_elec.N*norm_fac(rs)
+                deposited_ion_arr['H'],  tot_spec_elec.N*norm_fac(rs)
             )
             deposited_He_ion  = np.dot(
-                deposited_ion_arr['He'],  in_spec_elec.N*norm_fac(rs)
+                deposited_ion_arr['He'],  tot_spec_elec.N*norm_fac(rs)
             )
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
             deposited_Lya  = np.dot(
-                deposited_Lya_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_Lya_arr,  tot_spec_elec.N*norm_fac(rs)
             )
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
             deposited_heat = np.dot(
-                deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
+                deposited_heat_arr, tot_spec_elec.N*norm_fac(rs)
             )
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
             deposited_ICS  = np.dot(
-                deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_ICS_arr,  tot_spec_elec.N*norm_fac(rs)
             )
 
             #######################################
@@ -497,12 +500,11 @@ def evolve(
 
             # ICS secondary photon spectrum after electron cooling, 
             # per injection event.
-            ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+            ics_phot_spec = ics_sec_phot_tf.sum_specs(tot_spec_elec)
 
             # secondary photon spectrum from deexcitation of atoms 
             # that were collisionally excited by electrons
-            ionized_elec = get_ionized_elec(in_spec_phot, eleceng, x_at_rs, method='He')
-            deexc_phot_spec = deexc_phot_spectra.sum_specs(in_spec_elec+lowengelec_spec_at_rs+ionized_elec)
+            deexc_phot_spec = deexc_phot_spectra.sum_specs(tot_spec_elec)
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
