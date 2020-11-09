@@ -96,6 +96,7 @@ def get_elec_cooling_tf(
     """
 
     # Use default ICS transfer functions if not specified.
+    simple_ICS = False
 
     ics_tf = load_data('ics_tf')
 
@@ -460,15 +461,16 @@ def get_elec_cooling_tf(
     continuum_engloss_arr[eleceng > 20*phys.me - phys.me] = 0
 
     #!!! ICS modifications below
-    dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
-    ICS_engloss_arr = dE_ICS_dt
-    elec_heat_spec_grid[0,0] -= dE_ICS_dt[0]/eleceng[0]
-    elec_heat_spec_grid[1:, 1:] += np.diag(
-        dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
-    )
-    elec_heat_spec_grid[1:, :-1] -= np.diag(
-        dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
-    )
+    if simple_ICS:
+        dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
+        ICS_engloss_arr = dE_ICS_dt
+        elec_heat_spec_grid[0,0] -= dE_ICS_dt[0]/eleceng[0]
+        elec_heat_spec_grid[1:, 1:] += np.diag(
+            dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
+        )
+        elec_heat_spec_grid[1:, :-1] -= np.diag(
+            dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
+        )
     
     # Deposited excitation array.
     for exc in exc_types:
@@ -494,13 +496,18 @@ def get_elec_cooling_tf(
             np.dot(sec_elec_spec_N_arr, eleceng)
             #+ np.dot(sec_phot_spec_N_arr, photeng)
             #- continuum_engloss_arr
-            + ICS_engloss_arr #!!! ICS modification
+            #+ ICS_engloss_arr #!!! ICS modification
             + deposited_ICS_eng_arr
             + np.sum([deposited_exc_eng_arr[exc] for exc in exc_types], axis=0)
             + deposited_H_ion_eng_arr
             + deposited_He_ion_eng_arr
             + deposited_heat_eng_arr
         )
+
+        if simple_ICS:
+            toteng_no_self_scatter_arr += ICS_engloss_arr
+        else:
+            toteng_no_self_scatter_arr += np.dot(sec_phot_spec_N_arr, photeng) - continuum_engloss_arr
 
     tind = 0
     print(
@@ -521,7 +528,11 @@ def get_elec_cooling_tf(
         sec_elec_spec_N_arr *= fac_arr[:, np.newaxis]
         #sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
         #continuum_engloss_arr  *= fac_arr
-        ICS_engloss_arr        *= fac_arr #!!! ICS modification
+        if simple_ICS:
+            ICS_engloss_arr        *= fac_arr #!!! ICS modification
+        else:
+            sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
+            continuum_engloss_arr  *= fac_arr
         deposited_ICS_eng_arr  *= fac_arr
         for exc in exc_types:
             deposited_exc_eng_arr[exc]  *= fac_arr
@@ -607,9 +618,12 @@ def get_elec_cooling_tf(
     )
     
 
-    ICS_engloss_vec = solve_triangular(
-        inv_mat, ICS_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
-    )
+    if simple_ICS:
+        ICS_engloss_vec = solve_triangular(
+            inv_mat, ICS_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
+        )
+    else:
+        ICS_engloss_vec = np.zeros_like(eleceng)
 
     #!!! Delete
     ## Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
@@ -687,13 +701,18 @@ def get_elec_cooling_tf(
             #- np.dot(sec_lowengelec_tf.grid_vals, eleceng)
             # + cont_loss_ICS_vec
             #- np.dot(sec_phot_tf.grid_vals, photeng)
-            - ICS_engloss_vec #!!! ICS modification
+            #- ICS_engloss_vec #!!! ICS modification
             - np.sum([deposited_exc_vec[exc] for exc in exc_types], axis=0)
             - deposited_He_ion_vec
             - deposited_H_ion_vec
             - deposited_heat_vec
             - deposited_ICS_vec
         )
+
+        if simple_ICS:
+            conservation_check -= ICS_engloss_vec
+        else:
+            conservation_check += cont_loss_ICS_vec - np.dot(sec_phot_tf.grid_vals, photeng)
 
         if np.any(np.abs(conservation_check/eleceng) > 1e-5):
             failed_conservation_check = True
@@ -720,13 +739,19 @@ def get_elec_cooling_tf(
                 
                 # print('Continuum_engloss: ', cont_loss_ICS_vec[i])
                 
-                print(
-                    'Fraction of Energy in photons - Continuum: ', (
-                        ICS_engloss_vec[i] #ICS modification
-                        #np.dot(sec_phot_tf.grid_vals[i], photeng)/eng
-                        # - cont_loss_ICS_vec[i]
+                if simple_ICS:
+                    print(
+                        'Fraction of Energy in photons - Continuum: ', (
+                            ICS_engloss_vec[i] #ICS modification
+                        )
                     )
-                )
+                else:
+                    print(
+                        'Fraction of Energy in photons - Continuum: ', (
+                            np.dot(sec_phot_tf.grid_vals[i], photeng)/eng
+                             - cont_loss_ICS_vec[i]
+                        )
+                    )
 
                 print(
                     'Fraction Deposited in ionization: ', 
