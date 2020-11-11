@@ -36,7 +36,7 @@ mass_threshold = {
 }
 
 # Function for Lorentz boosting energy spectra
-def boost_elec_spec(y, spec, Ecut=None):
+def boost_elec_spec(y, spec, Emin=None, Emax=None):
     """
     Returns isotropic spectrum of electrons boosted by Lorentz factor y.
     
@@ -46,8 +46,8 @@ def boost_elec_spec(y, spec, Ecut=None):
         Lorentz boost factor
     spec : ndarray
         Energy spectrum of electrons in original frame
-    Ecut : float
-        Energy cutoff for spectrum
+    Emax : float
+        Maximum energy for spectrum
 
     Returns
     -------
@@ -69,17 +69,21 @@ def boost_elec_spec(y, spec, Ecut=None):
 
     for i, E in enumerate(toteng):
         # Limits of integration
-        if Ecut is None:
-            Emax = y * (E + b*p(E))
+        if Emax is None:
+            Eupper = y * (E + b*p(E))
         else:
-            Emax = min(Ecut, y * (E + b*p(E)))
-        Emin = y * (E - b*p(E))
-        
+            Eupper = min(Emax, y * (E + b*p(E)))
+
+        if Emin is None:
+            Elower = y * (E - b*p(E))
+        else:
+            Elower = max(Emin, y * (E - b*p(E)))
+         
         # Only do integration where the limits make sense
-        if Emin > Emax:
+        if Elower > Eupper:
             new_dNdE[i] = 0
         else:
-            intspec, err = quad(integrand, Emin, Emax)
+            intspec, err = quad(integrand, Elower, Eupper)
             new_dNdE[i] = 1/(2*b*y) * intspec
 
     return Spectrum(spec.eng, new_dNdE, spec_type='dNdE')
@@ -206,7 +210,7 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
             dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
 
             # dNdE of electrons boosted to the dark matter frame
-            dNdE_DM = boost_elec_spec(y, dNdE_rest, Ecut=(mu**2 + me**2)/(2*mu))
+            dNdE_DM = boost_elec_spec(y, dNdE_rest, Emin=me, Emax=(mu**2 + me**2)/(2*mu))
 
             return dNdE_DM
 
@@ -225,7 +229,7 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
             # eng is kinetic energy, eleceng is total energy, KE + m
             eleceng = eng + phys.me
             # Electron momentum
-            pmu = np.sqrt(toteng**2 - phys.me**2)
+            pmu = np.sqrt(eleceng**2 - phys.me**2)
             # Lorentz gamma from boosting from muon rest frame to pion rest frame
             y1 = (mp**2 + mu**2)/(2*mp*mu)
             # Lorentz gamma from boosting from pion rest frame to DM rest frame
@@ -241,10 +245,10 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
             dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
 
             # dNdE of electrons boosted to the pion frame
-            dNdE_pi = boost_elec_spec(y1, dNdE_rest, Ecut=(mu**2 + me**2)/(2*mu))
+            dNdE_pi = boost_elec_spec(y1, dNdE_rest, Emin=me, Emax=(mu**2 + me**2)/(2*mu))
             # dNdE of electrons boosted to the dark matter frame
             next_cut = eng[np.where(dNdE_pi.dNdE==0)[0][1]]
-            dNdE_DM = boost_elec_spec(y2, dNdE_pi, next_cut)
+            dNdE_DM = boost_elec_spec(y2, dNdE_pi, Emax=next_cut)
 
             return dNdE_DM
 

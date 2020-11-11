@@ -654,7 +654,7 @@ def get_history(
                     # Recombination.
                     - xHII * ne * reion.alphaA_recomb('HII', T_m)
                 )
-            )[0]
+            )
             
             # Assume that the heating rate due to reionization sources is proportional
             # to the ionization rate due to reionization sources
@@ -694,7 +694,7 @@ def get_history(
                     xHII, xHeII, xHeIII, T_m, rs
                 )
             ) / (3/2 * nH * (1 + chi + xe))
-            #print('reion_cooling, dm heat, reion_heat %0.3f, %0.3f, %0.3f' % (reion_cooling, dm_heating_rate, reion_heating))
+           # print('reion_cooling, dm heat, reion_heat %0.3f, %0.3f, %0.3f' % (reion_cooling, dm_heating_rate, reion_heating))
 
             #if rs<7.25:
             #    if(xe>(1+phys.chi)*0.99):
@@ -706,6 +706,9 @@ def get_history(
                 adiabatic_cooling_rate + compton_rate 
                 + dm_heating_rate + reion_cooling + reion_heating
             )
+        return [
+            dlogT_dz(var[0], rs),
+        ]
 
     def tla_reion_fixed_xHI_xHeI(rs, var):
         # TLA with fixed HI and HeI reionization history, but variable HeII levels. 
@@ -917,7 +920,6 @@ def get_history(
         #     tla_before_reion, [rs_vec[0], rs_vec[-1]],
         #     init_cond, method='Radau'
         # )
-        # print(soln)
     elif xe_reion_func is not None:
         # Fixed xe reionization model implemented. 
         # First, solve without reionization.
@@ -1012,12 +1014,10 @@ def get_history(
             soln[~where_new_soln, 3] = chi/2 + chi/2*np.tanh(
                 soln[~where_new_soln, 3]
             )
-            #print('where', where_new_soln)
 
 
             # Solve for all subsequent redshifts. 
             if rs_above_std_xe_vec.size > 0:
-
                 if HeIIIcheck_switch:
                     if rs_below_std_xe_vec.size > 0:
                         init_cond_fixed_xe = np.array([soln[~where_new_soln, 0][-1],soln[~where_new_soln, 3][-1]])
