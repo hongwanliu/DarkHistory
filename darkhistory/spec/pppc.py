@@ -204,14 +204,22 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
             else:
                 y = mDM/2/mu
 
-            # Formula for dNdE of electrons in muon rest frame
-            dNdE_rest = 8*pmu/mu**2 * ( 2*eleceng/mu * (3-4*eleceng/mu) + phys.me**2/mu**2 * (6*eleceng/mu - 4) )
-            dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
-            dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
+            # Use relativistic limit above muon energies of 1 GeV
+            rel_switch = True
+            if rel_switch is True and y*mu > 1e9:
+                rel_spec = 2/(y*mu) * ((5/6) - (3/2)*(eleceng/(y*mu))**2 + (2/3)*(eleceng/(y*mu))**3)
+                # Set unphysical values to 0, i.e. where spectrum goes negative
+                ind = np.where(rel_spec < 0)[0][0]
+                rel_spec[ind:] = 0
+                dNdE_DM = Spectrum(eng, rel_spec, spec_type='dNdE')
+            else:
+                # Formula for dNdE of electrons in muon rest frame
+                dNdE_rest = 8*pmu/mu**2 * ( 2*eleceng/mu * (3-4*eleceng/mu) + phys.me**2/mu**2 * (6*eleceng/mu - 4) )
+                dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
+                dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
 
-            # dNdE of electrons boosted to the dark matter frame
-            dNdE_DM = boost_elec_spec(y, dNdE_rest, Emin=me, Emax=(mu**2 + me**2)/(2*mu))
-
+                # dNdE of electrons boosted to the dark matter frame
+                dNdE_DM = boost_elec_spec(y, dNdE_rest, Emin=me, Emax=(mu**2 + me**2)/(2*mu))
             return dNdE_DM
 
         elif sec == 'phot':
