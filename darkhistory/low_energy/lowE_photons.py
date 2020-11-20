@@ -12,112 +12,6 @@ import darkhistory.physics as phys
 import darkhistory.spec.spectools as spectools
 import time
 
-def get_kappa_2s(photspec):
-    """ Compute kappa_2s for use in kappa_DM function
-
-    Parameters
-    ----------
-    photspec : Spectrum object
-        spectrum of photons. spec.toteng() should return Energy per baryon.
-
-    Returns
-    -------
-    kappa_2s : float
-        The added photoionization rate from the 1s to the 2s state due to DM photons.
-    """
-    # Convenient Variables
-    eng = photspec.eng
-    rs = photspec.rs
-    Lambda = phys.width_2s1s_H
-    Tcmb = phys.TCMB(rs)
-    lya_eng = phys.lya_eng
-
-    # Photon phase space density (E >> kB*T approximation)
-    def Boltz(E):
-        return np.exp(-E/Tcmb)
-
-    bounds = spectools.get_bin_bound(eng)
-    mid = spectools.get_indx(bounds, lya_eng/2)
-
-    # Phase Space Density of DM
-    f_nu = photspec.dNdE * phys.c**3 / (
-        8 * np.pi * (eng/phys.hbar)**2
-    )
-
-    # Complementary (E - h\nu) phase space density of DM
-    f_nu_p = np.zeros(mid)
-
-    # Index of point complementary to eng[k]
-    comp_indx = spectools.get_indx(bounds, lya_eng - eng[0])
-
-    # Find the bin in which lya_eng - eng[k] resides. Store f_nu of that bin in f_nu_p.
-    for k in np.arange(mid):
-        while (lya_eng - eng[k]) < bounds[comp_indx]:
-            comp_indx -= 1
-        f_nu_p[k] = f_nu[comp_indx]
-
-    # Setting up the numerical integration
-
-    # Bin sizes
-    diffs = np.append(bounds[1:mid], lya_eng/2) - np.insert(bounds[1:mid], 0, 0)
-    diffs /= (2 * np.pi * phys.hbar)
-
-    dLam_dnu = phys.get_dLam2s_dnu()
-    rates = dLam_dnu(eng[:mid]/(2 * np.pi * phys.hbar))
-
-    boltz = Boltz(eng[:mid])
-    boltz_p = Boltz(lya_eng - eng[:mid])
-
-    # The Numerical Integral
-    kappa_2s = np.sum(
-        diffs * rates * (f_nu[:mid] + boltz) * (f_nu_p + boltz_p)
-    )/phys.width_2s1s_H - Boltz(lya_eng)
-
-    return kappa_2s
-
-def kappa_2p(photspec, xe):
-    """ Compute kappa_2p of the modified tla.
-
-    Parameters
-    ----------
-    photspec : Spectrum object
-        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return Energy per baryon.
-
-    Returns
-    -------
-    kappa_2p : float
-        The added photoexcitation rate from the 1s to 2p state, due to photons injected by DM.
-    """
-    eng = photspec.eng
-    rs = photspec.rs
-    
-    rate_2p1s_times_x1s = (
-        8 * np.pi * phys.hubble(rs)/
-        (3*(phys.nH * rs**3 * (phys.c/phys.lya_freq)**3))
-    )
-    x1s_times_R_Lya = rate_2p1s_times_x1s
-    Lambda = phys.width_2s1s_H
-
-    # The bin number containing 10.2eV
-    lya_index = spectools.get_indx(eng, phys.lya_eng)
-
-    # The bins between 10.2eV and 13.6eV
-    exc_bounds = spectools.get_bounds_between(
-        eng, phys.lya_eng, phys.rydberg
-    )
-
-    # Effect on 2p state due to DM products
-    kappa_2p = (
-        photspec.dNdE[lya_index] * phys.nB * rs**3 *
-        np.pi**2 * (phys.hbar * phys.c)**3 / phys.lya_eng**2
-    )
-
-    # Effect on 2s state
-    kappa_2s = get_kappa_2s(photspec)
-
-    return (
-        kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*(1-xe)*Lambda/4
-    )/(3*x1s_times_R_Lya/4 + (1-xe)*Lambda/4)
 
 
 #---- f_c functions ----#
@@ -359,3 +253,110 @@ def propagating_lowE_photons_fracs(photspec, x, dt):
     prop_fracs[photspec.eng>=54.4] = 0
     prop_fracs[photspec.eng<=13.6] = 0
     return prop_fracs
+
+def get_kappa_2s(photspec):
+    """ Compute kappa_2s for use in kappa_DM function
+
+    Parameters
+    ----------
+    photspec : Spectrum object
+        spectrum of photons. spec.toteng() should return Energy per baryon.
+
+    Returns
+    -------
+    kappa_2s : float
+        The added photoionization rate from the 1s to the 2s state due to DM photons.
+    """
+    # Convenient Variables
+    eng = photspec.eng
+    rs = photspec.rs
+    Lambda = phys.width_2s1s_H
+    Tcmb = phys.TCMB(rs)
+    lya_eng = phys.lya_eng
+
+    # Photon phase space density (E >> kB*T approximation)
+    def Boltz(E):
+        return np.exp(-E/Tcmb)
+
+    bounds = spectools.get_bin_bound(eng)
+    mid = spectools.get_indx(bounds, lya_eng/2)
+
+    # Phase Space Density of DM
+    f_nu = photspec.dNdE * phys.c**3 / (
+        8 * np.pi * (eng/phys.hbar)**2
+    )
+
+    # Complementary (E - h\nu) phase space density of DM
+    f_nu_p = np.zeros(mid)
+
+    # Index of point complementary to eng[k]
+    comp_indx = spectools.get_indx(bounds, lya_eng - eng[0])
+
+    # Find the bin in which lya_eng - eng[k] resides. Store f_nu of that bin in f_nu_p.
+    for k in np.arange(mid):
+        while (lya_eng - eng[k]) < bounds[comp_indx]:
+            comp_indx -= 1
+        f_nu_p[k] = f_nu[comp_indx]
+
+    # Setting up the numerical integration
+
+    # Bin sizes
+    diffs = np.append(bounds[1:mid], lya_eng/2) - np.insert(bounds[1:mid], 0, 0)
+    diffs /= (2 * np.pi * phys.hbar)
+
+    dLam_dnu = phys.get_dLam2s_dnu()
+    rates = dLam_dnu(eng[:mid]/(2 * np.pi * phys.hbar))
+
+    boltz = Boltz(eng[:mid])
+    boltz_p = Boltz(lya_eng - eng[:mid])
+
+    # The Numerical Integral
+    kappa_2s = np.sum(
+        diffs * rates * (f_nu[:mid] + boltz) * (f_nu_p + boltz_p)
+    )/phys.width_2s1s_H - Boltz(lya_eng)
+
+    return kappa_2s
+
+def kappa_2p(photspec, xe):
+    """ Compute kappa_2p of the modified tla.
+
+    Parameters
+    ----------
+    photspec : Spectrum object
+        spectrum of photons. Assumed to be in dNdE mode. spec.toteng() should return Energy per baryon.
+
+    Returns
+    -------
+    kappa_2p : float
+        The added photoexcitation rate from the 1s to 2p state, due to photons injected by DM.
+    """
+    eng = photspec.eng
+    rs = photspec.rs
+    
+    rate_2p1s_times_x1s = (
+        8 * np.pi * phys.hubble(rs)/
+        (3*(phys.nH * rs**3 * (phys.c/phys.lya_freq)**3))
+    )
+    x1s_times_R_Lya = rate_2p1s_times_x1s
+    Lambda = phys.width_2s1s_H
+
+    # The bin number containing 10.2eV
+    lya_index = spectools.get_indx(eng, phys.lya_eng)
+
+    # The bins between 10.2eV and 13.6eV
+    exc_bounds = spectools.get_bounds_between(
+        eng, phys.lya_eng, phys.rydberg
+    )
+
+    # Effect on 2p state due to DM products
+    kappa_2p = (
+        photspec.dNdE[lya_index] * phys.nB * rs**3 *
+        np.pi**2 * (phys.hbar * phys.c)**3 / phys.lya_eng**2
+    )
+
+    # Effect on 2s state
+    kappa_2s = get_kappa_2s(photspec)
+
+    return (
+        kappa_2p*3*x1s_times_R_Lya/4 + kappa_2s*(1-xe)*Lambda/4
+    )/(3*x1s_times_R_Lya/4 + (1-xe)*Lambda/4)
