@@ -98,11 +98,17 @@ def get_elec_cooling_tf(
     # Use default ICS transfer functions if not specified.
     simple_ICS = False
 
-    ics_tf = load_data('ics_tf')
+    if (raw_thomson_tf == None) | (raw_rel_tf == None) | (raw_engloss_tf == None):
+        ics_tf = load_data('ics_tf')
 
-    raw_thomson_tf = ics_tf['thomson']
-    raw_rel_tf     = ics_tf['rel']
-    raw_engloss_tf = ics_tf['engloss']
+    if (raw_thomson_tf == None):
+        raw_thomson_tf = ics_tf['thomson']
+
+    if (raw_rel_tf == None):
+        raw_rel_tf     = ics_tf['rel']
+
+    if (raw_engloss_tf == None):
+        raw_engloss_tf = ics_tf['engloss']
 
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
@@ -229,9 +235,13 @@ def get_elec_cooling_tf(
     # Energy loss transfer function for single primary electron
     # single scattering. This is dN/(dE dt), dt = 1 s.
     # -   Similar to the above, but now we keep track of the final electron energy !!!
+    # -   In other words, E_in - E_fin = Delta is the amount of energy gained by the photons, regardless of their initial energy..
     engloss_ICS_tf = engloss_spec(
-        eleceng, photeng, T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
+        eleceng, delta=photeng, T=T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
+    print(rs)
+    crap = engloss_ICS_tf
+
 
     # Downcasting speeds up np.dot
     phot_ICS_tf._grid_vals = phot_ICS_tf.grid_vals.astype('float64')
@@ -250,7 +260,7 @@ def get_elec_cooling_tf(
 
     # Create the secondary electron transfer functions.
 
-    # ICS transfer function.
+    # (empty) ICS transfer function.
     elec_ICS_tf = tf.TransFuncAtRedshift(
         np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
         rs = rs*np.ones_like(eleceng), eng = eleceng,
@@ -268,10 +278,21 @@ def get_elec_cooling_tf(
         elec_ICS_tf._grid_vals = spectools.engloss_rebin_fast(
             eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
         )
+
+    dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
+    ICS_engloss_arr = dE_ICS_dt
+    if simple_ICS & False:
+        elec_ICS_tf._grid_vals[0,0] = -dE_ICS_dt[0]/eleceng[0]
+        elec_ICS_tf._grid_vals[1:, 1:] = np.diag(
+            dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
+        )
+        elec_ICS_tf._grid_vals[1:, :-1] = -np.diag(
+            dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
+        )
     
     # Total upscattered photon energy.
     cont_loss_ICS_vec = np.zeros_like(eleceng)
-    # Deposited energy, enforces energy conservation.
+    # Enforces energy conservation.
     deposited_ICS_vec = np.zeros_like(eleceng)
     
     #########################
@@ -426,6 +447,8 @@ def get_elec_cooling_tf(
         + np.sum([elec_tf['ion'][species].grid_vals for species in atoms], axis=0)
         + elec_heat_spec_grid
     )
+    #print(elec_ICS_tf.grid_vals)
+    #print(dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:]))
     
     # Secondary photon spectrum (from ICS). 
     sec_phot_spec_N_arr = phot_ICS_tf.grid_vals
@@ -459,19 +482,7 @@ def get_elec_cooling_tf(
     continuum_engloss_arr = CMB_upscatter_eng_rate*np.ones_like(eleceng)
     # Energy loss is not taken into account for eleceng > 20*phys.me
     continuum_engloss_arr[eleceng > 20*phys.me - phys.me] = 0
-
-    #!!! ICS modifications below
-    if simple_ICS:
-        dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
-        ICS_engloss_arr = dE_ICS_dt
-        elec_heat_spec_grid[0,0] -= dE_ICS_dt[0]/eleceng[0]
-        elec_heat_spec_grid[1:, 1:] += np.diag(
-            dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
-        )
-        elec_heat_spec_grid[1:, :-1] -= np.diag(
-            dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
-        )
-    
+ 
     # Deposited excitation array.
     for exc in exc_types:
         deposited_exc_eng_arr[exc] += exc_potentials[exc]*elec_tf['exc'][exc].totN()
@@ -786,7 +797,7 @@ def get_elec_cooling_tf(
                 raise RuntimeError('Conservation of energy failed.')
 
     return (
-        sec_phot_tf, inv_mat, #sec_lowengelec_tf,
+        sec_phot_tf, crap, #sec_lowengelec_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
         ICS_engloss_vec, #cont_loss_ICS_vec, deposited_ICS_vec, 
         deexc_phot_spectra, deposited_Lya_vec
