@@ -91,6 +91,8 @@ rho_baryon   = rho_crit*omega_baryon
 """ Baryon density in eV cm\ :sup:`-3`\ ."""
 nB          = rho_baryon/mp
 """ Baryon number density in eV cm\ :sup:`-3`\ ."""
+s0          = 2891.2
+""" Entropy density of CMB in cm\ :sup:`-3`\ ."""
 
 YHe         = 0.245
 """Helium abundance by mass."""
@@ -1130,7 +1132,7 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
         else:
             raise TypeError('invalid species.')
     elif (method == 'MEDEA') | (method == 'AcharyaKhatri'):
-        if (method == 'AcharyaKhatri'):
+        if (method == 'AcharyaKhatri') | (method == 'MEDEA'):
             if (species == 'HeI'):
                 state = '2p'
             elif species == 'HeII':
@@ -1206,8 +1208,8 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
                 else:
                     exc_xsec[eng>900] = xsec_asympt(species, state, eng[eng>900])
 
-                # !!! Bad extrapolation
-                #exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
+                # !!! bad extrapolation
+                exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
 
             return exc_xsec
     
@@ -1429,7 +1431,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 # All electrons are now counted in the lowest bin.
                 #!!!
                 tot_elec_N = np.zeros_like(eng)
-                tot_elec_N[0] = (in_eng-rydberg)/eng[0]
+                tot_elec_N[0] = (in_eng-ion_pot)/eng[0]
                 return np.outer(np.ones_like(in_eng), tot_elec_N)
 
             low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
@@ -1488,7 +1490,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             )
 
             #underflow bin
-            low_eng_elec_N[zero_mask,0]= (in_eng[zero_mask]-rydberg)/eng[0]
+            low_eng_elec_N[zero_mask,0]= (in_eng[zero_mask]-ion_pot)/eng[0]
             #high_eng_elec_N[zero_mask,0]=1.
 
     elif method == 'MEDEA':
@@ -1693,6 +1695,8 @@ def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
     so to convert to SI, we insert 1/(4*pi*eps_0)^2 and use that e^2/(4*pi*eps_0) = alpha
     """
 
+    if method == 'MEDEA':
+        method = 'old'
     if method == 'old':
         w = np.sqrt(1 - 1/(1 + eng/me)**2)
         ne = xe*nH*rs**3 * (hbar*c)**3
