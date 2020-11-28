@@ -25,7 +25,7 @@ def get_elec_cooling_tf(
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
     ics_engloss_data=None, #loweng=3000, 
     spec_2s1s=None,
-    check_conservation_eng = False, verbose=False
+    check_conservation_eng = False, simple_ICS=False, verbose=False
 ):
 
     """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
@@ -95,9 +95,9 @@ def get_elec_cooling_tf(
 
     """
 
-    # Use default ICS transfer functions if not specified.
-    simple_ICS = False
+    id_mat = np.identity(eleceng.size)
 
+    # Use default ICS transfer functions if not specified.
     if (raw_thomson_tf == None) | (raw_rel_tf == None) | (raw_engloss_tf == None):
         ics_tf = load_data('ics_tf')
 
@@ -182,7 +182,6 @@ def get_elec_cooling_tf(
         N_underflow = {}
 
         # Compute the (normalized) collisional excitation spectra.
-        id_mat = np.identity(eleceng.size)
 
         # Electron with energy eleceng produces a spectrum with one particle
         # of energy eleceng - exc_potential.
@@ -229,7 +228,7 @@ def get_elec_cooling_tf(
     #   -What's the outgoing electron energy?  Dunno, because we could have had
     #    any CMB photon in the initial state !!!
     phot_ICS_tf = ics_spec(
-        eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf
+        eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf, T_ref=phys.TCMB(400)
     )
 
     # Energy loss transfer function for single primary electron
@@ -239,8 +238,6 @@ def get_elec_cooling_tf(
     engloss_ICS_tf = engloss_spec(
         eleceng, delta=photeng, T=T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
     )
-    print(rs)
-    crap = engloss_ICS_tf
 
 
     # Downcasting speeds up np.dot
@@ -279,9 +276,10 @@ def get_elec_cooling_tf(
             eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
         )
 
-    dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
+    #dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
+    dE_ICS_dt = engloss_ICS_tf.toteng()
     ICS_engloss_arr = dE_ICS_dt
-    if simple_ICS & False:
+    if simple_ICS:
         elec_ICS_tf._grid_vals[0,0] = -dE_ICS_dt[0]/eleceng[0]
         elec_ICS_tf._grid_vals[1:, 1:] = np.diag(
             dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
@@ -332,12 +330,12 @@ def get_elec_cooling_tf(
                         in_eng = eleceng, rs = rs*np.ones_like(eleceng),
                         eng = eleceng, dlnz = -1, spec_type  = 'N'
                     )
-                    if (exc[0] == '2'):
+                    #if (exc[0] == '2'):
                         #print(exc, rate_vec[45]*10.2, coll_xsec[process](eleceng, species=species, method=method, state=exc)[45])
-                        print(elec_tf[process][exc].totN()[45]*10.2)
-                    if (exc[0] == '3'):
+                        #print(elec_tf[process][exc].totN()[45]*10.2)
+                    #if (exc[0] == '3'):
                         #print(exc, rate_vec[45]*13.6*8/9, coll_xsec[process](eleceng, species=species, method=method, state=exc)[45])
-                        print(elec_tf[process][exc].totN()[45]*13.6*8/9)
+                        #print(elec_tf[process][exc].totN()[45]*13.6*8/9)
  
 
     deposited_exc_vec = {exc : np.zeros_like(eleceng) for exc in exc_types}
@@ -438,6 +436,11 @@ def get_elec_cooling_tf(
     CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(phys.TCMB(rs))
     
     ##!!! take the prompt photons - thomson*c*normalized blackbody, compare to dE_ICS_dt
+
+    norm_CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng, phys.TCMB(rs)), spec_type='dNdE')
+    norm_CMB_spec /= norm_CMB_spec.toteng()
+    upscattered_CMB_grid = np.outer(CMB_upscatter_eng_rate*np.ones_like(eleceng), norm_CMB_spec.N)
+    crap = phot_ICS_tf.grid_vals - upscattered_CMB_grid
     
     
     # Secondary scattered electron spectrum.
@@ -455,7 +458,7 @@ def get_elec_cooling_tf(
     # !!! Consider possibility of adding atomic transition photons here!!!
     
     # Deposited ICS array.
-    deposited_ICS_eng_arr = (
+    ICS_err_arr = (
         #Total amount of energy of the electrons that got scattered
         np.sum(elec_ICS_tf.grid_vals, axis=1)*eleceng
 
@@ -471,7 +474,7 @@ def get_elec_cooling_tf(
     # This is only non-zero due to numerical errors. Luckily it is very small.
 
     # Energy loss is not taken into account for eleceng > 20*phys.me
-    deposited_ICS_eng_arr[eleceng > 20*phys.me - phys.me] -= ( 
+    ICS_err_arr[eleceng > 20*phys.me - phys.me] -= ( 
         CMB_upscatter_eng_rate
     )
     # !!! A legacy of Tracy's code: For electrons with a boost of 20 or more
@@ -508,7 +511,7 @@ def get_elec_cooling_tf(
             #+ np.dot(sec_phot_spec_N_arr, photeng)
             #- continuum_engloss_arr
             #+ ICS_engloss_arr #!!! ICS modification
-            + deposited_ICS_eng_arr
+            + ICS_err_arr
             + np.sum([deposited_exc_eng_arr[exc] for exc in exc_types], axis=0)
             + deposited_H_ion_eng_arr
             + deposited_He_ion_eng_arr
@@ -521,17 +524,17 @@ def get_elec_cooling_tf(
             toteng_no_self_scatter_arr += np.dot(sec_phot_spec_N_arr, photeng) - continuum_engloss_arr
 
     tind = 0
-    print(
-        deposited_exc_eng_arr['2s'][tind],
-        deposited_exc_eng_arr['2p'][tind],
-        deposited_exc_eng_arr['3p'][tind],
-        deposited_H_ion_eng_arr[tind],
-        deposited_He_ion_eng_arr[tind],
-        deposited_heat_eng_arr[tind],
-        np.dot(sec_elec_spec_N_arr, eleceng)[tind],
-        np.dot(sec_phot_spec_N_arr, photeng)[tind]-continuum_engloss_arr[tind] + deposited_ICS_eng_arr[tind]
-        #toteng_no_self_scatter_arr[tind]
-    )
+    #print(
+    #    deposited_exc_eng_arr['2s'][tind],
+    #    deposited_exc_eng_arr['2p'][tind],
+    #    deposited_exc_eng_arr['3p'][tind],
+    #    deposited_H_ion_eng_arr[tind],
+    #    deposited_He_ion_eng_arr[tind],
+    #    deposited_heat_eng_arr[tind],
+    #    np.dot(sec_elec_spec_N_arr, eleceng)[tind],
+    #    np.dot(sec_phot_spec_N_arr, photeng)[tind]-continuum_engloss_arr[tind] + deposited_ICS_eng_arr[tind]
+    #    #toteng_no_self_scatter_arr[tind]
+    #)
 
     if no_self_scatter:
         fac_arr = eleceng/toteng_no_self_scatter_arr
@@ -544,7 +547,7 @@ def get_elec_cooling_tf(
         else:
             sec_phot_spec_N_arr *= fac_arr[:, np.newaxis]
             continuum_engloss_arr  *= fac_arr
-        deposited_ICS_eng_arr  *= fac_arr
+        ICS_err_arr  *= fac_arr
         for exc in exc_types:
             deposited_exc_eng_arr[exc]  *= fac_arr
         deposited_H_ion_eng_arr  *= fac_arr
@@ -592,9 +595,9 @@ def get_elec_cooling_tf(
     #sec_elec_spec_N_arr[sec_elec_spec_N_arr<1e-8] = 0.
     inv_mat = id_mat - sec_elec_spec_N_arr
 
-    deposited_ICS_vec  = solve_triangular(
+    ICS_err_vec  = solve_triangular(
         inv_mat,
-        deposited_ICS_eng_arr, lower=True, check_finite=False, unit_diagonal=True
+        ICS_err_arr, lower=True, check_finite=False, unit_diagonal=True
     )
 
     for exc in exc_types:
@@ -630,11 +633,9 @@ def get_elec_cooling_tf(
     
 
     if simple_ICS:
-        ICS_engloss_vec = solve_triangular(
+        deposited_ICS_vec = solve_triangular(
             inv_mat, ICS_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
         )
-    else:
-        ICS_engloss_vec = np.zeros_like(eleceng)
 
     #!!! Delete
     ## Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
@@ -698,6 +699,8 @@ def get_elec_cooling_tf(
     # transfer function.
 
     sec_phot_tf._grid_vals = sec_phot_specs - upscattered_CMB_grid
+    if not simple_ICS:
+        deposited_ICS_vec = np.dot(sec_phot_tf._grid_vals, photeng)
     
     #!!! Delete
     #sec_lowengelec_tf._grid_vals = sec_lowengelec_specs
@@ -717,7 +720,7 @@ def get_elec_cooling_tf(
             - deposited_He_ion_vec
             - deposited_H_ion_vec
             - deposited_heat_vec
-            - deposited_ICS_vec
+            #- ICS_err_vec
         )
 
         if simple_ICS:
@@ -725,7 +728,7 @@ def get_elec_cooling_tf(
         else:
             conservation_check += cont_loss_ICS_vec - np.dot(sec_phot_tf.grid_vals, photeng)
 
-        if np.any(np.abs(conservation_check/eleceng) > 1e-5):
+        if np.any(np.abs(conservation_check/eleceng) > 2e-2):
             failed_conservation_check = True
         #else:
         #    print('NICE')
@@ -784,12 +787,12 @@ def get_elec_cooling_tf(
                     conservation_check[i]/eng*100
                 )
                 print('Fraction Deposited in ICS (Numerical Error): ', 
-                    deposited_ICS_vec[i]/eng
+                    ICS_err_vec[i]/eng
                 )
                 
                 print(
                     'Energy conservation with deposited (%): ',
-                    (conservation_check[i] - deposited_ICS_vec[i])/eng*100
+                    (conservation_check[i] - ICS_err_vec[i])/eng*100
                 )
                 print('***************************************************')
                 
@@ -797,9 +800,9 @@ def get_elec_cooling_tf(
                 raise RuntimeError('Conservation of energy failed.')
 
     return (
-        sec_phot_tf, crap, #sec_lowengelec_tf,
+        sec_phot_tf, #crap, #sec_lowengelec_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
-        ICS_engloss_vec, #cont_loss_ICS_vec, deposited_ICS_vec, 
+        deposited_ICS_vec, ICS_err_vec, 
         deexc_phot_spectra, deposited_Lya_vec
     )
 
