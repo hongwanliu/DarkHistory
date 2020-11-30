@@ -113,8 +113,8 @@ def get_elec_cooling_tf(
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-    #method = 'MEDEA'
-    method = 'AcharyaKhatri'
+    method = 'MEDEA'
+    #method = 'AcharyaKhatri'
     if method == 'AcharyaKhatri':
         exc_types  = ['2s', '2p', '3p',
                 'HeI', 'HeII'] 
