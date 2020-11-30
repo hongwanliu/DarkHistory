@@ -91,7 +91,7 @@ def getf_ion(photspec, norm_fac, dt, n, method, cross_check=False):
         f_HeI = 0
         f_HeII = 0
     
-    elif method == 'helium':
+    elif method == 'He':
 
         # Neglect HeII photoionization
         # !!! Not utilizing partial binning!
