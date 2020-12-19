@@ -12,6 +12,7 @@ from config import load_data
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectools import rebin_N_arr
+from darkhistory.spec.spectools import discretize
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 
@@ -285,16 +286,24 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
         # Box width
         Emin = y*(1-b) * mp/2
         Emax = y*(1+b) * mp/2
-        dNdE[(eng > Emin) & (eng < Emax)] = 1/b/y/mp * 4 # Factor of 4 b/c four photons in decay
+        #dNdE[(eng > Emin) & (eng < Emax)] = 1/b/y/mp * 4 # Factor of 4 b/c four photons in decay
+
+        # Define box function to discretize
+        def pion_box_spectrum(eng_phot):
+            if (eng_phot > Emin) & (eng_phot < Emax):
+                return 1/b/y/mp * 4
+            else:
+                return 0
 
         if sec == 'elec':
             return Spectrum(
                 eng, np.zeros_like(eng), spec_type='dNdE'
             )
         if sec == 'phot':
-            return Spectrum(
-                eng, dNdE, spec_type='dNdE'
-            )
+            return discretize(eng, pion_box_spectrum)
+            #return Spectrum(
+            #    eng, dNdE, spec_type='dNdE'
+            #)
 
 
     log10x = np.log10(eng/_mDM)
