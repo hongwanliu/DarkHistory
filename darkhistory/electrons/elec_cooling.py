@@ -434,13 +434,14 @@ def get_elec_cooling_tf(
 
     # Continuum energy loss rate per electron, dU_CMB/dt.
     CMB_upscatter_eng_rate = phys.thomson_xsec*phys.c*phys.CMB_eng_density(phys.TCMB(rs))
+    CMB_upscatter_rate = phys.thomson_xsec*phys.c*phys.CMB_N_density(phys.TCMB(rs))
     
     ##!!! take the prompt photons - thomson*c*normalized blackbody, compare to dE_ICS_dt
 
     norm_CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng, phys.TCMB(rs)), spec_type='dNdE')
-    norm_CMB_spec /= norm_CMB_spec.toteng()
-    upscattered_CMB_grid = np.outer(CMB_upscatter_eng_rate*np.ones_like(eleceng), norm_CMB_spec.N)
-    crap = phot_ICS_tf.grid_vals - upscattered_CMB_grid
+    norm_CMB_spec /= norm_CMB_spec.totN()
+    upscattered_CMB_grid = np.outer(CMB_upscatter_rate*np.ones_like(eleceng), norm_CMB_spec.N)
+    crap = phot_ICS_tf.grid_vals - 0*upscattered_CMB_grid
     
     
     # Secondary scattered electron spectrum.
@@ -800,7 +801,7 @@ def get_elec_cooling_tf(
                 raise RuntimeError('Conservation of energy failed.')
 
     return (
-        sec_phot_tf, #crap, #sec_lowengelec_tf,
+        sec_phot_tf, crap, #sec_lowengelec_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
         deposited_ICS_vec, ICS_err_vec, 
         deexc_phot_spectra, deposited_Lya_vec
