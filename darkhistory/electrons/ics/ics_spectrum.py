@@ -472,10 +472,11 @@ def thomson_spec(eleckineng, photeng, T, as_pairs=False):
         photeng_mask = np.outer(np.ones(eleckineng.size), photeng)
 
     # Boolean arrays. Depending on as_pairs, can be 1- or 2-D. 
-    beta_small = (beta_mask < 0.01)
-    eta_small  = (eta_mask < 0.1/beta_mask)
+    print('change made')
+    beta_small = (beta_mask < 0.1)
+    #eta_small  = (eta_mask < 0.2/beta_mask)
 
-    where_diff = (beta_small & eta_small)
+    where_diff = beta_small #& eta_small)
 
     testing = False
 
