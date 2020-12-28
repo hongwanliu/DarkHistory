@@ -12,6 +12,7 @@ from config import load_data
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectools import rebin_N_arr
+from darkhistory.spec.spectools import discretize
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 
@@ -211,12 +212,14 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
                 # Set unphysical values to 0, i.e. where spectrum goes negative
                 ind = np.where(rel_spec < 0)[0][0]
                 rel_spec[ind:] = 0
-                dNdE_DM = Spectrum(eng, rel_spec, spec_type='dNdE')
+                # Multiply rel_spec by 2 because the decay includes two electrons
+                dNdE_DM = Spectrum(eng, 2*rel_spec, spec_type='dNdE')
             else:
                 # Formula for dNdE of electrons in muon rest frame
                 dNdE_rest = 8*pmu/mu**2 * ( 2*eleceng/mu * (3-4*eleceng/mu) + phys.me**2/mu**2 * (6*eleceng/mu - 4) )
                 dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
-                dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
+                # Multiply dNdE_rest by 2 because the decay includes two electrons
+                dNdE_rest = Spectrum(eng, 2*dNdE_rest, spec_type='dNdE')
 
                 # dNdE of electrons boosted to the dark matter frame
                 dNdE_DM = boost_elec_spec(y, dNdE_rest, Emin=me, Emax=(mu**2 + me**2)/(2*mu))
@@ -250,7 +253,8 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
             dNdE_rest = 8*pmu/mu**2 * ( 
                             2*eleceng/mu * (3-4*eleceng/mu) + phys.me**2/mu**2 * (6*eleceng/mu - 4) )
             dNdE_rest[eng > (mu**2 + phys.me**2)/(2*mu)] = 0.
-            dNdE_rest = Spectrum(eng, dNdE_rest, spec_type='dNdE')
+            # Multiply dNdE_rest by 2 because the decay includes two electrons
+            dNdE_rest = Spectrum(eng, 2*dNdE_rest, spec_type='dNdE')
 
             # dNdE of electrons boosted to the pion frame
             dNdE_pi = boost_elec_spec(y1, dNdE_rest, Emin=me, Emax=(mu**2 + me**2)/(2*mu))
@@ -282,16 +286,24 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
         # Box width
         Emin = y*(1-b) * mp/2
         Emax = y*(1+b) * mp/2
-        dNdE[(eng > Emin) & (eng < Emax)] = 1/b/y/mp
+        #dNdE[(eng > Emin) & (eng < Emax)] = 1/b/y/mp * 4 # Factor of 4 b/c four photons in decay
+
+        # Define box function to discretize
+        def pion_box_spectrum(eng_phot):
+            if (eng_phot > Emin) & (eng_phot < Emax):
+                return 1/b/y/mp * 4
+            else:
+                return 0
 
         if sec == 'elec':
             return Spectrum(
                 eng, np.zeros_like(eng), spec_type='dNdE'
             )
         if sec == 'phot':
-            return Spectrum(
-                eng, dNdE, spec_type='dNdE'
-            )
+            return discretize(eng, pion_box_spectrum)
+            #return Spectrum(
+            #    eng, dNdE, spec_type='dNdE'
+            #)
 
 
     log10x = np.log10(eng/_mDM)
