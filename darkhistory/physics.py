@@ -885,7 +885,15 @@ def xHII_std(rs):
 
         _xHII_std = interp1d(rs_vec, xHII_vec)
 
-    return _xHII_std(rs)
+    extrap = rs>2e3
+    if np.sum(extrap) == 0:
+        return _xHII_std(rs)
+    elif np.sum(not extrap) == 0:
+        return xe_Saha(rs, 'HI')
+    else:
+        return np.append(_xHII_std(rs[not extrap]), xe_Saha(rs[extrap], 'xHI'))
+            
+        
 
 def xHeII_std(rs):
     """Baseline nHeII/nH value.
