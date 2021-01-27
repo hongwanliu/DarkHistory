@@ -228,11 +228,10 @@ def get_history(
                 return injection_rate
         
     chi = phys.chi
+    # residual neutral atom fraction once reionization is complete
+    re_resid_frac = 10**(-4.4)
 
     if reion_switch:
-
-        # residual neutral atom fraction once reionization is complete
-        re_resid_frac = 10**(-4.4)
 
         if photoion_rate_func is None:
 

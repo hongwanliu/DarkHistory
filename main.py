@@ -512,28 +512,29 @@ def evolve(
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
         # Compute the fraction of ionizing photons that free stream within this step
-        if (reion_switch == True) & (rs < reion_rs):
-            # If reionization is complete, set the residual fraction of neutral atoms to their measured value
-            if x_arr[-1,0] == 1:
-                x_arr[-1,0] = 1-10**(-4.4)
-            if x_arr[-1,1] == phys.chi:
-                x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
+        if (reion_switch == True):
+            if (rs<reion_rs):
+                # If reionization is complete, set the residual fraction of neutral atoms to their measured value
+                if x_arr[-1,0] >= 1-10**(-4.4):
+                    x_arr[-1,0] = 1-10**(-4.4)
+                if x_arr[-1,1] >= phys.chi*(1-10**(-4.4)):
+                    x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
 
-            if HeIIIcheck_switch:
-                # All of the photons above 54.4eV get absorbed by HeII, all HeII instantly recombine,
-                # so the number of recombined photon
-                #ne = xe_reion_func(rs) * phys.nH * rs**3
-                ne = x_arr[-1,2] * phys.nH * rs**3
-                factor = x_arr[-1,2] * ne * reion.alphaA_recomb('HeIII', Tm_arr[-1]) * dt
-                if factor > 20:
-                    recomb_frac = 1
-                else:
-                    recomb_frac = 1-np.exp(-factor)
+                if HeIIIcheck_switch:
+                    # All of the photons above 54.4eV get absorbed by HeII, all HeII instantly recombine,
+                    # so the number of recombined photon
+                    #ne = xe_reion_func(rs) * phys.nH * rs**3
+                    ne = x_arr[-1,2] * phys.nH * rs**3
+                    factor = x_arr[-1,2] * ne * reion.alphaA_recomb('HeIII', Tm_arr[-1]) * dt
+                    if factor > 20:
+                        recomb_frac = 1
+                    else:
+                        recomb_frac = 1-np.exp(-factor)
 
-                ind = sum(lowengphot_spec_at_rs.eng < 4*phys.rydberg)-1
-                lowengphot_spec_at_rs.N[ind] += recomb_frac * phys.nH*rs**3 * x_arr[-1, 2] / (phys.nB*rs**3)
-                #ion_bounds_HeII = spectools.get_bounds_between(phot_spec.eng, 4*phys.rydberg)
-                #lowengphot_spec_at_rs.N[ind] += lowengphot_spec_at_rs.totN(bound_type='eng', bound_arr=ion_bounds_HeII)
+                    ind = sum(lowengphot_spec_at_rs.eng < 4*phys.rydberg)-1
+                    lowengphot_spec_at_rs.N[ind] += recomb_frac * phys.nH*rs**3 * x_arr[-1, 2] / (phys.nB*rs**3)
+                    #ion_bounds_HeII = spectools.get_bounds_between(phot_spec.eng, 4*phys.rydberg)
+                    #lowengphot_spec_at_rs.N[ind] += lowengphot_spec_at_rs.totN(bound_type='eng', bound_arr=ion_bounds_HeII)
 
 
             lowEprop_mask = propagating_lowE_photons_fracs(
