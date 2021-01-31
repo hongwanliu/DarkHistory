@@ -795,7 +795,6 @@ def get_history(
                 _f_heating(rs, xHI, xHeI, xHeII) * inj_rate
             ) / (3/2 * nH * (1 + chi + xe))
             #print('DM after: ', dm_heating_rate, inj_rate)
-
             reion_cooling = phys.dtdz(rs) * (
                 reion.recomb_cooling_rate(
                     xHII, xHeII, xHeIII(yHeIII), T_m, rs
@@ -925,20 +924,10 @@ def get_history(
 
         # tfirst=True means that tla_before_reion accepts rs as 
         # first argument.
-        good_soln = False
-        bettertol = rtol
-        while good_soln is False:
-            soln_no_reion = odeint(
-                tla_before_reion, _init_cond, rs_vec,
-                mxstep = mxstep, tfirst=True, rtol=bettertol
-            )
-            # Check if anything in solution is nan
-            # If yes AND initial conditions are good, resolve with smaller tolerance
-            if np.any(np.isnan(soln_no_reion))and not np.any(np.isnan(_init_cond)):
-                print('nans in solution, resolving...')
-                bettertol *= 0.8
-            else:
-                good_soln = True
+        soln_no_reion = odeint(
+            tla_before_reion, _init_cond, rs_vec, 
+            mxstep = mxstep, tfirst=True, rtol=rtol
+        )
         # soln_no_reion = solve_ivp(
         #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
         #     init_cond, method='BDF', t_eval=rs_vec
@@ -957,9 +946,9 @@ def get_history(
             
             xe_no_reion = xHII_no_reion + xHeII_no_reion + 2*xHeIII_no_reion
             xe_reion = xe_reion_func(rs_vec)
-
             # Find where to solve the TLA. Must lie below reion_rs and 
             # have xe_reion > xe_no_reion.
+
             if np.all(xe_reion >= xe_no_reion) or (zstar_switch):
                 where_new_soln = (np.arange(rs_vec.size) >=0)
                 zstar_switch = True
@@ -984,7 +973,6 @@ def get_history(
                     where_start = np.max([where_xe, where_rs])
                 else:
                     where_start = np.max(where_rs)
-
                 # Define the boolean mask.
                 where_new_soln = (np.arange(rs_vec.size) >= where_start)
                 #print('where_start', where_start, where_new_soln)
@@ -1010,9 +998,7 @@ def get_history(
             soln[~where_new_soln, 2] = chi/2 + chi/2*np.tanh(
                 soln[~where_new_soln, 2]
             )
-            soln[~where_new_soln, 3] = chi/2 + chi/2*np.tanh(
-                soln[~where_new_soln, 3]
-            )
+            soln[:, 3] = chi/2 + chi/2*np.tanh(soln[:, 3])
 
 
             # Solve for all subsequent redshifts. 
@@ -1039,12 +1025,12 @@ def get_history(
                         soln[where_new_soln, 3] = np.squeeze(soln_with_reion[:,1])
 
                     soln[where_new_soln, 3] = chi/2 + chi/2*np.tanh(soln[where_new_soln, 3])
+
                 else:
                     if rs_below_std_xe_vec.size > 0:
                         init_cond_fixed_xe = np.array([soln[~where_new_soln, 0][-1]])
                     else:
                         init_cond_fixed_xe = np.array([_init_cond[0]])
-
                     soln_with_reion = odeint(
                         tla_reion_fixed_xe, init_cond_fixed_xe,  #MODIFIED
                         rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol,
@@ -1054,17 +1040,13 @@ def get_history(
                         soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:,0])
                     else:
                         soln[where_new_soln, 0] = np.squeeze(soln_with_reion[:,0])
-
                 # Put in the solutions for xHII and xHeII. 
-                #print(rs_vec, where_new_soln, xe_func_switch)
                 soln[where_new_soln, 1] = np.array(
                     [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
                 ) * (1. / (1. + phys.chi))
                 soln[where_new_soln, 2] = np.array(
                     [xe_reion_func(rs) for rs in rs_vec[where_new_soln]]
                 ) * (phys.chi / (1. + phys.chi))
-                #print(soln[where_new_soln, 3])
-                #soln[where_new_soln, 3] = chi/2 + chi/2*np.tanh(soln[where_new_soln, 3])
 
         # Convert from log_T_m to T_m
         soln[:,0] = np.exp(soln[:,0])
@@ -1081,6 +1063,7 @@ def get_history(
 
         soln[soln[:,1]>1-re_resid_frac,1] = 1-re_resid_frac
         soln[soln[:,2]>phys.chi*(1-re_resid_frac),2] = phys.chi*(1-re_resid_frac)
+
 
         return zstar_switch, soln
 
