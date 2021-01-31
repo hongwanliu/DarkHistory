@@ -727,7 +727,7 @@ def get_elec_cooling_tf(
         if simple_ICS:
             conservation_check -= ICS_engloss_vec
         else:
-            conservation_check += cont_loss_ICS_vec - np.dot(sec_phot_tf.grid_vals, photeng)
+            conservation_check -= np.dot(sec_phot_tf.grid_vals, photeng)
 
         if np.any(np.abs(conservation_check/eleceng) > 2e-2):
             failed_conservation_check = True
