@@ -949,7 +949,7 @@ def Tm_std(rs):
     elif np.sum(~extrap) == 0:
         return TCMB(rs)
     else:
-        return np.append(_Tm_std(rs[not extrap]), TCMB(rs[extrap]))
+        return np.append(_Tm_std(rs[~extrap]), TCMB(rs[extrap]))
 
     # For redshifts above 3000, assume full coupling to the CMB temperature
     #if isinstance(rs,np.float):
