@@ -878,21 +878,22 @@ def xHII_std(rs):
 
     global _xHII_std
 
+    if isinstance(rs,float):
+        rs = np.array([rs])
+
     if _xHII_std is None:
-
-        rs_vec   = load_data('hist')['rs']
-        xHII_vec = load_data('hist')['xHII']
-
-        _xHII_std = interp1d(rs_vec, xHII_vec)
+        _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
     extrap = rs>2e3
     if np.sum(extrap) == 0:
         return _xHII_std(rs)
     elif np.sum(~extrap) == 0:
-        return xe_Saha(rs, 'HI')
+        return np.array([xe_Saha(r, 'HI') for r in rs])
     else:
-        return np.append(_xHII_std(rs[~extrap]), xe_Saha(rs[extrap], 'xHI'))
-            
+        output = np.zeros_like(rs)
+        output[~extrap] = _xHII_std(rs[~extrap])
+        output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
+        return output
         
 
 def xHeII_std(rs):
@@ -949,7 +950,10 @@ def Tm_std(rs):
     elif np.sum(~extrap) == 0:
         return TCMB(rs)
     else:
-        return np.append(_Tm_std(rs[~extrap]), TCMB(rs[extrap]))
+        output = np.zeros_like(rs)
+        output[~extrap] = _Tm_std(rs[~extrap])
+        output[extrap] = TCMB(rs[extrap])
+        return output
 
     # For redshifts above 3000, assume full coupling to the CMB temperature
     #if isinstance(rs,np.float):
