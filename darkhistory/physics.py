@@ -891,7 +891,7 @@ def xHII_std(rs):
     elif np.sum(~extrap) == 0:
         return xe_Saha(rs, 'HI')
     else:
-        return np.append(_xHII_std(rs[not extrap]), xe_Saha(rs[extrap], 'xHI'))
+        return np.append(_xHII_std(rs[~extrap]), xe_Saha(rs[extrap], 'xHI'))
             
         
 
