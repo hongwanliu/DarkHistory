@@ -888,7 +888,7 @@ def xHII_std(rs):
     extrap = rs>2e3
     if np.sum(extrap) == 0:
         return _xHII_std(rs)
-    elif np.sum(not extrap) == 0:
+    elif np.sum(~extrap) == 0:
         return xe_Saha(rs, 'HI')
     else:
         return np.append(_xHII_std(rs[not extrap]), xe_Saha(rs[extrap], 'xHI'))
@@ -946,7 +946,7 @@ def Tm_std(rs):
     extrap = rs>2e3
     if np.sum(extrap) == 0:
         return _Tm_std(rs)
-    elif np.sum(not extrap) == 0:
+    elif np.sum(~extrap) == 0:
         return TCMB(rs)
     else:
         return np.append(_Tm_std(rs[not extrap]), TCMB(rs[extrap]))
