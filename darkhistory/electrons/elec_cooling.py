@@ -438,10 +438,12 @@ def get_elec_cooling_tf(
     
     ##!!! take the prompt photons - thomson*c*normalized blackbody, compare to dE_ICS_dt
 
+    # Normalized CMB spectrum. 
     norm_CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng, phys.TCMB(rs)), spec_type='dNdE')
     norm_CMB_spec /= norm_CMB_spec.totN()
+
+    # Get the CMB spectrum upscattered from cont_loss_ICS_vec. 
     upscattered_CMB_grid = np.outer(CMB_upscatter_rate*np.ones_like(eleceng), norm_CMB_spec.N)
-    crap = phot_ICS_tf.grid_vals - 0*upscattered_CMB_grid
     
     
     # Secondary scattered electron spectrum.
@@ -455,7 +457,9 @@ def get_elec_cooling_tf(
     #print(dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:]))
     
     # Secondary photon spectrum (from ICS). 
-    sec_phot_spec_N_arr = phot_ICS_tf.grid_vals
+    sec_phot_spec_N_arr = phot_ICS_tf.grid_vals - upscattered_CMB_grid
+    sec_phot_spec_N_arr[beta_ele<.1] = loweng_ICS_distortion(eleceng[beta_ele<.1], photeng, phys.TCMB(rs))
+    crap = sec_phot_spec_N_arr.copy()
     # !!! Consider possibility of adding atomic transition photons here!!!
     
     # Deposited ICS array.
@@ -470,7 +474,7 @@ def get_elec_cooling_tf(
 
         # This is -[the energy gained by photons]
         # (Total amount of energy in the upscattered photons - the energy these photons started with)
-        - (np.dot(sec_phot_spec_N_arr, photeng) - CMB_upscatter_eng_rate)
+        - np.dot(sec_phot_spec_N_arr, photeng)
     )
     # This is only non-zero due to numerical errors. Luckily it is very small.
 
@@ -522,7 +526,7 @@ def get_elec_cooling_tf(
         if simple_ICS:
             toteng_no_self_scatter_arr += ICS_engloss_arr
         else:
-            toteng_no_self_scatter_arr += np.dot(sec_phot_spec_N_arr, photeng) - continuum_engloss_arr
+            toteng_no_self_scatter_arr += np.dot(sec_phot_spec_N_arr, photeng) 
 
     tind = 0
     #print(
@@ -699,7 +703,7 @@ def get_elec_cooling_tf(
     # Subtract this spectrum from sec_phot_specs to get the final
     # transfer function.
 
-    sec_phot_tf._grid_vals = sec_phot_specs - upscattered_CMB_grid
+    sec_phot_tf._grid_vals = sec_phot_specs 
     if not simple_ICS:
         deposited_ICS_vec = np.dot(sec_phot_tf._grid_vals, photeng)
     
@@ -729,7 +733,7 @@ def get_elec_cooling_tf(
         else:
             conservation_check -= np.dot(sec_phot_tf.grid_vals, photeng)
 
-        if np.any(np.abs(conservation_check/eleceng) > 2e-2):
+        if np.any(np.abs(conservation_check/eleceng) > 1e-3):
             failed_conservation_check = True
         #else:
         #    print('NICE')
@@ -807,6 +811,28 @@ def get_elec_cooling_tf(
         deexc_phot_spectra, deposited_Lya_vec
     )
 
+def loweng_ICS_distortion(eleceng, photeng, T):
+    y = photeng/T
 
+    prefac = (
+        phys.c*(3/8)*phys.thomson_xsec/4
+        * (
+            8*np.pi*T**2
+            /(phys.ele_compton*phys.me)**3
+        )
+    )
 
-    
+    beta = phys.np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
+    P_beta_2 = np.zeros(y.size)
+    P_beta_2 = 32/9*y**3/(1 - np.exp(-y))**3*(
+            np.exp(-2*y)*(y + 4) + np.exp(-y)*(y - 4)
+        )
+
+    spec = Spectra(
+            prefac*np.outer(beta**2, P_beta_2), in_eng = eleceng, eng = photeng,
+            spec_type = 'dNdE'
+        )
+
+    spec.switch_spec_type()
+    return spec._grid_vals
+
