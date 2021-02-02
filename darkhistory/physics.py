@@ -91,6 +91,8 @@ rho_baryon   = rho_crit*omega_baryon
 """ Baryon density in eV cm\ :sup:`-3`\ ."""
 nB          = rho_baryon/mp
 """ Baryon number density in eV cm\ :sup:`-3`\ ."""
+s0          = 2891.2
+""" Entropy density of CMB in cm\ :sup:`-3`\ ."""
 
 YHe         = 0.245
 """Helium abundance by mass."""
@@ -454,7 +456,7 @@ He_exc_eng = {
     '23s': 2*np.pi*hbar*c*159855.9745,
     '21s': 2*np.pi*hbar*c*166277.4403,
     '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
-    '21p': 2*np.pi*hbar*c*171134.8970,
+    '21p': 2*np.pi*hbar*c*171134.8970, '2p' : 2*np.pi*hbar*c*171134.8970,
     #nl^(2S+1)L, n is the excited state of the excited electron, 
     #l is its orbital angular momentum, 
     #(2S+1) is the total spin multiplicity, 
@@ -876,14 +878,23 @@ def xHII_std(rs):
 
     global _xHII_std
 
+    if isinstance(rs,float):
+        rs = np.array([rs])
+
     if _xHII_std is None:
+        _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
-        rs_vec   = load_data('hist')['rs']
-        xHII_vec = load_data('hist')['xHII']
-
-        _xHII_std = interp1d(rs_vec, xHII_vec)
-
-    return _xHII_std(rs)
+    extrap = rs>2e3
+    if np.sum(extrap) == 0:
+        return _xHII_std(rs)
+    elif np.sum(~extrap) == 0:
+        return np.array([xe_Saha(r, 'HI') for r in rs])
+    else:
+        output = np.zeros_like(rs)
+        output[~extrap] = _xHII_std(rs[~extrap])
+        output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
+        return output
+        
 
 def xHeII_std(rs):
     """Baseline nHeII/nH value.
@@ -933,7 +944,16 @@ def Tm_std(rs):
 
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
-    return _Tm_std(rs)
+    extrap = rs>2e3
+    if np.sum(extrap) == 0:
+        return _Tm_std(rs)
+    elif np.sum(~extrap) == 0:
+        return TCMB(rs)
+    else:
+        output = np.zeros_like(rs)
+        output[~extrap] = _Tm_std(rs[~extrap])
+        output[extrap] = TCMB(rs[extrap])
+        return output
 
     # For redshifts above 3000, assume full coupling to the CMB temperature
     #if isinstance(rs,np.float):
@@ -1129,7 +1149,14 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
         else:
             raise TypeError('invalid species.')
-    elif method == 'MEDEA':
+    elif (method == 'MEDEA') | (method == 'AcharyaKhatri'):
+        if (method == 'AcharyaKhatri') | (method == 'MEDEA'):
+            if (species == 'HeI'):
+                state = '2p'
+            elif species == 'HeII':
+                return 0
+
+
         if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') or (int(state[:-1]) not in np.arange(2,11)))):
 
             TypeError("Must specify 2s, 2p, 3p, ..., or 10p, for HI excitation") 
@@ -1184,78 +1211,23 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
                 return 4*np.pi*bohr_rad**2*rydberg/(KE + bind_eng[species] + exc_eng[species][state]) * factor
 
 
-            exc_xsec = load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
-            exc_xsec[eng<exc_eng[species][state]] = 0
-            exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
+            if method == 'MEDEA':
+                exc_xsec = load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
+                exc_xsec[eng<exc_eng[species][state]] = 0
+                exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
 
-            return exc_xsec
-    
-    elif method == 'AcharyaKhatri':
-        if (species == 'HI') and ((state != '2s') and ((state[-1] != 'p') or (int(state[:-1]) not in np.arange(2,11)))):
 
-            TypeError("Must specify 2s, 2p, 3p, ..., or 10p, for HI excitation") 
-
-        elif (species == 'HeI') and ((state[1:] != 'p1P') and (int(state[0]) not in np.arange(2,11))):
-
-            TypeError("Must specify 2p1P, 3p1P, ..., or 10p1P for HeI excitation") 
-
-        else:
-
-            # If eng is a number, make it an np.ndarray
-            if isinstance(eng, float):
-                eng = np.array([eng])
-
-            # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
-            # threshold energy
-            exc_eng  = {'HI': HI_exc_eng, 'HeI': He_exc_eng}
-            bind_eng = {'HI': rydberg,    'HeI': He_ion_eng}
-
-            #!!! CHECK must include relativistic corrections at E>10keV
-            #Parameters for high energy limit, ordered from 2p to 10p
-            a_params = {
-                'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,  .004919,  .003237,  .002246,  .001623],
-                'HeI': [ .165601,  .041611,  .016111,  .008298,  .004740,  .002963,  .001975,  .001383,  .001006]
-            } 
-            b_params = {
-                'HI':  [ .271785,  .060202,  .022984,  .011243,  .006348,  .003939,  .002550,  .001824,  .001323],
-                'HeI': [-.076942, -.018087, -.007040, -.003475, -.001972, -.001227, -.000816, -.000570, -.000414]
-            }
-            c_params = {
-                'HI':  [ .000112, -.019775, -.009279, -.004880, -.002853, -.001806, -.001213, -.000854, -.000623],
-                'HeI': [ .033306,  .002104, -.000045, -.000228, -.000194, -.000146, -.000108, -.000080, -.000061]
-            }
-
-            fsc_HeI  = [ .2583,    .07061,   .02899,   .01466,   .00844,   .00529,   .00354,   .00248,   .00181]
-            facc_HeI = [ .2762,    .07343,   .02986,   .01504,   .00863,   .00541,   .00361,   .00253,   .00184]
-
-            def xsec_asympt(species, state, KE):
-                ind = int(state[0])-2
+            elif method == 'AcharyaKhatri':
+                exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng) # in units of cm^2
+                exc_xsec[eng<exc_eng[species][state]] = 0
+                # CCC cross-sections end around 1 keV
                 if species == 'HI':
-                    # Bethe approximation
-                    if state == '2s':
-                        return 4*np.pi*bohr_rad**2/KE*13.6*(0.12 - 0.31*13.6/KE)
-                        #return np.zeros_like(KE)
-                    elif state == '2p':
-                        return 4*np.pi*bohr_rad**2/KE*13.6*(0.55*np.log(4*KE/13.6) - 0.55*0.9 + 0.21*13.6/KE)
-                    elif state == '3p':
-                        return 4*np.pi*bohr_rad**2/KE*13.6*(8.9e-2*(np.log(4*KE/13.6)-0.27))
+                    exc_xsec[eng>999] = xsec_asympt(species, state, eng[eng>999])
                 else:
-                    f_ratio = 1.
+                    exc_xsec[eng>900] = xsec_asympt(species, state, eng[eng>900])
 
-                factor = (a_params[species][ind] * np.log(KE/rydberg) 
-                        + b_params[species][ind]
-                        + c_params[species][ind] * rydberg/KE)*f_ratio
-
-                # Eqn (5) of Kim, Stone, Desclaux (2002)
-                return 4*np.pi*bohr_rad**2*rydberg/(KE + bind_eng[species] + exc_eng[species][state]) * factor
-
-            exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng) # in units of cm^2
-            exc_xsec[eng<exc_eng[species][state]] = 0
-            # CCC cross-sections end around 1 keV
-            if species == 'HI':
-                exc_xsec[eng>999] = xsec_asympt(species, state, eng[eng>999])
-            else:
-                exc_xsec[eng>900] = xsec_asympt(species, state, eng[eng>900])
+                # !!! bad extrapolation
+                exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
 
             return exc_xsec
     
@@ -1291,6 +1263,9 @@ def coll_ion_xsec(eng, species=None, method='old'):
     Returns the Arnaud and Rothenflug rate if method == 'old'.
 
     """
+    if method == 'AcharyaKhatri':
+        if species != 'HI':
+            method='old'
 
     if method == 'old':
         if species == 'HI':
@@ -1382,6 +1357,29 @@ def coll_ion_xsec(eng, species=None, method='old'):
         except:
             if eng <= B:
                 return 0
+    elif method=='AcharyaKhatri':
+        if isinstance(eng, float):
+            eng = np.array([eng])
+        ionHI=np.array([[14.00,1.69960e-18],[14.50,3.05083e-18],[15.00,5.65916e-18],
+            [15.60,8.92024e-18],[17.60,1.99166e-17],[20.00,2.99277e-17],[25.00,4.46188e-17],
+            [30.00,5.27297e-17],[35.00,5.63541e-17],[45.00,6.24417e-17],[54.42,6.32510e-17],
+            [70.00,6.11397e-17],[100.00,5.35302e-17],[150.00,4.58328e-17],[200.00,3.85752e-17],
+            [500.00,1.94152e-17],[999.00,1.08292e-17]]
+        )
+        ionHI = interp1d(ionHI[:,0], ionHI[:,1], bounds_error=False, fill_value=(1.69960e-18,1.08292e-17))
+        xsec = ionHI(eng)
+        
+        # Low Values
+        xsec[eng<rydberg] = 0
+
+        # High Values
+        neng = eng[eng>999]/rydberg
+        C_i = np.exp(3.048)
+        gamma_i = -1.63 - np.log(neng)
+        xsec[eng>999.0] = 4*np.pi * bohr_rad**2/neng * (
+                0.28*np.log(4*C_i*neng) + gamma_i/neng
+        )
+        return xsec
 
     else:
         raise TypeError('method = new not developed yet')
@@ -1451,7 +1449,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
                 # All electrons are now counted in the lowest bin.
                 #!!!
                 tot_elec_N = np.zeros_like(eng)
-                tot_elec_N[0] = 2.
+                tot_elec_N[0] = (in_eng-ion_pot)/eng[0]
                 return np.outer(np.ones_like(in_eng), tot_elec_N)
 
             low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
@@ -1510,8 +1508,8 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
             )
 
             #underflow bin
-            low_eng_elec_N[zero_mask,0]=1. #eleceng[0]/eleceng[zero_mask]
-            high_eng_elec_N[zero_mask,0]=1.
+            low_eng_elec_N[zero_mask,0]= (in_eng[zero_mask]-ion_pot)/eng[0]
+            #high_eng_elec_N[zero_mask,0]=1.
 
     elif method == 'MEDEA':
         # See Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954
@@ -1690,7 +1688,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     return low_eng_elec_N + high_eng_elec_N
 
 
-def elec_heating_engloss_rate(eng, xe, rs):
+def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
     """Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .
 
     Parameters
@@ -1715,16 +1713,22 @@ def elec_heating_engloss_rate(eng, xe, rs):
     so to convert to SI, we insert 1/(4*pi*eps_0)^2 and use that e^2/(4*pi*eps_0) = alpha
     """
 
-    w = np.sqrt(1 - 1/(1 + eng/me)**2)
-    ne = xe*nH*rs**3 * (hbar*c)**3
+    if method == 'MEDEA':
+        method = 'old'
+    if method == 'old':
+        w = np.sqrt(1 - 1/(1 + eng/me)**2)
+        ne = xe*nH*rs**3 * (hbar*c)**3
 
-    prefac = 4*np.pi*alpha**2
-    #zeta_e = 7.40e-11*ne/(hbar*c)**3 # Must be in units of cm^-3)
-    #coulomb_log = np.log(4*eng/zeta_e)
-    coulomb_log = np.log(4*eng * (4*np.pi*alpha*ne/me)**(-1/2))
+        prefac = 4*np.pi*alpha**2
+        #zeta_e = 7.40e-11*ne/(hbar*c)**3 # Must be in units of cm^-3)
+        #coulomb_log = np.log(4*eng/zeta_e)
+        coulomb_log = np.log(4*eng * (4*np.pi*alpha*ne/me)**(-1/2))
 
-    # must use the mass of the electron in eV m^2 s^-2.
-    return prefac*ne*coulomb_log/(me*w) / hbar #*xe**.05
+        # must use the mass of the electron in eV m^2 s^-2.
+        return prefac*ne*coulomb_log/(me*w) / hbar #*xe**.05
+    elif method == 'AcharyaKhatri':
+        ne = xe*nH*rs**3
+        return 2e-4 * ne**0.97/eng**0.44 * ( (eng-Te)/(eng-0.53*Te) )**(2.36)
 
 def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None):
     """energy deposition fraction into channel c, f_c(z), as a function of dark matter mass and redshift.

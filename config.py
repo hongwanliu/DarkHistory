@@ -18,7 +18,8 @@ from scipy.interpolate import interp1d
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path = '/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
+#data_path = '/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
+data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
 
 # Global variables for data.
 glob_binning_data = None
@@ -445,7 +446,7 @@ def load_data(data_type):
         return glob_pppc_data
     
     elif data_type == 'exc':
-        if 1+1==2:
+        if True:
 #        if glob_exc_data == None:
             species_list = ['HI', 'HeI']
             exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
@@ -469,7 +470,7 @@ def load_data(data_type):
 
     elif data_type == 'exc_AcharyaKhatri':
 #        if glob_exc_data == None:
-        if 1+1==2:
+        if True:
             #CCC cross-sections in units of cm^2
             species_list = ['HI', 'HeI']
             exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb')),

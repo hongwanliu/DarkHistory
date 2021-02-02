@@ -23,10 +23,9 @@ from   darkhistory.spec.spectools import discretize
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
-from darkhistory.low_energy.lowE_deposition import compute_fs
-from darkhistory.low_energy.lowE_deposition import get_ionized_elec
-from darkhistory.low_energy.lowE_electrons import make_interpolator
-from darkhistory.low_energy.lowE_photons import propagating_lowE_photons_fracs
+from darkhistory.photons.phot_dep import compute_fs
+from darkhistory.photons.phot_dep import get_ionized_elec
+from darkhistory.photons.phot_dep import propagating_lowE_photons_fracs
 
 from darkhistory.history import tla
 
@@ -382,15 +381,7 @@ def evolve(
     append_lowengelec_spec  = out_lowengelec_specs.append
 
     # Initialize arrays to store f values. 
-    f_low  = np.empty((0,5))
-    f_high = np.empty((0,5))
-
-    # Initialize array to store high-energy energy deposition rate. 
-    highengdep_grid = np.empty((0,4))
-
-
-    # Object to help us interpolate over MEDEA results. 
-    MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
+    f_c  = np.empty((0,5))
 
     #########################################################################
     #########################################################################
@@ -438,11 +429,12 @@ def evolve(
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
+            # Create the electron transfer functions
             (
-                ics_sec_phot_tf, elec_processes_lowengelec_tf,
+                ics_sec_phot_tf, #elec_processes_lowengelec_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
-                continuum_loss, deposited_ICS_arr, deexc_phot_spectra,
-                deposited_Lya_arr
+                ICS_engloss_vec, ICS_err_vec,
+                deexc_phot_spectra, deposited_Lya_arr
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
                     xHII_elec_cooling, xHeII=xHeII_elec_cooling,
@@ -456,42 +448,34 @@ def evolve(
                     loweng=eleceng[0]
                 )
 
-            # Apply the transfer function to the input electron spectrum. 
-            ionized_elec = get_ionized_elec(in_spec_phot, eleceng, x_at_rs, method='He')
-            tot_spec_elec = in_spec_elec+lowengelec_spec_at_rs+ionized_elec
 
-            # Low energy electrons from electron cooling, per injection event.
-            elec_processes_lowengelec_spec = (
-                elec_processes_lowengelec_tf.sum_specs(tot_spec_elec)
-            )
+            ### Apply the transfer function to the input electron spectrum generated in this step ###
 
-            # Add this to lowengelec_at_rs. 
-            lowengelec_spec_at_rs = (
-                elec_processes_lowengelec_spec*norm_fac(rs)
-            )
+            # electrons in this step are comprised of:
+            #  promptly injected from DM (in_spec_elec), 
+            #  produced by high energy photon processes (lowengelec_spec_at_rs) 
+            #  photoionized from atoms (ionized_elec)
+            ionized_elec = get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
+            tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
 
-            # High-energy deposition into ionization, 
-            # *per baryon in this step*. 
+            # deposited energy into ionization, *per baryon in this step*. 
             deposited_H_ion  = np.dot(
-                deposited_ion_arr['H'],  tot_spec_elec.N*norm_fac(rs)
+                deposited_ion_arr['H'], tot_spec_elec.N
             )
             deposited_He_ion  = np.dot(
-                deposited_ion_arr['He'],  tot_spec_elec.N*norm_fac(rs)
+                deposited_ion_arr['He'], tot_spec_elec.N
             )
-            # High-energy deposition into excitation, 
-            # *per baryon in this step*. 
+            # Lyman-alpha excitation 
             deposited_Lya  = np.dot(
-                deposited_Lya_arr,  tot_spec_elec.N*norm_fac(rs)
+                deposited_Lya_arr, tot_spec_elec.N
             )
-            # High-energy deposition into heating, 
-            # *per baryon in this step*. 
+            # heating
             deposited_heat = np.dot(
-                deposited_heat_arr, tot_spec_elec.N*norm_fac(rs)
+                deposited_heat_arr, tot_spec_elec.N
             )
-            # High-energy deposition numerical error, 
-            # *per baryon in this step*. 
-            deposited_ICS  = np.dot(
-                deposited_ICS_arr,  tot_spec_elec.N*norm_fac(rs)
+            # numerical error
+            deposited_err  = np.dot(
+                ICS_err_vec, tot_spec_elec.N
             )
 
             #######################################
@@ -520,8 +504,7 @@ def evolve(
             highengphot_spec_at_rs += (
                 in_spec_phot + ics_phot_spec + positronium_phot_spec
             ) * norm_fac(rs)
-            tmp_sum = in_spec_phot + ics_phot_spec + positronium_phot_spec
-            lowengphot_spec_at_rs += deexc_phot_spec*norm_fac(rs)
+            lowengphot_spec_at_rs = lowengphot_spec_at_rs + deexc_phot_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -569,11 +552,30 @@ def evolve(
             # High-energy deposition from input electrons. 
             highengdep_at_rs += np.array([
                 deposited_H_ion/dt,
-                #!!!deposited_He_ion/dt,
+                #deposited_He_ion/dt,
                 deposited_Lya/dt,
                 deposited_heat/dt,
-                deposited_ICS/dt
+                deposited_err/dt
             ])
+
+            #print(highengdep_at_rs)
+            #print(np.array([
+            #    deposited_H_ion/dt,
+            #    #deposited_He_ion/dt,
+            #    deposited_Lya/dt,
+            #    deposited_heat/dt,
+            #    deposited_err/dt
+            #]))
+
+            norm = phys.nB*rs**3 / rate_func_eng(rs)
+            # High-energy deposition from input electrons. 
+            f_elec = {
+                    'H ion'  : highengdep_at_rs[0] * norm,
+                    'He ion' : deposited_He_ion/dt * norm,
+                    'Lya'    : highengdep_at_rs[1] * norm,
+                    'heat'   : highengdep_at_rs[2] * norm,
+                    'err'    : highengdep_at_rs[3] * norm
+                    }
 
         # Values of (xHI, xHeI, xHeII) to use for computing f.
         if backreaction or (compute_fs_method == 'HeII' and rs <= reion_rs):
@@ -591,49 +593,38 @@ def evolve(
             ])
 
 
-        #if x_vec_for_f[0] == 0:
-        #    x_vec_for_f[0]= 1e-12
         if compute_fs_method == 'HeII' and rs > reion_rs:
 
             # For 'HeII', stick with 'no_He' until after 
             # reionization kicks in.
 
-            f_raw = compute_fs(
-                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+            f_phot = compute_fs(
+                lowengphot_spec_at_rs,
                 x_vec_for_f, rate_func_eng(rs), dt,
-                highengdep_at_rs, method='no_He', cross_check=cross_check
+                method='old', cross_check=cross_check
             )
 
         else:
 
-            f_raw = compute_fs(
-                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+            f_phot = compute_fs(
+                lowengphot_spec_at_rs,
                 x_vec_for_f, rate_func_eng(rs), dt,
-                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
+                method=compute_fs_method, cross_check=cross_check
             )
 
-        # Save the f_c(z) values.
-        f_low  = np.concatenate((f_low,  [f_raw[0]]))
-        f_high = np.concatenate((f_high, [f_raw[1]]))
-
-        # print(f_low, f_high)
-
-        # Save CMB upscattered rate and high-energy deposition rate.
-        highengdep_grid = np.concatenate(
-            (highengdep_grid, [highengdep_at_rs])
-        )
-
         # Compute f for TLA: sum of low and high. 
-        f_H_ion = f_raw[0][0] + f_raw[1][0]
-        f_exc   = f_raw[0][2] + f_raw[1][2]
-        f_heat  = f_raw[0][3] + f_raw[1][3]
+        f_H_ion = f_phot['H ion'] + f_elec['H ion']
+        f_Lya   = f_phot['Lya'] + f_elec['Lya']
+        f_heat  = f_elec['heat']
 
         if compute_fs_method == 'old':
             # The old method neglects helium.
             f_He_ion = 0. 
         else:
-            f_He_ion = f_raw[0][1] + f_raw[1][1]
+            f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         
+        # Save the f_c(z) values.
+        f_c = np.concatenate((f_c, [[f_H_ion, f_He_ion, f_Lya, f_heat, f_elec['err']]]))
 
         #####################################################################
         #####################################################################
@@ -659,7 +650,7 @@ def evolve(
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
-            f_H_ion=f_H_ion, f_H_exc=f_exc, f_heating=f_heat,
+            f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
             injection_rate=rate_func_eng,
             reion_switch=reion_switch, reion_rs=reion_rs, 
             reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
@@ -756,26 +747,13 @@ def evolve(
     if use_tqdm:
         pbar.close()
 
-    f_to_return = (f_low, f_high)
-    
     # Some processing to get the data into presentable shape. 
-    f_low_dict = {
-        'H ion':  f_low[:,0],
-        'He ion': f_low[:,1],
-        'exc':    f_low[:,2],
-        'heat':   f_low[:,3],
-        'cont':   f_low[:,4]
-    }
-    f_high_dict = {
-        'H ion':  f_high[:,0],
-        'He ion': f_high[:,1],
-        'exc':    f_high[:,2],
-        'heat':   f_high[:,3],
-        'cont':   f_high[:,4]
-    }
-
     f = {
-        'low': f_low_dict, 'high': f_high_dict
+        'H ion':  f_c[:,0],
+        'He ion': f_c[:,1],
+        'Lya':    f_c[:,2],
+        'heat':   f_c[:,3],
+        'err':    f_c[:,4]
     }
 
     data = {
