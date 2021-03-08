@@ -600,7 +600,7 @@ def beta_ion(T_rad, species):
 
         return TypeError('invalid species.')
 
-def peebles_C(xHII, rs):
+def peebles_C(xHII, rs, T2=None):
     """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
@@ -634,7 +634,10 @@ def peebles_C(xHII, rs):
 
     rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
 
-    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
+    if T2 != None:
+        rate_ion = (1-xHII) * beta_ion(T2, 'HI')
+    else:
+        rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
 
     return rate_exc/(rate_exc + rate_ion)
 

@@ -647,6 +647,18 @@ def evolve(
             [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
         )
 
+        from scipy.interpolate import interp1d
+        prefac = np.pi**2 * phys.nB*(phys.hbar*phys.c*rs)**3
+        E2 = phys.rydberg-phys.lya_eng
+        eng = lowengphot_spec_at_rs.eng
+        dNdE_DM = lowengphot_spec_at_rs.dNdE
+        dnde = interp1d(eng,dNdE_DM)(E2)
+        T2 = E2/np.log(1+E2**2/prefac/dnde)
+        #T2=None
+        print(rs, phys.TCMB(rs), T2)
+        if rs>2.5e3 or T2<phys.TCMB(rs):
+            T2=None
+
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
@@ -657,7 +669,7 @@ def evolve(
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
+            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol, T2 = T2
         )
 
         #####################################################################
