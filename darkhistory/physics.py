@@ -878,22 +878,27 @@ def xHII_std(rs):
 
     global _xHII_std
 
-    if isinstance(rs,float):
-        rs = np.array([rs])
+    flt_switch=False
 
     if _xHII_std is None:
         _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
-    extrap = rs>2e3
-    if np.sum(extrap) == 0:
-        return _xHII_std(rs)
-    elif np.sum(~extrap) == 0:
-        return np.array([xe_Saha(r, 'HI') for r in rs])
+    if isinstance(rs,float):
+        if rs<2e3:
+            return _xHII_std(rs)
+        else:
+            return xe_Saha(rs, 'HI')
     else:
-        output = np.zeros_like(rs)
-        output[~extrap] = _xHII_std(rs[~extrap])
-        output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
-        return output
+        extrap = rs>2e3
+        if np.sum(extrap) == 0:
+            return _xHII_std(rs)
+        elif np.sum(~extrap) == 0:
+            return np.array([xe_Saha(r, 'HI') for r in rs])
+        else:
+            output = np.zeros_like(rs)
+            output[~extrap] = _xHII_std(rs[~extrap])
+            output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
+            return output
         
 
 def xHeII_std(rs):
@@ -937,6 +942,7 @@ def Tm_std(rs):
 
     global _Tm_std
 
+
     if _Tm_std is None:
 
         rs_vec  = load_data('hist')['rs']
@@ -944,16 +950,22 @@ def Tm_std(rs):
 
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
-    extrap = rs>2e3
-    if np.sum(extrap) == 0:
-        return _Tm_std(rs)
-    elif np.sum(~extrap) == 0:
-        return TCMB(rs)
+    if isinstance(rs,float):
+        if rs<2e3:
+            return _Tm_std(rs)
+        else:
+            return TCMB(rs)
     else:
-        output = np.zeros_like(rs)
-        output[~extrap] = _Tm_std(rs[~extrap])
-        output[extrap] = TCMB(rs[extrap])
-        return output
+        extrap = rs>2e3
+        if np.sum(extrap) == 0:
+            return _Tm_std(rs)
+        elif np.sum(~extrap) == 0:
+            return TCMB(rs)
+        else:
+            output = np.zeros_like(rs)
+            output[~extrap] = _Tm_std(rs[~extrap])
+            output[extrap] = TCMB(rs[extrap])
+            return output
 
     # For redshifts above 3000, assume full coupling to the CMB temperature
     #if isinstance(rs,np.float):
