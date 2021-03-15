@@ -786,10 +786,9 @@ def generate_spec_2s1s(photeng):
     if spec_2s1s != None:
         return spec_2s1s
     else:
-        # !!! (Is this off by a factor of h?) 
         # A discretized form of the spectrum of 2-photons emitted in the
         # 2s->1s de-excitation process.
-        spec_2s1s = discretize(photeng,phys.dLam2s_dnu)
+        spec_2s1s = discretize(photeng,phys.dNdE_2s1s)/2.
         return spec_2s1s
 
 def get_elec_cooling_data(eleceng, photeng):

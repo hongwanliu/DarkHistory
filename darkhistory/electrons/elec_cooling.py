@@ -165,7 +165,7 @@ def get_elec_cooling_tf(
     deposited_heat_eng_arr = np.zeros_like(eleceng)
 
     if spec_2s1s == None:
-        spec_2s1s = spectools.discretize(photeng,phys.dLam2s_dnu)
+        spec_2s1s = spectools.discretize(photeng,phys.dNdE_2s1s)/2.
 
     if coll_ion_sec_elec_specs is None:
 

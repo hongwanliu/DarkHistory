@@ -1840,38 +1840,63 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
 
 #     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
 
-def dLam2s_dnu(eng):
-    """Hydrogen 2s to 1s two-photon decay rate per nu as a function of nu (unitless).
+def dNdE_2s1s(eng, Spitz_Green=False):
+    """Hydrogen 2s to 1s two-photon decay profile
 
     nu is the frequency of the more energetic photon.
     To find the total decay rate (8.22 s^-1), integrate from 5.1eV/h to 10.2eV/h
+    The normalization is such that integrating from 5.1eV to 10.2eV yields 2
 
     Parameters
     ----------
+    eng : float
+        The energy at which to evaluate the profile
 
     Returns
     -------
-    Lam : ndarray
-     Decay rate per nu.
+    phi(y) : ndarray
+        dN/dE profile of two-photon transition.
     """
-    #coeff = 9 * alpha**6 * rydberg /(
-    # 2**10 * 2 * np.pi * hbar
-    #) * width_2s1s_H/8.26548398114 / lya_freq
-    # Fix the normalization
-    coeff = 1/19.317043357174253/2
-    #     #print(coeff)
+    if not Spitz_Green:
+        # Nussbaumer H., Schmutz W., 1984, A&A, 138, 495 #
+        C, alpha, beta, gamma = 24.5561, 0.88, 1.53, 0.8
+        y = eng/lya_eng
 
-    #     # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
-    #     # interpolating points come from Spitzer and Greenstein, 1951
-    y = np.arange(0, 1.05, .05)
-    psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
-                4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
+        # Extrapolation
+        if isinstance(y, np.ndarray):
+            y[y>1] = 1
+            y[y<0] = 0
+        else:
+            if y>1:
+                y=1
+            elif y<0:
+                y=0
 
-    #     # evaluation outside of interpolation window yields 0.
-    f = interp1d(y, psi, kind='cubic', bounds_error=False, fill_value=(0,0))
-    #def dLam2s_dnu(nu):
-    #nu = eng/(hbar*2*np.pi)
-    return coeff * f(eng/lya_eng)
+        # Fitting function
+        omega = y*(1-y)
+        fac = (4*omega)**gamma
+        return C/lya_eng * (
+            omega * (1-fac) + alpha * fac * omega**beta
+        )
+
+    else:
+        # Spitzer L. J., Greenstein J. L., 1951, ApJ, 114, 407 #
+        #coeff = 9 * alpha**6 * rydberg /(
+        # 2**10 * 2 * np.pi * hbar
+        #) * width_2s1s_H/8.26548398114 / lya_freq
+        # Fix the normalization
+        coeff = 1/19.317043357174253
+
+        # coeff * psi(y) * dy = probability of emitting a photon in the window nu_alpha * [y, y+dy)
+        y = np.arange(0, 1.05, .05)
+        psi = np.array([0, 1.725, 2.783, 3.481, 3.961, 4.306, 4.546, 4.711, 4.824, 4.889, 4.907,
+                    4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
+
+        #     # evaluation outside of interpolation window yields 0.
+        f = interp1d(y, psi, kind='cubic', bounds_error=False, fill_value=(0,0))
+        #def dLam2s_dnu(nu):
+        #nu = eng/(hbar*2*np.pi)
+        return coeff * f(eng/lya_eng)
 
      #return dLam2s_dnu
 
