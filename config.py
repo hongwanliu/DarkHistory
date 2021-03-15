@@ -446,31 +446,48 @@ def load_data(data_type):
         return glob_pppc_data
     
     elif data_type == 'exc':
-        if True:
-#        if glob_exc_data == None:
+        if glob_exc_data == None:
             species_list = ['HI', 'HeI']
-            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
+            state_list = [
+                '2s', '2p', 
+                '3s', '3p', '3d', 
+                '4s', '4p', '4d', '4f', 
+                '5p', '6p', '7p', '8p', '9p', '10p'
+            ]
+
+            KimRudd_list = ['2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+            KimRudd_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
                     'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
                     }
 
-            state_list = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+            CCC_states = ['2s','3s','3d','4s','4d','4f']
+            CCC_data = pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb'))
 
-            def make_interpolator(x,y):
+
+            def make_interpolator(species,state):
+                if (species=='HI') and (state in CCC_states):
+                    x = CCC_data['eng']
+                    y = CCC_data[state]
+                elif not (state in CCC_states):
+                    x = KimRudd_data[species]['eng_'+state[-1]]
+                    y = KimRudd_data[species][state]
+                else:
+                    x,y = None,None
+
                 if (x is None) or (y is None):
                     return None
                 else:
                     return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
             glob_exc_data = {species: 
-                {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
+                {state : make_interpolator(species, state)
                 for state in state_list}
             for species in species_list}
 
         return glob_exc_data
 
     elif data_type == 'exc_AcharyaKhatri':
-#        if glob_exc_data == None:
-        if True:
+        if glob_exc_data == None:
             #CCC cross-sections in units of cm^2
             species_list = ['HI', 'HeI']
             exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb')),
