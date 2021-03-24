@@ -470,7 +470,8 @@ def load_data(data_type):
                     y = CCC_data[state]
                 elif not (state in CCC_states):
                     x = KimRudd_data[species]['eng_'+state[-1]]
-                    y = KimRudd_data[species][state]
+                    # The cross-section is currently in units of Angstrom^2
+                    y = KimRudd_data[species][state]*1e-16
                 else:
                     x,y = None,None
 
@@ -480,8 +481,7 @@ def load_data(data_type):
                     return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
             glob_exc_data = {species: 
-                {state : make_interpolator(species, state)
-                for state in state_list}
+                {state : make_interpolator(species, state) for state in state_list}
             for species in species_list}
 
         return glob_exc_data
