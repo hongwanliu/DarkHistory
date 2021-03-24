@@ -656,33 +656,58 @@ def get_elec_cooling_tf(
     #!!! Assume single photon ejection for n -> 2 transitions, which
     #isn't true for n>3
     #!!! What about other excited states?
+    #if method != 'AcharyaKhatri':
+    #    deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
+    #    deexc_engs = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
+    #    deexc_grid = np.zeros((deexc_engs.size, eleceng.size))
+
+    #    for i, state in enumerate(deexc_states):
+    #        #array of photons that are produced
+    #        deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
+
+    #    deexc_phot_spectra = Spectra(
+    #        spec_arr = deexc_grid.transpose(), eng=deexc_engs,
+    #        rebin_eng=photeng, in_eng=eleceng, spec_type='N', 
+    #        rs=np.ones_like(eleceng)*rs
+    #    )
+
+    #    #Figure out the proportion of electrons that ended up in 2s,
+    #    # and multiply the total number by the 2s-1s two-photon spectrum
+    #    deposited_Lya_vec = np.zeros_like(deposited_exc_vec['2p'])
+    #    for i, state in enumerate(Ps):
+    #        # Number of electrons that end up in 2s
+    #        N_exc = deposited_exc_vec[state]/phys.HI_exc_eng[state]*(1-Ps[state])
+    #        deexc_phot_spectra._grid_vals += np.outer(N_exc, spec_2s1s.N*2) #Factor of 2 --> 2 photon emission
+
+    #        # Make sure that deposited_exc_arr only contains the atoms in the 2p state
+    #        deposited_Lya_vec += (
+    #            deposited_exc_vec[state] * Ps[state] * phys.lya_eng/phys.HI_exc_eng[state]
+    #        )
     if method != 'AcharyaKhatri':
+        #List of excited states
         deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
+        #Energy difference between excited states (n>2) and n=2
         deexc_engs = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
         deexc_grid = np.zeros((deexc_engs.size, eleceng.size))
-
-        for i, state in enumerate(deexc_states):
-            #array of photons that are produced
-            deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
-
         deexc_phot_spectra = Spectra(
-            spec_arr = deexc_grid.transpose(), eng=deexc_engs,
-            rebin_eng=photeng, in_eng=eleceng, spec_type='N', 
+            spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
+            in_eng=eleceng, spec_type='N', 
             rs=np.ones_like(eleceng)*rs
         )
 
-        #Figure out the proportion of electrons that ended up in 2s,
-        # and multiply the total number by the 2s-1s two-photon spectrum
-        deposited_Lya_vec = np.zeros_like(deposited_exc_vec['2p'])
-        for i, state in enumerate(Ps):
-            # Number of electrons that end up in 2s
-            N_exc = deposited_exc_vec[state]/phys.HI_exc_eng[state]*(1-Ps[state])
-            deexc_phot_spectra._grid_vals += np.outer(N_exc, spec_2s1s.N*2) #Factor of 2 --> 2 photon emission
+        #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
+        one_transition = get_total_transition(rs, 1-xHI, phys.TCMB(rs), phys.Tm_std(rs), mode='spec', nmax=10)
 
-            # Make sure that deposited_exc_arr only contains the atoms in the 2p state
-            deposited_Lya_vec += (
-                deposited_exc_vec[state] * Ps[state] * phys.lya_eng/phys.HI_exc_eng[state]
+        for i, state in enumerate(deexc_states):
+            #Use energy deposited in excitation to infer the number of excited (n>2) atoms
+            deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
+            #Multiply number of excited atoms by corresponding spectra and add it in            
+            deexc_phot_spectra += Spectra(
+                spec_arr=np.outer(deexc_grid[i], one_transition[thing].N), eng=photeng,
+                in_eng=eleceng, spec_type='N',
+                rs=np.ones_like(eleceng)*rs
             )
+        deposited_Lya_vec = None
     else:
         deposited_Lya_vec = None
         deexc_phot_spectra = None

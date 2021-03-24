@@ -1,10 +1,20 @@
 """Atomic excitation state transitions, ionization, and recombination functions."""
 
 import numpy as np 
-
 from darkhistory import physics as phys 
+from darkhistory.spec.spectrum import Spectrum
+from darkhistory.spec.spectools import discretize
 import scipy.special
+from config import load_data
+
+NBINS = 100
+Nkappa = 10 * NBINS + 1
+
 hplanck = phys.hbar*2*np.pi
+EI       = 13.5982860719383 #/*13.60569193 / (1.0 + me_mp)*/       /* Ionization energy of hydrogen in eV, accounting for reduced mass */
+alpha_fs = 7.2973525376e-3                                                     #/* Fine structure constant */
+cLight   = 2.99792458e10                                                       #/* Speed of light in cm/s */
+mue      = 510720.762779219              #/*me / (1.0 + me_mp)*/               #/* Reduced mass of hydrogen in eV*/
 
 #*************************************************#
 #A_{nl} coefficient defined in Hey (2006), Eq. (9)#
@@ -125,12 +135,6 @@ def p_np_1s(n, R, rs, xHI=None):
 
 #~~~ BOUND_FREE FUNCTIONS ~~~
 
-EI       = 13.5982860719383 #/*13.60569193 / (1.0 + me_mp)*/       /* Ionization energy of hydrogen in eV, accounting for reduced mass */
-alpha_fs = 7.2973525376e-3                                                     #/* Fine structure constant */
-hPlanck  = 4.13566733e-15                                                      #/* Planck's constant in eV*s */
-cLight   = 2.99792458e10                                                       #/* Speed of light in cm/s */
-mue      = 510720.762779219              #/*me / (1.0 + me_mp)*/               #/* Reduced mass of hydrogen in eV*/
-
 # /*********************************************************************************************************************
 # Populates two matrices with the coefficients g(n, l; kappa, l+1) and g(n, l; kappa, l-1).
 # Input: two [nmax] matrices g_up and g_dn, n, kappa.
@@ -174,42 +178,6 @@ def populate_gnlk(nmax, n, kappa):
     return gnk_up, gnk_dn
 
 
-# /************************************************************************************************************************
-# Populates one array n2k2[Nkappa] and two [nmax+1][Nkappa][nmax] matrices g_up, g_dn, s.t.
-# - Nkappa = 10 * NBINS + 1
-# - n2k2 has NBINS logarithmically spaced bins between n2k2min and n2k2max, each bin containing 11 linearly spaced values
-# for later 11-point Newton-Cotes integration (as in Grin & Hirata, 2010).
-# - g_up[n][ik][l] = g(n, l; kappa[ik], l+1)
-# - g_dn[n][ik][l] = g(n, l; kappa[ik], l-1)
-# *************************************************************************************************************************/
-
-def populate_n2k2_and_g_old(nmax, NBINS):
-    Nkappa = 10 * NBINS + 1
-    n2k2 = np.zeros(10 * (NBINS-1) + 11)
-    g = {key: np.zeros((nmax+1,Nkappa,nmax)) for key in ['up', 'dn']}
-
-    n2k2min = 1e-25                             #/* Min value of n^2 kappa^2 table */
-    n2k2max = 4.96e8                            #/* Max value of n^2 kappa^2 table */
-
-    bigBins = np.zeros(NBINS + 1)
-    temp = np.zeros(11)
-
-    #/* Populating n2k2: Nbins logarithmically spaced bins, each has 10 sub-bins */
-    bigBins = np.logspace(np.log10(n2k2min), np.log10(n2k2max), NBINS + 1)
-
-    for iBig in range(NBINS):
-        temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
-        for i in range(11):
-            n2k2[10 * iBig + i] = temp[i];
-
-    #/* Now populating the g's */
-    for n in range(1, nmax+1):
-        for ik in range(10*NBINS + 1):
-            g['up'][n][ik], g['dn'][n][ik] = populate_gnlk(nmax, n, np.sqrt(n2k2[ik]) / n)
-
-    return n2k2, g
-
-
 # /********************************************************************************************
 # k2[n][ik] because boundaries depend on n
 #  ********************************************************************************************/
@@ -244,6 +212,14 @@ def Newton_Cotes_11pt(x, f):
     return (5.0 * h * (16067.0 * (f[0] + f[10]) + 106300.0 * (f[1] + f[9])
                       - 48525.0 * (f[2] + f[8]) + 272400.0 * (f[3] + f[7])
                       - 260550.0 * (f[4] + f[6]) + 427368.0 * f[5]) / 299376.0)
+
+
+# /********************************************************************************************* 
+# Populating the photoionization rates beta(n, l, Tr)
+# Input: beta[nmax+1][nmax], Tr in eV, nmax
+# and the precomputed tables n2k2, g_up[nmax+1][Nkappa][nmax], g_dn[nmax+1][Nkappa][nmax], 
+# where Nkappa = 10 * NBINS + 1
+# *********************************************************************************************/
 
 def populate_beta(TM, Tr, nmax, k2_tab, g, NBINS):
     k2 = np.zeros(11)
@@ -300,3 +276,205 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g, NBINS):
                 alpha[n][l] += Newton_Cotes_11pt(k2, int_a)
             alpha[n][l] *= common_factor / n2
     return alpha
+
+
+def get_transition_energies(nmax):
+    """
+    Compute the exact energy bins for transitions between excited state of hydrogen.
+    This includes an extra bin at 20 eV to represent bound-free transitions.
+
+    Parameters
+    ----------
+    nmax : int
+        Highest excited state to be included
+
+    Returns
+    -------
+    H_engs : array
+    """
+
+    H_engs = np.zeros((nmax+1,nmax+1))
+    H_engss_Cont = np.zeros(nmax+1)
+    for n1 in range(1,nmax+1):
+        H_engss_Cont[n1] = phys.rydberg / n1**2
+        H_engs[0,n1] = phys.rydberg / n1**2
+        for n2 in range(1,n1):
+            H_engs[n1,n2] = phys.rydberg * ((1/n2)**2 - (1/n1)**2)
+        
+    H_engs = np.sort(np.unique(H_engs))
+    # Add a separate energy bin to temporarily represent 2s->1s
+    H_engs = np.concatenate((H_engs,[20]))
+    return H_engs
+
+
+def get_total_transition(rs, xHI, Tr, TM, 
+    mode='spec', nmax):
+    """
+    Calculate either the probabilities to switch between between states or the 
+    resulting photon spectra after many transitions.
+
+    Parameters
+    ----------
+    rs : redshift
+    xHI : neutral fraction of hydrogen
+    Tr : radiation temperature
+    TM : matter temperature
+    mode : 'prob' to return probabilities or 'spec' to return spectra
+    nmax : int
+        Highest excited state to be included
+
+    Returns
+    -------
+    Pto1s_many, PtoCont_many : vectors of probabilities for transitioning to
+        1s, continuum after many transitions
+    transition_specs : dictionary of photon spectra, labeled by
+        initial excited state (in N, not dNdE)
+    """
+
+    #Get the transition rates
+    R = populate_radial(nmax)
+    BB = populate_bound_bound(nmax, Tr, R)
+    k2_tab, g = populate_k2_and_g(nmax, TM)
+    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g)
+    beta = populate_beta(TM, Tr, nmax, k2_tab, g)
+
+    #Get transition energies
+    H_engs = get_transition_energies(nmax)
+
+    #Include sobolev optical depth
+    for n in np.arange(2,nmax+1,1):
+        BB['dn'][n][1][1] = p_np_1s(n, R, rs, xHI=xHI) * BB['dn'][n][1][1]
+    #Include forbidden 2s->1s transition
+    BB['dn'][2][1][0] = phys.width_2s1s_H
+
+    # Get indices where alpha != 0 --> correspond to ground and excited states
+    nonzero_n, nonzero_l = alpha.nonzero()
+
+    # Make array that has the n of each excited state
+    ns = np.zeros(int(nmax*(nmax+1)/2))
+    counter = 0
+    for i in range(1,nmax+1):
+        ns[counter:counter + i] = i
+        counter += i
+
+    ### Build probability matrix for single transition, P_ij
+    P_matrix = np.zeros((len(nonzero_n)+1, len(nonzero_n)+1))
+    
+    # Ground and continuum states are sink states
+    P_matrix[0,0] = 1
+    P_matrix[-1,-1] = 1
+    
+    for nl in range(1, len(nonzero_n)):
+        # Find indices for possible states to transition to (l must change by 1)
+        # Get the rates for transitioning to those states, as well as total rate
+        if nonzero_l[nl] != 0:
+            dn_inds = np.where(nonzero_l == nonzero_l[nl]-1)[0]
+            dn_rates = BB['dn'][nonzero_n[nl], nonzero_n[dn_inds], nonzero_l[nl]]
+        else:
+            # If angular momentum is 0, can only transition up
+            dn_rates = 0
+            
+        up_inds = np.where(nonzero_l == nonzero_l[nl]+1)[0]
+        up_rates = BB['up'][nonzero_n[nl], nonzero_n[up_inds], nonzero_l[nl]]
+        tot_rate = np.sum(up_rates) + np.sum(dn_rates) + beta[nonzero_n[nl]][nonzero_l[nl]]
+        
+        # Special 2s->1s transition
+        if nl == 1:
+            tot_rate += BB['dn'][2][1][0]
+            P_matrix[1][0] = BB['dn'][2][1][0] / tot_rate
+            
+        # Normalize by total rate for each state to get probabilities instead of rates
+        if nonzero_l[nl] != 0:
+            P_matrix[nl][dn_inds] = dn_rates / tot_rate
+        P_matrix[nl][up_inds] = up_rates / tot_rate
+        P_matrix[nl][-1] = beta[nonzero_n[nl]][nonzero_l[nl]] / tot_rate
+    
+    ### Calculate probability of any state going to 1s or continuum after many transitions
+    if mode == 'prob':
+        # Vector of probabilities for single transition
+        Pto1s = P_matrix[1:-1,0]
+        PtoCont = P_matrix[1:-1,-1]
+        
+        P_sub = P_matrix[1:-1,1:-1]
+        P_series = np.linalg.inv(np.identity(len(Pto1s)) - P_sub)
+        
+        # Geometric series with single-transition matrix
+        Pto1s_many = np.dot(P_series, Pto1s)
+        PtoCont_many = np.dot(P_series, PtoCont)
+        
+        return Pto1s_many, PtoCont_many
+                
+    ### Build matrix for photon spectra from single transitions
+    elif mode == 'spec':
+        # Since this is a photon spectrum, the length of the last axis is the number of photon energy bins
+        NE_single = np.zeros((len(nonzero_n)+1, len(nonzero_n)+1, len(H_engs)))
+        
+        # We are only putting one photon in one bin, so spectrum already correctly normalized
+        # Run over initial excited states
+        for nli in range(len(nonzero_n)):
+            #Bound-free transitions
+            eng = phys.rydberg / ns[nli]**2
+            # Find correct energy bin
+            ind = np.where(H_engs <= eng)[0][-1]
+            # Add 1 photon for emission, -1 for absorption
+            NE_single[nli,-1,ind] = -1
+            NE_single[-1,nli,ind] = 1
+            
+            #Bound-bound transitions
+            # Run over final states
+            for nlf in range(len(nonzero_n)):
+                # Put 2s->1s transition in special energy bin
+                if (nli == 1) and (nlf == 0):
+                    ind = np.where(H_engs <= 20)[0][-1]
+                    NE_single[nli,nlf,ind] = 1
+                else:
+                    # Energy of photon emitted/absorped
+                    eng = phys.rydberg * ((1/ns[nlf])**2 - (1/ns[nli])**2)
+                    if eng != 0.0:
+                        # Find correct energy bin
+                        ind = np.where(H_engs <= abs(eng))[0][-1]
+                        # Add 1 photon if emission, -1 for absorption
+                        NE_single[nli,nlf,ind] = np.sign(eng)
+        
+        ### Calculate spectrum from cascading to 1s after many transitions
+        PNE_1s = np.dot(P_matrix[:-1,:-1], NE_single[:-1,:-1])
+        PNE_diag_1s = np.transpose(np.diagonal(PNE_1s))
+        NE_1s = np.dot(P_series, PNE_diag_1s[1:])
+        
+        ### Calculate spectrum from going up to continuum after many transitions
+        PNE_Cont = np.dot(P_matrix[1:,1:], NE_single[1:,1:])
+        PNE_diag_Cont = np.transpose(np.diagonal(PNE_Cont))
+        NE_Cont = np.dot(P_series, PNE_diag_Cont[:-1])
+                
+        # Most photons are double counted between transitions to 1s and to continuum.
+        # What the continuum spectrum does not have are the photons corresponding to 
+        # the final transition to 1s, which all have energy > 10 eV.
+        phot1s_inds = np.where(photeng>10)[0]
+        photCont_inds = np.where(np.in1d(photeng,photengs_Cont))
+        NE_Cont[:,phot1s_inds] = NE_1s[:,phot1s_inds]
+        
+        # Use Spectrum class to rebin
+        binning = load_data('binning')
+        spectroscopic = ['s', 'p', 'd', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'q', 'r', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+        
+        # Replace 2s -> 1s transition with continuous two-photon spectrum
+        spec_2s1s = discretize(binning['phot'],phys.dNdE_2s1s)
+        spec_2s1s.switch_spec_type()
+        amp_2s1s = np.array(NE_Cont[:, -1])
+        NE_Cont[:, -1] = 0
+        
+        transition_specs = {}
+        for i in range(1,len(nonzero_n)):
+            state_string = f'{nonzero_n[i]}'+spectroscopic[nonzero_l[i]]
+            transition_specs[state_string] = Spectrum(photeng, NE_Cont[i-1], spec_type='N')
+            transition_specs[state_string].rebin(binning['phot'])
+            transition_specs[state_string] += amp_2s1s[i-1]*spec_2s1s
+
+        return transition_specs        
+
+    else:
+        print("mode not specified; must either be 'prob' or 'spec'.")
+
+
+
+
