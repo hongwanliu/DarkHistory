@@ -1191,7 +1191,7 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
             exc_eng  = {'HI': HI_exc_eng, 'HeI': He_exc_eng}
             bind_eng = {'HI': rydberg,    'HeI': He_ion_eng}
 
-            #!!! CHECK must include relativistic corrections at E>10keV
+            #!!! The Bethe approximation requires relativistic corrections at E > ~10keV
             #Parameters for high energy limit, ordered from 2p to 10p
             a_params = {
                 'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,  .004919,  .003237,  .002246,  .001623],
@@ -1211,28 +1211,28 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
             # Eqn (5) of Kim, Stone, Desclaux (2002)
             def xsec_asympt(species, state, KE):
-                ind = int(state[0])-2
-                if species == 'HeI':
-                    f_ratio = facc_HeI[ind]/fsc_HeI[ind]
+                if state[-1] == 'p':
+                    ind = int(state[0])-2
+                    if species == 'HeI':
+                        f_ratio = facc_HeI[ind]/fsc_HeI[ind]
+                    else:
+                        if state == '2s':
+                            return np.zeros_like(KE)
+                        # Kim et al: "The f scaling compensates for the inadequacy of the wave functions when electron correlation effect is significant"
+                        # Set f_ratio = 1 since there are no electron correlations in the hydrogen atom.
+                        f_ratio = 1.
+
+                    factor = (a_params[species][ind] * np.log(KE/rydberg) 
+                            + b_params[species][ind]
+                            + c_params[species][ind] * rydberg/KE)*f_ratio
+
+                    return 4*np.pi*bohr_rad**2*rydberg/(KE + bind_eng[species] + exc_eng[species][state]) * factor
                 else:
-                    if state == '2s':
-                        return np.zeros_like(KE)
-                    f_ratio = 1.
-
-                factor = (a_params[species][ind] * np.log(KE/rydberg) 
-                        + b_params[species][ind]
-                        + c_params[species][ind] * rydberg/KE)*f_ratio
-
-                return 4*np.pi*bohr_rad**2*rydberg/(KE + bind_eng[species] + exc_eng[species][state]) * factor
+                    return np.zeros_like(KE)
 
 
-            if method == 'MEDEA':
-                exc_xsec = load_data('exc')[species][state](eng)*1e-16 # in units of cm^-2
-                exc_xsec[eng<exc_eng[species][state]] = 0
-                exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
 
-
-            elif method == 'AcharyaKhatri':
+            if method == 'AcharyaKhatri':
                 exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng) # in units of cm^2
                 exc_xsec[eng<exc_eng[species][state]] = 0
                 # CCC cross-sections end around 1 keV
@@ -1243,6 +1243,10 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
                 # !!! bad extrapolation
                 exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
+            else:
+                exc_xsec = load_data('exc')[species][state](eng) # in units of cm^-2
+                exc_xsec[eng<exc_eng[species][state]] = 0
+                exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
 
             return exc_xsec
     
