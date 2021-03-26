@@ -224,7 +224,7 @@ def Newton_Cotes_11pt(x, f):
 def populate_beta(TM, Tr, nmax, k2_tab, g, NBINS):
     k2 = np.zeros(11)
     int_b = np.zeros(11)
-    common_factor =  2.0/3.0 * alpha_fs**3 * EI/hPlanck
+    common_factor =  2.0/3.0 * alpha_fs**3 * EI/hplanck
     beta = np.zeros((nmax+1,nmax))
 
     for n in range(1, nmax+1):
@@ -257,8 +257,8 @@ def populate_beta(TM, Tr, nmax, k2_tab, g, NBINS):
 def populate_alpha(Tm, Tr, nmax, k2_tab, g, NBINS):
     k2 = np.zeros(11)
     int_a = np.zeros(11)   
-    common_factor = (2.0/3.0 * alpha_fs**3 * EI/hPlanck 
-                     * (hPlanck**2 * cLight**2/(2.0 * np.pi * mue * Tm))**1.5)
+    common_factor = (2.0/3.0 * alpha_fs**3 * EI/hplanck 
+                     * (hplanck**2 * cLight**2/(2.0 * np.pi * mue * Tm))**1.5)
     alpha = np.zeros((nmax+1,nmax))
     
     for n in range(1,nmax+1):
@@ -294,9 +294,9 @@ def get_transition_energies(nmax):
     """
 
     H_engs = np.zeros((nmax+1,nmax+1))
-    H_engss_Cont = np.zeros(nmax+1)
+    H_engs_Cont = np.zeros(nmax+1)
     for n1 in range(1,nmax+1):
-        H_engss_Cont[n1] = phys.rydberg / n1**2
+        H_engs_Cont[n1] = phys.rydberg / n1**2
         H_engs[0,n1] = phys.rydberg / n1**2
         for n2 in range(1,n1):
             H_engs[n1,n2] = phys.rydberg * ((1/n2)**2 - (1/n1)**2)
@@ -307,8 +307,7 @@ def get_transition_energies(nmax):
     return H_engs
 
 
-def get_total_transition(rs, xHI, Tr, TM, 
-    mode='spec', nmax):
+def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec'):
     """
     Calculate either the probabilities to switch between between states or the 
     resulting photon spectra after many transitions.
@@ -334,9 +333,9 @@ def get_total_transition(rs, xHI, Tr, TM,
     #Get the transition rates
     R = populate_radial(nmax)
     BB = populate_bound_bound(nmax, Tr, R)
-    k2_tab, g = populate_k2_and_g(nmax, TM)
-    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g)
-    beta = populate_beta(TM, Tr, nmax, k2_tab, g)
+    k2_tab, g = populate_k2_and_g(nmax, TM, NBINS)
+    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g, NBINS)
+    beta = populate_beta(TM, Tr, nmax, k2_tab, g, NBINS)
 
     #Get transition energies
     H_engs = get_transition_energies(nmax)
@@ -389,15 +388,15 @@ def get_total_transition(rs, xHI, Tr, TM,
         P_matrix[nl][up_inds] = up_rates / tot_rate
         P_matrix[nl][-1] = beta[nonzero_n[nl]][nonzero_l[nl]] / tot_rate
     
+    # Vector of probabilities for single transition
+    Pto1s = P_matrix[1:-1,0]
+    PtoCont = P_matrix[1:-1,-1]
+        
+    P_sub = P_matrix[1:-1,1:-1]
+    P_series = np.linalg.inv(np.identity(len(Pto1s)) - P_sub)
+
     ### Calculate probability of any state going to 1s or continuum after many transitions
     if mode == 'prob':
-        # Vector of probabilities for single transition
-        Pto1s = P_matrix[1:-1,0]
-        PtoCont = P_matrix[1:-1,-1]
-        
-        P_sub = P_matrix[1:-1,1:-1]
-        P_series = np.linalg.inv(np.identity(len(Pto1s)) - P_sub)
-        
         # Geometric series with single-transition matrix
         Pto1s_many = np.dot(P_series, Pto1s)
         PtoCont_many = np.dot(P_series, PtoCont)
@@ -449,8 +448,8 @@ def get_total_transition(rs, xHI, Tr, TM,
         # Most photons are double counted between transitions to 1s and to continuum.
         # What the continuum spectrum does not have are the photons corresponding to 
         # the final transition to 1s, which all have energy > 10 eV.
-        phot1s_inds = np.where(photeng>10)[0]
-        photCont_inds = np.where(np.in1d(photeng,photengs_Cont))
+        phot1s_inds = np.where(H_engs>10)[0]
+        #photCont_inds = np.where(np.in1d(H_engs,photengs_Cont))
         NE_Cont[:,phot1s_inds] = NE_1s[:,phot1s_inds]
         
         # Use Spectrum class to rebin
@@ -466,7 +465,7 @@ def get_total_transition(rs, xHI, Tr, TM,
         transition_specs = {}
         for i in range(1,len(nonzero_n)):
             state_string = f'{nonzero_n[i]}'+spectroscopic[nonzero_l[i]]
-            transition_specs[state_string] = Spectrum(photeng, NE_Cont[i-1], spec_type='N')
+            transition_specs[state_string] = Spectrum(H_engs, NE_Cont[i-1], spec_type='N')
             transition_specs[state_string].rebin(binning['phot'])
             transition_specs[state_string] += amp_2s1s[i-1]*spec_2s1s
 
