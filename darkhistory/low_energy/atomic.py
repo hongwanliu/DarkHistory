@@ -6,6 +6,7 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectools import discretize
 import scipy.special
 from config import load_data
+from datetime import datetime
 
 NBINS = 100
 Nkappa = 10 * NBINS + 1
@@ -144,63 +145,65 @@ def p_np_1s(n, R, rs, xHI=None):
 # **********************************************************************************************************************/
 
 def populate_gnlk(nmax, n, kappa):
-    gnk_up = np.zeros(nmax)
-    gnk_dn = np.zeros(nmax)
-
+    gnk_up = np.zeros((nmax, len(kappa)))
+    gnk_dn = np.zeros((nmax, len(kappa)))
+    
     k2 = kappa**2
     n2 = n**2
-
+        
     log_product = 0.0;
-
+    
     for s in range(1, n+1):
         log_product = log_product + np.log(1.0 + s*s*k2)
     log_init = (0.5 * (np.log(np.pi/2) - lgamma(2.0 * n)) + np.log(4.0) + n * np.log(4.0 * n) + 0.5 * log_product
-             - 0.5 * np.log(1.0 - np.exp(-2.0 * np.pi / kappa)) - 2.0 * np.arctan(n * kappa) / kappa
+             - 0.5 * np.log(1.0 - np.exp(-2.0 * np.pi / kappa)) - 2.0 * np.arctan(n * kappa) / kappa 
              - (n + 2.0) * np.log(1.0 + n2 * k2))
     gnk_up[n-1] = np.exp(log_init)
     gnk_dn[n-1] = 0.5 * np.sqrt((1.0 + n2 * k2) / (1.0 + (n - 1.0) * (n - 1.0) * k2)) / n * gnk_up[n-1]
-
+ 
     if n > 1:
-        gnk_up[n-2] = 0.5 * np.sqrt((2.0 * n - 1.0) * (1.0 + n2 * k2)) * gnk_up[n-1]
+        gnk_up[n-2] = 0.5 * np.sqrt((2.0 * n - 1.0) * (1.0 + n2 * k2)) * gnk_up[n-1]    
         gnk_dn[n-2] = 0.5 * (4.0 + (n - 1.0) * (1.0 + n2 * k2)) * np.sqrt(
-            (2.0 * n - 1.0) / (1.0 + (n - 2.0) * (n - 2.0) * k2)) / n * gnk_dn[n-1]
-        for l in range(n-1,1,-1):
+            (2.0 * n - 1.0) / (1.0 + (n - 2.0) * (n - 2.0) * k2)) / n * gnk_dn[n-1]  
+        for l in range(n-1,1,-1): 
             l2 = l**2
             gnk_up[l-2] = 0.5 * (((4.0 * (n2 - l2) + l * (2.0 * l - 1.0) * (1.0 + n2 * k2)) * gnk_up[l-1]
                               - 2.0 * n * np.sqrt((n2 - l2) * (1.0 + (l + 1.0) * (l + 1.0) * k2)) * gnk_up[l])
                                 / np.sqrt((n2 - (l - 1.0) * (l - 1.0)) * (1.0 + l2 * k2)) / n)
-
-        for l in range(n-2,0,-1):
+        
+        for l in range(n-2,0,-1):  
             l2 = l**2;
             gnk_dn[l-1] = 0.5 * (((4.0 * (n2 - l2) + l * (2.0 * l + 1.0) * (1.0 + n2 * k2)) * gnk_dn[l]
                               - 2.0 * n * np.sqrt((n2 - (l + 1.0) * (l + 1.0)) * (1.0 + l2 * k2)) * gnk_dn[l+1])
                               / np.sqrt((n2 - l2) * (1.0 + (l - 1.0) * (l - 1.0) * k2)) / n)
-    return gnk_up, gnk_dn
-
+    return np.transpose(gnk_up), np.transpose(gnk_dn)
 
 # /********************************************************************************************
 # k2[n][ik] because boundaries depend on n
 #  ********************************************************************************************/
 
-def populate_k2_and_g(nmax, TM, NBINS):
-    Nkappa = 10 * NBINS + 1
+def populate_k2_and_g(nmax, TM):
     k2_tab = np.zeros((nmax+1,10 * (NBINS-1) + 11))
     g = {key: np.zeros((nmax+1,Nkappa,nmax)) for key in ['up', 'dn']}
-    k2max = 7e2*TM/EI
+    k2max = 7e2*TM/EI        
 
     for n in range(1,nmax+1):
         k2min = 1e-25/n/n
         bigBins = np.logspace(np.log10(k2min), np.log10(k2max), NBINS + 1)
-        for iBig in range(NBINS):
-            temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
-            for i in range(11):
-                k2_tab[n][10 * iBig + i] = temp[i]
-        for ik in range(10 * NBINS + 1):
-            g['up'][n][ik], g['dn'][n][ik] = populate_gnlk(nmax, n, np.sqrt(k2_tab[n][ik]))
+#         for iBig in range(NBINS):
+#             temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
+#             for i in range(11):
+#                 k2_tab[n][10 * iBig + i] = temp[i]
+        iBig = np.arange(NBINS)
+        temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
+        for i in range(11):
+            k2_tab[n][10 * iBig + i] = temp[i]
+        ik = np.arange(10 * NBINS + 1)
+        g['up'][n,ik], g['dn'][n,ik] = populate_gnlk(nmax, n, np.sqrt(k2_tab[n,ik]))  
     return k2_tab, g
 
 
-# /*******************************************************************************************
+# /******************************************************************************************* 
 # 11 point Newton-Cotes integration.
 # Inputs: an 11-point array x, an 11-point array f(x).
 # Output: \int f(x) dx over the interval provided.
@@ -209,10 +212,9 @@ def populate_k2_and_g(nmax, TM, NBINS):
 def Newton_Cotes_11pt(x, f):
     h = (x[10] - x[0])/10.0 #/* step size */
 
-    return (5.0 * h * (16067.0 * (f[0] + f[10]) + 106300.0 * (f[1] + f[9])
+    return (5.0 * h * (16067.0 * (f[0] + f[10]) + 106300.0 * (f[1] + f[9]) 
                       - 48525.0 * (f[2] + f[8]) + 272400.0 * (f[3] + f[7])
                       - 260550.0 * (f[4] + f[6]) + 427368.0 * f[5]) / 299376.0)
-
 
 # /********************************************************************************************* 
 # Populating the photoionization rates beta(n, l, Tr)
@@ -221,27 +223,27 @@ def Newton_Cotes_11pt(x, f):
 # where Nkappa = 10 * NBINS + 1
 # *********************************************************************************************/
 
-def populate_beta(TM, Tr, nmax, k2_tab, g, NBINS):
-    k2 = np.zeros(11)
-    int_b = np.zeros(11)
+def populate_beta(TM, Tr, nmax, k2_tab, g):
+    k2 = np.zeros((11, NBINS))
+    int_b = np.zeros((11, NBINS))
     common_factor =  2.0/3.0 * alpha_fs**3 * EI/hplanck
     beta = np.zeros((nmax+1,nmax))
 
     for n in range(1, nmax+1):
         n2 = n**2
         for l in range(n):
-            for iBin in range(NBINS):
-                for i in range(11):
-                    ik = 10 * iBin + i
-                    k2[i] = k2_tab[n][ik]
-                    if (Tr < 1e-10):      #/* Flag meaning TR = 0 */
-                        int_b[i] = 0.0
-                    else:
-                        int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(EI / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
-                                      ((l + 1.0) * g['up'][n][ik][l] * g['up'][n][ik][l] 
-                                       + l * g['dn'][n][ik][l] * g['dn'][n][ik][l]))
-                beta[n][l] +=  Newton_Cotes_11pt(k2, int_b)
-            beta[n][l]  *= common_factor / n2 / (2.0 * l + 1.0)
+            iBin = np.arange(NBINS)
+            for i in range(11):
+                ik = 10 * iBin + i
+                k2[i] = k2_tab[n][ik]
+                if (Tr < 1e-10):      #/* Flag meaning TR = 0 */
+                    int_b[i] = 0.0
+                else:
+                    int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(EI / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
+                                  ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
+                                   + l * g['dn'][n,ik,l] * g['dn'][n,ik,l]))
+            beta[n][l] += np.sum(Newton_Cotes_11pt(k2, int_b))
+            beta[n][l] *= common_factor / n2 / (2.0 * l + 1.0)
     return beta
 
 # /********************************************************************************************* 
@@ -254,9 +256,9 @@ def populate_beta(TM, Tr, nmax, k2_tab, g, NBINS):
 
 # /****************************************************************************************/
 
-def populate_alpha(Tm, Tr, nmax, k2_tab, g, NBINS):
-    k2 = np.zeros(11)
-    int_a = np.zeros(11)   
+def populate_alpha(Tm, Tr, nmax, k2_tab, g):
+    k2 = np.zeros((11, NBINS))
+    int_a = np.zeros((11, NBINS))   
     common_factor = (2.0/3.0 * alpha_fs**3 * EI/hplanck 
                      * (hplanck**2 * cLight**2/(2.0 * np.pi * mue * Tm))**1.5)
     alpha = np.zeros((nmax+1,nmax))
@@ -264,16 +266,16 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g, NBINS):
     for n in range(1,nmax+1):
         n2 = n**2
         for l in range(n):
-            for iBin in range(NBINS):
-                for i in range(11):
-                    ik = 10 * iBin + i
-                    k2[i] = k2_tab[n][ik]
-                    int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * EI / Tm) *
-                                 ((l + 1.0) * g['up'][n][ik][l] * g['up'][n][ik][l] 
-                                  + l * g['dn'][n][ik][l] * g['dn'][n][ik][l]))
-                    if Tr > 1e-10:
-                        int_a[i] /= (1. - np.exp(-EI/Tr*(k2[i] + 1./n2)))
-                alpha[n][l] += Newton_Cotes_11pt(k2, int_a)
+            iBin = np.arange(NBINS)
+            for i in range(11):
+                ik = 10 * iBin + i
+                k2[i] = k2_tab[n][ik]
+                int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * EI / Tm) *
+                             ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
+                              + l * g['dn'][n,ik,l] * g['dn'][n,ik,l]))
+                if Tr > 1e-10:
+                    int_a[i] /= (1. - np.exp(-EI/Tr*(k2[i] + 1./n2)))
+            alpha[n][l] += np.sum(Newton_Cotes_11pt(k2, int_a))
             alpha[n][l] *= common_factor / n2
     return alpha
 
@@ -333,9 +335,9 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec'):
     #Get the transition rates
     R = populate_radial(nmax)
     BB = populate_bound_bound(nmax, Tr, R)
-    k2_tab, g = populate_k2_and_g(nmax, TM, NBINS)
-    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g, NBINS)
-    beta = populate_beta(TM, Tr, nmax, k2_tab, g, NBINS)
+    k2_tab, g = populate_k2_and_g(nmax, TM)
+    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g)
+    beta = populate_beta(TM, Tr, nmax, k2_tab, g)
 
     #Get transition energies
     H_engs = get_transition_energies(nmax)
@@ -436,13 +438,19 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec'):
                         NE_single[nli,nlf,ind] = np.sign(eng)
         
         ### Calculate spectrum from cascading to 1s after many transitions
-        PNE_1s = np.dot(P_matrix[:-1,:-1], NE_single[:-1,:-1])
-        PNE_diag_1s = np.transpose(np.diagonal(PNE_1s))
+        # PNE_1s = np.dot(P_matrix[:-1,:-1], NE_single[:-1,:-1])
+        # PNE_diag_1s = np.transpose(np.diagonal(PNE_1s))
+        PNE_diag_1s = np.zeros((len(nonzero_n), len(H_engs)))
+        for i in range(len(nonzero_n)):
+            PNE_diag_1s[i] = np.sum(P_matrix[:-1,:-1][i] * np.transpose(NE_single[:-1,:-1][i]), axis=-1)
         NE_1s = np.dot(P_series, PNE_diag_1s[1:])
         
         ### Calculate spectrum from going up to continuum after many transitions
-        PNE_Cont = np.dot(P_matrix[1:,1:], NE_single[1:,1:])
-        PNE_diag_Cont = np.transpose(np.diagonal(PNE_Cont))
+        # PNE_Cont = np.dot(P_matrix[1:,1:], NE_single[1:,1:])
+        # PNE_diag_Cont = np.transpose(np.diagonal(PNE_Cont))
+        PNE_diag_Cont = np.zeros((len(nonzero_n), len(H_engs)))
+        for i in range(len(nonzero_n)):
+            PNE_diag_Cont[i] = np.sum(P_matrix[1:,1:][i] * np.transpose(NE_single[1:,1:][i]), axis=-1)
         NE_Cont = np.dot(P_series, PNE_diag_Cont[:-1])
                 
         # Most photons are double counted between transitions to 1s and to continuum.

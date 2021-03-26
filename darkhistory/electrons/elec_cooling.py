@@ -2,7 +2,7 @@
 """
 
 import numpy as np
-
+from datetime import datetime
 import darkhistory.physics as phys
 import darkhistory.utilities as utils
 import darkhistory.spec.transferfunction as tf
@@ -691,10 +691,6 @@ def get_elec_cooling_tf(
         deexc_states[0] = '2s'
         deexc_states[1] = '2p'
         deexc_states[2:] = np.array([str(i)+'p' for i in nrange])
-        ##Energy difference between excited states (n>2) and n=2
-        #deexc_engs = np.zeros(len(deexc_states))
-        #deexc_engs[:2] = phys.lya_eng
-        #deexc_engs[2:] = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
         deexc_grid = np.zeros((deexc_states.size, eleceng.size))
         deexc_phot_spectra = Spectra(
             spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
@@ -704,7 +700,6 @@ def get_elec_cooling_tf(
 
         #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
         one_transition = atomic.get_total_transition(rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, mode='spec')
-
         for i, state in enumerate(deexc_states):
             #Use energy deposited in excitation to infer the number of excited (n>2) atoms
             deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
