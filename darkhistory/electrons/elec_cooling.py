@@ -2,11 +2,12 @@
 """
 
 import numpy as np
-
+from datetime import datetime
 import darkhistory.physics as phys
 import darkhistory.utilities as utils
 import darkhistory.spec.transferfunction as tf
 import darkhistory.spec.spectools as spectools
+import darkhistory.low_energy.atomic as atomic
 
 from config import load_data
 
@@ -685,10 +686,12 @@ def get_elec_cooling_tf(
     #        )
     if method != 'AcharyaKhatri':
         #List of excited states
-        deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
-        #Energy difference between excited states (n>2) and n=2
-        deexc_engs = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
-        deexc_grid = np.zeros((deexc_engs.size, eleceng.size))
+        nrange = np.arange(3,11,1)
+        deexc_states = np.zeros(len(nrange)+2,'U4')
+        deexc_states[0] = '2s'
+        deexc_states[1] = '2p'
+        deexc_states[2:] = np.array([str(i)+'p' for i in nrange])
+        deexc_grid = np.zeros((deexc_states.size, eleceng.size))
         deexc_phot_spectra = Spectra(
             spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
             in_eng=eleceng, spec_type='N', 
@@ -696,18 +699,17 @@ def get_elec_cooling_tf(
         )
 
         #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
-        one_transition = get_total_transition(rs, 1-xHI, phys.TCMB(rs), phys.Tm_std(rs), mode='spec', nmax=10)
-
+        one_transition = atomic.get_total_transition(rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, mode='spec')
         for i, state in enumerate(deexc_states):
             #Use energy deposited in excitation to infer the number of excited (n>2) atoms
             deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
             #Multiply number of excited atoms by corresponding spectra and add it in            
             deexc_phot_spectra += Spectra(
-                spec_arr=np.outer(deexc_grid[i], one_transition[thing].N), eng=photeng,
+                spec_arr=np.outer(deexc_grid[i], one_transition[state].N), eng=photeng,
                 in_eng=eleceng, spec_type='N',
                 rs=np.ones_like(eleceng)*rs
             )
-        deposited_Lya_vec = None
+        deposited_Lya_vec = np.zeros_like(deposited_exc_vec['2p'])
     else:
         deposited_Lya_vec = None
         deexc_phot_spectra = None

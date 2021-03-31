@@ -655,7 +655,7 @@ def evolve(
         dnde = interp1d(eng,dNdE_DM)(E2)
         T2 = E2/np.log(1+E2**2/prefac/dnde)
         #T2=None
-        print(rs, phys.TCMB(rs), T2)
+        #print(rs, phys.TCMB(rs), T2)
         if rs>2.5e3 or T2<phys.TCMB(rs):
             T2=None
 
