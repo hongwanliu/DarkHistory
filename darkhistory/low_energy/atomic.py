@@ -12,10 +12,7 @@ NBINS = 100
 Nkappa = 10 * NBINS + 1
 
 hplanck = phys.hbar*2*np.pi
-EI       = 13.5982860719383 #/*13.60569193 / (1.0 + me_mp)*/       /* Ionization energy of hydrogen in eV, accounting for reduced mass */
-alpha_fs = 7.2973525376e-3                                                     #/* Fine structure constant */
-cLight   = 2.99792458e10                                                       #/* Speed of light in cm/s */
-mue      = 510720.762779219              #/*me / (1.0 + me_mp)*/               #/* Reduced mass of hydrogen in eV*/
+mue      = phys.me/(1+phys.me/phys.mp)
 
 #*************************************************#
 #A_{nl} coefficient defined in Hey (2006), Eq. (9)#
@@ -79,8 +76,9 @@ def populate_radial(nmax):
 #                 = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB_up[n'][n][l-1]    if n < n'
 #  *****************************************************************************************************************/
 
-def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10):
+def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_DM=None):
     BB = {key: np.zeros((nmax+1,nmax+1,nmax)) for key in ['up', 'dn']}
+
     for n in np.arange(2,nmax+1,1):
         n2 = n**2
         for n_p in np.arange(1,n,1):
@@ -89,7 +87,7 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10):
             if (Tr < ZEROTEMP):    #/* if Tr = 0*/
                 fEnnp = 0.0;
             else:
-                fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr))
+                fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + f_DM(Ennp)
                 #fEnnp = 1/(np.exp(Ennp/Tr)-1)
 
             common_factor = 2*np.pi/3 * phys.rydberg / hplanck * (
@@ -107,8 +105,14 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10):
                 if (Tr < ZEROTEMP):  #/* if Tr = 0 */
                     BB['up'][n_p][n][l] = BB['dn'][n_p][n][l+1] = 0.0;
                 else:
-                    BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(-Ennp/Tr) * BB['dn'][n][n_p][l+1]
-                    BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(-Ennp/Tr) * BB['up'][n][n_p][l]
+                    #BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(-Ennp/Tr) * BB['dn'][n][n_p][l+1]
+                    #BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(-Ennp/Tr) * BB['up'][n][n_p][l]
+                    
+                    # When adding a distortion, detailed balance is inconvenient.
+                    # Instead, take away the 1+fEnnp from a couple of lines above, 
+                    # then replace it with fEnnp (that's all detailed balance was doing).
+                    BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp
+                    BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * BB['up'][n][n_p][l]  /(1+fEnnp) * fEnnp
 
     return BB
 
@@ -151,10 +155,9 @@ def populate_gnlk(nmax, n, kappa):
     k2 = kappa**2
     n2 = n**2
         
-    log_product = 0.0;
-    
+    log_product = 0.
     for s in range(1, n+1):
-        log_product = log_product + np.log(1.0 + s*s*k2)
+        log_product += np.log(1.0 + s**2 * k2)
     log_init = (0.5 * (np.log(np.pi/2) - lgamma(2.0 * n)) + np.log(4.0) + n * np.log(4.0 * n) + 0.5 * log_product
              - 0.5 * np.log(1.0 - np.exp(-2.0 * np.pi / kappa)) - 2.0 * np.arctan(n * kappa) / kappa 
              - (n + 2.0) * np.log(1.0 + n2 * k2))
@@ -185,15 +188,11 @@ def populate_gnlk(nmax, n, kappa):
 def populate_k2_and_g(nmax, TM):
     k2_tab = np.zeros((nmax+1,10 * (NBINS-1) + 11))
     g = {key: np.zeros((nmax+1,Nkappa,nmax)) for key in ['up', 'dn']}
-    k2max = 7e2*TM/EI        
+    k2max = 7e2*TM/phys.rydberg        
 
     for n in range(1,nmax+1):
         k2min = 1e-25/n/n
         bigBins = np.logspace(np.log10(k2min), np.log10(k2max), NBINS + 1)
-#         for iBig in range(NBINS):
-#             temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
-#             for i in range(11):
-#                 k2_tab[n][10 * iBig + i] = temp[i]
         iBig = np.arange(NBINS)
         temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
         for i in range(11):
@@ -223,10 +222,10 @@ def Newton_Cotes_11pt(x, f):
 # where Nkappa = 10 * NBINS + 1
 # *********************************************************************************************/
 
-def populate_beta(TM, Tr, nmax, k2_tab, g):
+def populate_beta(TM, Tr, nmax, k2_tab, g, f_DM=None):
     k2 = np.zeros((11, NBINS))
     int_b = np.zeros((11, NBINS))
-    common_factor =  2.0/3.0 * alpha_fs**3 * EI/hplanck
+    common_factor =  2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck
     beta = np.zeros((nmax+1,nmax))
 
     for n in range(1, nmax+1):
@@ -239,9 +238,11 @@ def populate_beta(TM, Tr, nmax, k2_tab, g):
                 if (Tr < 1e-10):      #/* Flag meaning TR = 0 */
                     int_b[i] = 0.0
                 else:
-                    int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(EI / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
-                                  ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
-                                   + l * g['dn'][n,ik,l] * g['dn'][n,ik,l]))
+                    Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_DM(Ennp)
+                    # Burgess, Eqn 1
+                    #int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(phys.rydberg / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
+                    int_b[i] = ((1.0 + k2[i]*n2)**3 * fEnnp * ((l + 1.0) * g['up'][n,ik,l]**2 + l * g['dn'][n,ik,l]**2))
             beta[n][l] += np.sum(Newton_Cotes_11pt(k2, int_b))
             beta[n][l] *= common_factor / n2 / (2.0 * l + 1.0)
     return beta
@@ -256,11 +257,11 @@ def populate_beta(TM, Tr, nmax, k2_tab, g):
 
 # /****************************************************************************************/
 
-def populate_alpha(Tm, Tr, nmax, k2_tab, g):
+def populate_alpha(Tm, Tr, nmax, k2_tab, g, f_DM=None):
     k2 = np.zeros((11, NBINS))
     int_a = np.zeros((11, NBINS))   
-    common_factor = (2.0/3.0 * alpha_fs**3 * EI/hplanck 
-                     * (hplanck**2 * cLight**2/(2.0 * np.pi * mue * Tm))**1.5)
+    common_factor = (2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck 
+                     * (hplanck**2 * phys.c**2/(2.0 * np.pi * mue * Tm))**1.5)
     alpha = np.zeros((nmax+1,nmax))
     
     for n in range(1,nmax+1):
@@ -270,11 +271,17 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g):
             for i in range(11):
                 ik = 10 * iBin + i
                 k2[i] = k2_tab[n][ik]
-                int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * EI / Tm) *
-                             ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
-                              + l * g['dn'][n,ik,l] * g['dn'][n,ik,l]))
-                if Tr > 1e-10:
-                    int_a[i] /= (1. - np.exp(-EI/Tr*(k2[i] + 1./n2)))
+                if Tr<1e-10:
+                    int_a[i] = 0
+                else:
+                    Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_DM(Ennp)
+                #    int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * phys.rydberg / Tm) *
+                    int_a[i] = ((1.0 + n2 *k2[i])**3 * fEnnp *
+                                 ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
+                                  + l * g['dn'][n,ik,l] * g['dn'][n,ik,l]))
+                #if Tr > 1e-10:
+                #    int_a[i] /= (1. - np.exp(-phys.rydberg/Tr*(k2[i] + 1./n2)))
             alpha[n][l] += np.sum(Newton_Cotes_11pt(k2, int_a))
             alpha[n][l] *= common_factor / n2
     return alpha
@@ -309,7 +316,7 @@ def get_transition_energies(nmax):
     return H_engs
 
 
-def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec'):
+def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec', f_DM = None):
     """
     Calculate either the probabilities to switch between between states or the 
     resulting photon spectra after many transitions.
@@ -332,12 +339,15 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec'):
         initial excited state (in N, not dNdE)
     """
 
+    if f_DM==None:
+        f_DM = lambda a : 0
+
     #Get the transition rates
     R = populate_radial(nmax)
-    BB = populate_bound_bound(nmax, Tr, R)
+    BB = populate_bound_bound(nmax, Tr, R, f_DM=f_DM)
     k2_tab, g = populate_k2_and_g(nmax, TM)
-    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g)
-    beta = populate_beta(TM, Tr, nmax, k2_tab, g)
+    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g, f_DM=f_DM)
+    beta = populate_beta(TM, Tr, nmax, k2_tab, g, f_DM=f_DM)
 
     #Get transition energies
     H_engs = get_transition_energies(nmax)

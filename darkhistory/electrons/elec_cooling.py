@@ -26,7 +26,7 @@ def get_elec_cooling_tf(
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
     ics_engloss_data=None, #loweng=3000, 
     spec_2s1s=None,
-    check_conservation_eng = False, simple_ICS=False, verbose=False
+    check_conservation_eng = False, simple_ICS=False, verbose=False, f_DM=None
 ):
 
     """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
@@ -116,12 +116,19 @@ def get_elec_cooling_tf(
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
     method = 'MEDEA'
     #method = 'AcharyaKhatri'
+    #method = 'new'
+
     if method == 'AcharyaKhatri':
-        exc_types  = ['2s', '2p', '3p',
-                'HeI', 'HeII'] 
+        exc_types  = ['2s', '2p', '3p']
+    elif method == 'MEDEA':
+        H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
     else:
-        exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 
-                'HeI', 'HeII'] 
+        H_states = ['2s', '2p', 
+                '3s', '3p', '3d', 
+                '4s', '4p', '4d', '4f', 
+                '5p', '6p', '7p', '8p', '9p', '10p']
+
+    exc_types  = H_states+['HeI', 'HeII'] 
     # Probability for a state to decay down to 2p, see Hirata astro-ph/0507102v2
     Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
       '4p': 0.2609,'5p': 0.3078,'6p': 0.3259,
@@ -130,7 +137,7 @@ def get_elec_cooling_tf(
     #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
 
-    exc_potentials         = phys.HI_exc_eng.copy()
+    exc_potentials         = {state: phys.H_exc_eng(state) for state in H_states}
     exc_potentials['HeI']  = phys.He_exc_eng['23s']
     exc_potentials['HeII'] = 4*phys.lya_eng
 
@@ -699,10 +706,10 @@ def get_elec_cooling_tf(
         )
 
         #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
-        one_transition = atomic.get_total_transition(rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, mode='spec')
+        one_transition = atomic.get_total_transition(rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, mode='spec', f_DM=f_DM)
         for i, state in enumerate(deexc_states):
             #Use energy deposited in excitation to infer the number of excited (n>2) atoms
-            deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
+            deexc_grid[i] += deposited_exc_vec[state]/phys.H_exc_eng(state)
             #Multiply number of excited atoms by corresponding spectra and add it in            
             deexc_phot_spectra += Spectra(
                 spec_arr=np.outer(deexc_grid[i], one_transition[state].N), eng=photeng,

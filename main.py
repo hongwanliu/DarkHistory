@@ -429,6 +429,8 @@ def evolve(
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
+            #!!!
+            f_DM=None
             # Create the electron transfer functions
             (
                 ics_sec_phot_tf, crap,#elec_processes_lowengelec_tf,
@@ -444,7 +446,8 @@ def evolve(
                     coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
                     coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                     ics_engloss_data=ics_engloss_data,
-                    spec_2s1s = spec_2s1s
+                    spec_2s1s = spec_2s1s,
+                    f_DM=f_DM
                     #loweng=eleceng[0]
                 )
 
@@ -647,17 +650,18 @@ def evolve(
             [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
         )
 
-        from scipy.interpolate import interp1d
-        prefac = np.pi**2 * phys.nB*(phys.hbar*phys.c*rs)**3
-        E2 = phys.rydberg-phys.lya_eng
-        eng = lowengphot_spec_at_rs.eng
-        dNdE_DM = lowengphot_spec_at_rs.dNdE
-        dnde = interp1d(eng,dNdE_DM)(E2)
-        T2 = E2/np.log(1+E2**2/prefac/dnde)
+        #!!!
+        #from scipy.interpolate import interp1d
+        #prefac = np.pi**2 * phys.nB*(phys.hbar*phys.c*rs)**3
+        #E2 = phys.rydberg-phys.lya_eng
+        #eng = lowengphot_spec_at_rs.eng
+        #dNdE_DM = lowengphot_spec_at_rs.dNdE
+        #dnde = interp1d(eng,dNdE_DM)(E2)
+        #T2 = E2/np.log(1+E2**2/prefac/dnde)
         #T2=None
         #print(rs, phys.TCMB(rs), T2)
-        if rs>2.5e3 or T2<phys.TCMB(rs):
-            T2=None
+        #if rs>2.5e3 or T2<phys.TCMB(rs):
+        #    T2=None
 
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
@@ -669,7 +673,7 @@ def evolve(
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol, T2 = T2
+            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
 
         #####################################################################
@@ -817,12 +821,13 @@ def get_elec_cooling_data(eleceng, photeng):
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-    exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 'HeI', 'HeII']
+    H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+    exc_types  =  H_states+['HeI', 'HeII']
 
     #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
 
-    exc_potentials         = phys.HI_exc_eng.copy()
+    exc_potentials         = {state: phys.H_exc_eng(state) for state in H_states}
     exc_potentials['HeI']  = phys.He_exc_eng['23s']
     exc_potentials['HeII'] = 4*phys.lya_eng
 
