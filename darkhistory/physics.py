@@ -1171,7 +1171,7 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
             ion_eng = rydberg
         elif species == 'HeI':
             state = '2p'
-            exc_eng = HeI_exc_eng[state]
+            exc_eng = He_exc_eng[state]
             ion_eng = He_ion_eng
         else:
             #!!! Maybe it's wiser to throw a warning
