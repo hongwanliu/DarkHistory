@@ -706,7 +706,9 @@ def get_elec_cooling_tf(
         )
 
         #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
-        one_transition = atomic.get_total_transition(rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, mode='spec', f_DM=f_DM)
+        Pto1s_many, PtoCont_many, one_transition = atomic.get_total_transition(
+                rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, f_DM=f_DM
+        )
         for i, state in enumerate(deexc_states):
             #Use energy deposited in excitation to infer the number of excited (n>2) atoms
             deexc_grid[i] += deposited_exc_vec[state]/phys.H_exc_eng(state)

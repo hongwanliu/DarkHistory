@@ -316,7 +316,7 @@ def get_transition_energies(nmax):
     return H_engs
 
 
-def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec', f_DM = None):
+def get_total_transition(rs, xHI, Tr, TM, nmax, f_DM = None):
     """
     Calculate either the probabilities to switch between between states or the 
     resulting photon spectra after many transitions.
@@ -359,7 +359,9 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec', f_DM = None):
     BB['dn'][2][1][0] = phys.width_2s1s_H
 
     # Get indices where alpha != 0 --> correspond to ground and excited states
-    nonzero_n, nonzero_l = alpha.nonzero()
+    #nonzero_n, nonzero_l = alpha.nonzero()
+    nonzero_n = np.concatenate([list(map(int,k*np.ones(k))) for k in np.arange(1,nmax+1)])
+    nonzero_l = np.concatenate([np.arange(k) for k in np.arange(1,nmax+1)])
 
     # Make array that has the n of each excited state
     ns = np.zeros(int(nmax*(nmax+1)/2))
@@ -408,90 +410,87 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, mode='spec', f_DM = None):
     P_series = np.linalg.inv(np.identity(len(Pto1s)) - P_sub)
 
     ### Calculate probability of any state going to 1s or continuum after many transitions
-    if mode == 'prob':
-        # Geometric series with single-transition matrix
-        Pto1s_many = np.dot(P_series, Pto1s)
-        PtoCont_many = np.dot(P_series, PtoCont)
-        
-        return Pto1s_many, PtoCont_many
+    #if mode == 'prob':
+    # Geometric series with single-transition matrix
+    Pto1s_many = np.dot(P_series, Pto1s)
+    PtoCont_many = np.dot(P_series, PtoCont)
+    
+    #return Pto1s_many, PtoCont_many
                 
     ### Build matrix for photon spectra from single transitions
-    elif mode == 'spec':
-        # Since this is a photon spectrum, the length of the last axis is the number of photon energy bins
-        NE_single = np.zeros((len(nonzero_n)+1, len(nonzero_n)+1, len(H_engs)))
+    #elif mode == 'spec':
+    # Since this is a photon spectrum, the length of the last axis is the number of photon energy bins
+    NE_single = np.zeros((len(nonzero_n)+1, len(nonzero_n)+1, len(H_engs)))
+    
+    # We are only putting one photon in one bin, so spectrum already correctly normalized
+    # Run over initial excited states
+    for nli in range(len(nonzero_n)):
+        #Bound-free transitions
+        eng = phys.rydberg / ns[nli]**2
+        # Find correct energy bin
+        ind = np.where(H_engs <= eng)[0][-1]
+        # Add 1 photon for emission, -1 for absorption
+        NE_single[nli,-1,ind] = -1
+        NE_single[-1,nli,ind] = 1
         
-        # We are only putting one photon in one bin, so spectrum already correctly normalized
-        # Run over initial excited states
-        for nli in range(len(nonzero_n)):
-            #Bound-free transitions
-            eng = phys.rydberg / ns[nli]**2
-            # Find correct energy bin
-            ind = np.where(H_engs <= eng)[0][-1]
-            # Add 1 photon for emission, -1 for absorption
-            NE_single[nli,-1,ind] = -1
-            NE_single[-1,nli,ind] = 1
+        #Bound-bound transitions
+        # Run over final states
+        for nlf in range(len(nonzero_n)):
+            # Put 2s->1s transition in special energy bin
+            if (nli == 1) and (nlf == 0):
+                ind = np.where(H_engs <= 20)[0][-1]
+                NE_single[nli,nlf,ind] = 1
+            else:
+                # Energy of photon emitted/absorped
+                eng = phys.rydberg * ((1/ns[nlf])**2 - (1/ns[nli])**2)
+                if eng != 0.0:
+                    # Find correct energy bin
+                    ind = np.where(H_engs <= abs(eng))[0][-1]
+                    # Add 1 photon if emission, -1 for absorption
+                    NE_single[nli,nlf,ind] = np.sign(eng)
+    
+    ### Calculate spectrum from cascading to 1s after many transitions
+    # PNE_1s = np.dot(P_matrix[:-1,:-1], NE_single[:-1,:-1])
+    # PNE_diag_1s = np.transpose(np.diagonal(PNE_1s))
+    PNE_diag_1s = np.zeros((len(nonzero_n), len(H_engs)))
+    for i in range(len(nonzero_n)):
+        PNE_diag_1s[i] = np.sum(P_matrix[:-1,:-1][i] * np.transpose(NE_single[:-1,:-1][i]), axis=-1)
+    NE_1s = np.dot(P_series, PNE_diag_1s[1:])
+    
+    ### Calculate spectrum from going up to continuum after many transitions
+    # PNE_Cont = np.dot(P_matrix[1:,1:], NE_single[1:,1:])
+    # PNE_diag_Cont = np.transpose(np.diagonal(PNE_Cont))
+    PNE_diag_Cont = np.zeros((len(nonzero_n), len(H_engs)))
+    for i in range(len(nonzero_n)):
+        PNE_diag_Cont[i] = np.sum(P_matrix[1:,1:][i] * np.transpose(NE_single[1:,1:][i]), axis=-1)
+    NE_Cont = np.dot(P_series, PNE_diag_Cont[:-1])
             
-            #Bound-bound transitions
-            # Run over final states
-            for nlf in range(len(nonzero_n)):
-                # Put 2s->1s transition in special energy bin
-                if (nli == 1) and (nlf == 0):
-                    ind = np.where(H_engs <= 20)[0][-1]
-                    NE_single[nli,nlf,ind] = 1
-                else:
-                    # Energy of photon emitted/absorped
-                    eng = phys.rydberg * ((1/ns[nlf])**2 - (1/ns[nli])**2)
-                    if eng != 0.0:
-                        # Find correct energy bin
-                        ind = np.where(H_engs <= abs(eng))[0][-1]
-                        # Add 1 photon if emission, -1 for absorption
-                        NE_single[nli,nlf,ind] = np.sign(eng)
-        
-        ### Calculate spectrum from cascading to 1s after many transitions
-        # PNE_1s = np.dot(P_matrix[:-1,:-1], NE_single[:-1,:-1])
-        # PNE_diag_1s = np.transpose(np.diagonal(PNE_1s))
-        PNE_diag_1s = np.zeros((len(nonzero_n), len(H_engs)))
-        for i in range(len(nonzero_n)):
-            PNE_diag_1s[i] = np.sum(P_matrix[:-1,:-1][i] * np.transpose(NE_single[:-1,:-1][i]), axis=-1)
-        NE_1s = np.dot(P_series, PNE_diag_1s[1:])
-        
-        ### Calculate spectrum from going up to continuum after many transitions
-        # PNE_Cont = np.dot(P_matrix[1:,1:], NE_single[1:,1:])
-        # PNE_diag_Cont = np.transpose(np.diagonal(PNE_Cont))
-        PNE_diag_Cont = np.zeros((len(nonzero_n), len(H_engs)))
-        for i in range(len(nonzero_n)):
-            PNE_diag_Cont[i] = np.sum(P_matrix[1:,1:][i] * np.transpose(NE_single[1:,1:][i]), axis=-1)
-        NE_Cont = np.dot(P_series, PNE_diag_Cont[:-1])
-                
-        # Most photons are double counted between transitions to 1s and to continuum.
-        # What the continuum spectrum does not have are the photons corresponding to 
-        # the final transition to 1s, which all have energy > 10 eV.
-        phot1s_inds = np.where(H_engs>10)[0]
-        #photCont_inds = np.where(np.in1d(H_engs,photengs_Cont))
-        NE_Cont[:,phot1s_inds] = NE_1s[:,phot1s_inds]
-        
-        # Use Spectrum class to rebin
-        binning = load_data('binning')
-        spectroscopic = ['s', 'p', 'd', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'q', 'r', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-        
-        # Replace 2s -> 1s transition with continuous two-photon spectrum
-        spec_2s1s = discretize(binning['phot'],phys.dNdE_2s1s)
-        spec_2s1s.switch_spec_type()
-        amp_2s1s = np.array(NE_Cont[:, -1])
-        NE_Cont[:, -1] = 0
-        
-        transition_specs = {}
-        for i in range(1,len(nonzero_n)):
-            state_string = f'{nonzero_n[i]}'+spectroscopic[nonzero_l[i]]
-            transition_specs[state_string] = Spectrum(H_engs, NE_Cont[i-1], spec_type='N')
-            transition_specs[state_string].rebin(binning['phot'])
-            transition_specs[state_string] += amp_2s1s[i-1]*spec_2s1s
+    # Most photons are double counted between transitions to 1s and to continuum.
+    # What the continuum spectrum does not have are the photons corresponding to 
+    # the final transition to 1s, which all have energy > 10 eV.
+    phot1s_inds = np.where(H_engs>10)[0]
+    #photCont_inds = np.where(np.in1d(H_engs,photengs_Cont))
+    NE_Cont[:,phot1s_inds] = NE_1s[:,phot1s_inds]
+    
+    # Use Spectrum class to rebin
+    binning = load_data('binning')
+    spectroscopic = ['s', 'p', 'd', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'q', 'r', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+    
+    # Replace 2s -> 1s transition with continuous two-photon spectrum
+    spec_2s1s = discretize(binning['phot'],phys.dNdE_2s1s)
+    spec_2s1s.switch_spec_type()
+    amp_2s1s = np.array(NE_Cont[:, -1])
+    NE_Cont[:, -1] = 0
+    
+    transition_specs = {}
+    for i in range(1,len(nonzero_n)):
+        state_string = f'{nonzero_n[i]}'+spectroscopic[nonzero_l[i]]
+        transition_specs[state_string] = Spectrum(H_engs, NE_Cont[i-1], spec_type='N')
+        transition_specs[state_string].rebin(binning['phot'])
+        transition_specs[state_string] += amp_2s1s[i-1]*spec_2s1s
 
-        return transition_specs        
+    return Pto1s_many, PtoCont_many, transition_specs        
 
-    else:
-        print("mode not specified; must either be 'prob' or 'spec'.")
-
-
-
+    #else:
+    #    raise TypeError("mode not specified; must either be 'prob' or 'spec'.")
 
