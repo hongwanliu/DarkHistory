@@ -3,6 +3,7 @@
 """
 import numpy as np
 from numpy.linalg import matrix_power
+from scipy.interpolate import interp1d
 
 # from config import data_path, photeng, eleceng
 # from tf_data import *
@@ -383,6 +384,10 @@ def evolve(
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
 
+    # Initialize Spectrum object that stores the distortion
+    distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
+    dist_mask = photeng<phys.rydberg
+
     #########################################################################
     #########################################################################
     # LOOP! LOOP! LOOP! LOOP!                                               #
@@ -429,8 +434,10 @@ def evolve(
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
-            #!!!
             f_DM=None
+            fac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+            f_DM = interp1d(photeng, fac * distortion.dNdE/photeng**2)
+
             # Create the electron transfer functions
             (
                 ics_sec_phot_tf, crap,#elec_processes_lowengelec_tf,
@@ -454,10 +461,12 @@ def evolve(
 
             ### Apply the transfer function to the input electron spectrum generated in this step ###
 
-            # electrons in this step are comprised of:
+            # electrons in this step are comprised of those:
             #  promptly injected from DM (in_spec_elec), 
             #  produced by high energy photon processes (lowengelec_spec_at_rs) 
             #  photoionized from atoms (ionized_elec)
+
+            #All normalized per baryon
             ionized_elec = get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
             tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
 
@@ -485,9 +494,9 @@ def evolve(
             # Photons from Injected Electrons     #
             #######################################
 
-            # ICS secondary photon spectrum after electron cooling, 
-            # per injection event.
+            # ICS secondary photon spectrum after electron cooling, per baryon
             ics_phot_spec = ics_sec_phot_tf.sum_specs(tot_spec_elec)
+            #print(ics_phot_spec.N)
 
             # secondary photon spectrum from deexcitation of atoms 
             # that were collisionally excited by electrons
@@ -498,6 +507,7 @@ def evolve(
             positronium_phot_spec = pos.weighted_photon_spec(photeng) * (
                 in_spec_elec.totN()/2
             )
+
             positronium_phot_spec.switch_spec_type('N')
 
 
@@ -505,8 +515,8 @@ def evolve(
         # to the photon spectrum that got propagated forward. 
         if elec_processes:
             highengphot_spec_at_rs += (
-                in_spec_phot + ics_phot_spec + positronium_phot_spec
-            ) * norm_fac(rs)
+                in_spec_phot + positronium_phot_spec
+            ) * norm_fac(rs) + ics_phot_spec
             lowengphot_spec_at_rs = lowengphot_spec_at_rs + deexc_phot_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
@@ -546,6 +556,9 @@ def evolve(
         append_lowengphot_spec(lowengphot_spec_at_rs)
         append_lowengelec_spec(lowengelec_spec_at_rs)
 
+        # Add sub-13.6eV energy photons to the distortion
+        distortion.N[dist_mask] += lowengphot_spec_at_rs.N[dist_mask]
+
         #####################################################################
         #####################################################################
         # Compute f_c(z)                                                    #
@@ -560,15 +573,6 @@ def evolve(
                 deposited_heat/dt,
                 deposited_err/dt
             ])
-
-            #print(highengdep_at_rs)
-            #print(np.array([
-            #    deposited_H_ion/dt,
-            #    #deposited_He_ion/dt,
-            #    deposited_Lya/dt,
-            #    deposited_heat/dt,
-            #    deposited_err/dt
-            #]))
 
             norm = phys.nB*rs**3 / rate_func_eng(rs)
             # High-energy deposition from input electrons. 
@@ -731,6 +735,9 @@ def evolve(
             lowengphot_spec_at_rs.rs  = next_rs
             lowengelec_spec_at_rs.rs  = next_rs
 
+            # Redshift the distortion
+            distortion.redshift(next_rs)
+
             # Only save if next_rs > end_rs, since these are the x, Tm
             # values for the next redshift.
 
@@ -778,6 +785,7 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
+        'distortion': distortion,
         'f': f
     }
 
