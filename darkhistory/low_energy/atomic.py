@@ -3,6 +3,7 @@
 import numpy as np 
 from darkhistory import physics as phys 
 from darkhistory.spec.spectrum import Spectrum
+from   darkhistory.spec.spectra import Spectra
 from darkhistory.spec.spectools import discretize
 import scipy.special
 from config import load_data
@@ -76,7 +77,7 @@ def populate_radial(nmax):
 #                 = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB_up[n'][n][l-1]    if n < n'
 #  *****************************************************************************************************************/
 
-def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_DM=None):
+def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_dist=None):
     BB = {key: np.zeros((nmax+1,nmax+1,nmax)) for key in ['up', 'dn']}
 
     for n in np.arange(2,nmax+1,1):
@@ -87,7 +88,7 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_DM=None):
             if (Tr < ZEROTEMP):    #/* if Tr = 0*/
                 fEnnp = 0.0;
             else:
-                fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + f_DM(Ennp)
+                fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + f_dist(Ennp)
                 #fEnnp = 1/(np.exp(Ennp/Tr)-1)
 
             common_factor = 2*np.pi/3 * phys.rydberg / hplanck * (
@@ -185,10 +186,10 @@ def populate_gnlk(nmax, n, kappa):
 # k2[n][ik] because boundaries depend on n
 #  ********************************************************************************************/
 
-def populate_k2_and_g(nmax, TM):
+def populate_k2_and_g(nmax, Tm):
     k2_tab = np.zeros((nmax+1,10 * (NBINS-1) + 11))
     g = {key: np.zeros((nmax+1,Nkappa,nmax)) for key in ['up', 'dn']}
-    k2max = 7e2*TM/phys.rydberg        
+    k2max = 7e2*Tm/phys.rydberg        
 
     for n in range(1,nmax+1):
         k2min = 1e-25/n/n
@@ -222,7 +223,7 @@ def Newton_Cotes_11pt(x, f):
 # where Nkappa = 10 * NBINS + 1
 # *********************************************************************************************/
 
-def populate_beta(TM, Tr, nmax, k2_tab, g, f_DM=None):
+def populate_beta(Tm, Tr, nmax, k2_tab, g, f_dist=None):
     k2 = np.zeros((11, NBINS))
     int_b = np.zeros((11, NBINS))
     common_factor =  2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck
@@ -239,7 +240,7 @@ def populate_beta(TM, Tr, nmax, k2_tab, g, f_DM=None):
                     int_b[i] = 0.0
                 else:
                     Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
-                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_DM(Ennp)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_dist(Ennp)
                     # Burgess, Eqn 1
                     #int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(phys.rydberg / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
                     int_b[i] = ((1.0 + k2[i]*n2)**3 * fEnnp * ((l + 1.0) * g['up'][n,ik,l]**2 + l * g['dn'][n,ik,l]**2))
@@ -257,7 +258,7 @@ def populate_beta(TM, Tr, nmax, k2_tab, g, f_DM=None):
 
 # /****************************************************************************************/
 
-def populate_alpha(Tm, Tr, nmax, k2_tab, g, f_DM=None):
+def populate_alpha(Tm, Tr, nmax, k2_tab, g, f_dist=None):
     k2 = np.zeros((11, NBINS))
     int_a = np.zeros((11, NBINS))   
     common_factor = (2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck 
@@ -275,7 +276,7 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g, f_DM=None):
                     int_a[i] = 0
                 else:
                     Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
-                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_DM(Ennp)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_dist(Ennp)
                 #    int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * phys.rydberg / Tm) *
                     int_a[i] = ((1.0 + n2 *k2[i])**3 * fEnnp *
                                  ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
@@ -316,7 +317,7 @@ def get_transition_energies(nmax):
     return H_engs
 
 
-def get_total_transition(rs, xHI, Tr, TM, nmax, f_DM = None):
+def get_total_transition(rs, xHI, Tm, nmax, f_dist = None):
     """
     Calculate either the probabilities to switch between between states or the 
     resulting photon spectra after many transitions.
@@ -325,8 +326,7 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, f_DM = None):
     ----------
     rs : redshift
     xHI : neutral fraction of hydrogen
-    Tr : radiation temperature
-    TM : matter temperature
+    Tm : matter temperature
     mode : 'prob' to return probabilities or 'spec' to return spectra
     nmax : int
         Highest excited state to be included
@@ -339,15 +339,18 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, f_DM = None):
         initial excited state (in N, not dNdE)
     """
 
-    if f_DM==None:
-        f_DM = lambda a : 0
+    if f_dist==None:
+        f_dist = lambda a : 0
+
+    #Radiation Temperature
+    Tr = phys.TCMB(rs)
 
     #Get the transition rates
     R = populate_radial(nmax)
-    BB = populate_bound_bound(nmax, Tr, R, f_DM=f_DM)
-    k2_tab, g = populate_k2_and_g(nmax, TM)
-    alpha = populate_alpha(TM, Tr, nmax, k2_tab, g, f_DM=f_DM)
-    beta = populate_beta(TM, Tr, nmax, k2_tab, g, f_DM=f_DM)
+    BB = populate_bound_bound(nmax, Tr, R, f_dist=f_dist)
+    k2_tab, g = populate_k2_and_g(nmax, Tm)
+    alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, f_dist=f_dist)
+    beta = populate_beta(Tm, Tr, nmax, k2_tab, g, f_dist=f_dist)
 
     #Get transition energies
     H_engs = get_transition_energies(nmax)
@@ -482,15 +485,43 @@ def get_total_transition(rs, xHI, Tr, TM, nmax, f_DM = None):
     amp_2s1s = np.array(NE_Cont[:, -1])
     NE_Cont[:, -1] = 0
     
-    transition_specs = {}
+    P_1s, P_ion, transition_specs = {}, {}, {}
     for i in range(1,len(nonzero_n)):
         state_string = f'{nonzero_n[i]}'+spectroscopic[nonzero_l[i]]
+
+        P_1s[state_string]  = Pto1s_many[i-1]
+        P_ion[state_string] = PtoCont_many[i-1]
+
         transition_specs[state_string] = Spectrum(H_engs, NE_Cont[i-1], spec_type='N')
         transition_specs[state_string].rebin(binning['phot'])
         transition_specs[state_string] += amp_2s1s[i-1]*spec_2s1s
 
-    return Pto1s_many, PtoCont_many, transition_specs        
+    return P_1s, P_ion, transition_specs        
 
     #else:
     #    raise TypeError("mode not specified; must either be 'prob' or 'spec'.")
 
+def process_excitations(rs, xHII, Tm, eleceng, photeng, deposited_exc_vec, H_states, nmax, f_dist):
+
+    exc_grid = np.zeros((np.array(H_states).size, eleceng.size))
+    exc_phot_spectra = Spectra(
+        spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
+        in_eng=eleceng, spec_type='N',
+        rs=np.ones_like(eleceng)*rs
+    )
+    #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
+    P_1s, P_ion, one_transition = get_total_transition(rs, 1-xHII, Tm, nmax, f_dist)
+
+    for i, state in enumerate(H_states):
+
+        #Use energy deposited in excitation to infer the number of excited (n>2) atoms
+        exc_grid[i] += deposited_exc_vec[state]/phys.H_exc_eng(state)
+
+        #Multiply number of excited atoms by corresponding spectra and add it in
+        exc_phot_spectra += Spectra(
+            spec_arr=np.outer(exc_grid[i], one_transition[state].N), eng=photeng,
+            in_eng=eleceng, spec_type='N',
+            rs=np.ones_like(eleceng)*rs
+        )
+
+    return P_1s, P_ion, exc_phot_spectra

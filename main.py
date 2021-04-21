@@ -23,10 +23,11 @@ from   darkhistory.spec.spectools import discretize
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
+import darkhistory.low_energy.atomic as atomic
 
-from darkhistory.photons.phot_dep import compute_fs
-from darkhistory.photons.phot_dep import get_ionized_elec
-from darkhistory.photons.phot_dep import propagating_lowE_photons_fracs
+import darkhistory.photons.phot_dep as phot_dep
+from darkhistory.low_energy.lowE_deposition import compute_fs as compute_fs_OLD
+from darkhistory.low_energy.lowE_electrons import make_interpolator
 
 from darkhistory.history import tla
 
@@ -38,7 +39,7 @@ def evolve(
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
-    init_cond=None, coarsen_factor=1, backreaction=True, 
+    init_cond=None, coarsen_factor=1, backreaction=True, distort=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False
 ):
@@ -334,9 +335,10 @@ def evolve(
 
 
     # If there are no electrons, we get a speed up by ignoring them. 
-    elec_processes = True
-    if in_spec_elec.totN() > 0:
+    if (in_spec_elec.totN() > 0) | distort:
         elec_processes = True
+    else:
+        elec_processes = False
 
     if elec_processes:
 
@@ -384,9 +386,14 @@ def evolve(
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
 
-    # Initialize Spectrum object that stores the distortion
-    distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
-    dist_mask = photeng<phys.rydberg
+    if distort:
+        # Initialize Spectrum object that stores the distortion
+        distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
+        dist_mask = photeng<phys.rydberg
+    else:
+        distortion=None
+        # Object to help us interpolate over MEDEA results.
+        MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
 
     #########################################################################
     #########################################################################
@@ -434,16 +441,29 @@ def evolve(
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
-            f_DM=None
-            fac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
-            f_DM = interp1d(photeng, fac * distortion.dNdE/photeng**2)
+            # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
+            method = 'MEDEA'
+            #method = 'AcharyaKhatri'
+            #method = 'new'
+
+            if method == 'AcharyaKhatri':
+                H_states  = ['2s', '2p', '3p']
+                nmax=3
+            elif method == 'MEDEA':
+                H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+                nmax=10
+            else:
+                H_states = ['2s', '2p',
+                        '3s', '3p', '3d',
+                        '4s', '4p', '4d', '4f',
+                        '5p', '6p', '7p', '8p', '9p', '10p']
+                nmax=10
 
             # Create the electron transfer functions
             (
-                ics_sec_phot_tf, crap,#elec_processes_lowengelec_tf,
+                ics_sec_phot_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 ICS_engloss_vec, ICS_err_vec,
-                deexc_phot_spectra, deposited_Lya_arr
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
                     xHII_elec_cooling, xHeII=xHeII_elec_cooling,
@@ -453,10 +473,18 @@ def evolve(
                     coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
                     coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                     ics_engloss_data=ics_engloss_data,
-                    spec_2s1s = spec_2s1s,
-                    f_DM=f_DM
+                    method=method, H_states=H_states, spec_2s1s = spec_2s1s
                     #loweng=eleceng[0]
                 )
+
+
+            f_dist=None
+            #fac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+            #f_dist = interp1d(photeng, fac * distortion.dNdE/photeng**2)
+            P_1s, P_ion, exc_phot_spectra = atomic.process_excitations(
+                rs, x_arr[-1, 0], Tm_arr[-1], eleceng, photeng, deposited_exc_arr, H_states, nmax=nmax, f_dist=f_dist
+            )
+            #!!! Incorporate P_ion into f_ion somehow.
 
 
             ### Apply the transfer function to the input electron spectrum generated in this step ###
@@ -467,7 +495,7 @@ def evolve(
             #  photoionized from atoms (ionized_elec)
 
             #All normalized per baryon
-            ionized_elec = get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
+            ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
             tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
 
             # deposited energy into ionization, *per baryon in this step*. 
@@ -479,7 +507,7 @@ def evolve(
             )
             # Lyman-alpha excitation 
             deposited_Lya  = np.dot(
-                deposited_Lya_arr, tot_spec_elec.N
+                deposited_exc_arr['2p'], tot_spec_elec.N
             )
             # heating
             deposited_heat = np.dot(
@@ -498,9 +526,9 @@ def evolve(
             ics_phot_spec = ics_sec_phot_tf.sum_specs(tot_spec_elec)
             #print(ics_phot_spec.N)
 
-            # secondary photon spectrum from deexcitation of atoms 
+            # secondary photon spectrum from transitions of atoms 
             # that were collisionally excited by electrons
-            deexc_phot_spec = deexc_phot_spectra.sum_specs(tot_spec_elec)
+            exc_phot_spec = exc_phot_spectra.sum_specs(tot_spec_elec)
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
@@ -517,7 +545,7 @@ def evolve(
             highengphot_spec_at_rs += (
                 in_spec_phot + positronium_phot_spec
             ) * norm_fac(rs) + ics_phot_spec
-            lowengphot_spec_at_rs = lowengphot_spec_at_rs + deexc_phot_spec
+            lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_phot_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -529,7 +557,7 @@ def evolve(
             if x_arr[-1,1] == phys.chi:
                 x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
 
-            lowEprop_mask = propagating_lowE_photons_fracs(lowengphot_spec_at_rs, x_at_rs, dt)
+            lowEprop_mask = phot_dep.propagating_lowE_photons_fracs(lowengphot_spec_at_rs, x_at_rs, dt)
         else:
             lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
 
@@ -556,14 +584,30 @@ def evolve(
         append_lowengphot_spec(lowengphot_spec_at_rs)
         append_lowengelec_spec(lowengelec_spec_at_rs)
 
-        # Add sub-13.6eV energy photons to the distortion
-        distortion.N[dist_mask] += lowengphot_spec_at_rs.N[dist_mask]
+        if distort:
+            # Add sub-13.6eV energy photons to the distortion
+            distortion.N[dist_mask] += lowengphot_spec_at_rs.N[dist_mask]
 
         #####################################################################
         #####################################################################
         # Compute f_c(z)                                                    #
         #####################################################################
         #####################################################################
+        # Values of (xHI, xHeI, xHeII) to use for computing f.
+        if backreaction or (compute_fs_method == 'HeII' and rs <= reion_rs):
+            # Use the previous values with backreaction, or if we are using
+            # the HeII method after the reionization redshift. 
+            x_vec_for_f = np.array(
+                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
+            )
+        else:
+            # Use baseline values if no backreaction. 
+            x_vec_for_f = np.array([
+                    1. - phys.xHII_std(rs), 
+                    phys.chi - phys.xHeII_std(rs), 
+                    phys.xHeII_std(rs)
+            ])
+
         if elec_processes:
             # High-energy deposition from input electrons. 
             highengdep_at_rs += np.array([
@@ -584,54 +628,61 @@ def evolve(
                     'err'    : highengdep_at_rs[3] * norm
                     }
 
-        # Values of (xHI, xHeI, xHeII) to use for computing f.
-        if backreaction or (compute_fs_method == 'HeII' and rs <= reion_rs):
-            # Use the previous values with backreaction, or if we are using
-            # the HeII method after the reionization redshift. 
-            x_vec_for_f = np.array(
-                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
-            )
+        if distort:
+            if compute_fs_method == 'HeII' and rs > reion_rs:
+
+                # For 'HeII', stick with 'no_He' until after 
+                # reionization kicks in.
+
+                f_phot = phot_dep.compute_fs(
+                    lowengphot_spec_at_rs,
+                    x_vec_for_f, rate_func_eng(rs), dt,
+                    method='old', cross_check=cross_check
+                )
+
+            else:
+
+                f_phot = phot_dep.compute_fs(
+                    lowengphot_spec_at_rs,
+                    x_vec_for_f, rate_func_eng(rs), dt,
+                    method=compute_fs_method, cross_check=cross_check
+                )
+
+            # Compute f for TLA: sum of low and high. 
+            f_H_ion = f_phot['H ion'] + f_elec['H ion']
+            f_Lya   = f_phot['H exc'] + f_elec['Lya']
+            f_heat  = f_elec['heat']
+            f_err   = f_elec['err']
+
+            if compute_fs_method == 'old':
+                # The old method neglects helium.
+                f_He_ion = 0. 
+            else:
+                f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
+
         else:
-            # Use baseline values if no backreaction. 
-            x_vec_for_f = np.array([
-                    1. - phys.xHII_std(rs), 
-                    phys.chi - phys.xHeII_std(rs), 
-                    phys.xHeII_std(rs)
-            ])
-
-
-        if compute_fs_method == 'HeII' and rs > reion_rs:
-
-            # For 'HeII', stick with 'no_He' until after 
-            # reionization kicks in.
-
-            f_phot = compute_fs(
-                lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng(rs), dt,
-                method='old', cross_check=cross_check
+            f_raw = compute_fs_OLD(
+                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
             )
 
-        else:
+            # Compute f for TLA: sum of low and high.
+            f_H_ion = f_raw[0][0] + f_raw[1][0]
+            f_Lya   = f_raw[0][2] + f_raw[1][2]
+            f_heat  = f_raw[0][3] + f_raw[1][3]
+            # This keeps track of numerical error from ICS,
+            # which is absent when there are no electrons
+            f_err   = 0 
 
-            f_phot = compute_fs(
-                lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng(rs), dt,
-                method=compute_fs_method, cross_check=cross_check
-            )
+            if compute_fs_method == 'old':
+                f_He_ion = 0.
+            else:
+                f_He_ion = f_raw[0][1] + f_raw[1][1]
 
-        # Compute f for TLA: sum of low and high. 
-        f_H_ion = f_phot['H ion'] + f_elec['H ion']
-        f_Lya   = f_phot['Lya'] + f_elec['Lya']
-        f_heat  = f_elec['heat']
-
-        if compute_fs_method == 'old':
-            # The old method neglects helium.
-            f_He_ion = 0. 
-        else:
-            f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         
         # Save the f_c(z) values.
-        f_c = np.concatenate((f_c, [[f_H_ion, f_He_ion, f_Lya, f_heat, f_elec['err']]]))
+        f_c = np.concatenate((f_c, [[f_H_ion, f_He_ion, f_Lya, f_heat, f_err]]))
 
         #####################################################################
         #####################################################################
@@ -735,8 +786,9 @@ def evolve(
             lowengphot_spec_at_rs.rs  = next_rs
             lowengelec_spec_at_rs.rs  = next_rs
 
-            # Redshift the distortion
-            distortion.redshift(next_rs)
+            if distort:
+                # Redshift the distortion
+                distortion.redshift(next_rs)
 
             # Only save if next_rs > end_rs, since these are the x, Tm
             # values for the next redshift.
