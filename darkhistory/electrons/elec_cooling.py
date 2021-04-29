@@ -25,7 +25,7 @@ def get_elec_cooling_tf(
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
     ics_engloss_data=None, #loweng=3000, 
-    spec_2s1s=None,
+    method='new', H_states=None, spec_2s1s=None,
     check_conservation_eng = False, simple_ICS=False, verbose=False
 ):
 
@@ -113,24 +113,12 @@ def get_elec_cooling_tf(
 
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
-    # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-    method = 'MEDEA'
-    #method = 'AcharyaKhatri'
-    if method == 'AcharyaKhatri':
-        exc_types  = ['2s', '2p', '3p',
-                'HeI', 'HeII'] 
-    else:
-        exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 
-                'HeI', 'HeII'] 
-    # Probability for a state to decay down to 2p, see Hirata astro-ph/0507102v2
-    Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
-      '4p': 0.2609,'5p': 0.3078,'6p': 0.3259,
-      '7p': 0.3353,'8p': 0.3410,'9p': 0.3448,'10p': 0.3476}
+    exc_types  = H_states+['HeI', 'HeII'] 
 
     #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
 
-    exc_potentials         = phys.HI_exc_eng.copy()
+    exc_potentials         = {state: phys.H_exc_eng(state) for state in H_states}
     exc_potentials['HeI']  = phys.He_exc_eng['23s']
     exc_potentials['HeII'] = 4*phys.lya_eng
 
@@ -643,78 +631,6 @@ def get_elec_cooling_tf(
             inv_mat, ICS_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
         )
 
-    #!!! Delete
-    ## Prompt: low energy e produced in secondary spectrum upon scattering (sec_lowengelec_N_arr).
-    ## T : high energy e produced (sec_highengelec_N_arr). 
-    #sec_lowengelec_specs = solve_triangular(
-    #    np.identity(eleceng.size) - sec_highengelec_N_arr,
-    #    sec_lowengelec_N_arr, lower=True, check_finite=False
-    #)
-
-    #Allow all of the dexcited states to produce secondary photons
-    #First add all of the n -> 2 photons to the secondary photon spectrum
-
-    #!!! Assume single photon ejection for n -> 2 transitions, which
-    #isn't true for n>3
-    #!!! What about other excited states?
-    #if method != 'AcharyaKhatri':
-    #    deexc_states = np.array([str(i)+'p' for i in np.arange(3,11,1)])
-    #    deexc_engs = np.array([phys.HI_exc_eng[state] - phys.lya_eng for state in deexc_states])
-    #    deexc_grid = np.zeros((deexc_engs.size, eleceng.size))
-
-    #    for i, state in enumerate(deexc_states):
-    #        #array of photons that are produced
-    #        deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
-
-    #    deexc_phot_spectra = Spectra(
-    #        spec_arr = deexc_grid.transpose(), eng=deexc_engs,
-    #        rebin_eng=photeng, in_eng=eleceng, spec_type='N', 
-    #        rs=np.ones_like(eleceng)*rs
-    #    )
-
-    #    #Figure out the proportion of electrons that ended up in 2s,
-    #    # and multiply the total number by the 2s-1s two-photon spectrum
-    #    deposited_Lya_vec = np.zeros_like(deposited_exc_vec['2p'])
-    #    for i, state in enumerate(Ps):
-    #        # Number of electrons that end up in 2s
-    #        N_exc = deposited_exc_vec[state]/phys.HI_exc_eng[state]*(1-Ps[state])
-    #        deexc_phot_spectra._grid_vals += np.outer(N_exc, spec_2s1s.N*2) #Factor of 2 --> 2 photon emission
-
-    #        # Make sure that deposited_exc_arr only contains the atoms in the 2p state
-    #        deposited_Lya_vec += (
-    #            deposited_exc_vec[state] * Ps[state] * phys.lya_eng/phys.HI_exc_eng[state]
-    #        )
-    if method != 'AcharyaKhatri':
-        #List of excited states
-        nrange = np.arange(3,11,1)
-        deexc_states = np.zeros(len(nrange)+2,'U4')
-        deexc_states[0] = '2s'
-        deexc_states[1] = '2p'
-        deexc_states[2:] = np.array([str(i)+'p' for i in nrange])
-        deexc_grid = np.zeros((deexc_states.size, eleceng.size))
-        deexc_phot_spectra = Spectra(
-            spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
-            in_eng=eleceng, spec_type='N', 
-            rs=np.ones_like(eleceng)*rs
-        )
-
-        #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
-        one_transition = atomic.get_total_transition(rs, 1-xHII, phys.TCMB(rs), phys.Tm_std(rs), 10, mode='spec')
-        for i, state in enumerate(deexc_states):
-            #Use energy deposited in excitation to infer the number of excited (n>2) atoms
-            deexc_grid[i] += deposited_exc_vec[state]/phys.HI_exc_eng[state]
-            #Multiply number of excited atoms by corresponding spectra and add it in            
-            deexc_phot_spectra += Spectra(
-                spec_arr=np.outer(deexc_grid[i], one_transition[state].N), eng=photeng,
-                in_eng=eleceng, spec_type='N',
-                rs=np.ones_like(eleceng)*rs
-            )
-        deposited_Lya_vec = np.zeros_like(deposited_exc_vec['2p'])
-    else:
-        deposited_Lya_vec = None
-        deexc_phot_spectra = None
-
-
     # Subtract continuum from sec_phot_specs. After this point, 
     # sec_phot_specs will contain the *distortions* to the CMB. 
 
@@ -762,8 +678,6 @@ def get_elec_cooling_tf(
 
         if np.any(np.abs(conservation_check/eleceng) > 1e-3):
             failed_conservation_check = True
-        #else:
-        #    print('NICE')
 
         if verbose or failed_conservation_check:
 
@@ -832,10 +746,9 @@ def get_elec_cooling_tf(
                 raise RuntimeError('Conservation of energy failed.')
 
     return (
-        sec_phot_tf, crap, #sec_lowengelec_tf,
+        sec_phot_tf,
         {'H' : deposited_H_ion_vec, 'He' : deposited_He_ion_vec}, deposited_exc_vec, deposited_heat_vec,
-        deposited_ICS_vec, ICS_err_vec, 
-        deexc_phot_spectra, deposited_Lya_vec
+        deposited_ICS_vec, ICS_err_vec
     )
 
 def loweng_ICS_distortion(eleceng, photeng, T):

@@ -28,12 +28,12 @@ def getf_continuum(photspec, norm_fac, cross_check=False):
         )
 
 #excitation
-def getf_Lya(photspec, norm_fac, dt, xe, n, method, cross_check=False):
+def getf_exc(photspec, norm_fac, method, cross_check=False):
     if((method == 'old') or (method=='He') or (method == 'ion') or True):
         # All photons between 11.2eV and 13.6eV are deposited into excitation
         # partial binning
         if not cross_check:
-            tot_Lya_eng = (
+            tot_exc_eng = (
                 photspec.toteng(
                     bound_type='eng',
                     bound_arr=np.array([phys.lya_eng,phys.rydberg])
@@ -44,7 +44,7 @@ def getf_Lya(photspec, norm_fac, dt, xe, n, method, cross_check=False):
                 photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
                 photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
             )
-        f_Lya = tot_Lya_eng * norm_fac
+        f_exc = tot_exc_eng * norm_fac
     else:
         raise TypeError('option not supported yet')
         # Only photons in the 10.2eV bin participate in 1s->2p excitation.
@@ -65,7 +65,7 @@ def getf_Lya(photspec, norm_fac, dt, xe, n, method, cross_check=False):
         #    ) *
         #    phys.lya_eng * (norm_fac / phys.nB / photspec.rs**3 * dt)
         #)
-    return f_Lya
+    return f_exc
 
 #HI, HeI, HeII ionization
 def getf_ion(photspec, norm_fac, dt, n, method, cross_check=False):
@@ -182,10 +182,10 @@ def compute_fs(photspec, x, dE_dVdt_inj, dt, method='old', cross_check=False):
     norm_fac = phys.nB * photspec.rs**3 / dt / dE_dVdt_inj
 
     f_continuum = getf_continuum(photspec, norm_fac, cross_check)
-    f_Lya = getf_Lya(photspec, norm_fac, dt, xe, n, method, cross_check)
+    f_exc = getf_exc(photspec, norm_fac, method, cross_check)
     f_HI, f_HeI, f_HeII = getf_ion(photspec, norm_fac, dt, n, method, cross_check)
 
-    return {'H ion': f_HI, 'HeI ion': f_HeI, 'HeII ion': f_HeII, 'Lya': f_Lya, 'cont': f_continuum}
+    return {'H ion': f_HI, 'HeI ion': f_HeI, 'HeII ion': f_HeII, 'H exc': f_exc, 'cont': f_continuum}
 
 def propagating_lowE_photons_fracs(photspec, x, dt):
     """ Of the low energy photons, compute the fraction that did NOT get absorbed

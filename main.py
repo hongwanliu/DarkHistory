@@ -3,6 +3,7 @@
 """
 import numpy as np
 from numpy.linalg import matrix_power
+from scipy.interpolate import interp1d
 
 # from config import data_path, photeng, eleceng
 # from tf_data import *
@@ -22,10 +23,11 @@ from   darkhistory.spec.spectools import discretize
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
+import darkhistory.low_energy.atomic as atomic
 
-from darkhistory.photons.phot_dep import compute_fs
-from darkhistory.photons.phot_dep import get_ionized_elec
-from darkhistory.photons.phot_dep import propagating_lowE_photons_fracs
+import darkhistory.photons.phot_dep as phot_dep
+from darkhistory.low_energy.lowE_deposition import compute_fs as compute_fs_OLD
+from darkhistory.low_energy.lowE_electrons import make_interpolator
 
 from darkhistory.history import tla
 
@@ -37,7 +39,7 @@ def evolve(
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
-    init_cond=None, coarsen_factor=1, backreaction=True, 
+    init_cond=None, coarsen_factor=1, backreaction=True, distort=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False
 ):
@@ -333,9 +335,10 @@ def evolve(
 
 
     # If there are no electrons, we get a speed up by ignoring them. 
-    elec_processes = True
-    if in_spec_elec.totN() > 0:
+    if (in_spec_elec.totN() > 0) | distort:
         elec_processes = True
+    else:
+        elec_processes = False
 
     if elec_processes:
 
@@ -383,6 +386,15 @@ def evolve(
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
 
+    if distort:
+        # Initialize Spectrum object that stores the distortion
+        distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
+        dist_mask = photeng<phys.rydberg
+    else:
+        distortion=None
+        # Object to help us interpolate over MEDEA results.
+        MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
+
     #########################################################################
     #########################################################################
     # LOOP! LOOP! LOOP! LOOP!                                               #
@@ -429,12 +441,29 @@ def evolve(
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
+            # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
+            method = 'MEDEA'
+            #method = 'AcharyaKhatri'
+            #method = 'new'
+
+            if method == 'AcharyaKhatri':
+                H_states  = ['2s', '2p', '3p']
+                nmax=3
+            elif method == 'MEDEA':
+                H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+                nmax=10
+            else:
+                H_states = ['2s', '2p',
+                        '3s', '3p', '3d',
+                        '4s', '4p', '4d', '4f',
+                        '5p', '6p', '7p', '8p', '9p', '10p']
+                nmax=10
+
             # Create the electron transfer functions
             (
-                ics_sec_phot_tf, crap,#elec_processes_lowengelec_tf,
+                ics_sec_phot_tf,
                 deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
                 ICS_engloss_vec, ICS_err_vec,
-                deexc_phot_spectra, deposited_Lya_arr
             ) = get_elec_cooling_tf(
                     eleceng, photeng, rs,
                     xHII_elec_cooling, xHeII=xHeII_elec_cooling,
@@ -444,18 +473,29 @@ def evolve(
                     coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
                     coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                     ics_engloss_data=ics_engloss_data,
-                    spec_2s1s = spec_2s1s
+                    method=method, H_states=H_states, spec_2s1s = spec_2s1s
                     #loweng=eleceng[0]
                 )
 
 
+            f_dist=None
+            #fac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+            #f_dist = interp1d(photeng, fac * distortion.dNdE/photeng**2)
+            P_1s, P_ion, exc_phot_spectra = atomic.process_excitations(
+                rs, x_arr[-1, 0], Tm_arr[-1], eleceng, photeng, deposited_exc_arr, H_states, nmax=nmax, f_dist=f_dist
+            )
+            #!!! Incorporate P_ion into f_ion somehow.
+
+
             ### Apply the transfer function to the input electron spectrum generated in this step ###
 
-            # electrons in this step are comprised of:
+            # electrons in this step are comprised of those:
             #  promptly injected from DM (in_spec_elec), 
             #  produced by high energy photon processes (lowengelec_spec_at_rs) 
             #  photoionized from atoms (ionized_elec)
-            ionized_elec = get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
+
+            #All normalized per baryon
+            ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
             tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
 
             # deposited energy into ionization, *per baryon in this step*. 
@@ -467,7 +507,7 @@ def evolve(
             )
             # Lyman-alpha excitation 
             deposited_Lya  = np.dot(
-                deposited_Lya_arr, tot_spec_elec.N
+                deposited_exc_arr['2p'], tot_spec_elec.N
             )
             # heating
             deposited_heat = np.dot(
@@ -482,19 +522,20 @@ def evolve(
             # Photons from Injected Electrons     #
             #######################################
 
-            # ICS secondary photon spectrum after electron cooling, 
-            # per injection event.
+            # ICS secondary photon spectrum after electron cooling, per baryon
             ics_phot_spec = ics_sec_phot_tf.sum_specs(tot_spec_elec)
+            #print(ics_phot_spec.N)
 
-            # secondary photon spectrum from deexcitation of atoms 
+            # secondary photon spectrum from transitions of atoms 
             # that were collisionally excited by electrons
-            deexc_phot_spec = deexc_phot_spectra.sum_specs(tot_spec_elec)
+            exc_phot_spec = exc_phot_spectra.sum_specs(tot_spec_elec)
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
             positronium_phot_spec = pos.weighted_photon_spec(photeng) * (
                 in_spec_elec.totN()/2
             )
+
             positronium_phot_spec.switch_spec_type('N')
 
 
@@ -502,9 +543,9 @@ def evolve(
         # to the photon spectrum that got propagated forward. 
         if elec_processes:
             highengphot_spec_at_rs += (
-                in_spec_phot + ics_phot_spec + positronium_phot_spec
-            ) * norm_fac(rs)
-            lowengphot_spec_at_rs = lowengphot_spec_at_rs + deexc_phot_spec
+                in_spec_phot + positronium_phot_spec
+            ) * norm_fac(rs) + ics_phot_spec
+            lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_phot_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -516,7 +557,7 @@ def evolve(
             if x_arr[-1,1] == phys.chi:
                 x_arr[-1,1] = phys.chi*(1 - 10**(-4.4))
 
-            lowEprop_mask = propagating_lowE_photons_fracs(lowengphot_spec_at_rs, x_at_rs, dt)
+            lowEprop_mask = phot_dep.propagating_lowE_photons_fracs(lowengphot_spec_at_rs, x_at_rs, dt)
         else:
             lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
 
@@ -543,40 +584,15 @@ def evolve(
         append_lowengphot_spec(lowengphot_spec_at_rs)
         append_lowengelec_spec(lowengelec_spec_at_rs)
 
+        if distort:
+            # Add sub-13.6eV energy photons to the distortion
+            distortion.N[dist_mask] += lowengphot_spec_at_rs.N[dist_mask]
+
         #####################################################################
         #####################################################################
         # Compute f_c(z)                                                    #
         #####################################################################
         #####################################################################
-        if elec_processes:
-            # High-energy deposition from input electrons. 
-            highengdep_at_rs += np.array([
-                deposited_H_ion/dt,
-                #deposited_He_ion/dt,
-                deposited_Lya/dt,
-                deposited_heat/dt,
-                deposited_err/dt
-            ])
-
-            #print(highengdep_at_rs)
-            #print(np.array([
-            #    deposited_H_ion/dt,
-            #    #deposited_He_ion/dt,
-            #    deposited_Lya/dt,
-            #    deposited_heat/dt,
-            #    deposited_err/dt
-            #]))
-
-            norm = phys.nB*rs**3 / rate_func_eng(rs)
-            # High-energy deposition from input electrons. 
-            f_elec = {
-                    'H ion'  : highengdep_at_rs[0] * norm,
-                    'He ion' : deposited_He_ion/dt * norm,
-                    'Lya'    : highengdep_at_rs[1] * norm,
-                    'heat'   : highengdep_at_rs[2] * norm,
-                    'err'    : highengdep_at_rs[3] * norm
-                    }
-
         # Values of (xHI, xHeI, xHeII) to use for computing f.
         if backreaction or (compute_fs_method == 'HeII' and rs <= reion_rs):
             # Use the previous values with backreaction, or if we are using
@@ -592,39 +608,81 @@ def evolve(
                     phys.xHeII_std(rs)
             ])
 
+        if elec_processes:
+            # High-energy deposition from input electrons. 
+            highengdep_at_rs += np.array([
+                deposited_H_ion/dt,
+                #deposited_He_ion/dt,
+                deposited_Lya/dt,
+                deposited_heat/dt,
+                deposited_err/dt
+            ])
 
-        if compute_fs_method == 'HeII' and rs > reion_rs:
+            norm = phys.nB*rs**3 / rate_func_eng(rs)
+            # High-energy deposition from input electrons. 
+            f_elec = {
+                    'H ion'  : highengdep_at_rs[0] * norm,
+                    'He ion' : deposited_He_ion/dt * norm,
+                    'Lya'    : highengdep_at_rs[1] * norm,
+                    'heat'   : highengdep_at_rs[2] * norm,
+                    'err'    : highengdep_at_rs[3] * norm
+                    }
 
-            # For 'HeII', stick with 'no_He' until after 
-            # reionization kicks in.
+        if distort:
+            if compute_fs_method == 'HeII' and rs > reion_rs:
 
-            f_phot = compute_fs(
-                lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng(rs), dt,
-                method='old', cross_check=cross_check
-            )
+                # For 'HeII', stick with 'no_He' until after 
+                # reionization kicks in.
+
+                f_phot = phot_dep.compute_fs(
+                    lowengphot_spec_at_rs,
+                    x_vec_for_f, rate_func_eng(rs), dt,
+                    method='old', cross_check=cross_check
+                )
+
+            else:
+
+                f_phot = phot_dep.compute_fs(
+                    lowengphot_spec_at_rs,
+                    x_vec_for_f, rate_func_eng(rs), dt,
+                    method=compute_fs_method, cross_check=cross_check
+                )
+
+            # Compute f for TLA: sum of low and high. 
+            f_H_ion = f_phot['H ion'] + f_elec['H ion']
+            f_Lya   = f_phot['H exc'] + f_elec['Lya']
+            f_heat  = f_elec['heat']
+            f_err   = f_elec['err']
+
+            if compute_fs_method == 'old':
+                # The old method neglects helium.
+                f_He_ion = 0. 
+            else:
+                f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
 
         else:
-
-            f_phot = compute_fs(
-                lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng(rs), dt,
-                method=compute_fs_method, cross_check=cross_check
+            f_raw = compute_fs_OLD(
+                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
             )
 
-        # Compute f for TLA: sum of low and high. 
-        f_H_ion = f_phot['H ion'] + f_elec['H ion']
-        f_Lya   = f_phot['Lya'] + f_elec['Lya']
-        f_heat  = f_elec['heat']
+            # Compute f for TLA: sum of low and high.
+            f_H_ion = f_raw[0][0] + f_raw[1][0]
+            f_Lya   = f_raw[0][2] + f_raw[1][2]
+            f_heat  = f_raw[0][3] + f_raw[1][3]
+            # This keeps track of numerical error from ICS,
+            # which is absent when there are no electrons
+            f_err   = 0 
 
-        if compute_fs_method == 'old':
-            # The old method neglects helium.
-            f_He_ion = 0. 
-        else:
-            f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
+            if compute_fs_method == 'old':
+                f_He_ion = 0.
+            else:
+                f_He_ion = f_raw[0][1] + f_raw[1][1]
+
         
         # Save the f_c(z) values.
-        f_c = np.concatenate((f_c, [[f_H_ion, f_He_ion, f_Lya, f_heat, f_elec['err']]]))
+        f_c = np.concatenate((f_c, [[f_H_ion, f_He_ion, f_Lya, f_heat, f_err]]))
 
         #####################################################################
         #####################################################################
@@ -647,17 +705,18 @@ def evolve(
             [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
         )
 
-        from scipy.interpolate import interp1d
-        prefac = np.pi**2 * phys.nB*(phys.hbar*phys.c*rs)**3
-        E2 = phys.rydberg-phys.lya_eng
-        eng = lowengphot_spec_at_rs.eng
-        dNdE_DM = lowengphot_spec_at_rs.dNdE
-        dnde = interp1d(eng,dNdE_DM)(E2)
-        T2 = E2/np.log(1+E2**2/prefac/dnde)
+        #!!!
+        #from scipy.interpolate import interp1d
+        #prefac = np.pi**2 * phys.nB*(phys.hbar*phys.c*rs)**3
+        #E2 = phys.rydberg-phys.lya_eng
+        #eng = lowengphot_spec_at_rs.eng
+        #dNdE_DM = lowengphot_spec_at_rs.dNdE
+        #dnde = interp1d(eng,dNdE_DM)(E2)
+        #T2 = E2/np.log(1+E2**2/prefac/dnde)
         #T2=None
         #print(rs, phys.TCMB(rs), T2)
-        if rs>2.5e3 or T2<phys.TCMB(rs):
-            T2=None
+        #if rs>2.5e3 or T2<phys.TCMB(rs):
+        #    T2=None
 
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
@@ -669,7 +728,7 @@ def evolve(
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol, T2 = T2
+            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
 
         #####################################################################
@@ -727,6 +786,10 @@ def evolve(
             lowengphot_spec_at_rs.rs  = next_rs
             lowengelec_spec_at_rs.rs  = next_rs
 
+            if distort:
+                # Redshift the distortion
+                distortion.redshift(next_rs)
+
             # Only save if next_rs > end_rs, since these are the x, Tm
             # values for the next redshift.
 
@@ -774,6 +837,7 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
+        'distortion': distortion,
         'f': f
     }
 
@@ -817,12 +881,13 @@ def get_elec_cooling_data(eleceng, photeng):
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-    exc_types  = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', 'HeI', 'HeII']
+    H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+    exc_types  =  H_states+['HeI', 'HeII']
 
     #ionization and excitation energies
     ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
 
-    exc_potentials         = phys.HI_exc_eng.copy()
+    exc_potentials         = {state: phys.H_exc_eng(state) for state in H_states}
     exc_potentials['HeI']  = phys.He_exc_eng['23s']
     exc_potentials['HeII'] = 4*phys.lya_eng
 
