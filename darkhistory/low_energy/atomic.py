@@ -525,3 +525,23 @@ def process_excitations(rs, xHII, Tm, eleceng, photeng, deposited_exc_vec, H_sta
         )
 
     return P_1s, P_ion, exc_phot_spectra
+
+def yim_distortion(nu, amp, T, dist_type):
+    # Given amplitude, frequency [s^-1], temperature [K], 
+    #     and distortion type ('mu' or 'y')
+    # returns intensity of distortion in units of [ev / cm^2]
+    x = 2 * np.pi * phys.hbar * nu / phys.kB / T
+    
+    # can we add i-type distortions as well?
+    
+    if dist_type == 'y':
+        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
+                * x * np.exp(x) / (np.exp(x) - 1.)**2
+                *(x * (np.exp(x) + 1.) / (np.exp(x) - 1.) - 4.)
+               )
+    
+    elif dist_type == 'mu':
+        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
+                * np.exp(x) / (np.exp(x) - 1.)**2
+                *(x / 2.19 - 1.)
+               )
