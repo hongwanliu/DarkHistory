@@ -887,7 +887,7 @@ def xHII_std(rs):
     if _xHII_std is None:
         _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
-    if isinstance(rs,float):
+    if isinstance(rs*1.,float):
         if rs<2e3:
             return _xHII_std(rs)
         else:
@@ -954,7 +954,7 @@ def Tm_std(rs):
 
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
-    if isinstance(rs,float):
+    if isinstance(rs*1.,float):
         if rs<2e3:
             return _Tm_std(rs)
         else:
@@ -1179,7 +1179,7 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
 
         # If eng is a number, make it an np.ndarray
-        if isinstance(eng, float):
+        if isinstance(eng*1., float):
             eng = np.array([eng])
 
         # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
@@ -1335,7 +1335,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
             if eng <= ion_pot:
                 return 0
 
-    elif method == 'MEDEA':
+    elif (method == 'MEDEA') | (method == 'new'):
         if (species == 'HI') or (species == 'HeI'):
             if species == 'HI':
                 # Binding Energy
@@ -1389,7 +1389,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
             if eng <= B:
                 return 0
     elif method=='AcharyaKhatri':
-        if isinstance(eng, float):
+        if isinstance(eng*1., float):
             eng = np.array([eng])
         ionHI=np.array([[14.00,1.69960e-18],[14.50,3.05083e-18],[15.00,5.65916e-18],
             [15.60,8.92024e-18],[17.60,1.99166e-17],[20.00,2.99277e-17],[25.00,4.46188e-17],
@@ -1744,7 +1744,7 @@ def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
     so to convert to SI, we insert 1/(4*pi*eps_0)^2 and use that e^2/(4*pi*eps_0) = alpha
     """
 
-    if method == 'MEDEA':
+    if (method == 'MEDEA') | (method == 'new'):
         method = 'old'
     if method == 'old':
         w = np.sqrt(1 - 1/(1 + eng/me)**2)
