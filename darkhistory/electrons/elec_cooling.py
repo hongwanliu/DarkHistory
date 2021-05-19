@@ -449,7 +449,6 @@ def get_elec_cooling_tf(
     sec_phot_spec_N_arr = phot_ICS_tf.grid_vals - upscattered_CMB_grid
     sec_phot_spec_N_arr[beta_ele<.1] = loweng_ICS_distortion(eleceng[beta_ele<.1], photeng, phys.TCMB(rs))
     crap = sec_phot_spec_N_arr.copy()
-    # !!! Consider possibility of adding atomic transition photons here!!!
     
     # Deposited ICS array.
     ICS_err_arr = (
@@ -465,7 +464,7 @@ def get_elec_cooling_tf(
         # (Total amount of energy in the upscattered photons - the energy these photons started with)
         - np.dot(sec_phot_spec_N_arr, photeng)
     )
-    # This is only non-zero due to numerical errors. Luckily it is very small.
+    # This is only non-zero due to numerical errors. It is very small.
 
     # Energy loss is not taken into account for eleceng > 20*phys.me
     ICS_err_arr[eleceng > 20*phys.me - phys.me] -= ( 
