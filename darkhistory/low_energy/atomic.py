@@ -1,11 +1,14 @@
 """Atomic excitation state transitions, ionization, and recombination functions."""
 
 import numpy as np 
+from scipy.interpolate import interp1d
+
 from darkhistory import physics as phys 
 from darkhistory.spec.spectrum import Spectrum
 from   darkhistory.spec.spectra import Spectra
-from darkhistory.spec.spectools import discretize
+import darkhistory.spec.spectools as spectools
 import scipy.special
+
 from config import load_data
 from datetime import datetime
 
@@ -68,7 +71,7 @@ def populate_radial(nmax):
 
 # /***************************************************************************************************************
 # Populates two matrices with the bound-bound rates for emission and absorption,
-#  in a black-body radiation field.
+#  in a generic radiation field.
 # Inputs : two [nmax+1][nmax+1][nmax] matrices BB_up and BB_dn, nmax, Tr (IN EV !),
 #  and the two precomputed matrices of radial matrix elements R_up and R_dn.
 # BB_up[n][n'][l] = A([n,l]-> [n',l+1]) * (1 + f(E_{nn'}))                if n > n'
@@ -77,7 +80,7 @@ def populate_radial(nmax):
 #                 = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB_up[n'][n][l-1]    if n < n'
 #  *****************************************************************************************************************/
 
-def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_dist=None):
+def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
     BB = {key: np.zeros((nmax+1,nmax+1,nmax)) for key in ['up', 'dn']}
 
     for n in np.arange(2,nmax+1,1):
@@ -88,7 +91,10 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_dist=None):
             if (Tr < ZEROTEMP):    #/* if Tr = 0*/
                 fEnnp = 0.0;
             else:
-                fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + f_dist(Ennp)
+                if Delta_f != None:
+                    fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
+                else:
+                    fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr))
                 #fEnnp = 1/(np.exp(Ennp/Tr)-1)
 
             common_factor = 2*np.pi/3 * phys.rydberg / hplanck * (
@@ -114,6 +120,10 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, f_dist=None):
                     # then replace it with fEnnp (that's all detailed balance was doing).
                     BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp
                     BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * BB['up'][n][n_p][l]  /(1+fEnnp) * fEnnp
+
+    #Include forbidden 2s->1s transition
+    BB['dn'][2][1][0] = phys.width_2s1s_H
+    #!!! What about the inverse process?
 
     return BB
 
@@ -223,7 +233,7 @@ def Newton_Cotes_11pt(x, f):
 # where Nkappa = 10 * NBINS + 1
 # *********************************************************************************************/
 
-def populate_beta(Tm, Tr, nmax, k2_tab, g, f_dist=None):
+def populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
     k2 = np.zeros((11, NBINS))
     int_b = np.zeros((11, NBINS))
     common_factor =  2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck
@@ -240,7 +250,7 @@ def populate_beta(Tm, Tr, nmax, k2_tab, g, f_dist=None):
                     int_b[i] = 0.0
                 else:
                     Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
-                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_dist(Ennp)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
                     # Burgess, Eqn 1
                     #int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(phys.rydberg / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
                     int_b[i] = ((1.0 + k2[i]*n2)**3 * fEnnp * ((l + 1.0) * g['up'][n,ik,l]**2 + l * g['dn'][n,ik,l]**2))
@@ -258,7 +268,7 @@ def populate_beta(Tm, Tr, nmax, k2_tab, g, f_dist=None):
 
 # /****************************************************************************************/
 
-def populate_alpha(Tm, Tr, nmax, k2_tab, g, f_dist=None):
+def populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
     k2 = np.zeros((11, NBINS))
     int_a = np.zeros((11, NBINS))   
     common_factor = (2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck 
@@ -276,7 +286,7 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g, f_dist=None):
                     int_a[i] = 0
                 else:
                     Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
-                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + f_dist(Ennp)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
                 #    int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * phys.rydberg / Tm) *
                     int_a[i] = ((1.0 + n2 *k2[i])**3 * fEnnp *
                                  ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
@@ -317,7 +327,7 @@ def get_transition_energies(nmax):
     return H_engs
 
 
-def get_total_transition(rs, xHI, Tm, nmax, f_dist = None):
+def get_total_transition(rs, xHI, Tm, nmax, Delta_f = None):
     """
     Calculate either the probabilities to switch between between states or the 
     resulting photon spectra after many transitions.
@@ -339,27 +349,26 @@ def get_total_transition(rs, xHI, Tm, nmax, f_dist = None):
         initial excited state (in N, not dNdE)
     """
 
-    if f_dist==None:
-        f_dist = lambda a : 0
+    if Delta_f==None:
+        Delta_f = lambda a : 0
 
     #Radiation Temperature
     Tr = phys.TCMB(rs)
 
     #Get the transition rates
     R = populate_radial(nmax)
-    BB = populate_bound_bound(nmax, Tr, R, f_dist=f_dist)
+    BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
     k2_tab, g = populate_k2_and_g(nmax, Tm)
-    alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, f_dist=f_dist)
-    beta = populate_beta(Tm, Tr, nmax, k2_tab, g, f_dist=f_dist)
+    alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
+    beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
 
     #Get transition energies
     H_engs = get_transition_energies(nmax)
 
     #Include sobolev optical depth
     for n in np.arange(2,nmax+1,1):
-        BB['dn'][n][1][1] = p_np_1s(n, R, rs, xHI=xHI) * BB['dn'][n][1][1]
-    #Include forbidden 2s->1s transition
-    BB['dn'][2][1][0] = phys.width_2s1s_H
+        BB['dn'][n][1][1] *= p_np_1s(n, R, rs, xHI=xHI)
+        BB['up'][1][n][0] *= p_np_1s(n, R, rs, xHI=xHI)
 
     # Get indices where alpha != 0 --> correspond to ground and excited states
     #nonzero_n, nonzero_l = alpha.nonzero()
@@ -480,7 +489,7 @@ def get_total_transition(rs, xHI, Tm, nmax, f_dist = None):
     spectroscopic = ['s', 'p', 'd', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'q', 'r', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     
     # Replace 2s -> 1s transition with continuous two-photon spectrum
-    spec_2s1s = discretize(binning['phot'],phys.dNdE_2s1s)
+    spec_2s1s = spectools.discretize(binning['phot'],phys.dNdE_2s1s)
     spec_2s1s.switch_spec_type()
     amp_2s1s = np.array(NE_Cont[:, -1])
     NE_Cont[:, -1] = 0
@@ -501,27 +510,111 @@ def get_total_transition(rs, xHI, Tm, nmax, f_dist = None):
     #else:
     #    raise TypeError("mode not specified; must either be 'prob' or 'spec'.")
 
-def process_excitations(rs, xHII, Tm, eleceng, photeng, deposited_exc_vec, H_states, nmax, f_dist):
+def process_excitations(
+        rs, xHII, Tm, 
+        dlnz, inj_rate,
+        eleceng, photeng, 
+        nmax, H_states, deposited_exc_vec_elec, 
+        phot_spec, elec_spec, Delta_f
+):
+    """ Process the excitations caused by electrons and photons into 
+        a total number of deexcitations to the ground state, ionizations, 
+        and a total distortion spectrum
+    """
+    xHI = 1-xHII
+    nB = phys.nB*rs**3
+    dt = dlnz/phys.hubble(rs)
 
-    exc_grid = np.zeros((np.array(H_states).size, eleceng.size))
-    exc_phot_spectra = Spectra(
+    # Spectra that result from ONE atom in an excited state cascading to 1s or continuum
+    P_1s, P_ion, one_transition = get_total_transition(rs, xHI, Tm, nmax, Delta_f)
+
+    # Transfer Function: dot into a number of excited atoms, get out the excitation spectrum
+    exc_spectra_elec = Spectra(
         spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
         in_eng=eleceng, spec_type='N',
         rs=np.ones_like(eleceng)*rs
     )
-    #Spectra that result from ONE atom in an excited state cascading to 1s or continuum
-    P_1s, P_ion, one_transition = get_total_transition(rs, 1-xHII, Tm, nmax, f_dist)
+    exc_grid_elec = np.zeros((len(H_states), eleceng.size))
 
+    # Total number of excitations (from electron collisions or photoexcitation) that resulted in an ionization *per baryon*
+    N_exc_tot_ion = 0
+
+    ### Electron Contribution ###
     for i, state in enumerate(H_states):
 
         #Use energy deposited in excitation to infer the number of excited (n>2) atoms
-        exc_grid[i] += deposited_exc_vec[state]/phys.H_exc_eng(state)
+        exc_grid_elec[i] += deposited_exc_vec_elec[state]/phys.H_exc_eng(state)
+
+        # Multiply by P_ion[i], the probability that for state i, the atom ends up ionized
+        N_exc_tot_ion += np.dot(exc_grid_elec[i], elec_spec.N) * P_ion[state]
 
         #Multiply number of excited atoms by corresponding spectra and add it in
-        exc_phot_spectra += Spectra(
-            spec_arr=np.outer(exc_grid[i], one_transition[state].N), eng=photeng,
+        exc_spectra_elec += Spectra(
+            spec_arr=np.outer(exc_grid_elec[i], one_transition[state].N), eng=photeng,
             in_eng=eleceng, spec_type='N',
             rs=np.ones_like(eleceng)*rs
         )
 
-    return P_1s, P_ion, exc_phot_spectra
+    # Full spectrum produced by electrons
+    exc_spec_elec = exc_spectra_elec.sum_specs(elec_spec)
+
+    ### Photon Contribution ###
+    Tr = phys.TCMB(rs)
+    bnds = spectools.get_bin_bound(photeng)
+
+    # Actual Spectrum (not transfer function!). Normalized *per baryon*
+    exc_spec_phot = Spectrum(
+            photeng, np.zeros(photeng.size), spec_type='N', rs=rs
+    )
+
+    # Radial matrix element
+    R = populate_radial(nmax)
+
+    # multiply by f_BB and x_1s to get the rate of transition from 1s->np
+    As = xHI * 1/3 * phys.rydberg / phys.hbar * (
+        phys.alpha * (1-1/np.arange(2,nmax+1)**2)
+    )**3 * R['dn'][2:,1,1]**2
+
+    # Fraction of photons that got absorbed
+    absorbed_frac = np.zeros_like(photeng)
+
+    # energy bins that contain each Lyman series line
+    line_bins = np.array([[int(state[:-1]),sum(bnds<phys.H_exc_eng(state))-1] 
+        for i, state in enumerate(H_states) if state[-1]=='p'])
+
+    for i, state in enumerate(H_states):
+        if state[-1] == 'p':
+
+            n = int(state[:-1])
+
+            # Bin containing this excitation line
+            line_bin = sum(bnds<phys.H_exc_eng(state))-1
+
+            # all excitation lines that share the same bin
+            ns = line_bins[line_bins[:,1]==line_bins[n-2,1],0]
+
+            # Calculate the fraction of photons that get absorbed
+            # Note: we only keep track of the rate at which extra photons on top of the CMB are absorbed
+            E_1np = (1 - 1/ns**2) * phys.rydberg
+            absorption_rates = As[ns-2] * xHI * Delta_f(E_1np)
+            absorbed_frac[line_bin] = 1-np.exp(-sum(absorption_rates)*dt)
+
+            # If there's more than one line in this energy bin, compute the fraction absorbed by each line
+            frac_line = As[n-2]/sum(As[ns-2])
+            
+            # Number of excitations *per baryon*
+            N_exc_phot = absorbed_frac[line_bin] * frac_line * phot_spec.N[line_bin]
+
+            N_exc_tot_ion += N_exc_phot * P_ion[state]
+
+            # Spectrum produced for this state
+            exc_spec_phot.N += N_exc_phot * one_transition[state].N
+
+    # Convert N_exc_tot (number per baryon) to dE/dVdt, then divide by dE/dVdt|_inj in this step
+    f_ion =  (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
+
+    #Return: 
+    #   (i)   the contribution to f_ion from 
+    #   (ii)  the distortion spectrum produced by excitations due to electrons and photons, individually
+    #   (iii) the fraction of photons aborbed from phot_spec at each bin
+    return f_ion, exc_spec_elec, exc_spec_phot, absorbed_frac
