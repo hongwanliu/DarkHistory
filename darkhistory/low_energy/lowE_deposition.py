@@ -119,7 +119,7 @@ def compute_fs(
 
     elif method == 'He':
 
-        ionized_elec = get_ionized_elec(phot_spec, eleceng.eng, x, method=method)
+        ionized_elec = get_ionized_elec(phot_spec, elec_spec.eng, x, method=method)
 
         tmp_elec_spec = Spectrum(
             np.array(elec_spec.eng), np.array(elec_spec.N),
