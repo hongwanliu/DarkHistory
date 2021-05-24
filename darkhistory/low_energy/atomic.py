@@ -529,7 +529,7 @@ def process_excitations(rs, xHII, Tm, eleceng, photeng, deposited_exc_vec, H_sta
 def yim_distortion(nu, amp, T, dist_type):
     # Given amplitude, frequency [s^-1], temperature [K], 
     #     and distortion type ('mu' or 'y')
-    # returns intensity of distortion in units of [ev / cm^2]
+    # returns intensity of distortion in units of [(ev/s) / cm^2 / ster / Hz]
     x = 2 * np.pi * phys.hbar * nu / phys.kB / T
     
     # can we add i-type distortions as well?
