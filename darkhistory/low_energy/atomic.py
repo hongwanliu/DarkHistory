@@ -559,7 +559,6 @@ def process_excitations(
             rs=np.ones_like(eleceng)*rs
         )
 
-<<<<<<< HEAD
     # Full spectrum produced by electrons
     exc_spec_elec = exc_spectra_elec.sum_specs(elec_spec)
 
