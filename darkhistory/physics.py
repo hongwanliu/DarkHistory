@@ -570,9 +570,10 @@ def beta_ion(T_rad, species):
     in agreement with convention in RECFAST.
 
     """
+    mu_e = me/(1+me/mp)
     de_broglie_wavelength = (
         c * 2*np.pi*hbar
-        / np.sqrt(2 * np.pi * me * T_rad)
+        / np.sqrt(2 * np.pi * mu_e * T_rad)
     )
     
     if species == 'HI':
@@ -780,7 +781,8 @@ def xe_Saha(rs, species):
 
     T = TCMB(rs)
 
-    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * me * T)
+    mu_e = me/(1+me/mp)
+    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * T)
 
     if species == 'HI':
 
@@ -795,7 +797,7 @@ def xe_Saha(rs, species):
 
         else:
 
-            xe = 1. - a/rhs
+            xe = 1. - a/rhs + 2*(a/rhs)**2 - 5*(a/rhs)**3 #+ 14*(a/rhs)**4
 
     elif species == 'HeI':
         rhs = (
@@ -904,6 +906,44 @@ def xHII_std(rs):
             output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
             return output
         
+def xHI_std(rs):
+    """Baseline nHI/nH value.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift (1+z). 
+
+    Returns
+    -------
+    float
+        nHI/nH. 
+    """
+    if isinstance(rs, float):
+        if rs<2e3:
+            return 1-xHII_std(rs)
+        else:
+            #Use Saha equilibrium
+            mu_e = me/(1+me/mp)
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs))
+            rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
+            return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+    else:
+        extrap = rs>2e3
+        if np.sum(extrap)==0:
+            return 1-xHII_std(rs)
+        else:
+            mu_e = me/(1+me/mp)
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs[extrap]))
+            rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
+            if np.sum(~extrap) == 0:
+                return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+            else:
+                output = np.zeros_like(rs)
+                output[~extrap] = 1-xHII_std(rs[~extrap])
+                output[extrap] = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+                return output
+
 
 def xHeII_std(rs):
     """Baseline nHeII/nH value.
