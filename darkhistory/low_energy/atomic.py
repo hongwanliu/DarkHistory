@@ -559,6 +559,7 @@ def process_excitations(
             rs=np.ones_like(eleceng)*rs
         )
 
+<<<<<<< HEAD
     # Full spectrum produced by electrons
     exc_spec_elec = exc_spectra_elec.sum_specs(elec_spec)
 
@@ -622,3 +623,23 @@ def process_excitations(
     #   (ii)  the distortion spectrum produced by excitations due to electrons and photons, individually
     #   (iii) the fraction of photons aborbed from phot_spec at each bin
     return f_ion, exc_spec_elec, exc_spec_phot, absorbed_frac
+
+def yim_distortion(nu, amp, T, dist_type):
+    # Given amplitude, frequency [s^-1], temperature [K], 
+    #     and distortion type ('mu' or 'y')
+    # returns intensity of distortion in units of [ev / cm^2]
+    x = 2 * np.pi * phys.hbar * nu / phys.kB / T
+    
+    # can we add i-type distortions as well?
+    
+    if dist_type == 'y':
+        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
+                * x * np.exp(x) / (np.exp(x) - 1.)**2
+                *(x * (np.exp(x) + 1.) / (np.exp(x) - 1.) - 4.)
+               )
+    
+    elif dist_type == 'mu':
+        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
+                * np.exp(x) / (np.exp(x) - 1.)**2
+                *(x / 2.19 - 1.)
+               )
