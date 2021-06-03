@@ -16,7 +16,7 @@ NBINS = 100
 Nkappa = 10 * NBINS + 1
 
 hplanck = phys.hbar*2*np.pi
-mue      = phys.me/(1+phys.me/phys.mp)
+mu_e      = phys.me/(1+phys.me/phys.mp)
 
 #*************************************************#
 #A_{nl} coefficient defined in Hey (2006), Eq. (9)#
@@ -97,12 +97,12 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
                     fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr))
                 #fEnnp = 1/(np.exp(Ennp/Tr)-1)
 
-            common_factor = 2*np.pi/3 * phys.rydberg / hplanck * (
+            prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
 
             for l in np.arange(0,n_p+1,1): #/* Spont + stim emission */
-                A_up = common_factor * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
-                A_dn = common_factor *   l   / (2*l+1) * R['dn'][n][n_p][l]**2
+                A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
+                A_dn = prefac *   l   / (2*l+1) * R['dn'][n][n_p][l]**2
                 BB['up'][n][n_p][l] = A_up * (1+fEnnp)
                 BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
 
@@ -128,7 +128,7 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
     return BB
 
 #astro-ph/9912182 Eq. 40
-def tau_np_1s(n, R, rs, xHI=None):
+def tau_np_1s(n, rs, xHI=None):
     l=1
     nu = (1 - 1/n**2) * phys.rydberg/hplanck
     lam = phys.c/nu
@@ -137,17 +137,22 @@ def tau_np_1s(n, R, rs, xHI=None):
     nHI = xHI * phys.nH*rs**3
     pre = lam**3 * nHI / (8*np.pi*phys.hubble(rs))
     
-    common_factor = 2*np.pi/3 * phys.rydberg / hplanck * (
+    prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
         phys.alpha * (1 - 1/n**2))**3
     
-    A_dn = common_factor * l/(2*l+1) * R['dn'][n][1][l]**2
+    R = Hey_R_initial(n, 1) # R['dn'][n][1][l]
+    A_dn = prefac * l/(2*l+1) * R**2
     g = (2*l+1)/(2*l-1)
     return pre * A_dn * g 
 
 # Eq. 41
-def p_np_1s(n, R, rs, xHI=None):
-    tau = tau_np_1s(n, R, rs, xHI=xHI)
+def p_np_1s(n, rs, xHI=None):
+    tau = tau_np_1s(n, rs, xHI=xHI)
     return (1-np.exp(-tau))/tau
+
+# Notice that p ~ 1/tau so 
+# R*p = A*(1+f)/tau ~ 1/(pre*g)
+#     = 8 pi H / (3 n_1s lam^3)
 
 #~~~ BOUND_FREE FUNCTIONS ~~~
 
@@ -202,7 +207,7 @@ def populate_k2_and_g(nmax, Tm):
     k2max = 7e2*Tm/phys.rydberg        
 
     for n in range(1,nmax+1):
-        k2min = 1e-25/n/n
+        k2min = 1e-25/n**2
         bigBins = np.logspace(np.log10(k2min), np.log10(k2max), NBINS + 1)
         iBig = np.arange(NBINS)
         temp = np.linspace(bigBins[iBig], bigBins[iBig+1], 11)
@@ -234,13 +239,13 @@ def Newton_Cotes_11pt(x, f):
 # *********************************************************************************************/
 
 def populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
+    """ From prefac we see that the units are s^-1 """
     k2 = np.zeros((11, NBINS))
     int_b = np.zeros((11, NBINS))
-    common_factor =  2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck
+    prefac =  2/3 * phys.alpha**3 * phys.rydberg/hplanck
     beta = np.zeros((nmax+1,nmax))
 
     for n in range(1, nmax+1):
-        n2 = n**2
         for l in range(n):
             iBin = np.arange(NBINS)
             for i in range(11):
@@ -249,13 +254,16 @@ def populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
                 if (Tr < 1e-10):      #/* Flag meaning TR = 0 */
                     int_b[i] = 0.0
                 else:
-                    Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
-                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+                    Ennp = phys.rydberg * (k2[i] + 1/n**2)
+                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr))
+                    if Delta_f != None:
+                        fEnnp += Delta_f(Ennp)
                     # Burgess, Eqn 1
                     #int_b[i] = ((1.0 + k2[i]*n2)**3 / (np.exp(phys.rydberg / Tr * (k2[i] + 1.0 / n2)) - 1.0) * 
-                    int_b[i] = ((1.0 + k2[i]*n2)**3 * fEnnp * ((l + 1.0) * g['up'][n,ik,l]**2 + l * g['dn'][n,ik,l]**2))
+                    int_b[i] = ((1.0 + k2[i]*n**2)**3 * fEnnp * 
+                            ((l + 1) * g['up'][n,ik,l]**2 + l * g['dn'][n,ik,l]**2))
             beta[n][l] += np.sum(Newton_Cotes_11pt(k2, int_b))
-            beta[n][l] *= common_factor / n2 / (2.0 * l + 1.0)
+            beta[n][l] *= prefac / n**2 / (2*l+1)
     return beta
 
 # /********************************************************************************************* 
@@ -271,30 +279,26 @@ def populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
 def populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
     k2 = np.zeros((11, NBINS))
     int_a = np.zeros((11, NBINS))   
-    common_factor = (2.0/3.0 * phys.alpha**3 * phys.rydberg/hplanck 
-                     * (hplanck**2 * phys.c**2/(2.0 * np.pi * mue * Tm))**1.5)
-    alpha = np.zeros((nmax+1,nmax))
+    lam_T = hplanck * phys.c / (2*np.pi * mu_e * Tm)**(1/2)
+    prefac = 2/3 * phys.alpha**3 * phys.rydberg/hplanck
+    alpha = np.zeros((int(nmax+1),nmax))
     
     for n in range(1,nmax+1):
-        n2 = n**2
         for l in range(n):
             iBin = np.arange(NBINS)
             for i in range(11):
                 ik = 10 * iBin + i
                 k2[i] = k2_tab[n][ik]
-                if Tr<1e-10:
-                    int_a[i] = 0
-                else:
-                    Ennp = phys.rydberg / (k2[i] + 1.0 / n2)
-                    fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
-                #    int_a[i] = ((1.0 + n2 *k2[i])**3 * np.exp(-k2[i] * phys.rydberg / Tm) *
-                    int_a[i] = ((1.0 + n2 *k2[i])**3 * fEnnp *
-                                 ((l + 1.0) * g['up'][n,ik,l] * g['up'][n,ik,l] 
-                                  + l * g['dn'][n,ik,l] * g['dn'][n,ik,l]))
-                #if Tr > 1e-10:
-                #    int_a[i] /= (1. - np.exp(-phys.rydberg/Tr*(k2[i] + 1./n2)))
+                Ennp = phys.rydberg * (k2[i] + 1/n**2)
+                fEnnp = np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr))
+                if Delta_f != None:
+                    fEnnp += Delta_f(Ennp)
+
+                # 1006.1355v2 Eq 2
+                int_a[i] = ((1. + k2[i]*n**2)**3 * (1+fEnnp) * np.exp(-k2[i] * phys.rydberg / Tm) *
+                             ((l + 1) * g['up'][n,ik,l]**2 + l * g['dn'][n,ik,l]**2))
             alpha[n][l] += np.sum(Newton_Cotes_11pt(k2, int_a))
-            alpha[n][l] *= common_factor / n2
+            alpha[n][l] *= prefac / n**2 * lam_T**3
     return alpha
 
 
@@ -315,7 +319,7 @@ def get_transition_energies(nmax):
 
     H_engs = np.zeros((nmax+1,nmax+1))
     H_engs_Cont = np.zeros(nmax+1)
-    for n1 in range(1,nmax+1):
+    for n1 in np.arange(1,nmax+1):
         H_engs_Cont[n1] = phys.rydberg / n1**2
         H_engs[0,n1] = phys.rydberg / n1**2
         for n2 in range(1,n1):
@@ -357,20 +361,20 @@ def get_total_transition(rs, xHI, Tm, nmax, Delta_f = None):
 
     #Get the transition rates
     R = populate_radial(nmax)
-    BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
+    BB = populate_bound_bound(nmax, Tr, R, Delta_f)
     k2_tab, g = populate_k2_and_g(nmax, Tm)
-    alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
-    beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
+    alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f)
+    beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f)
 
     #Get transition energies
     H_engs = get_transition_energies(nmax)
 
     #Include sobolev optical depth
     for n in np.arange(2,nmax+1,1):
-        BB['dn'][n][1][1] *= p_np_1s(n, R, rs, xHI=xHI)
-        BB['up'][1][n][0] *= p_np_1s(n, R, rs, xHI=xHI)
+        BB['dn'][n][1][1] *= p_np_1s(n, rs, xHI=xHI)
+        BB['up'][1][n][0] *= p_np_1s(n, rs, xHI=xHI)
 
-    # Get indices where alpha != 0 --> correspond to ground and excited states
+    #get the indices of the bound states
     #nonzero_n, nonzero_l = alpha.nonzero()
     nonzero_n = np.concatenate([list(map(int,k*np.ones(k))) for k in np.arange(1,nmax+1)])
     nonzero_l = np.concatenate([np.arange(k) for k in np.arange(1,nmax+1)])
