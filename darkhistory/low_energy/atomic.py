@@ -283,8 +283,8 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
     prefac = 2/3 * phys.alpha**3 * phys.rydberg/hplanck
     alpha = np.zeros((int(nmax+1),nmax))
     
-    for n in range(1,nmax+1):
-        for l in range(n):
+    for n in np.range(1,nmax+1):
+        for l in np.range(n):
             iBin = np.arange(NBINS)
             for i in range(11):
                 ik = 10 * iBin + i
@@ -318,17 +318,15 @@ def get_transition_energies(nmax):
     """
 
     H_engs = np.zeros((nmax+1,nmax+1))
-    H_engs_Cont = np.zeros(nmax+1)
     for n1 in np.arange(1,nmax+1):
-        H_engs_Cont[n1] = phys.rydberg / n1**2
-        H_engs[0,n1] = phys.rydberg / n1**2
+        #H_engs[0,n1] = phys.rydberg / n1**2
         for n2 in range(1,n1):
             H_engs[n1,n2] = phys.rydberg * ((1/n2)**2 - (1/n1)**2)
         
     H_engs = np.sort(np.unique(H_engs))
     # Add a separate energy bin to temporarily represent 2s->1s
     H_engs = np.concatenate((H_engs,[20]))
-    return H_engs
+    return H_engs[1:]
 
 
 def get_total_transition(rs, xHI, Tm, nmax, Delta_f = None):
@@ -353,6 +351,9 @@ def get_total_transition(rs, xHI, Tm, nmax, Delta_f = None):
         initial excited state (in N, not dNdE)
     """
 
+    #Number of Hydrogen states below n=nmax+1
+    num_states = int(nmax*(nmax+1)/2)
+
     if Delta_f==None:
         Delta_f = lambda a : 0
 
@@ -375,55 +376,40 @@ def get_total_transition(rs, xHI, Tm, nmax, Delta_f = None):
         BB['up'][1][n][0] *= p_np_1s(n, rs, xHI=xHI)
 
     #get the indices of the bound states
-    #nonzero_n, nonzero_l = alpha.nonzero()
-    nonzero_n = np.concatenate([list(map(int,k*np.ones(k))) for k in np.arange(1,nmax+1)])
-    nonzero_l = np.concatenate([np.arange(k) for k in np.arange(1,nmax+1)])
+    states_n = np.concatenate([list(map(int,k*np.ones(k))) for k in range(1,nmax+1,1)])
+    states_l = np.concatenate([np.arange(k) for k in range(1,nmax+1)])
 
-    # Make array that has the n of each excited state
-    ns = np.zeros(int(nmax*(nmax+1)/2))
-    counter = 0
-    for i in range(1,nmax+1):
-        ns[counter:counter + i] = i
-        counter += i
-
-    ### Build probability matrix for single transition, P_ij
-    P_matrix = np.zeros((len(nonzero_n)+1, len(nonzero_n)+1))
-    
-    # Ground and continuum states are sink states
-    P_matrix[0,0] = 1
-    P_matrix[-1,-1] = 1
+    ### Build matrix P_ij = R_ji/R_i,tot
+    mat = np.zeros((num_states, num_states))
+    b = np.zeros(num_states)
     
     for nl in range(1, len(nonzero_n)):
-        # Find indices for possible states to transition to (l must change by 1)
-        # Get the rates for transitioning to those states, as well as total rate
-        if nonzero_l[nl] != 0:
-            dn_inds = np.where(nonzero_l == nonzero_l[nl]-1)[0]
-            dn_rates = BB['dn'][nonzero_n[nl], nonzero_n[dn_inds], nonzero_l[nl]]
-        else:
-            # If angular momentum is 0, can only transition up
-            dn_rates = 0
+        n, l = states_n[nl], states_l[nl]
+        tot_rate = np.sum(BB['dn'][n,:,l]) + np.sum(BB['up'][n,:,l]) + beta[n][l]
             
-        up_inds = np.where(nonzero_l == nonzero_l[nl]+1)[0]
-        up_rates = BB['up'][nonzero_n[nl], nonzero_n[up_inds], nonzero_l[nl]]
-        tot_rate = np.sum(up_rates) + np.sum(dn_rates) + beta[nonzero_n[nl]][nonzero_l[nl]]
+        # Construct the matrix
+        if l!= 0:
+            mat[nl,states_l == l-1] = BB['up'][l:,n,l-1]/tot_rate
+
+        if l!= nmax-1:
+            mat[nl,states_l == l+1] = BB['dn'][l+2:,n,l+1]/tot_rate
         
+
         # Special 2s->1s transition
+        if nl == 0:
+            mat[0][1] = BB['dn'][2][1][0]/ tot_rate
         if nl == 1:
-            tot_rate += BB['dn'][2][1][0]
-            P_matrix[1][0] = BB['dn'][2][1][0] / tot_rate
+            #Detalied Balance
+            mat[1][0] = BB['dn'][2][1][0]*np.exp((E(2)-E(1))/Tr) / tot_rate
             
-        # Normalize by total rate for each state to get probabilities instead of rates
-        if nonzero_l[nl] != 0:
-            P_matrix[nl][dn_inds] = dn_rates / tot_rate
-        P_matrix[nl][up_inds] = up_rates / tot_rate
-        P_matrix[nl][-1] = beta[nonzero_n[nl]][nonzero_l[nl]] / tot_rate
-    
-    # Vector of probabilities for single transition
-    Pto1s = P_matrix[1:-1,0]
-    PtoCont = P_matrix[1:-1,-1]
-        
-    P_sub = P_matrix[1:-1,1:-1]
-    P_series = np.linalg.inv(np.identity(len(Pto1s)) - P_sub)
+
+        # Construct the inhomogeneous term
+        b[nl] = xe**2 * nH * alpha[n][l] / tot_rate
+        if l==1:
+            b[nl] += x1s*BB['up'][1, n, 0] / tot_rate
+        elif nl==1:
+            # 1s to 2s transition from detailed balance
+            b[nl] += x1s*BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr) / tot_rate
 
     ### Calculate probability of any state going to 1s or continuum after many transitions
     #if mode == 'prob':
