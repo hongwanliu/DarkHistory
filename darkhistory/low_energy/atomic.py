@@ -283,8 +283,8 @@ def populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
     prefac = 2/3 * phys.alpha**3 * phys.rydberg/hplanck
     alpha = np.zeros((int(nmax+1),nmax))
     
-    for n in np.range(1,nmax+1):
-        for l in np.range(n):
+    for n in np.arange(1,nmax+1):
+        for l in np.arange(n):
             iBin = np.arange(NBINS)
             for i in range(11):
                 ik = 10 * iBin + i
