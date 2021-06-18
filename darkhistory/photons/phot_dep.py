@@ -40,31 +40,31 @@ def getf_exc(photspec, norm_fac, method, cross_check=False):
                 )[0]
             )
         else:
-            tot_lya_eng = np.dot(
+            tot_exc_eng = np.dot(
                 photspec.N[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)],
                 photspec.eng[(photspec.eng >= 10.2) & (photspec.eng <= 13.6)]
             )
         f_exc = tot_exc_eng * norm_fac
     else:
         raise TypeError('option not supported yet')
-        # Only photons in the 10.2eV bin participate in 1s->2p excitation.
-        # 1s->2s transition handled more carefully.
+    # Only photons in the 10.2eV bin participate in 1s->2p excitation.
+    # 1s->2s transition handled more carefully.
 
-        # Convenient variables
-        #kappa = kappa_DM(photspec, xe)
+    # Convenient variables
+    #kappa = kappa_DM(photspec, xe)
 
-        # Added this line since rate_2p1s_times_x1s function was removed.
-        #rate_2p1s_times_x1s = (
-        #    8 * np.pi * phys.hubble(photspec.rs)/
-        #    (3*(phys.nH * photspec.rs**3 * (phys.c/phys.lya_freq)**3))
-        #)
+    # Added this line since rate_2p1s_times_x1s function was removed.
+    #rate_2p1s_times_x1s = (
+    #    8 * np.pi * phys.hubble(photspec.rs)/
+    #    (3*(phys.nH * photspec.rs**3 * (phys.c/phys.lya_freq)**3))
+    #)
 
-        #f_Lya = (
-        #    kappa * (
-        #        3*rate_2p1s_times_x1s*phys.nH + phys.width_2s1s_H*n[0]
-        #    ) *
-        #    phys.lya_eng * (norm_fac / phys.nB / photspec.rs**3 * dt)
-        #)
+    #f_Lya = (
+    #    kappa * (
+    #        3*rate_2p1s_times_x1s*phys.nH + phys.width_2s1s_H*n[0]
+    #    ) *
+    #    phys.lya_eng * (norm_fac / phys.nB / photspec.rs**3 * dt)
+    #)
     return f_exc
 
 #HI, HeI, HeII ionization
@@ -249,6 +249,9 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
     -------
     Spectrum of photoionized electrons
     """
+    states = ['HI', 'HeI', 'HeII']
+    ion_eng = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
+    ion_ind = {state: sum(phot_spec.eng<ion_eng[state]) for state in states}
 
     if method == 'no_He':
 
@@ -262,7 +265,7 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
         )
         ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
-        ionized_elec = Spectrum(
+        tot_ionized_elec = Spectrum(
             ion_engs,
             phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
             rs=phot_spec.rs,
@@ -270,10 +273,10 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
         )
 
         new_eng = ion_engs - ion_pot
-        ionized_elec.shift_eng(new_eng)
+        tot_ionized_elec.shift_eng(new_eng)
 
-        # rebin so that ionized_elec may be added to elec_spec
-        ionized_elec.rebin(eleceng)
+        # rebin so that tot_ionized_elec may be added to elec_spec
+        tot_ionized_elec.rebin(eleceng)
 
     elif (method == 'He') or (method == 'He_recomb'):
 
@@ -301,63 +304,20 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
         phot_spec_HeI  = phot_spec*prob[1]
         phot_spec_HeII = phot_spec*prob[2]
 
-        # Bin boundaries, including the lowest (13.6, 24.6) eV bin.
-        ion_bounds_HI   = spectools.get_bounds_between(
-            phot_spec.eng, phys.rydberg
-        )
-        ion_bounds_HeI  = spectools.get_bounds_between(
-            phot_spec.eng, phys.He_ion_eng
-        )
-        ion_bounds_HeII = spectools.get_bounds_between(
-            phot_spec.eng, 4*phys.rydberg
-        )
-
-        # Bin centers. 
-        ion_engs_HI   = np.exp(
-            (np.log(ion_bounds_HI[1:]) + np.log(ion_bounds_HI[:-1]))/2
-        )
-        ion_engs_HeI  = np.exp(
-            (np.log(ion_bounds_HeI[1:]) + np.log(ion_bounds_HeI[:-1]))/2
-        )
-        ion_engs_HeII = np.exp(
-            (np.log(ion_bounds_HeII[1:]) + np.log(ion_bounds_HeII[:-1]))/2
-        )
 
         # Spectrum object containing secondary electron 
         # from ionization. 
-        ionized_elec_HI   = Spectrum(
-            ion_engs_HI,
-            phot_spec_HI.totN(bound_type='eng', bound_arr=ion_bounds_HI),
+        ionized_elec   = {state: Spectrum(
+            phot_spec.eng[ion_ind[state]:]-ion_eng[state],
+            phot_spec_HI.N[ion_ind[state]:],
             rs=phot_spec.rs, spec_type='N'
-        )
+        ) for state in states}
 
-        ionized_elec_HeI  = Spectrum(
-            ion_engs_HeI,
-            phot_spec_HeI.totN(bound_type='eng', bound_arr=ion_bounds_HeI),
-            rs=phot_spec.rs, spec_type='N'
-        )
+        tot_ionized_elec = Spectrum(eleceng, np.zeros_like(eleceng), rs=phot_spec.rs, spec_type='N')
+        for state in states:
+            ionized_elec[state].rebin(eleceng)
+            tot_ionized_elec += ionized_elec[state]
 
-        ionized_elec_HeII = Spectrum(
-            ion_engs_HeII,
-            phot_spec_HeII.totN(bound_type='eng', bound_arr=ion_bounds_HeII),
-            rs=phot_spec.rs, spec_type='N'
-        )
-
-        # electron energy (photon energy - ionizing potential).
-        new_eng_HI   = ion_engs_HI   - phys.rydberg
-        new_eng_HeI  = ion_engs_HeI  - phys.He_ion_eng 
-        new_eng_HeII = ion_engs_HeII - 4*phys.rydberg 
-
-        # change the Spectrum abscissa to the correct electron energy.
-        ionized_elec_HI.shift_eng(new_eng_HI)
-        ionized_elec_HeI.shift_eng(new_eng_HeI)
-        ionized_elec_HeII.shift_eng(new_eng_HeII)
-        # rebin so that ionized_elec may be added to elec_spec.
-        ionized_elec_HI.rebin(eleceng)
-        ionized_elec_HeI.rebin(eleceng)
-        ionized_elec_HeII.rebin(eleceng)
-
-        ionized_elec = ionized_elec_HI + ionized_elec_HeI + ionized_elec_HeII
 
     elif method == 'HeII':
 
@@ -367,7 +327,7 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
         )
         ion_engs = np.exp((np.log(ion_bounds[1:])+np.log(ion_bounds[:-1]))/2)
 
-        ionized_elec = Spectrum(
+        tot_ionized_elec = Spectrum(
             ion_engs,
             phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
             rs=phot_spec.rs,
@@ -375,13 +335,13 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
         )
 
         new_eng = ion_engs - eng_threshold
-        ionized_elec.shift_eng(new_eng)
+        tot_ionized_elec.shift_eng(new_eng)
 
-        # rebin so that ionized_elec may be added to elec_spec
-        ionized_elec.rebin(eleceng)
+        # rebin so that tot_ionized_elec may be added to elec_spec
+        tot_ionized_elec.rebin(eleceng)
 
     else: 
 
         raise TypeError('invalid method.')
 
-    return ionized_elec
+    return tot_ionized_elec

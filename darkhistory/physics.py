@@ -570,9 +570,10 @@ def beta_ion(T_rad, species):
     in agreement with convention in RECFAST.
 
     """
+    mu_e = me/(1+me/mp)
     de_broglie_wavelength = (
         c * 2*np.pi*hbar
-        / np.sqrt(2 * np.pi * me * T_rad)
+        / np.sqrt(2 * np.pi * mu_e * T_rad)
     )
     
     if species == 'HI':
@@ -780,7 +781,8 @@ def xe_Saha(rs, species):
 
     T = TCMB(rs)
 
-    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * me * T)
+    mu_e = me/(1+me/mp)
+    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * T)
 
     if species == 'HI':
 
@@ -795,7 +797,7 @@ def xe_Saha(rs, species):
 
         else:
 
-            xe = 1. - a/rhs
+            xe = 1. - a/rhs + 2*(a/rhs)**2 - 5*(a/rhs)**3 #+ 14*(a/rhs)**4
 
     elif species == 'HeI':
         rhs = (
@@ -887,7 +889,7 @@ def xHII_std(rs):
     if _xHII_std is None:
         _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
-    if isinstance(rs,float):
+    if isinstance(rs*1.,float):
         if rs<2e3:
             return _xHII_std(rs)
         else:
@@ -904,6 +906,44 @@ def xHII_std(rs):
             output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
             return output
         
+def xHI_std(rs):
+    """Baseline nHI/nH value.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift (1+z). 
+
+    Returns
+    -------
+    float
+        nHI/nH. 
+    """
+    if isinstance(rs, float):
+        if rs<2e3:
+            return 1-xHII_std(rs)
+        else:
+            #Use Saha equilibrium
+            mu_e = me/(1+me/mp)
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs))
+            rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
+            return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+    else:
+        extrap = rs>2e3
+        if np.sum(extrap)==0:
+            return 1-xHII_std(rs)
+        else:
+            mu_e = me/(1+me/mp)
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs[extrap]))
+            rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
+            if np.sum(~extrap) == 0:
+                return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+            else:
+                output = np.zeros_like(rs)
+                output[~extrap] = 1-xHII_std(rs[~extrap])
+                output[extrap] = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+                return output
+
 
 def xHeII_std(rs):
     """Baseline nHeII/nH value.
@@ -954,7 +994,7 @@ def Tm_std(rs):
 
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
-    if isinstance(rs,float):
+    if isinstance(rs*1.,float):
         if rs<2e3:
             return _Tm_std(rs)
         else:
@@ -1179,7 +1219,7 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
 
         # If eng is a number, make it an np.ndarray
-        if isinstance(eng, float):
+        if isinstance(eng*1., float):
             eng = np.array([eng])
 
         # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
@@ -1335,7 +1375,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
             if eng <= ion_pot:
                 return 0
 
-    elif method == 'MEDEA':
+    elif (method == 'MEDEA') | (method == 'new'):
         if (species == 'HI') or (species == 'HeI'):
             if species == 'HI':
                 # Binding Energy
@@ -1389,7 +1429,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
             if eng <= B:
                 return 0
     elif method=='AcharyaKhatri':
-        if isinstance(eng, float):
+        if isinstance(eng*1., float):
             eng = np.array([eng])
         ionHI=np.array([[14.00,1.69960e-18],[14.50,3.05083e-18],[15.00,5.65916e-18],
             [15.60,8.92024e-18],[17.60,1.99166e-17],[20.00,2.99277e-17],[25.00,4.46188e-17],
@@ -1744,7 +1784,7 @@ def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
     so to convert to SI, we insert 1/(4*pi*eps_0)^2 and use that e^2/(4*pi*eps_0) = alpha
     """
 
-    if method == 'MEDEA':
+    if (method == 'MEDEA') | (method == 'new'):
         method = 'old'
     if method == 'old':
         w = np.sqrt(1 - 1/(1 + eng/me)**2)

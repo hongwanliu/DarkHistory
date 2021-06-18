@@ -39,7 +39,7 @@ def evolve(
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
-    init_cond=None, coarsen_factor=1, backreaction=True, distort=True,
+    init_cond=None, coarsen_factor=1, backreaction=True, distort=False,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False
 ):
@@ -337,6 +337,25 @@ def evolve(
     # If there are no electrons, we get a speed up by ignoring them. 
     if (in_spec_elec.totN() > 0) | distort:
         elec_processes = True
+
+        # The excitation states we keep track of in hydrogen
+        # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
+        #method = 'MEDEA'
+        #method = 'AcharyaKhatri'
+        method = 'new'
+
+        if method == 'AcharyaKhatri':
+            H_states  = ['2s', '2p', '3p']
+            nmax=3
+        elif method == 'MEDEA':
+            H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
+            nmax=10
+        else:
+            H_states = ['2s', '2p',
+                    '3s', '3p', '3d',
+                    '4s', '4p', '4d', '4f',
+                    '5p', '6p', '7p', '8p', '9p', '10p']
+            nmax=10
     else:
         elec_processes = False
 
@@ -357,7 +376,7 @@ def evolve(
         (
             coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
             ics_engloss_data
-        ) = get_elec_cooling_data(eleceng, photeng)
+        ) = get_elec_cooling_data(eleceng, photeng, H_states)
 
         #Spectrum of photons emitted from 2s -> 1s de-excitation
         spec_2s1s = generate_spec_2s1s(photeng)
@@ -441,24 +460,6 @@ def evolve(
                 xHII_elec_cooling  = phys.xHII_std(rs)
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
-            # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-            method = 'MEDEA'
-            #method = 'AcharyaKhatri'
-            #method = 'new'
-
-            if method == 'AcharyaKhatri':
-                H_states  = ['2s', '2p', '3p']
-                nmax=3
-            elif method == 'MEDEA':
-                H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
-                nmax=10
-            else:
-                H_states = ['2s', '2p',
-                        '3s', '3p', '3d',
-                        '4s', '4p', '4d', '4f',
-                        '5p', '6p', '7p', '8p', '9p', '10p']
-                nmax=10
-
             # Create the electron transfer functions
             (
                 ics_sec_phot_tf,
@@ -477,19 +478,7 @@ def evolve(
                     #loweng=eleceng[0]
                 )
 
-
-            f_dist=None
-            #fac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
-            #f_dist = interp1d(photeng, fac * distortion.dNdE/photeng**2)
-            P_1s, P_ion, exc_phot_spectra = atomic.process_excitations(
-                rs, x_arr[-1, 0], Tm_arr[-1], eleceng, photeng, deposited_exc_arr, H_states, nmax=nmax, f_dist=f_dist
-            )
-            #!!! Incorporate P_ion into f_ion somehow.
-
-
-            ### Apply the transfer function to the input electron spectrum generated in this step ###
-
-            # electrons in this step are comprised of those:
+            # electrons in this step, which are comprised of those:
             #  promptly injected from DM (in_spec_elec), 
             #  produced by high energy photon processes (lowengelec_spec_at_rs) 
             #  photoionized from atoms (ionized_elec)
@@ -497,6 +486,27 @@ def evolve(
             #All normalized per baryon
             ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
             tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
+
+            #!!! Need to deal with distort == False case
+            if distort:
+
+                # Phase space density for the distortion
+                prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+                Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
+
+                #print(prefac * (distortion.dNdE/photeng**2)[149:154])
+                f_ion_atomic, exc_spec_elec, exc_spec_phot, H_absorption_phot_frac = atomic.process_excitations(
+                    rs, x_arr[-1, 0], Tm_arr[-1], 
+                    dlnz*coarsen_factor, rate_func_eng(rs), 
+                    eleceng, photeng, 
+                    nmax, H_states, deposited_exc_arr, 
+                    lowengphot_spec_at_rs, lowengelec_spec_at_rs, Delta_f
+                )
+                # Get rid of the photons that were absorbed through photoexcitation
+                lowengphot_spec_at_rs = (1-H_absorption_phot_frac) * lowengphot_spec_at_rs
+
+
+            ### Apply the transfer functions to the input electron spectrum generated in this step ###
 
             # deposited energy into ionization, *per baryon in this step*. 
             deposited_H_ion  = np.dot(
@@ -526,10 +536,6 @@ def evolve(
             ics_phot_spec = ics_sec_phot_tf.sum_specs(tot_spec_elec)
             #print(ics_phot_spec.N)
 
-            # secondary photon spectrum from transitions of atoms 
-            # that were collisionally excited by electrons
-            exc_phot_spec = exc_phot_spectra.sum_specs(tot_spec_elec)
-
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
             positronium_phot_spec = pos.weighted_photon_spec(photeng) * (
@@ -545,7 +551,8 @@ def evolve(
             highengphot_spec_at_rs += (
                 in_spec_phot + positronium_phot_spec
             ) * norm_fac(rs) + ics_phot_spec
-            lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_phot_spec
+            if distort:
+                lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_spec_elec + exc_spec_phot
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -564,8 +571,7 @@ def evolve(
         # Add this fraction to the propagating photons
         highengphot_spec_at_rs += lowEprop_mask * lowengphot_spec_at_rs
 
-
-        # Get rid of the lowenergy photons that weren't absorbed -- they're in highengphot now
+        # Get rid of the lowenergy photons that weren't absorbed through photoionization -- they're in highengphot now
         lowengphot_spec_at_rs = (1-lowEprop_mask) * lowengphot_spec_at_rs
 
         # Set the redshift correctly. 
@@ -654,6 +660,11 @@ def evolve(
             f_heat  = f_elec['heat']
             f_err   = f_elec['err']
 
+            if distort:
+                f_Lya=0
+                #print(rs, f_ion_atomic/f_H_ion)
+                f_H_ion += f_ion_atomic
+
             if compute_fs_method == 'old':
                 # The old method neglects helium.
                 f_He_ion = 0. 
@@ -663,7 +674,7 @@ def evolve(
         else:
             f_raw = compute_fs_OLD(
                 MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                x_vec_for_f, rate_func_eng(rs), dt,
                 highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
             )
 
@@ -818,6 +829,8 @@ def evolve(
     #########################################################################
     #########################################################################
 
+    if distort:
+        distortion.redshift(1)
 
     if use_tqdm:
         pbar.close()
@@ -855,7 +868,7 @@ def generate_spec_2s1s(photeng):
         spec_2s1s = discretize(photeng,phys.dNdE_2s1s)/2.
         return spec_2s1s
 
-def get_elec_cooling_data(eleceng, photeng):
+def get_elec_cooling_data(eleceng, photeng, H_states):
     """
     Returns electron cooling data for use in :func:`main.evolve`.
 
@@ -881,7 +894,6 @@ def get_elec_cooling_data(eleceng, photeng):
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
     # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-    H_states = ['2s', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
     exc_types  =  H_states+['HeI', 'HeII']
 
     #ionization and excitation energies
