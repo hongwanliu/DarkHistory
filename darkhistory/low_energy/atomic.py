@@ -331,7 +331,7 @@ def get_transition_energies(nmax):
 
 def get_total_transition(rs, xHI, Tm, nmax, Delta_f = None):
     """
-    Calculate either the probabilities to switch between between states or the 
+    Calculate either the probabilities to switch between states or the 
     resulting photon spectra after many transitions.
 
     Parameters
