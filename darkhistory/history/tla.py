@@ -329,7 +329,7 @@ def get_history(
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             peebC = phys.peebles_C(xHII(yHII), rs)
-            beta_ion = phys.beta_ion('HI')
+            beta_ion = phys.beta_ion(T_m, 'HI')
 
             return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                 # Recombination processes. 
