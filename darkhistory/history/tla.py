@@ -299,7 +299,7 @@ def get_history(
             )/ (3/2 * nH * (1 + chi + xe))
 
 
-        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, peebles_TLA=True, beta_MLA=None):
+        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, peebles_TLA=True, alpha_MLA=None, beta_MLA=None):
             # peebles_TLA == True:  adopt the Peebles C factor treatment (see 1904.xxxx)
             # peebles_TLA == False: keep track of the higher excited states similarly to Hyrec, 
             #      must provide beta_MLA = beta_i M^-1_ij b_j (see xxxx.xxxx)
@@ -360,7 +360,7 @@ def get_history(
                     # Boltzmann factor is T_r, agrees with HyREC paper.
                     # Commented out lines to agree with ExoCLASS
                     -(
-                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                        alpha_MLA * xHII(yHII) * xe * nH
                         - beta_MLA
                     )
                     # DM injection. Note that C = 1 at late times.
