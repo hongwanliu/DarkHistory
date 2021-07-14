@@ -52,7 +52,7 @@ def get_history(
     reion_switch=False, reion_rs=None, reion_method=None, heat_switch=False, DeltaT = 0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
-    mxstep = 1000, rtol=1e-4, T2=None
+    mxstep = 1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -328,12 +328,9 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-            if T2 == None:
-                peebC = phys.peebles_C(xHII(yHII), rs)
-                beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI')
-            else:
-                peebC = phys.peebles_C(xHII(yHII), rs, T2)
-                beta_ion = phys.beta_ion(T2, 'HI')
+            peebC = phys.peebles_C(xHII(yHII), rs)
+            beta_ion = phys.beta_ion('HI')
+
             return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                 # Recombination processes. 
                 # Boltzmann factor is T_r, agrees with HyREC paper.
