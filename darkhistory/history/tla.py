@@ -299,9 +299,9 @@ def get_history(
             )/ (3/2 * nH * (1 + chi + xe))
 
 
-        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, standard=True, beta_new=None):
-            # standard == True:  adopt the Peebles C factor treatment (see 1904.xxxx)
-            # standard == False: keep track of the higher excited states similarly to Hyrec, 
+        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, peebles_TLA=True, beta_new=None):
+            # peebles_TLA == True:  adopt the Peebles C factor treatment (see 1904.xxxx)
+            # peebles_TLA == False: keep track of the higher excited states similarly to Hyrec, 
             #      must provide beta_new = beta_i M^-1_ij b_j (see xxxx.xxxx)
 
             T_m = np.exp(log_T_m)
@@ -331,7 +331,7 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-            if standard:
+            if peebles_TLA:
                 peebC = phys.peebles_C(xHII(yHII), rs)
                 beta_ion = phys.beta_ion(T_m, 'HI')
 
