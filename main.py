@@ -39,8 +39,9 @@ def evolve(
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
-    init_cond=None, coarsen_factor=1, backreaction=True, distort=False,
+    init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
+    distort=False, nmax=9, peebles_TLA=True,
     use_tqdm=True, cross_check=False
 ):
     """
@@ -334,7 +335,7 @@ def evolve(
             return rate_func_eng(rs)
 
 
-    # If there are no electrons, we get a speed up by ignoring them. 
+    # If there are no electrons, we get a speed-up by ignoring them. 
     if (in_spec_elec.totN() > 0) | distort:
         elec_processes = True
 
@@ -494,16 +495,19 @@ def evolve(
                 prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
                 Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
 
-                #print(prefac * (distortion.dNdE/photeng**2)[149:154])
-                f_ion_atomic, exc_spec_elec, exc_spec_phot, H_absorption_phot_frac = atomic.process_excitations(
-                    rs, x_arr[-1, 0], Tm_arr[-1], 
-                    dlnz*coarsen_factor, rate_func_eng(rs), 
-                    eleceng, photeng, 
-                    nmax, H_states, deposited_exc_arr, 
-                    lowengphot_spec_at_rs, lowengelec_spec_at_rs, Delta_f
+                ##print(prefac * (distortion.dNdE/photeng**2)[149:154])
+                #f_ion_atomic, exc_spec_elec, exc_spec_phot, H_absorption_phot_frac = atomic.process_excitations(
+                #    rs, x_arr[-1, 0], Tm_arr[-1], 
+                #    dlnz*coarsen_factor, rate_func_eng(rs), 
+                #    eleceng, photeng, 
+                #    nmax, H_states, deposited_exc_arr, 
+                #    lowengphot_spec_at_rs, lowengelec_spec_at_rs, Delta_f
+                #)
+                ## Get rid of the photons that were absorbed through photoexcitation
+                #lowengphot_spec_at_rs = (1-H_absorption_phot_frac) * lowengphot_spec_at_rs
+                alpha_MLA, beta_MLA, exc_spec = get_distortion_and_ionization(
+                        rs, x_arr[-1, 0], Tm_arr[-1], nmax, spec_2s1s, Delta_f
                 )
-                # Get rid of the photons that were absorbed through photoexcitation
-                lowengphot_spec_at_rs = (1-H_absorption_phot_frac) * lowengphot_spec_at_rs
 
 
             ### Apply the transfer functions to the input electron spectrum generated in this step ###
@@ -552,7 +556,7 @@ def evolve(
                 in_spec_phot + positronium_phot_spec
             ) * norm_fac(rs) + ics_phot_spec
             if distort:
-                lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_spec_elec + exc_spec_phot
+                lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -663,7 +667,7 @@ def evolve(
             if distort:
                 f_Lya=0
                 #print(rs, f_ion_atomic/f_H_ion)
-                f_H_ion += f_ion_atomic
+                #f_H_ion += f_ion_atomic
 
             if compute_fs_method == 'old':
                 # The old method neglects helium.
@@ -739,7 +743,8 @@ def evolve(
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
+            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol, 
+            peebles_TLA=peebles_TLA, alpha_MLA=alpha_MLA, beta_MLA=beta_MLA
         )
 
         #####################################################################
