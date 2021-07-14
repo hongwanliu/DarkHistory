@@ -299,7 +299,10 @@ def get_history(
             )/ (3/2 * nH * (1 + chi + xe))
 
 
-        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, standard=True, beta_new=None):
+            # standard == True:  adopt the Peebles C factor treatment (see 1904.xxxx)
+            # standard == False: keep track of the higher excited states similarly to Hyrec, 
+            #      must provide beta_new = beta_i M^-1_ij b_j (see xxxx.xxxx)
 
             T_m = np.exp(log_T_m)
 
@@ -328,28 +331,41 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
-            peebC = phys.peebles_C(xHII(yHII), rs)
-            beta_ion = phys.beta_ion(T_m, 'HI')
+            if standard:
+                peebC = phys.peebles_C(xHII(yHII), rs)
+                beta_ion = phys.beta_ion(T_m, 'HI')
 
-            return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
-                # Recombination processes. 
-                # Boltzmann factor is T_r, agrees with HyREC paper.
-                # Commented out lines to agree with ExoCLASS
-                - peebC * (
-                    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
-                    - 4 * beta_ion * xHI
-                        # * np.exp(-phys.lya_eng/T_m)
-                        * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
+                    # Recombination processes. 
+                    # Boltzmann factor is T_r, agrees with HyREC paper.
+                    # Commented out lines to agree with ExoCLASS
+                    - peebC * (
+                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                        - 4 * beta_ion * xHI
+                            # * np.exp(-phys.lya_eng/T_m)
+                            * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                    )
+                    # DM injection. Note that C = 1 at late times.
+                    + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                        / (phys.rydberg * nH)
+                    # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
+                    + (1. - peebC) * (
+                        _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                        / (phys.lya_eng * nH)
+                    )
                 )
-                # DM injection. Note that C = 1 at late times.
-                + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
-                    / (phys.rydberg * nH)
-                # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
-                + (1. - peebC) * (
-                    _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
-                    / (phys.lya_eng * nH)
-                )
-            )
+            else:
+                return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
+                    # Recombination processes.
+                    # Boltzmann factor is T_r, agrees with HyREC paper.
+                    # Commented out lines to agree with ExoCLASS
+                    -(
+                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                        - beta_new
+                    )
+                    # DM injection. Note that C = 1 at late times.
+                    + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                        / (phys.rydberg * nH)
 
         def dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
 
