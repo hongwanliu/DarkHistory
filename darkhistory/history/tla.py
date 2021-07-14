@@ -299,10 +299,10 @@ def get_history(
             )/ (3/2 * nH * (1 + chi + xe))
 
 
-        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, peebles_TLA=True, beta_new=None):
+        def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs, peebles_TLA=True, beta_MLA=None):
             # peebles_TLA == True:  adopt the Peebles C factor treatment (see 1904.xxxx)
             # peebles_TLA == False: keep track of the higher excited states similarly to Hyrec, 
-            #      must provide beta_new = beta_i M^-1_ij b_j (see xxxx.xxxx)
+            #      must provide beta_MLA = beta_i M^-1_ij b_j (see xxxx.xxxx)
 
             T_m = np.exp(log_T_m)
 
@@ -361,7 +361,7 @@ def get_history(
                     # Commented out lines to agree with ExoCLASS
                     -(
                         phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
-                        - beta_new
+                        - beta_MLA
                     )
                     # DM injection. Note that C = 1 at late times.
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
