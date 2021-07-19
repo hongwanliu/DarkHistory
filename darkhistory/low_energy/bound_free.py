@@ -5,39 +5,9 @@ from scipy.special import loggamma
 from scipy.interpolate import interp1d 
 
 import darkhistory.physics as phys
+from config import load_data
 
-import pickle 
 
-# Contains a pre-computed dictionary indexed by [n][l][lp] of g values, 
-# using the generate_g_table_dict function at the end of this module. See arXiv:0911.1359 Eq. (30) for definition.
-table_dict  = pickle.load(open('g_table_dict.p',  'rb'))
-
-# Number of log-spaced large bins for kappa^2 = E_e / R, where E_e is the electron energy and R is the 
-# ionization potential of hydrogen. 
-
-n_kap = 50
-
-# Generate the abscissa for kappa^2 and the spacing at each point for integration later. We will compute
-# coefficients up to n = 300 of the hydrogen atom. 
-
-# first axis for n = 300 hydrogen states, second axis subdivides each large bin above 
-# into 10 equally spaced intervals in kappa^2.
-kappa2_bin_edges_ary = np.zeros((301,11*n_kap))
-h_ary = np.zeros((301,11*n_kap))
-
-# Fill the arrays accordingly. 
-for n in 1 + np.arange(300):
-
-    # Using the same boundaries as arXiv:0911.1359. However, we integrate over kappa^2. 
-    kappa2_big_bin_edges = np.logspace(np.log10(1e-25/n**2), np.log10(4.96e8/n**2), num=n_kap+1)
-
-    for i,_ in enumerate(kappa2_big_bin_edges[:-1]):
-
-        low = kappa2_big_bin_edges[i]
-        upp = kappa2_big_bin_edges[i+1]
-        abscissa = np.linspace(low, upp, num=11)
-        kappa2_bin_edges_ary[n, 11*i:11*(i+1)] = abscissa
-        h_ary[n, 11*i:11*(i+1)] = np.ones(11) * (abscissa[1] - abscissa[0])
 
 def g(l, lp, n, kappa=None):
     """
@@ -76,7 +46,7 @@ def g(l, lp, n, kappa=None):
     if kappa is None:
         # If no abscissa specified, using the default kappa^2 given above. Return the table values.
 
-        return table_dict[n][l][lp]
+        return load_data('bnd_free')['g_table_dict'][n][l][lp]
 
     else:
 
@@ -208,9 +178,9 @@ def Theta(l, lp, n, kappa=None):
 
         # Use default kappa^2 binning. 
 
-        kappa = np.sqrt(kappa2_bin_edges_ary[n])
+        kappa = np.sqrt(load_data('bnd_free')['kappa2_bin_edges_ary'][n])
 
-        return (1 + n**2 * kappa**2) * table_dict[n][l][lp]**2
+        return (1 + n**2 * kappa**2) * load_data('bnd_free')['g_table_dict'][n][l][lp]**2
 
     else:
 
@@ -219,7 +189,7 @@ def Theta(l, lp, n, kappa=None):
 # Set-up the Newton-Cotes weights. We use an 11-point Newton-Cotes integration
 # over each of the 50 bins. 
 
-newton_cotes_11_weights = 5. / 299376. * np.ones(n_kap*11)
+newton_cotes_11_weights = 5. / 299376. * np.ones(load_data('bnd_free')['n_kap']*11)
 newton_cotes_11_weights[0::11] *= 16067.
 newton_cotes_11_weights[1::11] *= 106300. 
 newton_cotes_11_weights[2::11] *= -48525. 
@@ -319,10 +289,10 @@ def I_Burgess(n, l, lp, T_m, T_r=None, f_gamma=None, stimulated_emission=True, o
         )
     
     # Multiply the computed Newton-Cotes weights above by the size of the interval. 
-    weights = newton_cotes_11_weights * h_ary[n]
+    weights = newton_cotes_11_weights * load_data('bnd_free')['h_ary'][n]
 
     # Perform the Newton-Cotes integral. 
-    integral = np.dot(weights, integ(kappa2_bin_edges_ary[n]))
+    integral = np.dot(weights, integ(load_data('bnd_free')['kappa2_bin_edges_ary'][n]))
 
     return np.max((l, lp)) * y * integral
 
@@ -435,10 +405,10 @@ def beta_nl(n, l, T_r=None, f_gamma=None):
         ) * phys.rydberg / phys.hbar**3 / phys.c**2
     
     # Multiply the computed Newton-Cotes weights above by the size of the interval. 
-    weights = newton_cotes_11_weights * h_ary[n]
+    weights = newton_cotes_11_weights * load_data('bnd_free')['h_ary'][n]
 
     # Perform the Newton-Cotes integral. 
-    integral = np.dot(weights, integ(kappa2_bin_edges_ary[n], f_gamma))
+    integral = np.dot(weights, integ(load_data('bnd_free')['kappa2_bin_edges_ary'][n], f_gamma))
 
     return prefac*integral 
 
@@ -586,7 +556,7 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
 
     y = rydb / T_m
 
-    kappa2 = kappa2_bin_edges_ary[n]
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
 
     E_gamma = (kappa2 + 1./n**2) * rydb 
 
@@ -639,7 +609,7 @@ def generate_g_table_dict():
 
         g_table_dict[n] = {}
 
-        abscissa = kappa2_bin_edges_ary[n]
+        abscissa = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
 
         for l in np.arange(n-1, -1, step=-1):
 
