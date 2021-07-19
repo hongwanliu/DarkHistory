@@ -22,15 +22,16 @@ from scipy.interpolate import interp1d
 data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
 
 # Global variables for data.
-glob_binning_data = None
-glob_dep_tf_data  = None
-glob_ics_tf_data  = None
-glob_struct_data  = None
-glob_hist_data    = None
-glob_pppc_data    = None
-glob_f_data       = None
-glob_exc_data     = None
-glob_reion_data   = None
+glob_binning_data   = None
+glob_dep_tf_data    = None
+glob_ics_tf_data    = None
+glob_struct_data    = None
+glob_hist_data      = None
+glob_pppc_data      = None
+glob_f_data         = None
+glob_exc_data       = None
+glob_reion_data     = None
+glob_bnd_free_data  = None
 
 class PchipInterpolator2D: 
 
@@ -510,11 +511,31 @@ def load_data(data_type):
         return glob_exc_data
 
     elif data_type == 'reion':
-        if glob_exc_data == None:
-            glob_exc_data = pickle.load(open(data_path+'/Onorbe_data.p','rb'))
+        if glob_reion_data == None:
+            glob_reion_data = pickle.load(open(data_path+'/Onorbe_data.p','rb'))
 
-        return glob_exc_data
+        return glob_reion_data
 
+    elif data_type == 'bnd_free':
+        if glob_bnd_free_data == None:
+            # Contains a pre-computed dictionary indexed by [n][l][lp] of g values,
+            # using the generate_g_table_dict function at the end of this module. See arXiv:0911.1359 Eq. (30) for definition.
+            glob_bnd_free_data['g_table_dict']  = pickle.load(open('g_table_dict.p',  'rb'))
+
+            # Number of log-spaced large bins for kappa^2 = E_e / R, where E_e is the electron energy and R is the
+            # ionization potential of hydrogen.
+
+            glob_bnd_free_data['n_kap'] = 50
+
+            # Generate the abscissa for kappa^2 and the spacing at each point for integration later. We will compute
+            # coefficients up to n = 300 of the hydrogen atom.
+
+            # first axis for n = 300 hydrogen states, second axis subdivides each large bin above
+            # into 10 equally spaced intervals in kappa^2.
+            glob_bnd_free_data['kappa2_bin_edges_ary'] = np.zeros((301,11*n_kap))
+            glob_bnd_free_data['h_ary'] = np.zeros((301,11*n_kap))
+
+        return glob_bnd_free_data
     else:
 
         raise ValueError('invalid data_type.')
