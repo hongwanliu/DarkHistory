@@ -421,7 +421,7 @@ def get_optical_depth(rs_vec, xe_vec):
 # Hydrogen                              #
 #########################################
 
-rydberg      = 13.5982860719383
+rydberg      = 1/2 * mu_ep * alpha**2
 """Ionization potential of ground state hydrogen in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
@@ -572,10 +572,9 @@ def beta_ion(T_rad, species):
     in agreement with convention in RECFAST.
 
     """
-    mu_e = me/(1+me/mp)
     de_broglie_wavelength = (
         c * 2*np.pi*hbar
-        / np.sqrt(2 * np.pi * mu_e * T_rad)
+        / np.sqrt(2 * np.pi * mu_ep * T_rad)
     )
     
     if species == 'HI':
@@ -780,8 +779,7 @@ def xe_Saha(rs, species):
 
     T = TCMB(rs)
 
-    mu_e = me/(1+me/mp)
-    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * T)
+    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
 
     if species == 'HI':
 
@@ -923,8 +921,7 @@ def xHI_std(rs):
             return 1-xHII_std(rs)
         else:
             #Use Saha equilibrium
-            mu_e = me/(1+me/mp)
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs))
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs))
             rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
             return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
     else:
@@ -932,8 +929,7 @@ def xHI_std(rs):
         if np.sum(extrap)==0:
             return 1-xHII_std(rs)
         else:
-            mu_e = me/(1+me/mp)
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs[extrap]))
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs[extrap]))
             rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
             if np.sum(~extrap) == 0:
                 return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
