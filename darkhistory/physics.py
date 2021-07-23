@@ -553,7 +553,7 @@ def alpha_recomb(T_m, species, fudge=True):
 
     
 
-def beta_ion(T_rad, species):
+def beta_ion(T_rad, species, fudge=True):
     """Case-B photoionization coefficient.
 
     Parameters
@@ -582,7 +582,7 @@ def beta_ion(T_rad, species):
     if species == 'HI':
         return (
             (1/de_broglie_wavelength)**3
-            * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad, 'HI')
+            * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad, 'HI', fudge=fudge)
         )/4
 
     elif species == 'HeI_21s':
@@ -591,14 +591,14 @@ def beta_ion(T_rad, species):
         # print(de_broglie_wavelength)
         return 4*(
             (1/de_broglie_wavelength)**3
-            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s')
+            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s', fudge=fudge)
         )
 
     elif species == 'HeI_23s':
         E_23s_inf = He_ion_eng - He_exc_eng['23s']
         return (4/3)*(
             (1/de_broglie_wavelength)**3
-            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s')
+            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s', fudge=fudge)
         )
 
     else:
