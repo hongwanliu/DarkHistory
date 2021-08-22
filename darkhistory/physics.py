@@ -26,11 +26,13 @@ me          = 510998.9461
 """Electron mass in eV."""
 mHe         = 3.97107*mp
 """Helium nucleus mass in eV."""
+mu_ep = (mp * me) / (mp + me)
+"""Reduced mass of electron and proton."""
 hbar        = 6.58211951e-16
 """hbar in eV s."""
 c           = 299792458e2
 """Speed of light in cm s\ :sup:`-1`\ ."""
-kB          = 8.6173324e-5
+kB          = 8.617333262145e-5
 """Boltzmann constant in eV K\ :sup:`-1`\ ."""
 alpha       = 1/137.035999139
 """Fine structure constant."""
@@ -419,7 +421,7 @@ def get_optical_depth(rs_vec, xe_vec):
 # Hydrogen                              #
 #########################################
 
-rydberg      = 13.60569253
+rydberg      = 13.5982860719383
 """Ionization potential of ground state hydrogen in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
@@ -427,7 +429,7 @@ lya_freq     = lya_eng / (2*np.pi*hbar)
 """Lyman alpha transition frequency in Hz."""
 width_2s1s_H = 8.22458
 """Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
-bohr_rad     = (hbar*c) / (me*alpha)
+bohr_rad     = (hbar*c) / (mu_ep*alpha)
 """Bohr radius in cm."""
 def H_exc_eng(state):
     if (state=='2s') | (state=='2p'):
@@ -602,7 +604,7 @@ def beta_ion(T_rad, species):
 
         return TypeError('invalid species.')
 
-def peebles_C(xHII, rs, T2=None):
+def peebles_C(xHII, rs):
     """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
@@ -636,10 +638,7 @@ def peebles_C(xHII, rs, T2=None):
 
     rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
 
-    if T2 != None:
-        rate_ion = (1-xHII) * beta_ion(T2, 'HI')
-    else:
-        rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
+    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
 
     return rate_exc/(rate_exc + rate_ion)
 
