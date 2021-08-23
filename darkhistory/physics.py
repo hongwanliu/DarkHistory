@@ -513,8 +513,8 @@ def alpha_recomb(T_m, species, fudge=True):
         # Fudge factor recommended in 1011.3758
         fudge_fac = 1.0
         if fudge:
-            fudge_fac = 1.125
-            # fudge_fac = 1.14
+            #fudge_fac = 1.125
+            fudge_fac = 1.14
 
         conv_fac = 1.0e-4/kB
 
@@ -605,7 +605,7 @@ def beta_ion(T_rad, species, fudge=True):
 
         return TypeError('invalid species.')
 
-def peebles_C(xHII, rs):
+def peebles_C(xHII, rs, fudge=True):
     """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
@@ -639,7 +639,7 @@ def peebles_C(xHII, rs):
 
     rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
 
-    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
+    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI', fudge)
 
     return rate_exc/(rate_exc + rate_ion)
 
