@@ -2,6 +2,7 @@
 
 """
 import numpy as np
+import sys
 from numpy.linalg import matrix_power
 from scipy.interpolate import interp1d
 
@@ -41,7 +42,7 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
-    distort=False, nmax=9, peebles_TLA=True,
+    distort=False, fudge=True, nmax=9,
     use_tqdm=True, cross_check=False
 ):
     """
@@ -406,14 +407,18 @@ def evolve(
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
 
+    alpha_MLA, beta_MLA = None,None
     if distort:
         # Initialize Spectrum object that stores the distortion
         distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
         dist_mask = photeng<phys.rydberg
+        recfast_TLA = False
+        elec_processes=True
     else:
         distortion=None
         # Object to help us interpolate over MEDEA results.
         MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
+        recfast_TLA=True
 
     #########################################################################
     #########################################################################
@@ -492,8 +497,9 @@ def evolve(
             if distort:
 
                 # Phase space density for the distortion
-                prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
-                Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
+                #prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+                #Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
+                Delta_f = lambda ee : 0
 
                 ##print(prefac * (distortion.dNdE/photeng**2)[149:154])
                 #f_ion_atomic, exc_spec_elec, exc_spec_phot, H_absorption_phot_frac = atomic.process_excitations(
@@ -505,8 +511,8 @@ def evolve(
                 #)
                 ## Get rid of the photons that were absorbed through photoexcitation
                 #lowengphot_spec_at_rs = (1-H_absorption_phot_frac) * lowengphot_spec_at_rs
-                alpha_MLA, beta_MLA, exc_spec = get_distortion_and_ionization(
-                        rs, x_arr[-1, 0], Tm_arr[-1], nmax, spec_2s1s, Delta_f
+                alpha_MLA, beta_MLA, exc_spec = atomic.get_distortion_and_ionization(
+                        rs, 1-x_arr[-1, 0], Tm_arr[-1], nmax, spec_2s1s, Delta_f
                 )
 
 
@@ -734,6 +740,21 @@ def evolve(
         #    T2=None
 
         # Solve the TLA for x, Tm for the *next* step. 
+        #print(alpha_MLA, phys.alpha_recomb(phys.TCMB(rs),'HI'))
+
+        tau_S = atomic.tau_np_1s(2,rs)
+        Tr = phys.TCMB(rs)
+
+        x2s = atomic.x2s_steady_state(rs, Tr, Tm_arr[-1], x_arr[-1,0], 1-x_arr[-1,0], tau_S)
+        if alpha_MLA is not None:
+            print(rs, alpha_MLA/phys.alpha_recomb(Tm_arr[-1],'HI'), 
+                    beta_MLA/(phys.beta_ion(Tr,'HI')*x2s*4)
+                    )
+        #print(phys.peebles_C(x_arr[-1,0],rs))
+        #print(rs, init_cond_TLA)
+        if(np.any(np.isnan(init_cond_TLA))):
+            raise ValueError('Encountered nan in Tm or x')
+
         new_vals = tla.get_history(
             np.array([rs, next_rs]), init_cond=init_cond_TLA,
             f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
@@ -744,7 +765,7 @@ def evolve(
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol, 
-            peebles_TLA=peebles_TLA, alpha_MLA=alpha_MLA, beta_MLA=beta_MLA
+            recfast_TLA=recfast_TLA, fudge=fudge, alpha_MLA=alpha_MLA, beta_MLA=beta_MLA
         )
 
         #####################################################################

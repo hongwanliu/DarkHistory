@@ -421,7 +421,7 @@ def get_optical_depth(rs_vec, xe_vec):
 # Hydrogen                              #
 #########################################
 
-rydberg      = 13.5982860719383
+rydberg      = 1/2 * mu_ep * alpha**2
 """Ionization potential of ground state hydrogen in eV."""
 lya_eng      = rydberg*3/4
 """Lyman alpha transition energy in eV."""
@@ -487,7 +487,7 @@ width_21s_1s_He = 51.3
 # Recombination/Ionization              #
 #########################################
 
-def alpha_recomb(T_m, species):
+def alpha_recomb(T_m, species, fudge=True):
     """Case-B recombination coefficient.
 
     Parameters
@@ -511,8 +511,10 @@ def alpha_recomb(T_m, species):
     if species == 'HI':
 
         # Fudge factor recommended in 1011.3758
-        fudge_fac = 1.125
-        # fudge_fac = 1.14
+        fudge_fac = 1.0
+        if fudge:
+            #fudge_fac = 1.125
+            fudge_fac = 1.14
 
         conv_fac = 1.0e-4/kB
 
@@ -551,7 +553,7 @@ def alpha_recomb(T_m, species):
 
     
 
-def beta_ion(T_rad, species):
+def beta_ion(T_rad, species, fudge=True):
     """Case-B photoionization coefficient.
 
     Parameters
@@ -572,16 +574,15 @@ def beta_ion(T_rad, species):
     in agreement with convention in RECFAST.
 
     """
-    mu_e = me/(1+me/mp)
     de_broglie_wavelength = (
         c * 2*np.pi*hbar
-        / np.sqrt(2 * np.pi * mu_e * T_rad)
+        / np.sqrt(2 * np.pi * mu_ep * T_rad)
     )
     
     if species == 'HI':
         return (
             (1/de_broglie_wavelength)**3
-            * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad, 'HI')
+            * np.exp(-rydberg/4/T_rad) * alpha_recomb(T_rad, 'HI', fudge=fudge)
         )/4
 
     elif species == 'HeI_21s':
@@ -590,21 +591,21 @@ def beta_ion(T_rad, species):
         # print(de_broglie_wavelength)
         return 4*(
             (1/de_broglie_wavelength)**3
-            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s')
+            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s', fudge=fudge)
         )
 
     elif species == 'HeI_23s':
         E_23s_inf = He_ion_eng - He_exc_eng['23s']
         return (4/3)*(
             (1/de_broglie_wavelength)**3
-            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s')
+            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s', fudge=fudge)
         )
 
     else:
 
         return TypeError('invalid species.')
 
-def peebles_C(xHII, rs):
+def peebles_C(xHII, rs, fudge=True):
     """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
@@ -638,7 +639,7 @@ def peebles_C(xHII, rs):
 
     rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
 
-    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI')
+    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI', fudge)
 
     return rate_exc/(rate_exc + rate_ion)
 
@@ -780,8 +781,7 @@ def xe_Saha(rs, species):
 
     T = TCMB(rs)
 
-    mu_e = me/(1+me/mp)
-    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * T)
+    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
 
     if species == 'HI':
 
@@ -923,8 +923,7 @@ def xHI_std(rs):
             return 1-xHII_std(rs)
         else:
             #Use Saha equilibrium
-            mu_e = me/(1+me/mp)
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs))
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs))
             rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
             return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
     else:
@@ -932,8 +931,7 @@ def xHI_std(rs):
         if np.sum(extrap)==0:
             return 1-xHII_std(rs)
         else:
-            mu_e = me/(1+me/mp)
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_e * TCMB(rs[extrap]))
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs[extrap]))
             rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
             if np.sum(~extrap) == 0:
                 return rhs**-1 - 2*rhs**-2 + 5*rhs**-3

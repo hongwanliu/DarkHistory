@@ -11,6 +11,7 @@ import scipy.special
 
 from config import load_data
 from datetime import datetime
+import darkhistory.low_energy.bound_free as bf
 
 NBINS = 100
 Nkappa = 10 * NBINS + 1
@@ -238,7 +239,7 @@ def Newton_Cotes_11pt(x, f):
 # where Nkappa = 10 * NBINS + 1
 # *********************************************************************************************/
 
-def populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
+def populate_beta(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=True):
     """ From prefac we see that the units are s^-1 """
     beta = np.zeros((nmax+1,nmax))
 
@@ -249,7 +250,7 @@ def populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=None):
 
         for n in range(1, nmax+1):
             for l in range(n):
-                beta[n][l] = (n, l, Tr, f_gamma)
+                beta[n][l] = bf.beta_nl(n, l, f_gamma=f_gamma)
 
     else:
 
@@ -298,7 +299,7 @@ def populate_alpha(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=T
 
         for n in np.arange(1,nmax+1):
             for l in np.arange(n):
-                alpha[n][l] = alpha_nl(n, l, Tm, Tr, f_gamma, stimulated_emission=True)
+                alpha[n][l] = bf.alpha_nl(n, l, Tm, f_gamma=f_gamma, stimulated_emission=True)
     else:
 
         k2 = np.zeros((11, NBINS))
@@ -352,14 +353,14 @@ def get_transition_energies(nmax):
     H_engs = np.concatenate((H_engs,[20]))
     return H_engs[1:]
 
-def f_exc_to_b(:
+def f_exc_to_b(
         rs, xHII, Tm, 
         dlnz, inj_rate,
         eleceng, photeng, 
         nmax, H_states, R, 
         deposited_exc_vec_elec, 
         phot_spec, elec_spec, Delta_f
-    )
+        ):
     """
     Compute how the injected excitation energy converts to numbers of excited states.
     Then compute how these numbers convert to the inhomogeneous term in our steady-state Mx=b equation.
@@ -450,6 +451,12 @@ def get_distortion_and_ionization(
     #Number of Hydrogen states at or below n=nmax
     num_states = int(nmax*(nmax+1)/2)
 
+    xe = 1-xHI
+    nH = phys.nH * rs**3
+    nB = phys.nB*rs**3
+    E = lambda n : phys.rydberg/n**2
+    g_nl = lambda l : 2*l+1
+
     if Delta_f==None:
         Delta_f = lambda a : 0
 
@@ -458,10 +465,12 @@ def get_distortion_and_ionization(
 
     #Get the transition rates
     R = populate_radial(nmax)
-    BB = populate_bound_bound(nmax, Tr, R, Delta_f)
-    k2_tab, g = populate_k2_and_g(nmax, Tm)
-    alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f)
-    beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f)
+    BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
+    #k2_tab, g = populate_k2_and_g(nmax, Tm)
+    #alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
+    #beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
+    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f)
+    beta = populate_beta(Tm, Tr, nmax, Delta_f=Delta_f)
 
     #Include sobolev optical depth
     for n in np.arange(2,nmax+1,1):
@@ -517,19 +526,21 @@ def get_distortion_and_ionization(
     x_vec = np.linalg.solve(mat,b[1:])
     x_full = np.append(xHI, x_vec)
 
+    #print(rs,x_full[1])
+
     ### Now calculate the total ionization and distortion ###
 
     E_current = 0
     ind_current = 0
     H_engs = np.zeros((int) (nmax*(nmax-1)/2))
     Nphot_cascade = H_engs.copy()
-    nB = phys.nB*rs**3
-    beta_new = 0
+    beta_MLA, alpha_MLA = 0, 0
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
-            beta_new += x_full[nl] * beta[n][l]
+            beta_MLA  += x_full[nl] * beta[n][l]
+            alpha_MLA += alpha[n][l]
 
         # Add new transition energies to H_engs
         if E_current != E(n):
@@ -541,7 +552,7 @@ def get_distortion_and_ionization(
 
         # photons from l <-> l+1 transitions (per baryon per second)
         if l<nmax-1:
-            Nphot_cascade[ind_current:ind_current + nmax-n] += nH_vec[i]*(
+            Nphot_cascade[ind_current:ind_current + nmax-n] += nH*(
                 x_full[(states_l == l+1) * (states_n>n)] * BB['dn'][n+1:,n,l+1] #Downscattering adds photons
                 -x_full[nl] * BB['up'][n,n+1:,l] #upscattering subtracts them
             )/nB
@@ -549,18 +560,18 @@ def get_distortion_and_ionization(
 
         # photons from l <-> l-1 transitions
         if l>0:
-            Nphot_cascade[ind_current:ind_current + nmax-n] += nH_vec[i] * (
+            Nphot_cascade[ind_current:ind_current + nmax-n] += nH * (
                 x_full[(states_l == l-1) * (states_n>n)] * BB['up'][n+1:,n,l-1]
                 -x_full[nl] * BB['dn'][n,n+1:,l]
             )/nB
 
-        # Make a spectrum
-        data = np.array(sorted(np.flipud(np.transpose([H_engs,Nphot_cascade])), key=lambda pair:pair[0]))
-        transition_spec = Spectrum(data[:,0], data[:,1], spec_type='N')
-        transition_spec.rebin(binning['phot'])
+    # Make a spectrum
+    data = np.array(sorted(np.flipud(np.transpose([H_engs,Nphot_cascade])), key=lambda pair:pair[0]))
+    transition_spec = Spectrum(data[:,0], data[:,1], spec_type='N')
+    transition_spec.rebin(load_data('binning')['phot'])
 
-        amp_2s1s = BB['dn'][2,1,0] * (x_full[1] - x_full[0]*np.exp(-phys.lya_eng/phys.TCMB(rs)))
-        transition_spec.N += amp_2s1s * spec_2s1s.N
+    amp_2s1s = BB['dn'][2,1,0] * (x_full[1] - x_full[0]*np.exp(-phys.lya_eng/phys.TCMB(rs)))
+    transition_spec.N += amp_2s1s * spec_2s1s.N
 
     return alpha_MLA, beta_MLA, transition_spec
 
@@ -692,3 +703,29 @@ def yim_distortion(nu, amp, T, dist_type):
                 * np.exp(x) / (np.exp(x) - 1.)**2
                 *(x / 2.19 - 1.)
                )
+
+def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
+
+    #Boltzmann Factor at lya energy
+    B_Lya = np.exp(-phys.lya_eng/Tr)
+    
+    #Photon occupation number
+    f_Lya = B_Lya/(1-B_Lya)
+    
+    #2p-1s rate, including Sobolev optical depth
+    R_Lya = 2**9/3**8 * phys.alpha**3 * phys.rydberg/phys.hbar * (1+f_Lya)
+    R_Lya *= (1-np.exp(-tau_S))/tau_S
+
+    #Total deexcitation rate including 2s->1s rate
+    sum_rates = (3*R_Lya + phys.width_2s1s_H)/4
+
+    #Denominator of Peebles C factor
+    denom = sum_rates + phys.beta_ion(Tr,'HI')
+
+    #Two numerator terms for x2 steady state solution
+    nH = phys.nH * rs**3
+    term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI')
+    term2 = 4 * x1s * np.exp(-phys.lya_eng/Tr) * sum_rates
+
+    # Factor of 4 converts from x2 to x2s
+    return (term1 + term2)/denom / 4
