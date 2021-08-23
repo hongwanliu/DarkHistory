@@ -210,6 +210,7 @@ def load_data(data_type):
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
     global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data, glob_reion_data
+    global glob_bnd_free_data
 
     if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
@@ -518,6 +519,9 @@ def load_data(data_type):
 
     elif data_type == 'bnd_free':
         if glob_bnd_free_data == None:
+
+            glob_bnd_free_data = {}
+
             # Contains a pre-computed dictionary indexed by [n][l][lp] of g values,
             # using the generate_g_table_dict function at the end of this module. See arXiv:0911.1359 Eq. (30) for definition.
             glob_bnd_free_data['g_table_dict']  = pickle.load(open('g_table_dict.p',  'rb'))
@@ -532,8 +536,22 @@ def load_data(data_type):
 
             # first axis for n = 300 hydrogen states, second axis subdivides each large bin above
             # into 10 equally spaced intervals in kappa^2.
-            glob_bnd_free_data['kappa2_bin_edges_ary'] = np.zeros((301,11*n_kap))
-            glob_bnd_free_data['h_ary'] = np.zeros((301,11*n_kap))
+            glob_bnd_free_data['kappa2_bin_edges_ary'] = np.zeros((301,11*glob_bnd_free_data['n_kap']))
+            glob_bnd_free_data['h_ary'] = np.zeros((301,11*glob_bnd_free_data['n_kap']))
+
+            # Fill the arrays accordingly.
+            for n in 1 + np.arange(300):
+
+                # Using the same boundaries as arXiv:0911.1359. However, we integrate over kappa^2.
+                kappa2_big_bin_edges = np.logspace(np.log10(1e-25/n**2), np.log10(4.96e8/n**2), num=glob_bnd_free_data['n_kap']+1)
+
+                for i,_ in enumerate(kappa2_big_bin_edges[:-1]):
+
+                    low = kappa2_big_bin_edges[i]
+                    upp = kappa2_big_bin_edges[i+1]
+                    abscissa = np.linspace(low, upp, num=11)
+                    glob_bnd_free_data['kappa2_bin_edges_ary'][n, 11*i:11*(i+1)] = abscissa
+                    glob_bnd_free_data['h_ary'][n, 11*i:11*(i+1)] = np.ones(11) * (abscissa[1] - abscissa[0])
 
         return glob_bnd_free_data
     else:

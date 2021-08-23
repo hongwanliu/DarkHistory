@@ -8,7 +8,6 @@ import darkhistory.physics as phys
 from config import load_data
 
 
-
 def g(l, lp, n, kappa=None):
     """
     Matrix element for bound-free transition. 
@@ -239,17 +238,21 @@ def I_Burgess(n, l, lp, T_m, T_r=None, f_gamma=None, stimulated_emission=True, o
     doing the integral with default kappa values. 
     """
 
-    if T_r is not None and f_gamma is not None: 
+    if stimulated_emission:
+        if T_r is not None and f_gamma is not None: 
 
-        raise ValueError('Please use either T_r or f_gamma, not both.')
+            raise ValueError('Please use either T_r or f_gamma, not both.')
 
-    if f_gamma is not None and not stimulated_emission: 
+        if T_r is None and f_gamma is None:
 
-        raise ValueError('Please use f_gamma with stimulated emission only.')
+            raise ValueError('Please use either T_r or f_gamma.')
 
-    if T_r is None and f_gamma is None:
+    else:
 
-        raise ValueError('Please use either T_r or f_gamma.')
+        if f_gamma is not None: 
+
+            raise ValueError('Please use f_gamma with stimulated emission only.')
+
 
     # For comparison with Burgess, we need to use the ionization potential assuming
     # the electron mass and not the electron-proton reduced mass. 
@@ -327,17 +330,21 @@ def alpha_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
     Currently only doing the integral with default kappa values. 
     """
 
-    if T_r is not None and f_gamma is not None: 
+    if stimulated_emission:
 
-        raise ValueError('Please use either T_r or f_gamma, not both.')
+        if T_r is not None and f_gamma is not None: 
 
-    if T_r is None and f_gamma is None: 
+            raise ValueError('Please use either T_r or f_gamma, not both.')
 
-        raise ValueError('Please use either T_r or f_gamma.')
+        if T_r is None and f_gamma is None: 
 
-    if f_gamma is not None and not stimulated_emission: 
+            raise ValueError('Please use either T_r or f_gamma.')
 
-        raise ValueError('Please use f_gamma with stimulated emission only.')
+    else:
+
+        if f_gamma is not None: 
+
+            raise ValueError('Please use f_gamma with stimulated emission only.')
 
     prefac = 2 * np.sqrt(np.pi) * phys.alpha**4 * phys.bohr_rad**2 * phys.c / 3. 
 
@@ -440,13 +447,15 @@ def alpha_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
     Currently only doing the integral with default kappa values. 
     """
 
-    if T_r is not None and f_gamma is not None: 
+    if stimulated_emission:
 
-        raise ValueError('Please use either T_r or f_gamma, not both.')
+        if T_r is not None and f_gamma is not None: 
 
-    if T_r is None and f_gamma is None: 
+            raise ValueError('Please use either T_r or f_gamma, not both.')
 
-        raise ValueError('Please use either T_r or f_gamma.')
+        if T_r is None and f_gamma is None: 
+
+            raise ValueError('Please use either T_r or f_gamma.')
 
     coeff = 0. 
 
@@ -499,6 +508,7 @@ def beta_B(T_r, n=100):
         # Sum from l=0 to nn-1.
         for ll in np.arange(nn):
 
+            # 2*ll+1 comes from the sum over m substates
             contrib_ll = beta_nl(nn, ll, T_r=T_r, f_gamma=None) * (2*ll + 1) * np.exp(-phys.rydberg * (1./4. - 1./nn**2) / T_r)
             contrib_nn += contrib_ll
             
@@ -506,7 +516,9 @@ def beta_B(T_r, n=100):
 
         # print(nn, contrib_nn)
             
-    return coeff
+    #hc=2*np.pi*phys.hbar*phys.c
+    #lam_T = hc/(2*np.pi * phys.mu_ep * T_r)**(1/2)
+    return coeff/4 #* lam_T**3 * np.exp(phys.rydberg/4 / T_r)
 
 def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
     """
