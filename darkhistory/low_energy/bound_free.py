@@ -541,8 +541,8 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
 
     Returns
     -------
-    ndarray
-        Recombination photon spectrum coefficient. 
+    tuple of ndarray
+        Energy abscissa and recombination photon spectrum coefficient. 
 
     Notes
     -----
@@ -568,7 +568,7 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
 
     y = rydb / T_m
 
-    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
+    kappa2 = kappa2_bin_edges_ary[n]
 
     E_gamma = (kappa2 + 1./n**2) * rydb 
 
@@ -595,10 +595,65 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
         * y * (1 + n**2 * kappa2)**2 * np.exp(-kappa2 * y)
     ) / phys.rydberg
 
-    return prefac * fac_gamma * (
-        l * Theta(l, l-1, n, kappa=None) * (l > 0) 
-        + (l+1) * Theta(l, l+1, n, kappa=None)
-    )
+    return ((kappa2 + 1/n**2) * phys.rydberg, 
+        prefac * fac_gamma * (
+            l * Theta(l, l-1, n, kappa=None) * (l > 0) 
+            + (l+1) * Theta(l, l+1, n, kappa=None)
+        ))
+
+def gamma_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
+    """
+    Case-B recombination coefficient. This is the sum of alpha_nl, n>=2.  
+
+    Parameters
+    ----------
+    T_m : float
+        The matter temperature in eV.  
+    T_r : float, optional
+        The radiation temperature in eV for a blackbody distribution.
+    f_gamma : function, optional
+        Photon occupation number as a function of energy. 
+    stimulated_emission : boolean
+        If True, includes stimulated emission for a blackbody distribution. 
+    n : int
+        The maximum n to include. 
+
+    Returns
+    -------
+    ndarray
+        The case-B recombination coefficient in cm^-3 s^-1. 
+
+    Notes
+    -----
+    Currently only doing the integral with default kappa values. 
+    """
+
+    if T_r is not None and f_gamma is not None: 
+
+        raise ValueError('Please use either T_r or f_gamma, not both.')
+
+    if T_r is None and f_gamma is None: 
+
+        raise ValueError('Please use either T_r or f_gamma.')
+
+    coeff = 0. 
+
+    # Sum from nn = 2 to n. 
+    for nn in 2 + np.arange(n-1):
+
+        contrib_nn = 0
+
+        # Sum from l=0 to nn-1. 
+        for ll in np.arange(nn):
+
+            contrib_ll = alpha_nl(nn, ll, T_m, T_r=T_r, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
+            contrib_nn += contrib_ll
+            
+        coeff += contrib_nn
+
+        # print(nn, contrib_nn)
+            
+    return coeff
 
 
 def generate_g_table_dict():
