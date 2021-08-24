@@ -19,7 +19,8 @@ from scipy.interpolate import interp1d
 # LOOK FOR THESE DATA FILES HERE. 
 
 #data_path = '/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
-data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
+# data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
+data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
 
 # Global variables for data.
 glob_binning_data   = None
@@ -522,12 +523,14 @@ def load_data(data_type):
 
             glob_bnd_free_data = {}
 
+            print()
+
             # Contains a pre-computed dictionary indexed by [n][l][lp] of g values,
             # using the generate_g_table_dict function at the end of this module. See arXiv:0911.1359 Eq. (30) for definition.
-            glob_bnd_free_data['g_table_dict']  = pickle.load(open('g_table_dict.p',  'rb'))
+            glob_bnd_free_data['g_table_dict']  = pickle.load(open(data_path+'/g_table_dict.p',  'rb'))
 
             # Number of log-spaced large bins for kappa^2 = E_e / R, where E_e is the electron energy and R is the
-            # ionization potential of hydrogen.
+            # ionization potential of hydrogen.            
 
             glob_bnd_free_data['n_kap'] = 50
 

@@ -5,6 +5,8 @@ from scipy.special import loggamma
 from scipy.interpolate import interp1d 
 
 import darkhistory.physics as phys
+from darkhistory.spec.spectrum import Spectrum
+
 from config import load_data
 
 
@@ -406,6 +408,9 @@ def beta_nl(n, l, T_r=None, f_gamma=None):
 
             f_gam_fac = f_gamma(E_gamma)
 
+        # Using the fact that dn_gamma / dE_gamma = (1/n^2 + K^2)^2 I_H^3 / pi^2 f
+        # times a conversion to get into natural units. 
+
         return (kappa2 + 1/n**2)**2 * phys.rydberg**2 / np.pi**2 * f_gam_fac * (
             (l+1)*Theta(l, l+1, n, kappa=None)
             + l*Theta(l, l-1, n, kappa=None)
@@ -496,6 +501,7 @@ def beta_B(T_r, n=100):
     -----
     See Peebles ApJ 153, 1 (1968) Eq. (26) for definition.
     Currently only doing the integral with default kappa values. 
+    Assumes that the nl-states are equilibrium distributed. 
     """
 
     coeff = 0. 
@@ -518,7 +524,8 @@ def beta_B(T_r, n=100):
             
     #hc=2*np.pi*phys.hbar*phys.c
     #lam_T = hc/(2*np.pi * phys.mu_ep * T_r)**(1/2)
-    return coeff/4 #* lam_T**3 * np.exp(phys.rydberg/4 / T_r)
+    return coeff 
+    # return coeff/4 #* lam_T**3 * np.exp(phys.rydberg/4 / T_r)
 
 def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
     """
@@ -541,8 +548,8 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
 
     Returns
     -------
-    tuple of ndarray
-        Energy abscissa and recombination photon spectrum coefficient. 
+    Spectrum
+        Recombination photon spectrum coefficient. 
 
     Notes
     -----
@@ -568,7 +575,7 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
 
     y = rydb / T_m
 
-    kappa2 = kappa2_bin_edges_ary[n]
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
 
     E_gamma = (kappa2 + 1./n**2) * rydb 
 
@@ -595,18 +602,85 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
         * y * (1 + n**2 * kappa2)**2 * np.exp(-kappa2 * y)
     ) / phys.rydberg
 
-    return ((kappa2 + 1/n**2) * phys.rydberg, 
-        prefac * fac_gamma * (
-            l * Theta(l, l-1, n, kappa=None) * (l > 0) 
-            + (l+1) * Theta(l, l+1, n, kappa=None)
-        ))
+    # Remove the first few entries, which are repeated because kappa2 << 1/n^2.
+    eng, ind = np.unique(E_gamma, return_index=True)
+    res = prefac * fac_gamma * (
+        l * Theta(l, l-1, n, kappa=None) * (l > 0) 
+        + (l+1) * Theta(l, l+1, n, kappa=None)
+    )
 
-def gamma_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
+    return Spectrum(eng, res[ind],spec_type='dNdE')
+
+def xi_nl(n, l, T_r=None, f_gamma=None):
     """
-    Case-B recombination coefficient. This is the sum of alpha_nl, n>=2.  
+    Photoionization photon spectrum coefficient in eV^-1 sec^-1. 
 
     Parameters
     ----------
+    n : int
+        The initial energy level of the hydrogen atom. 
+    l : int
+        The initial l-state in the hydrogen atom.  
+    T_r : float, optional
+        The radiation temperature in eV for a blackbody distribution.
+    f_gamma : function, optional
+        Photon occupation number as a function of energy. 
+
+    Returns
+    -------
+    Spectrum
+        Energy abscissa and photoionization photon spectrum coefficient. 
+
+    Notes
+    -----
+    The number density of photons per energy per time absorbed by photoionization from
+    the nl level is n_nl * xi_nl. 
+    The photon energy abscissa is fixed to be (kappa2 + 1/n**2) * phys.rydberg, where 
+    kappa2 is our precomputed kappa2 values. 
+    """
+
+    if T_r is not None and f_gamma is not None: 
+
+        raise ValueError('Please use either T_r or f_gamma, not both.')
+
+    if T_r is None and f_gamma is None: 
+
+        raise ValueError('Please use either T_r or f_gamma.')
+
+    prefac = 4 * np.pi * phys.alpha * phys.bohr_rad**2 / 3 * n**2 / (2*l + 1)
+
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
+
+    E_gamma = (1. / n**2 + kappa2) * phys.rydberg 
+
+    if f_gamma is None:
+
+        # Blackbody occupation number. 
+        f_gam_fac = np.exp(-E_gamma/T_r) / (1. - np.exp(-E_gamma/T_r)) 
+
+    else:
+
+        f_gam_fac = f_gamma(E_gamma)
+
+    d_beta_d_kappa2 = prefac * (kappa2 + 1./n**2)**2 * phys.rydberg**2 / np.pi**2 * f_gam_fac * (
+        (l+1)*Theta(l, l+1, n, kappa=None)
+        + l*Theta(l, l-1, n, kappa=None)
+    ) * phys.rydberg / phys.hbar**3 / phys.c**2
+
+    # Remove the first few entries, which are repeated because kappa2 << 1/n^2.
+    eng, ind = np.unique(E_gamma, return_index=True)
+    res = d_beta_d_kappa2 / phys.rydberg 
+
+    return Spectrum(eng, res[ind],spec_type='dNdE')
+
+def gamma_B(eng, T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
+    """
+    Case-B recombination spectrum coefficient, including transitions to n>=2.  
+
+    Parameters
+    ----------
+    eng : ndarray
+        The energy abscissa for the coefficients in eV.
     T_m : float
         The matter temperature in eV.  
     T_r : float, optional
@@ -620,8 +694,8 @@ def gamma_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
 
     Returns
     -------
-    ndarray
-        The case-B recombination coefficient in cm^-3 s^-1. 
+    Spectrum
+        The case-B recombination spectrum coefficient in eV cm^-3 s^-1. 
 
     Notes
     -----
@@ -636,25 +710,86 @@ def gamma_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
 
         raise ValueError('Please use either T_r or f_gamma.')
 
-    coeff = 0. 
+    coeff = None 
 
     # Sum from nn = 2 to n. 
     for nn in 2 + np.arange(n-1):
 
-        contrib_nn = 0
+        contrib_nn = None
 
         # Sum from l=0 to nn-1. 
         for ll in np.arange(nn):
 
-            contrib_ll = alpha_nl(nn, ll, T_m, T_r=T_r, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
-            contrib_nn += contrib_ll
-            
-        coeff += contrib_nn
+            contrib_ll = gamma_nl(nn, ll, T_m, T_r, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
+            if contrib_nn is None: 
+                contrib_nn = contrib_ll 
+            else:
+                contrib_nn += contrib_ll
 
-        # print(nn, contrib_nn)
+        contrib_nn.rebin(eng)
+
+        if coeff is None:
+            
+            coeff = contrib_nn 
+
+        else:
+
+            coeff += contrib_nn
+
             
     return coeff
 
+def xi_B(eng, T_r, n = 100):
+    """
+    Case-B Photoionization photon spectrum coefficient in eV^-1 sec^-1, including transitions to n>=2.
+
+    Parameters
+    ----------
+    eng: ndarray
+        The energy abscissa for the coefficients in eV. 
+    T_r : float, optional
+        The radiation temperature in eV for a blackbody distribution.
+    n : int
+        The maximum n to include
+
+    Returns
+    -------
+    Spectrum
+        Energy abscissa and photoionization photon spectrum coefficient in eV^-1 sec^-1.
+
+    Notes
+    -----
+    Currently only doing the integral with default kappa values. 
+    Assumes that the nl-states are equilibrium distributed. 
+    """
+
+    coeff = None
+
+    # Sum from nn = 2 to n. 
+    for nn in 2 + np.arange(n-1): 
+
+        contrib_nn = None
+        
+        # Sum from l=0 to nn-1. 
+        for ll in np.arange(nn): 
+
+            contrib_ll = xi_nl(nn, ll, T_r) * (2*ll + 1) * np.exp(-phys.rydberg * (1./4. - 1./nn**2) / T_r)
+            if contrib_nn is None: 
+                contrib_nn = contrib_ll 
+            else:
+                contrib_nn += contrib_ll 
+
+        contrib_nn.rebin(eng)
+
+        if coeff is None:
+            
+            coeff = contrib_nn 
+
+        else:
+
+            coeff += contrib_nn
+
+    return coeff 
 
 def generate_g_table_dict():
     """
