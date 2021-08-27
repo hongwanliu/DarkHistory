@@ -407,18 +407,34 @@ def evolve(
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
 
-    alpha_MLA, beta_MLA = None,None
     if distort:
         # Initialize Spectrum object that stores the distortion
         distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
         dist_mask = photeng<phys.rydberg
         recfast_TLA = False
         elec_processes=True
+
+        alpha_MLA_data = np.array([
+            [rs, phys.alpha_recomb(Tm_init, 'HI')], 
+            [rs, phys.alpha_recomb(Tm_init, 'HI')]
+        ])
+
+        tau = atomic.tau_np_1s(2,rs)
+        xe_init = xH_init + xHe_init
+        x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), Tm_init, xe_init, 1-xe_init, tau)
+        x2  = 4*x2s
+        beta_ion = phys.beta_ion(Tm_init, 'HI')
+        beta_MLA_data = np.array([
+            [rs, beta_ion*x2], 
+            [rs, beta_ion*x2]
+        ])
+
     else:
         distortion=None
         # Object to help us interpolate over MEDEA results.
         MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
         recfast_TLA=True
+        alpha_MLA, beta_MLA = None,None
 
     #########################################################################
     #########################################################################
@@ -493,6 +509,24 @@ def evolve(
             ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
             tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
 
+            if True:
+                def beta_MLA(logrs):
+                    rs = np.exp(logrs)
+
+                    tau = atomic.tau_np_1s(2,rs)
+                    xe = phys.xHII_std(rs)
+                    Tm = phys.Tm_std(rs)
+                    Tr = phys.TCMB(rs)
+                    x2s = atomic.x2s_steady_state(rs, Tr, Tm, xe, 1-xe, tau)
+                    x2 = 4*x2s
+                    beta_ion = phys.beta_ion(Tm, 'HI')
+
+                    return np.log(beta_ion*x2)
+
+
+                #def alpha_MLA(rs):
+                #    return phys.alpha_recomb(phys.Tm_std(rs), 'HI')
+
             #!!! Need to deal with distort == False case
             if distort:
 
@@ -511,9 +545,55 @@ def evolve(
                 #)
                 ## Get rid of the photons that were absorbed through photoexcitation
                 #lowengphot_spec_at_rs = (1-H_absorption_phot_frac) * lowengphot_spec_at_rs
-                alpha_MLA, beta_MLA, exc_spec = atomic.get_distortion_and_ionization(
+                alpha_MLA_data[0] = alpha_MLA_data[1]
+                beta_MLA_data[0]  = beta_MLA_data[1]
+
+                alpha_MLA_data[1][1], beta_MLA_data[1][1], exc_spec = atomic.get_distortion_and_ionization(
                         rs, 1-x_arr[-1, 0], Tm_arr[-1], nmax, spec_2s1s, Delta_f
                 )
+
+                #if rs==start_rs:
+                #    xe_tmp = phys.xHII_std
+                #    Tm_tmp = phys.Tm_std
+                #else:
+                #    rs_vec = np.append(out_highengphot_specs.rs, rs)
+                #    xe_tmp = interp1d(rs_vec, x_arr[:,0]+x_arr[:,1], fill_value='extrapolate')
+                #    Tm_tmp = interp1d(rs_vec, Tm_arr, fill_value='extrapolate')
+
+                #def beta_MLA(rs):
+                #    xe = xe_tmp(rs)
+                #    Tm = Tm_tmp(rs)
+                #    crap1, beta, crap2 = atomic.get_distortion_and_ionization(
+                #            rs, 1-xe, Tm, nmax, spec_2s1s, Delta_f
+                #    )
+
+                #    return beta
+
+                alpha_MLA_data[1][0], beta_MLA_data[1][0] = rs, rs
+
+                #if False:
+                    #tau = atomic.tau_np_1s(2,rs)
+                    #xe = x_arr[-1, 0]
+                    #Tm_tmp = Tm_arr[-1]
+                    
+                    #x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), Tm_tmp, 
+                    #        xe, 
+                    #        1-xe, tau)
+                    #x2  = 4*x2s
+                    #beta_ion = phys.beta_ion(Tm_tmp, 'HI')
+
+                    #beta_MLA_data[1][1] = np.log(beta_ion*x2)
+                    #alpha_MLA_data[1][1] = phys.alpha_recomb(Tm_arr[-1], 'HI')
+                    ##beta_MLA_data[1][1] = beta_MLA(np.log(beta_MLA_data[1,0]))
+                    ##alpha_MLA_data[1][1] = phys.alpha_recomb(Tm_arr[-1], 'HI')
+                    
+
+
+                alpha_MLA = interp1d(alpha_MLA_data[:,0], alpha_MLA_data[:,1], fill_value='extrapolate')
+                beta_MLA  = interp1d(
+                        np.log(beta_MLA_data[:,0]), 
+                        np.log(beta_MLA_data[:,1]),  fill_value='extrapolate')
+
 
 
             ### Apply the transfer functions to the input electron spectrum generated in this step ###
@@ -742,17 +822,17 @@ def evolve(
         # Solve the TLA for x, Tm for the *next* step. 
         #print(alpha_MLA, phys.alpha_recomb(phys.TCMB(rs),'HI'))
 
-        tau_S = atomic.tau_np_1s(2,rs)
+        tau_S = atomic.tau_np_1s(2,rs, 1-x_arr[-1,0])
         Tr = phys.TCMB(rs)
 
         x2s = atomic.x2s_steady_state(rs, Tr, Tm_arr[-1], x_arr[-1,0], 1-x_arr[-1,0], tau_S)
-        if alpha_MLA is not None:
-            print(rs, alpha_MLA/phys.alpha_recomb(Tm_arr[-1],'HI'), 
-                    beta_MLA/(phys.beta_ion(Tr,'HI')*x2s*4)
-                    )
+        #if alpha_MLA is not None:
+        #    print(rs, alpha_MLA(rs)/phys.alpha_recomb(Tm_arr[-1],'HI'), 
+        #            beta_MLA(rs)/(phys.beta_ion(Tr,'HI')*x2s*4)
+        #            )
         #print(phys.peebles_C(x_arr[-1,0],rs))
-        #print(rs, init_cond_TLA)
         if(np.any(np.isnan(init_cond_TLA))):
+            print(rs, init_cond_TLA)
             raise ValueError('Encountered nan in Tm or x')
 
         new_vals = tla.get_history(
