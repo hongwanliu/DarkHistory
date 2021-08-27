@@ -290,16 +290,19 @@ def populate_beta(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=Tr
 
 # /****************************************************************************************/
 
-def populate_alpha(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=True):
+def populate_alpha(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=True, stimulated_emission=True):
     alpha = np.zeros((int(nmax+1),nmax))
 
     if new_switch:
-        def f_gamma(Ennp):
-            return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+        if stimulated_emission:
+            def f_gamma(Ennp):
+                return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+        else:
+            f_gamma = None
 
         for n in np.arange(1,nmax+1):
             for l in np.arange(n):
-                alpha[n][l] = bf.alpha_nl(n, l, Tm, f_gamma=f_gamma, stimulated_emission=True)
+                alpha[n][l] = bf.alpha_nl(n, l, Tm, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
     else:
 
         k2 = np.zeros((11, NBINS))
@@ -469,7 +472,7 @@ def get_distortion_and_ionization(
     #k2_tab, g = populate_k2_and_g(nmax, Tm)
     #alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
     #beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
-    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f)
+    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, stimulated_emission=True)
     beta = populate_beta(Tm, Tr, nmax, Delta_f=Delta_f)
 
     #Include sobolev optical depth
