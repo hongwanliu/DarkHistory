@@ -8,3 +8,11 @@
 
 *.pyc
 **/*.pyc
+
+# files to be removed
+nntf/interps/
+nntf/models/
+nntf/tests/archive/
+nntf/tests/evolve.log
+nntf/tests/run_output/
+nntf/tests/test.p
