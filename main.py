@@ -2,13 +2,6 @@
 
 """
 
-###################################
-
-##### CP notes change points. For easy editing only. Compare full document when merging
-
-###################################
-
-
 
 import numpy as np
 from numpy.linalg import matrix_power
@@ -36,10 +29,8 @@ from darkhistory.low_energy.lowE_electrons import make_interpolator
 
 from darkhistory.history import tla
 
-##### NNTF Change Point: includes
 import time
 from nntf.nntf import NNTF
-##### ----
 
 def evolve(
     in_spec_elec=None, in_spec_phot=None,
@@ -859,46 +850,7 @@ def evolve(
             ## pred
             HEPp12.predict_TF(rs=rs_to_interpolate, xH=xHII_to_interp, xHe=xHeII_to_interp)
             HEPs11.predict_TF(rs=rs_to_interpolate, xH=xHII_to_interp, xHe=xHeII_to_interp)
-            
-            HEPp12_tfgv = HEPp12.TF
-            HEPs11_tfgv = HEPs11.TF
-            
-            ## tmp fix in_start_i
-            HEPp12_tf, HEPs11_tf = get_ctf(rs_to_interpolate, xHII_to_interp, xHeII_to_interp)
-            
-            i = 1
-            while HEPp12_tf.grid_vals[i][i-1] < 1e-30:
-                HEPp12_tfgv[i] *= 0
-                i += 1
-            HEPp12i = i
-            
-            HEPs11_tfgv[0][0] = 1
-            i = 1
-            while HEPs11_tf.grid_vals[i][i-1] < 1e-30:
-                HEPs11_tfgv[i] *= 0
-                HEPs11_tfgv[i][i] = 1
-                i += 1
-            #print(HEPp12i, i)
-            #if rs_to_interpolate < 1600:
-            #    HEPp12_tfgv = HEPp12_tf.grid_vals
-            # debug to see how can fix
-            #c = coarsen_factor
-            #for i in range(c, 500):
-            #    HEPp12_tfgv[i][i-c:i+1] = HEPp12_tf.grid_vals[i][i-c:i+1]
-            
-            # fix HEPs11 with HEPs11_E
-            E_true = HEPs11_E_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interpolate)
-            cf = coarsen_factor
-            rel_diff = 0
-            for i in range(cf, 500):
-                E_pred = np.dot(photeng, HEPs11_tfgv[i])
-                E_part_pred = np.dot(photeng[i-cf:i+1], HEPs11_tfgv[i][i-cf:i+1])
-                E_part_true = E_part_pred + (E_true[i]-E_pred)
-                HEPs11_tfgv[i][i-cf:i+1] *= (E_part_true/E_part_pred)
-                rel_diff += np.abs( 1-(E_part_pred/E_part_true) )
-            rel_diff /= (500-cf)
-            print('HEPs11 pred E accuracy avg: %.4f' % (1-rel_diff))
-            
+
             # compounding
             lowengphot_tf._grid_vals = np.matmul(
                 HEPs11_tfgv, lowengphot_tf._grid_vals
@@ -919,38 +871,6 @@ def evolve(
             RSloss = np.dot(out_highengphot_specs[-1].N, RSloss_tf)
             eng['RSL'] = RSloss
             
-            # fix HEPp12 with energy conservation
-            E_true = HEPp12_E_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interpolate)
-            #rel_diff_true_tocons = 0
-            rel_diff_pred_tocons = 0
-            #rel_diff_pred_true = 0
-            for i in range(cf, 500):
-                E_in  = photeng[i] # 1 photon in i'th entry
-                E_HEP = np.dot(photeng, HEPp12_tfgv[i])
-                E_LEP = np.dot(photeng, lowengphot_tf._grid_vals[i])
-                E_LEE = np.dot(eleceng, lowengelec_tf._grid_vals[i])
-                E_HED = np.sum(highengdep_arr[i]) * (dlnz/phys.hubble(rs_to_interpolate)) * coarsen_factor
-                E_RSL = RSloss_tf[i]
-                
-                E_pred   = E_HEP
-                E_tocons = E_in - (E_LEP + E_LEE + E_HED + E_RSL)
-                E_part_pred   = np.dot(photeng[i-cf:i+1], HEPp12_tfgv[i][i-cf:i+1])
-                E_part_tocons = E_part_pred + (E_tocons-E_pred)
-                
-                #print('%d %.4e %.4f %.4f %.4f %.4f %.4f' % (i, E_in, E_true[i]/E_in, E_pred/E_in, E_tocons/E_in, E_part_pred/E_in, E_part_tocons/E_in) )
-                if E_true[i]/E_in < 0.2:
-                    HEPp12_tfgv[i][i] += (E_tocons-E_pred)/photeng[i]
-                    ratio = 1
-                elif E_part_pred/E_in < 0.5:
-                    ratio = (E_tocons/E_pred)
-                    HEPp12_tfgv[i] *= ratio
-                else:
-                    ratio = (E_part_tocons/E_part_pred)
-                    HEPp12_tfgv[i][i-cf:i+1] *= ratio
-                #print('ratio', ratio)
-                rel_diff_pred_tocons += np.abs( 1-1/ratio )
-            rel_diff_pred_tocons /= (500-cf)
-            print('HEPp12 pred-tocons E accuracy avg: %.4f' % (1-rel_diff_pred_tocons))
             highengphot_tf._grid_vals = HEPp12_tfgv
             
             # record tfs used

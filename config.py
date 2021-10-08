@@ -168,7 +168,7 @@ class PchipInterpolator2D:
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
 
-def load_data(data_type, use_v1_data=False): ##### CP
+def load_data(data_type, use_v1_data=False):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -191,7 +191,9 @@ def load_data(data_type, use_v1_data=False): ##### CP
         - *'f'* -- :math:`f_c(z)` fractions without backreaction; and
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
-
+        
+    use_v1_data : bool
+        If True, use data files from version 1.0 of DarkHistory, which does not include ['tf_helper'], ['binning']['ics_eng'], ['binning']['ics_rel_eng']
 
     Returns
     --------
@@ -223,9 +225,10 @@ def load_data(data_type, use_v1_data=False): ##### CP
     if data_type == 'binning':
 
         if glob_binning_data is None:
-            glob_binning_data = pickle.load(open(load_data_path+'binning.p', 'rb'))
+            glob_binning_data = pickle.load(open(load_data_path+'default_binning.p', 'rb'))
 
         return glob_binning_data # keys: 'phot', 'elec', 'ics_eng', 'ics_rel_eng'
+        # if use_v1_data==True, return keys: 'phot', 'elec'
 
     ##################################################
     ### transfer functions

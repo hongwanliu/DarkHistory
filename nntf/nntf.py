@@ -83,13 +83,13 @@ class NNTFRaw:
         ####################
         ### data
         binning_data = load_data('binning')
-        if self.TF_type == 'CTF': # [in, out]
-            self.io_abscs = np.log([binning_data['phot'], binning_data['phot']])
-        elif self.TF_type == 'LEE':
+        if self.TF_type in ['hep_p12', 'hep_s11']:
+            self.io_abscs = np.log([binning_data['phot'], binning_data['phot']]) # [in, out]
+        elif self.TF_type == 'lee':
             self.io_abscs = np.log([binning_data['phot'], binning_data['elec']])
-        elif self.TF_type == 'ICS':
+        elif self.TF_type == 'ics':
             self.io_abscs = np.log([binning_data['ics_eng'], binning_data['ics_eng']])
-        elif self.TF_type == 'ICSREL':
+        elif self.TF_type == 'ics_rel':
             self.io_abscs = np.log([binning_data['ics_rel_eng'], binning_data['ics_rel_eng']])
         else:
             raise ValueError('Invalid TF_type.')
@@ -102,18 +102,17 @@ class NNTFRaw:
         ####################
         ### mask (same for all (rs, xH, xHe))
         self.mask = np.full(self.TF_shape, 0)
-        if self.TF_type == 'CTF':
+        if self.TF_type in ['hep_p12', 'hep_s11']:
             for ii in range(173, 500):
                 self.mask[ii,:ii+1] += 1
-        elif self.TF_type == 'LEE':
-            me = phys.me
+        elif self.TF_type == 'lee':
             self.mask[223:,:136] += 1 # Eout < 3 keV, Ein > 3 keV
             for ii in range(200, 223):
                 Ein = binning_data['phot'][ii]
                 Eomax = (2 * Ein**2) / (phys.me + 2*Ein) # max kinetic energy of outgoing electron in compton scattering
                 oimax = np.searchsorted(binning_data['elec'], Eomax) # max oi
                 self.mask[ii,:oimax+1] += 1
-        elif self.TF_type == 'ICS' or self.TF_type == 'ICSREL': ##################### edit mask
+        elif self.TF_type in ['ics', 'ics_rel']: ##################### edit mask
             self.mask += 1
                 
         ####################
@@ -126,32 +125,30 @@ class NNTFRaw:
         self._pred_in_2D = np.array(self._pred_in_2D, dtype=np.float32)
         
         
-    def predict_raw_TF(self, verbose=False, **params):
+    def predict_raw_TF(self, rs=4.0, xH=None, xHe=None):
         
-        if self.TF_type == 'CTF' or self.TF_type == 'LEE':
-            rs  = params['rs']
-            xH  = np.clip(params['xH'], XMIN, XMAX) if 'xH' in params else None
-            xHe = np.clip(params['xHe']/0.07894737, XMIN, XMAX) if 'xHe' in params else None # convert to idl code's convention
+        if self.TF_type in ['hep_p12', 'hep_s11', 'lee']:
             rs_in = np.log(rs)
             if rs > RS_NODES[1]:   # regime 2
                 xH_in  = 4.0
                 xHe_in = 4.0
             elif rs > RS_NODES[0]: # regime 1
-                xH_in  = np.arctanh(2*xH-1)
+                xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
                 xHe_in = -5.0
             else:                  # regime 0
-                xH_in  = np.arctanh(2*xH-1)
-                xHe_in = np.arctanh(2*xHe-1)
+                xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
+                xHe_in = np.arctanh(2*np.clip(xHe/(phys.YHe/(4*(1-phys.YHe))), XMIN, XMAX)-1)
         
             pred_in_shape = (len(self._pred_in_2D),)
             pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
                              np.full( pred_in_shape, xHe_in, dtype=np.float32 ),
                              np.full( pred_in_shape, rs_in , dtype=np.float32 ),
                              self._pred_in_2D ]
-        elif self.TF_type == 'ICS' or self.TF_type == 'ICSREL':
+        elif self.TF_type in ['ics', 'ics_rel']:
             pred_in = self._pred_in_2D
         
-        pred_out = np.array(self.model.predict(pred_in, batch_size=len(pred_in), verbose=verbose)).flatten()
+        #pred_out = np.array(self.model.predict(pred_in, batch_size=len(pred_in))).flatten()
+        pred_out = np.array(self.model.predict_on_batch(pred_in)).flatten()
         
         # build raw_TF
         self.raw_TF = np.full(self.TF_shape, LOG_EPSILON)
@@ -180,19 +177,33 @@ class NNTF (NNTFRaw):
         super().__init__(model, TF_type)
         self.TF = None
         
-        if self.TF_type == 'CTF' or self.TF_type == 'LEE':
+        if self.TF_type in ['hep_p12', 'hep_s11', 'lee']:
             tf_helper_data = load_data('tf_helper')
             self.lci_interp = tf_helper_data['lci']
     
-    def predict_TF(self, **params):
+    def predict_TF(self, rs=4.0, xH=None, xHe=None, E_arr=None):
         
-        self.predict_raw_TF(**params)
+        self.predict_raw_TF(rs=rs, xH=xH, xHe=xHe)
         self.TF = np.exp(self.raw_TF)
         
-        if self.TF_type == 'LEE':
-            lci = int(np.round(self.lci_interp.get_val(params['xH'], params['xHe'], params['rs']))) # xHe in lci_interp is DarkHistory convention
+        if self.TF_type in ['hep_p12', 'hep_s11', 'lee']:
+            
+            ### cut below lci
+            lci = int(np.round(self.lci_interp.get_val(xH, xHe, rs)))
+                # xHe in lci_interp is in DarkHistory convention
             self.TF[:lci,:] = 0
-    
+            if self.TF_type == 'hep_s11':
+                for i in range(self.TF_shape[0]):
+                    self.TF[i][i] += 1
+        
+            ### adjust for E_arr
+            i_start = lci if self.TF_type in ['hep_p12', 'lee'] else 12
+            for i in range(i_start, 500):
+                if self.TF_type in ['hep_p12', 'hep_s11']:
+                    normalize_to_E(E_arr, N_arr, i-12, i, E_arr[i])
+                else:
+                    normalize_to_E(E_arr, N_arr, 135, 135, E_arr[i])
+                
     def __call__(self, in_spec, **params):
         #if not np.all(np.log(in_spec.eng) == self.io_abscs[0]):
         #    raise ValueError('Incompatible input abscissa.')
@@ -201,3 +212,9 @@ class NNTF (NNTFRaw):
         
         out_spec_N = np.dot(in_spec.N, self.TF)
         return Spectrum(np.exp(self.io_abscs[1]), out_spec_N, rs=params['rs'], spec_type='N')
+    
+    
+def normalize_to_E(E_arr, N_arr, i_s, i_e, truth): # (absc, arr in N, [i_s:i_e+1])
+    part = np.dot(E_arr[i_s:i_e+1], N_arr[i_s:i_e+1])
+    part_target = part + (truth - np.dot(E_arr, N_arr))
+    N_arr[i_s:i_e+1] *= (part_target/part)
