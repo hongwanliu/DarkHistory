@@ -1995,18 +1995,18 @@ def ymu_distortion(nu, amp, T, dist_type):
     -------
     Intensity in units of (eV/s) / cm^2 / ster / Hz
     """
-    x = 2 * np.pi * phys.hbar * nu / phys.kB / T
+    x = 2 * np.pi * hbar * nu / kB / T
     
     # can we add i-type distortions as well?
     
     if dist_type == 'y':
-        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
+        return (amp * 4. * np.pi * hbar * nu**3 / c**2
                 * x * np.exp(x) / (np.exp(x) - 1.)**2
                 *(x * (np.exp(x) + 1.) / (np.exp(x) - 1.) - 4.)
                )
     
     elif dist_type == 'mu':
-        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
+        return (amp * 4. * np.pi * hbar * nu**3 / c**2
                 * np.exp(x) / (np.exp(x) - 1.)**2
                 *(x / 2.19 - 1.)
                )
