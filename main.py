@@ -675,62 +675,7 @@ def evolve(
         # tf_mode: debug            #
         #############################
         if tf_mode == 'debug':
-            
-            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-                get_tf(
-                    rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=coarsen_factor, use_v1_data=(tf_mode=='table_v1')
-                )
-            )
-            
-            if rs > 1600:
-                LEE_TF = LEE_R2
-            elif rs > 48: # regime 0 valid to ~49
-                LEE_TF = LEE_R1
-            else:
-                LEE_TF = LEE_R0
-            LEE_TF.predict_TF(rs=rs, xH=xHII_to_interp, xHe=xHeII_to_interp)
-            #LEE_tfgv = LEE_TF.TF
-            #for ii in range(500):
-            #    for oi in range(500):
-            #        if lowengelec_tf._grid_vals[ii][oi] < 1e-30:
-            #            LEE_tfgv[ii][oi] = 1e-100
-            #tf_arr.append( (lowengelec_tf._grid_vals, LEE_TF.TF) )
-            lowengelec_tf._grid_vals = np.matmul( prop_tf, LEE_TF.TF )
-
-            # Get the spectra for the next step by applying the 
-            # transfer functions. 
-            highengdep_at_rs = np.dot(
-                np.swapaxes(highengdep_arr, 0, 1),
-                out_highengphot_specs[-1].N
-            )
-            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
-            
-            # record redshift energy loss
-            if coarsen_factor == 1:
-                rs_to_interpolate = rs
-                rsloss_N = out_highengphot_specs[-1].N
-            else:
-                rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-                rsloss_N = np.dot(out_highengphot_specs[-1].N, prop_tf)
-            
-            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interpolate)
-            hep_lb_i = np.searchsorted(photeng, hep_lb)
-            relevantindices = np.zeros((500,))
-            relevantindices[hep_lb_i:] += 1
-            eng['RSL'] = np.sum( relevantindices * rsloss_N * photeng ) * dlnz
-            
-            # tmp fix energy conservation
-            dt_mid = dlnz * coarsen_factor / phys.hubble(rs_to_interpolate) # uses rs_to_interpolate instead of rs
-            eng['in']  = out_highengphot_specs[-1].toteng()
-            eng['HEP'] = highengphot_spec_at_rs.toteng()
-            eng['LEP'] = lowengphot_spec_at_rs.toteng()
-            eng['LEE'] = lowengelec_spec_at_rs.toteng()
-            eng['HED'] = np.sum(highengdep_at_rs) * dt_mid
-            eng['out'] = eng['HEP'] + eng['LEP'] + eng['LEE'] + eng['HED'] + eng['RSL']
-            #highengphot_spec_at_rs *= (eng['HEP'] + (eng['in']-eng['out'])) / eng['HEP']
+            pass
             
         #############################
         # tf_mode: table[_v1]       #
@@ -785,13 +730,6 @@ def evolve(
             hep_p12_tf, hep_s11_tf = get_ctf(rs_to_interpolate, xHII_to_interp, xHeII_to_interp)
             hep_p12_gv = hep_p12_tf._grid_vals
             hep_s11_gv = hep_s11_tf._grid_vals
-            
-            # debug
-            #hep_p12_gv_o = np.linalg.matrix_power(highengphot_tf._grid_vals, coarsen_factor)
-            #hep_s11_gv_o = np.zeros_like(highengphot_tf._grid_vals)
-            #for i in range(coarsen_factor):
-            #    hep_s11_gv_o += np.linalg.matrix_power(highengphot_tf._grid_vals, i)
-            #tf_arr.append([hep_p12_gv, hep_p12_gv_o])
             
             # compounding
             lowengphot_tf._grid_vals = np.matmul(
