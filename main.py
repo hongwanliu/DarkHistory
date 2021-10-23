@@ -155,31 +155,27 @@ def evolve(
     photeng = binning['phot']
     eleceng = binning['elec']
 
-    ############# Section: later will separate into modes #############
-    dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
-    highengphot_tf_interp = dep_tf_data['highengphot']
-    lowengphot_tf_interp  = dep_tf_data['lowengphot']
-    lowengelec_tf_interp  = dep_tf_data['lowengelec']
-    highengdep_interp     = dep_tf_data['highengdep']
-    
-    tf_helper_data = load_data( 'tf_helper' )
-    HEPp12_E_interp = tf_helper_data['hep_p12_E']
-    HEPs11_E_interp = tf_helper_data['hep_s11_E']
-    hep_lb_interp    = tf_helper_data['hep_lb']
-    
     if tf_mode == 'table' or tf_mode == 'table_v1':
-        None
+        dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
+        highengphot_tf_interp = dep_tf_data['highengphot']
+        lowengphot_tf_interp  = dep_tf_data['lowengphot']
+        lowengelec_tf_interp  = dep_tf_data['lowengelec']
+        highengdep_interp     = dep_tf_data['highengdep']
     elif tf_mode == 'CTF':
-        dep_ctf_data = load_data( 'dep_ctf' )
-        hep_p12_interp = dep_ctf_data['hep_p12']
-        hep_s11_interp = dep_ctf_data['hep_s11']
+        dep_ctf_data = load_data('dep_ctf')
     elif tf_mode == 'NNCTF':
-        None
-    else:
-        print('Invalid tf_mode!')
-    
-    # Neural network transfer function # to be fitted into load_data
-    if tf_mode == 'NNCTF':
+        # tmp
+        dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
+        highengphot_tf_interp = dep_tf_data['highengphot']
+        lowengphot_tf_interp  = dep_tf_data['lowengphot']
+        lowengelec_tf_interp  = dep_tf_data['lowengelec']
+        highengdep_interp     = dep_tf_data['highengdep']
+        # tmp end
+        
+        tf_helper_data = load_data('tf_helper')
+        tf_E_interp = tf_helper_data['tf_E']
+        hep_lb_interp    = tf_helper_data['hep_lb']
+        
         MODEL_DIR = '/zfs/yitians/darkhistory/NNDH/training/models/'
         HEPp12_R2 = NNTF(MODEL_DIR + '20210524_HEPp12_R2_run0', 'CTF')
         HEPp12_R1 = NNTF(MODEL_DIR + '20210122_HEPp12_R1_long_run0', 'CTF')
@@ -187,11 +183,12 @@ def evolve(
         HEPs11_R2 = NNTF(MODEL_DIR + '20210524_HEPs11_R2_run0', 'CTF')
         HEPs11_R1 = NNTF(MODEL_DIR + '20210122_HEPs11_R1_run0', 'CTF')
         HEPs11_R0 = NNTF(MODEL_DIR + '20210122_HEPs11_R0_run0', 'CTF')
-    elif tf_mode == 'debug':
-        MODEL_DIR = '/zfs/yitians/darkhistory/NNDH/training/models/'
+        
         LEE_R2 = NNTF(MODEL_DIR + 'LEE_R2_run0', 'LEE')
         LEE_R1 = NNTF(MODEL_DIR + 'LEE_R1_run0', 'LEE')
         LEE_R0 = NNTF(MODEL_DIR + 'LEE_R0_run0', 'LEE')
+    else:
+        print('Invalid tf_mode!')
     
     ics_tf_data = load_data('ics_tf')
 
