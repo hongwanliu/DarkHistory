@@ -10,7 +10,7 @@ from numpy.linalg import matrix_power
 # from tf_data import *
 
 from config import load_data
-
+from nntf.nntf import load_model
 
 import darkhistory.physics as phys
 
@@ -30,7 +30,6 @@ from darkhistory.low_energy.lowE_electrons import make_interpolator
 from darkhistory.history import tla
 
 import time
-#from nntf.nntf import NNTF
 
 def evolve(
     in_spec_elec=None, in_spec_phot=None,
@@ -43,7 +42,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
-    tf_mode='table' # modes: 'table', 'table_v1', 'CTF' (tmp?), 'NNCTF' (tmp name) ('debug')
+    tf_mode='table' # modes: 'table', 'table_v1', 'nntf'
 ):
     """
     Main function computing histories and spectra. 
@@ -164,33 +163,40 @@ def evolve(
         
         tf_helper_data = load_data('tf_helper')
         tf_E_interp = tf_helper_data['tf_E']
-        hep_lb_interp    = tf_helper_data['hep_lb']
+        hep_lb_interp = tf_helper_data['hep_lb']
+        
     elif tf_mode == 'CTF':
         dep_ctf_data = load_data('dep_ctf')
-    elif tf_mode == 'NNCTF':
+        
+    elif tf_mode == 'nntf':
+        print('coarsen_factor is set to 12!')
+        coarsen_factor = 12
         # tmp
         dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
         highengphot_tf_interp = dep_tf_data['highengphot']
         lowengphot_tf_interp  = dep_tf_data['lowengphot']
         lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
+        dep_ctf_data = load_data('dep_ctf')
+        hep_ctf_interp = dep_ctf_data['hep']
+        prp_ctf_interp = dep_ctf_data['prp']
         # tmp end
         
         tf_helper_data = load_data('tf_helper')
-        tf_E_interp = tf_helper_data['tf_E']
-        hep_lb_interp    = tf_helper_data['hep_lb']
+        tf_E_interp   = tf_helper_data['tf_E']
+        hep_lb_interp = tf_helper_data['hep_lb']
         
-        MODEL_DIR = '/zfs/yitians/darkhistory/NNDH/training/models/'
-        HEPp12_R2 = NNTF(MODEL_DIR + '20210524_HEPp12_R2_run0', 'CTF')
-        HEPp12_R1 = NNTF(MODEL_DIR + '20210122_HEPp12_R1_long_run0', 'CTF')
-        HEPp12_R0 = NNTF(MODEL_DIR + '20210122_HEPp12_R0_long_run0', 'CTF')
-        HEPs11_R2 = NNTF(MODEL_DIR + '20210524_HEPs11_R2_run0', 'CTF')
-        HEPs11_R1 = NNTF(MODEL_DIR + '20210122_HEPs11_R1_run0', 'CTF')
-        HEPs11_R0 = NNTF(MODEL_DIR + '20210122_HEPs11_R0_run0', 'CTF')
+        nntf_data = load_model('dep_nntf')
+        hep_nntf    = nntf_data['hep']
+        prp_nntf    = nntf_data['prp']
+        lee_nntf    = nntf_data['lee']
+        lep_recontf = nntf_data['lep']
         
-        LEE_R2 = NNTF(MODEL_DIR + 'LEE_R2_run0', 'LEE')
-        LEE_R1 = NNTF(MODEL_DIR + 'LEE_R1_run0', 'LEE')
-        LEE_R0 = NNTF(MODEL_DIR + 'LEE_R0_run0', 'LEE')
+        nntf_data = load_model('ics_nntf')
+        ics_thm_nntf = nntf_data['ics_thm']
+        ics_rel_nntf = nntf_data['ics_rel']
+        ics_enl_nntf = nntf_data['ics_enl']
+        
     else:
         print('Invalid tf_mode!')
     
@@ -414,7 +420,7 @@ def evolve(
     #####################################
     # Book keeping                      #
     #####################################
-    log_file = open('/zfs/yitians/darkhistory/DarkHistory/nntf/tests/evolve.log', 'w')
+    log_file = open('evolve.log', 'w')
     tf_arr = []
     debug_arr = []
     
@@ -702,13 +708,13 @@ def evolve(
             
             # record redshift energy loss
             if coarsen_factor == 1:
-                rs_to_interpolate = rs
+                rs_to_interp = rs
                 rsloss_N = out_highengphot_specs[-1].N
             else:
-                rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+                rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
                 rsloss_N = np.dot(out_highengphot_specs[-1].N, prop_tf)
             
-            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interpolate)
+            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interp)
             hep_lb_i = np.searchsorted(photeng, hep_lb)
             relevantindices = np.zeros((500,))
             relevantindices[hep_lb_i:] += 1
@@ -719,16 +725,16 @@ def evolve(
         #############################
         elif tf_mode == 'CTF' and coarsen_factor == 12:
             
-            rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                 get_tf(
-                    rs_to_interpolate, xHII_to_interp, xHeII_to_interp,
+                    rs_to_interp, xHII_to_interp, xHeII_to_interp,
                     dlnz, coarsen_factor=1
                 )
             )
             
-            hep_p12_tf, hep_s11_tf = get_ctf(rs_to_interpolate, xHII_to_interp, xHeII_to_interp)
+            hep_p12_tf, hep_s11_tf = get_ctf(rs_to_interp, xHII_to_interp, xHeII_to_interp)
             hep_p12_gv = hep_p12_tf._grid_vals
             hep_s11_gv = hep_s11_tf._grid_vals
             
@@ -755,74 +761,61 @@ def evolve(
             
             # record redshift energy loss
             rsloss_N = np.dot(out_highengphot_specs[-1].N, hep_s11_gv)
-            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interpolate)
+            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interp)
             hep_lb_i = np.searchsorted(photeng, hep_lb)
             relevantindices = np.zeros((500,))
             relevantindices[hep_lb_i:] += 1
             eng['RSL'] = np.sum( relevantindices * rsloss_N * photeng ) * dlnz
             
         #############################
-        # tf_mode: NNCTF            #
+        # tf_mode: nntf             #
         #############################
-        elif tf_mode == 'NNCTF' and coarsen_factor == 12:
+        elif tf_mode == 'nntf':
             
-            rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             
-            # tmp
-            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-                get_tf(
-                    rs_to_interpolate, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=1
-                )
-            )
+            ## obtain TF
+            rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
+            rsxHxHe_key = { 'rs' : rs_to_interp,
+                            'xH' : xHII_to_interp,
+                            'xHe': xHeII_to_interp }
+            hep_E, prp_E, lee_E = tf_E_interp.get_val(*rsxHxHe_loc)
+            hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
+            prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
+            lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
+            lep_recontf.get_TF(**rsxHxHe_key)
+            hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
             
-            if rs_to_interpolate > 1600:
-                HEPp12 = HEPp12_R2
-                HEPs11 = HEPs11_R2
-            elif rs_to_interpolate > 48:
-                HEPp12 = HEPp12_R1
-                HEPs11 = HEPs11_R1
-            else:
-                HEPp12 = HEPp12_R0
-                HEPs11 = HEPs11_R0
-            
-            ## pred
-            HEPp12.predict_TF(rs=rs_to_interpolate, xH=xHII_to_interp, xHe=xHeII_to_interp)
-            HEPs11.predict_TF(rs=rs_to_interpolate, xH=xHII_to_interp, xHe=xHeII_to_interp)
+            # tmp fix
+            hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            lep_recontf.TF = lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            lee_nntf.TF = lowengelec_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
 
             # compounding
-            lowengphot_tf._grid_vals = np.matmul(
-                HEPs11_tfgv, lowengphot_tf._grid_vals
-            )
-            lowengelec_tf._grid_vals = np.matmul(
-                HEPs11_tfgv, lowengelec_tf._grid_vals
-            )
-            highengdep_arr = (
-                np.matmul(HEPs11_tfgv, highengdep_arr)/coarsen_factor
-            )
+            lep_recontf.TF = np.matmul( prp_nntf.TF, lep_recontf.TF )
+            lee_nntf.TF    = np.matmul( prp_nntf.TF, lee_nntf.TF    )
+            hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
             
             # compute redshift energy loss
-            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interpolate)
+            hep_lb = hep_lb_interp.get_val(*rsxHxHe_loc)
             hep_lb_i = np.searchsorted(photeng, hep_lb)
             relevantindices = np.zeros((500,))
             relevantindices[hep_lb_i:] += 1
-            RSloss_tf = np.matmul(HEPs11_tfgv, relevantindices*photeng*dlnz)
+            RSloss_tf = np.matmul(prp_nntf.TF, relevantindices*photeng*dlnz)
             RSloss = np.dot(out_highengphot_specs[-1].N, RSloss_tf)
             eng['RSL'] = RSloss
-            
-            highengphot_tf._grid_vals = HEPp12_tfgv
-            
+
             # record tfs used
-            tf_arr.append([HEPp12_tfgv, HEPp12_tf.grid_vals, HEPs11_tfgv, HEPs11_tf.grid_vals])
+            tf_arr.append([hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
+                           hep_nntf.TF])
             
             # apply tf
-            highengdep_at_rs = np.dot(
-                np.swapaxes(highengdep_arr, 0, 1),
-                out_highengphot_specs[-1].N
-            )
-            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+            highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lep_recontf( out_highengphot_specs[-1] )
+            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
+                                       out_highengphot_specs[-1].N )
         
         ################################################################################
         
@@ -830,8 +823,10 @@ def evolve(
         # Outputs                   #
         #############################
         
+        # record things
+        
         # check energy conservation
-        dt_mid = dlnz * coarsen_factor / phys.hubble(rs_to_interpolate) # uses rs_to_interpolate instead of rs
+        dt_mid = dlnz * coarsen_factor / phys.hubble(rs_to_interp) # uses rs_to_interp instead of rs
         
         eng['in']  = out_highengphot_specs[-1].toteng()
         eng['HEP'] = highengphot_spec_at_rs.toteng()
@@ -840,8 +835,8 @@ def evolve(
         eng['HED'] = np.sum(highengdep_at_rs) * dt_mid
         eng['out'] = eng['HEP'] + eng['LEP'] + eng['LEE'] + eng['HED'] + eng['RSL']
 
-        show_text  = 'rs=%.3f ' % rs_to_interpolate
-        show_text += '[%.2f%%]  ' % ( 100*(np.log10(start_rs)-np.log10(rs_to_interpolate)) / (np.log10(start_rs)-np.log10(end_rs)) )
+        show_text  = 'rs=%.3f ' % rs_to_interp
+        show_text += '[%.2f%%]  ' % ( 100*(np.log10(start_rs)-np.log10(rs_to_interp)) / (np.log10(start_rs)-np.log10(end_rs)) )
         show_text += 'Tot:%.3fs ' % (time.time() - loop_timer_start)
         show_text += 'TF:%.3fs  ' % (time.time() - tf_timer_start)
         show_text += 'xH=%.3e '   % xHII_to_interp
@@ -932,8 +927,7 @@ def evolve(
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
         'f': f,
-        'TF': tf_arr,
-        'debug': debug_arr
+        'tf': tf_arr
     }
 
     return data

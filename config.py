@@ -13,7 +13,6 @@ from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 from scipy.interpolate import RegularGridInterpolator
 
-
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
@@ -167,6 +166,7 @@ class PchipInterpolator2D:
         return np.log10(
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
+    
 
 def load_data(data_type, use_v1_data=False):
     """ Loads data from downloaded files. 
@@ -278,13 +278,13 @@ def load_data(data_type, use_v1_data=False):
         if glob_dep_ctf_data is None:
             
             print('****** Loading compounded transfer function data... ******')
-            hep_p12_interp = pickle.load( open(load_data_path+'hep_p12_tf_interp.raw', 'rb'))
-            hep_s11_interp = pickle.load( open(load_data_path+'hep_s11_tf_interp.raw', 'rb'))
+            hep_ctf_interp = pickle.load( open(load_data_path+'hep_p12_tf_interp.raw', 'rb'))
+            prp_ctf_interp = pickle.load( open(load_data_path+'hep_s11_tf_interp.raw', 'rb'))
             print('****** Loading complete! ******')
             
             glob_dep_ctf_data = {
-                'hep_p12': hep_p12_interp,
-                'hep_s11': hep_s11_interp
+                'hep': hep_ctf_interp,
+                'prp': prp_ctf_interp
             }
 
         return glob_dep_ctf_data

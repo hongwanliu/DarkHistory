@@ -6,22 +6,15 @@ import time
 import sys
 import pickle
 
-#import tensorflow as tf
 from tensorflow import keras
 
 sys.path.append('..')
 from config import load_data
+from config import data_path
 from darkhistory.spec.spectrum import Spectrum
 import darkhistory.physics as phys
 
-#from nntf.interps.interps import Interps
-#HEP_L = Interps(DH_DIR + 'nntf/interps/HEP_L.interps')
-#LB = Interps(DH_DIR + 'nntf/interps/lowerbound.interps')
-
-#NNDH_DIR = '/zfs/yitians/darkhistory/NNDH/'
-#sys.path.append(NNDH_DIR + 'training')
-#import losses
-#tf.keras.utils.get_custom_objects().update({"msep": losses.msep})
+from nntf.recontf import LEPTF
 
 ####################
 ### CONSTANTS
@@ -30,7 +23,7 @@ EPSILON = 1e-100
 LOG_EPSILON = np.log(EPSILON)
 LOG10_EPSILON = np.log10(EPSILON)
 
-XMAX = (np.tanh(4)+1)/2
+XMAX = (np.tanh(+4)+1)/2
 XMIN = (np.tanh(-5)+1)/2
 
 RS_NODES = [40, 1600]
@@ -84,15 +77,16 @@ class NNTFRaw:
         ### data
         binning_data = load_data('binning')
         if self.TF_type in ['hep_p12', 'hep_s11']:
-            self.io_abscs = np.log([binning_data['phot'], binning_data['phot']]) # [in, out]
+            self.abscs = [binning_data['phot'], binning_data['phot']] # [in, out]
         elif self.TF_type == 'lee':
-            self.io_abscs = np.log([binning_data['phot'], binning_data['elec']])
+            self.abscs = [binning_data['phot'], binning_data['elec']]
         elif self.TF_type == 'ics':
-            self.io_abscs = np.log([binning_data['ics_eng'], binning_data['ics_eng']])
+            self.abscs = [binning_data['ics_eng'], binning_data['ics_eng']]
         elif self.TF_type == 'ics_rel':
-            self.io_abscs = np.log([binning_data['ics_rel_eng'], binning_data['ics_rel_eng']])
+            self.abscs = [binning_data['ics_rel_eng'], binning_data['ics_rel_eng']]
         else:
             raise ValueError('Invalid TF_type.')
+        self.io_abscs = np.log(self.abscs)
         
         ####################
         ### TF
@@ -185,6 +179,7 @@ class NNTF (NNTFRaw):
         
         self.predict_raw_TF(rs=rs, xH=xH, xHe=xHe)
         self.TF = np.exp(self.raw_TF)
+        self.rs = rs
         
         if self.TF_type in ['hep_p12', 'hep_s11', 'lee']:
             
@@ -200,21 +195,88 @@ class NNTF (NNTFRaw):
             i_start = lci if self.TF_type in ['hep_p12', 'lee'] else 12
             for i in range(i_start, 500):
                 if self.TF_type in ['hep_p12', 'hep_s11']:
-                    normalize_to_E(E_arr, N_arr, i-12, i, E_arr[i])
+                    normalize_to_E(self.abscs[0], self.TF[i], i-12, i, E_arr[i])
                 else:
-                    normalize_to_E(E_arr, N_arr, 135, 135, E_arr[i])
+                    normalize_to_E(self.abscs[0], self.TF[i], 135, 135, E_arr[i])
                 
-    def __call__(self, in_spec, **params):
-        #if not np.all(np.log(in_spec.eng) == self.io_abscs[0]):
-        #    raise ValueError('Incompatible input abscissa.')
-        
-        self.predict_TF(**params)
-        
+    def __call__(self, in_spec):
         out_spec_N = np.dot(in_spec.N, self.TF)
-        return Spectrum(np.exp(self.io_abscs[1]), out_spec_N, rs=params['rs'], spec_type='N')
+        return Spectrum(self.abscs[1], out_spec_N, rs=self.rs, spec_type='N')
+    
+
+class NNTF_Rs: # switch NNTF between multiple regimes
+    def __init__(self, models, rs_nodes, TF_type):
+        if len(rs_nodes) != len(models)-1:
+            raise ValueError('Models and rs_nodes not matching.')
+        self.NNTFs = [ NNTF(model, TF_type) for model in models ]
+        self.rs_nodes = rs_nodes
+        self.TF = None
+        self.rs = None
+    
+    def predict_TF(self, rs=4.0, **params):
+        self.ri = np.searchsorted(self.rs_nodes, rs)
+        self.NNTFs[self.ri].predict_TF(rs=rs, **params)
+        self.TF = self.NNTFs[self.ri].TF
+    
+    def __call__(self, in_spec, **params):
+        return self.NNTFs[self.ri](in_spec)
     
     
-def normalize_to_E(E_arr, N_arr, i_s, i_e, truth): # (absc, arr in N, [i_s:i_e+1])
-    part = np.dot(E_arr[i_s:i_e+1], N_arr[i_s:i_e+1])
-    part_target = part + (truth - np.dot(E_arr, N_arr))
+def normalize_to_E(E_absc, N_arr, i_s, i_e, truth): # (absc, arr in N, [i_s:i_e+1])
+    part = np.dot(E_absc[i_s:i_e+1], N_arr[i_s:i_e+1])
+    part_target = part + (truth - np.dot(E_absc, N_arr))
     N_arr[i_s:i_e+1] *= (part_target/part)
+
+    
+########################################
+
+glob_dep_nntfs = None
+glob_ics_nntfs = None
+
+def load_model(model_type):
+    
+    global glob_dep_nntfs, glob_ics_nntfs
+    
+    model_path = data_path + '/nntf_models/'
+    
+    if model_type == 'dep_nntf':
+        
+        if glob_dep_nntfs is None:
+            
+            rs_nodes = [40, 1600]
+            hep_nntf = NNTF_Rs([model_path+'20210122_HEPp12_R0_long_run0',
+                                model_path+'20210122_HEPp12_R1_long_run0',
+                                model_path+'20210524_HEPp12_R2_run0'],
+                                rs_nodes, 'hep_p12')
+            prp_nntf = NNTF_Rs([model_path+'20210122_HEPs11_R0_run0',
+                                model_path+'20210122_HEPs11_R1_run0',
+                                model_path+'20210524_HEPs11_R2_run0'],
+                               rs_nodes, 'hep_s11')
+            lee_nntf = NNTF_Rs([model_path+'LEE_R0_run0',
+                                model_path+'LEE_R1_run0',
+                                model_path+'LEE_R2_run0'],
+                               rs_nodes, 'lee')
+            lep_recontf  = LEPTF()
+            
+            glob_dep_nntfs = {
+                'hep' : hep_nntf,
+                'prp' : prp_nntf,
+                'lee' : lee_nntf,
+                'lep' : lep_recontf
+            }
+            return glob_dep_nntfs
+        
+    elif model_type == 'ics_nntf':
+        
+        if glob_ics_nntfs is None:
+            
+            ics_thm_nntf = None
+            ics_rel_nntf = None
+            ics_enl_nntf = None
+            
+            glob_ics_nntfs = {
+                'ics_thm' : ics_thm_nntf,
+                'ics_rel' : ics_rel_nntf,
+                'ics_enl' : ics_enl_nntf
+            }
+            return glob_ics_nntfs
