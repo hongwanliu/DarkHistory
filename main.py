@@ -161,11 +161,16 @@ def evolve(
         lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
         
+        ics_tf_data = load_data('ics_tf')
+        ics_thomson_ref_tf = ics_tf_data['thomson']
+        ics_rel_ref_tf     = ics_tf_data['rel']
+        engloss_ref_tf     = ics_tf_data['engloss']
+        
         tf_helper_data = load_data('tf_helper')
         tf_E_interp = tf_helper_data['tf_E']
         hep_lb_interp = tf_helper_data['hep_lb']
         
-    elif tf_mode == 'CTF':
+    elif tf_mode == 'ctf':
         dep_ctf_data = load_data('dep_ctf')
         
     elif tf_mode == 'nntf':
@@ -187,24 +192,20 @@ def evolve(
         hep_lb_interp = tf_helper_data['hep_lb']
         
         nntf_data = load_model('dep_nntf')
-        hep_nntf    = nntf_data['hep']
-        prp_nntf    = nntf_data['prp']
-        lee_nntf    = nntf_data['lee']
-        lep_recontf = nntf_data['lep']
+        hep_nntf = nntf_data['hep']
+        prp_nntf = nntf_data['prp']
+        lee_nntf = nntf_data['lee']
+        lep_pdtf = nntf_data['lep']
         
         nntf_data = load_model('ics_nntf')
-        ics_thm_nntf = nntf_data['ics_thm']
-        ics_rel_nntf = nntf_data['ics_rel']
-        ics_enl_nntf = nntf_data['ics_enl']
+        ics_thomson_ref_tf = nntf_data['ics_thomson'].TFAR
+        engloss_ref_tf     = nntf_data['ics_engloss'].TFAR
+        ics_rel_ref_tf     = nntf_data['ics_ref'].TFAR
         
     else:
         print('Invalid tf_mode!')
     
-    ics_tf_data = load_data('ics_tf')
-
-    ics_thomson_ref_tf = ics_tf_data['thomson']
-    ics_rel_ref_tf     = ics_tf_data['rel']
-    engloss_ref_tf     = ics_tf_data['engloss']
+    
     ########################## Section: end ##########################
     
     #####################################
@@ -718,8 +719,64 @@ def evolve(
             hep_lb_i = np.searchsorted(photeng, hep_lb)
             relevantindices = np.zeros((500,))
             relevantindices[hep_lb_i:] += 1
-            eng['RSL'] = np.sum( relevantindices * rsloss_N * photeng ) * dlnz
-        
+            eng['rsl'] = np.sum( relevantindices * rsloss_N * photeng ) * dlnz
+            
+        #############################
+        # tf_mode: nntf             #
+        #############################
+        elif tf_mode == 'nntf':
+            
+            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            
+            ## obtain TF
+            rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
+            rsxHxHe_key = { 'rs' : rs_to_interp,
+                            'xH' : xHII_to_interp,
+                            'xHe': xHeII_to_interp }
+            hep_E, prp_E, lee_E = tf_E_interp.get_val(*rsxHxHe_loc) # what the xHe convention
+            hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
+            prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
+            lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
+            lep_pdtf.predict_TF(**rsxHxHe_key)
+            hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
+            
+            # tmp fix
+            hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            lep_pdtf.TF = lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            lee_nntf.TF = lowengelec_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+
+            # compounding
+            lep_pdtf.TF = np.matmul( prp_nntf.TF, lep_pdtf.TF )
+            lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF    )
+            hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
+            
+            # compute redshift energy loss
+            hep_lb = hep_lb_interp.get_val(*rsxHxHe_loc)
+            hep_lb_i = np.searchsorted(photeng, hep_lb)
+            relevantindices = np.zeros((500,))
+            relevantindices[hep_lb_i:] += 1
+            rsloss_tf = np.matmul(prp_nntf.TF, relevantindices*photeng*dlnz)
+            rsloss = np.dot(out_highengphot_specs[-1].N, rsloss_tf)
+            eng['rsl'] = rsloss
+
+            # record tfs used
+            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
+                get_tf(
+                    rs, xHII_to_interp, xHeII_to_interp,
+                    dlnz, coarsen_factor=12, use_v1_data=False
+                )
+            )
+            tf_arr.append([lee_nntf.TF, lowengelec_tf._grid_vals])
+            
+            # apply tf
+            highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
+            #lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lep_pdtf( out_highengphot_specs[-1] )
+            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
+                                       out_highengphot_specs[-1].N )
+            
         #############################
         # tf_mode: CTF              #
         #############################
@@ -765,57 +822,7 @@ def evolve(
             hep_lb_i = np.searchsorted(photeng, hep_lb)
             relevantindices = np.zeros((500,))
             relevantindices[hep_lb_i:] += 1
-            eng['RSL'] = np.sum( relevantindices * rsloss_N * photeng ) * dlnz
-            
-        #############################
-        # tf_mode: nntf             #
-        #############################
-        elif tf_mode == 'nntf':
-            
-            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-            
-            ## obtain TF
-            rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
-            rsxHxHe_key = { 'rs' : rs_to_interp,
-                            'xH' : xHII_to_interp,
-                            'xHe': xHeII_to_interp }
-            hep_E, prp_E, lee_E = tf_E_interp.get_val(*rsxHxHe_loc)
-            hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
-            prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
-            lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
-            lep_recontf.get_TF(**rsxHxHe_key)
-            hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
-            
-            # tmp fix
-            hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
-            prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
-            lep_recontf.TF = lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
-            lee_nntf.TF = lowengelec_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
-
-            # compounding
-            lep_recontf.TF = np.matmul( prp_nntf.TF, lep_recontf.TF )
-            lee_nntf.TF    = np.matmul( prp_nntf.TF, lee_nntf.TF    )
-            hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
-            
-            # compute redshift energy loss
-            hep_lb = hep_lb_interp.get_val(*rsxHxHe_loc)
-            hep_lb_i = np.searchsorted(photeng, hep_lb)
-            relevantindices = np.zeros((500,))
-            relevantindices[hep_lb_i:] += 1
-            RSloss_tf = np.matmul(prp_nntf.TF, relevantindices*photeng*dlnz)
-            RSloss = np.dot(out_highengphot_specs[-1].N, RSloss_tf)
-            eng['RSL'] = RSloss
-
-            # record tfs used
-            tf_arr.append([hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
-                           hep_nntf.TF])
-            
-            # apply tf
-            highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lep_recontf( out_highengphot_specs[-1] )
-            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
-                                       out_highengphot_specs[-1].N )
+            eng['rsl'] = np.sum( relevantindices * rsloss_N * photeng ) * dlnz
         
         ################################################################################
         
@@ -829,26 +836,24 @@ def evolve(
         dt_mid = dlnz * coarsen_factor / phys.hubble(rs_to_interp) # uses rs_to_interp instead of rs
         
         eng['in']  = out_highengphot_specs[-1].toteng()
-        eng['HEP'] = highengphot_spec_at_rs.toteng()
-        eng['LEP'] = lowengphot_spec_at_rs.toteng()
-        eng['LEE'] = lowengelec_spec_at_rs.toteng()
-        eng['HED'] = np.sum(highengdep_at_rs) * dt_mid
-        eng['out'] = eng['HEP'] + eng['LEP'] + eng['LEE'] + eng['HED'] + eng['RSL']
+        eng['hep'] = highengphot_spec_at_rs.toteng()
+        eng['lep'] = lowengphot_spec_at_rs.toteng()
+        eng['lee'] = lowengelec_spec_at_rs.toteng()
+        eng['hed'] = np.sum(highengdep_at_rs) * dt_mid
+        eng['out'] = eng['hep'] + eng['lep'] + eng['lee'] + eng['hed'] + eng['rsl']
 
         show_text  = 'rs=%.3f ' % rs_to_interp
         show_text += '[%.2f%%]  ' % ( 100*(np.log10(start_rs)-np.log10(rs_to_interp)) / (np.log10(start_rs)-np.log10(end_rs)) )
-        show_text += 'Tot:%.3fs ' % (time.time() - loop_timer_start)
-        show_text += 'TF:%.3fs  ' % (time.time() - tf_timer_start)
+        show_text += 'Tot:%.2fs ' % (time.time() - loop_timer_start)
+        show_text += 'TF:%.2fs  ' % (time.time() - tf_timer_start)
         show_text += 'xH=%.3e '   % xHII_to_interp
         show_text += 'xHe=%.3e  ' % xHeII_to_interp
-        show_text += 'HEP:%.5f ' % (eng['HEP']/eng['in'])
-        show_text += 'LEP:%.5f ' % (eng['LEP']/eng['in'])
-        show_text += 'LEE:%.5f ' % (eng['LEE']/eng['in'])
-        show_text += 'HED:%.5f ' % (eng['HED']/eng['in'])
-        show_text += 'RSL:%.5f ' % (eng['RSL']/eng['in'])
-        show_text += 'out:%.5f  ' % (eng['out']/eng['in'])
-        
-        show_text += 'DEBUG %.3f %.3e' % (debug_1, debug_2)
+        show_text += 'hep=%.4f ' % (eng['hep']/eng['in'])
+        show_text += 'lep=%.4f ' % (eng['lep']/eng['in'])
+        show_text += 'lee=%.4f ' % (eng['lee']/eng['in'])
+        show_text += 'hed=%.4f ' % (eng['hed']/eng['in'])
+        show_text += 'rsl=%.4f ' % (eng['rsl']/eng['in'])
+        show_text += 'out=%.4f  ' % (eng['out']/eng['in'])
         
         print(show_text, flush=True)
         log_file.write(show_text+'\n')
