@@ -1,3 +1,0 @@
-Note:
-
-use_v1_data might be TMP, don't go into documentation
