@@ -43,7 +43,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     distort=False, fudge=True, nmax=9, MLA_funcs=None,
-    use_tqdm=True, cross_check=False
+    use_tqdm=True, cross_check=False, recfast_TLA=None
 ):
     """
     Main function computing histories and spectra. 
@@ -173,6 +173,8 @@ def evolve(
     ics_thomson_ref_tf  = ics_tf_data['thomson']
     ics_rel_ref_tf      = ics_tf_data['rel']
     engloss_ref_tf      = ics_tf_data['engloss']
+
+    ics_check = False
 
     # If compute_fs_method is 'HeII', must be using instantaneous reionization. 
     if compute_fs_method == 'HeII':
@@ -409,9 +411,9 @@ def evolve(
 
     if distort:
         # Initialize Spectrum object that stores the distortion
-        distortion = Spectrum(photeng, np.zeros_like(photeng), rs=start_rs, spec_type='N')
-        dist_mask = photeng<phys.rydberg
-        recfast_TLA = False
+        distortion = Spectrum(photeng, np.zeros_like(photeng), rs=1, spec_type='N')
+        if recfast_TLA is None:
+            recfast_TLA = False
         elec_processes=True
 
         if MLA_funcs is None:
@@ -438,8 +440,9 @@ def evolve(
         distortion=None
         # Object to help us interpolate over MEDEA results.
         MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
-        recfast_TLA=True
         alpha_MLA, beta_MLA = None,None
+        if recfast_TLA is None:
+            recfast_TLA=True
 
     #########################################################################
     #########################################################################
@@ -650,7 +653,8 @@ def evolve(
                 in_spec_phot + positronium_phot_spec
             ) * norm_fac(rs) + ics_phot_spec
             if distort:
-                lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_spec
+                if not ics_check:
+                    lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -689,8 +693,12 @@ def evolve(
         append_lowengelec_spec(lowengelec_spec_at_rs)
 
         if distort:
-            # Add sub-13.6eV energy photons to the distortion
-            distortion.N[dist_mask] += lowengphot_spec_at_rs.N[dist_mask]
+            # Define the spectrum to add to the distortion at this step, without altering the redshift of the original spectrum
+            temp_spec = Spectrum(lowengphot_spec_at_rs.eng, lowengphot_spec_at_rs.N, rs=lowengphot_spec_at_rs.rs, spec_type='N')
+            # Redshift contribution to present day and add sub-13.6eV/rs energy photons to the distortion
+            temp_spec.redshift(1)
+            dist_mask = photeng < phys.rydberg / temp_spec.rs
+            distortion.N[dist_mask] += temp_spec.N[dist_mask]
 
         #####################################################################
         #####################################################################
@@ -839,6 +847,9 @@ def evolve(
         #            beta_MLA(rs)/(phys.beta_ion(Tr,'HI')*x2s*4)
         #            )
         #print(phys.peebles_C(x_arr[-1,0],rs))
+        #print(rs, init_cond_TLA)
+        #print(rs, rate_func_eng(rs)) 
+
         if(np.any(np.isnan(init_cond_TLA))):
             print(rs, init_cond_TLA)
             raise ValueError('Encountered nan in Tm or x')
@@ -911,10 +922,6 @@ def evolve(
             lowengphot_spec_at_rs.rs  = next_rs
             lowengelec_spec_at_rs.rs  = next_rs
 
-            if distort:
-                # Redshift the distortion
-                distortion.redshift(next_rs)
-
             # Only save if next_rs > end_rs, since these are the x, Tm
             # values for the next redshift.
 
@@ -942,9 +949,6 @@ def evolve(
     # END OF LOOP! END OF LOOP!                                             #
     #########################################################################
     #########################################################################
-
-    if distort:
-        distortion.redshift(1)
 
     if use_tqdm:
         pbar.close()

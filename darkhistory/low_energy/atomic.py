@@ -688,26 +688,6 @@ def process_excitations(
     #   (iii) the fraction of photons aborbed from phot_spec at each bin
     return f_ion, exc_spec_elec, exc_spec_phot, absorbed_frac
 
-def yim_distortion(nu, amp, T, dist_type):
-    # Given amplitude, frequency [s^-1], temperature [K], 
-    #     and distortion type ('mu' or 'y')
-    # returns intensity of distortion in units of [ev / cm^2]
-    x = 2 * np.pi * phys.hbar * nu / phys.kB / T
-    
-    # can we add i-type distortions as well?
-    
-    if dist_type == 'y':
-        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
-                * x * np.exp(x) / (np.exp(x) - 1.)**2
-                *(x * (np.exp(x) + 1.) / (np.exp(x) - 1.) - 4.)
-               )
-    
-    elif dist_type == 'mu':
-        return (amp * 4. * np.pi * phys.hbar * nu**3 / phys.c**2
-                * np.exp(x) / (np.exp(x) - 1.)**2
-                *(x / 2.19 - 1.)
-               )
-
 def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
 
     #Boltzmann Factor at lya energy
