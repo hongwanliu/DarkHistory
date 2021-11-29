@@ -42,7 +42,7 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
-    distort=False, fudge=True, nmax=9,
+    distort=False, fudge=True, nmax=9, MLA_funcs=None,
     use_tqdm=True, cross_check=False
 ):
     """
@@ -357,7 +357,7 @@ def evolve(
                     '3s', '3p', '3d',
                     '4s', '4p', '4d', '4f',
                     '5p', '6p', '7p', '8p', '9p', '10p']
-            nmax=10
+            # nmax2
     else:
         elec_processes = False
 
@@ -414,6 +414,11 @@ def evolve(
         recfast_TLA = False
         elec_processes=True
 
+        if MLA_funcs is None:
+            make_MLA = True
+        else:
+            make_MLA = False
+
         alpha_MLA_data = np.array([
             [rs, phys.alpha_recomb(Tm_init, 'HI')], 
             [rs, phys.alpha_recomb(Tm_init, 'HI')]
@@ -443,7 +448,6 @@ def evolve(
     #########################################################################
 
     while rs > end_rs:
-
         # Update tqdm. 
         if use_tqdm:
             pbar.update(1)
@@ -589,10 +593,14 @@ def evolve(
                     
 
 
-                alpha_MLA = interp1d(alpha_MLA_data[:,0], alpha_MLA_data[:,1], fill_value='extrapolate')
+                alpha_MLA = interp1d(alpha_MLA_data[:,0], alpha_MLA_data[:,1], kind='linear', fill_value='extrapolate')
                 beta_MLA  = interp1d(
                         np.log(beta_MLA_data[:,0]), 
                         np.log(beta_MLA_data[:,1]),  fill_value='extrapolate')
+
+                if not make_MLA:
+                    alpha_MLA = MLA_funcs[0]
+                    beta_MLA = MLA_funcs[1]
 
 
 
