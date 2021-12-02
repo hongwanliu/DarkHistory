@@ -88,9 +88,9 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
         n2 = n**2
         for n_p in np.arange(1,n,1):
             n_p2 = n_p**2
-            Ennp = (1/n_p2 - 1/n2) * phys.rydberg;
+            Ennp = (1/n_p2 - 1/n2) * phys.rydberg
             if (Tr < ZEROTEMP):    #/* if Tr = 0*/
-                fEnnp = 0.0;
+                fEnnp = 0.0
             else:
                 if Delta_f != None:
                     fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
@@ -134,7 +134,8 @@ def tau_np_1s(n, rs, xHI=None):
     nu = (1 - 1/n**2) * phys.rydberg/hplanck
     lam = phys.c/nu
     if xHI == None:
-        xHI = 1-phys.xHII_std(rs)
+        # xHI = 1-phys.xHII_std(rs)
+        xHI = phys.xHI_std(rs)
     nHI = xHI * phys.nH*rs**3
     pre = lam**3 * nHI / (8*np.pi*phys.hubble(rs))
     
@@ -290,16 +291,19 @@ def populate_beta(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=Tr
 
 # /****************************************************************************************/
 
-def populate_alpha(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=True):
+def populate_alpha(Tm, Tr, nmax, k2_tab=None, g=None, Delta_f=None, new_switch=True, stimulated_emission=True):
     alpha = np.zeros((int(nmax+1),nmax))
 
     if new_switch:
-        def f_gamma(Ennp):
-            return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+        if stimulated_emission:
+            def f_gamma(Ennp):
+                return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+        else:
+            f_gamma = None
 
         for n in np.arange(1,nmax+1):
             for l in np.arange(n):
-                alpha[n][l] = bf.alpha_nl(n, l, Tm, f_gamma=f_gamma, stimulated_emission=True)
+                alpha[n][l] = bf.alpha_nl(n, l, Tm, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
     else:
 
         k2 = np.zeros((11, NBINS))
@@ -469,7 +473,7 @@ def get_distortion_and_ionization(
     #k2_tab, g = populate_k2_and_g(nmax, Tm)
     #alpha = populate_alpha(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
     #beta = populate_beta(Tm, Tr, nmax, k2_tab, g, Delta_f=Delta_f)
-    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f)
+    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, stimulated_emission=True)
     beta = populate_beta(Tm, Tr, nmax, Delta_f=Delta_f)
 
     #Include sobolev optical depth
@@ -706,6 +710,7 @@ def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
     nH = phys.nH * rs**3
     term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI')
     term2 = 4 * x1s * np.exp(-phys.lya_eng/Tr) * sum_rates
+    # print(term1, term2)
 
     # Factor of 4 converts from x2 to x2s
-    return (term1 + term2)/denom / 4
+    return (term1 + term2)/denom / 4.

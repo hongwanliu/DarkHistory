@@ -867,7 +867,7 @@ _xHII_std  = None
 _xHeII_std = None
 _Tm_std    = None
 
-def xHII_std(rs):
+def xHII_std(rs, rs_extrap = 1.555e3):
     """Baseline nHII/nH value.
 
     Parameters
@@ -883,29 +883,38 @@ def xHII_std(rs):
 
     global _xHII_std
 
-    flt_switch=False
-
     if _xHII_std is None:
         _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
     if isinstance(rs*1.,float):
-        if rs<2e3:
+        if rs<rs_extrap:
             return _xHII_std(rs)
         else:
-            return xe_Saha(rs, 'HI')
+            # return xe_Saha(rs, 'HI')
+            #Use Saha equilibrium
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs))
+            rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
+            xHI = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+            return 1 - xHI
     else:
-        extrap = rs>2e3
+        extrap = rs>rs_extrap
         if np.sum(extrap) == 0:
             return _xHII_std(rs)
-        elif np.sum(~extrap) == 0:
-            return np.array([xe_Saha(r, 'HI') for r in rs])
         else:
-            output = np.zeros_like(rs)
-            output[~extrap] = _xHII_std(rs[~extrap])
-            output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
-            return output
+            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs[extrap]))
+            rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
+            xHI = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+            if np.sum(~extrap) == 0:
+                # return np.array([xe_Saha(r, 'HI') for r in rs])
+                return 1 - xHI
+            else:
+                output = np.zeros_like(rs)
+                output[~extrap] = _xHII_std(rs[~extrap])
+                # output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
+                output[extrap] = 1 - xHI
+                return output
         
-def xHI_std(rs):
+def xHI_std(rs, rs_extrap = 1.555e3):
     """Baseline nHI/nH value.
 
     Parameters
@@ -919,7 +928,7 @@ def xHI_std(rs):
         nHI/nH. 
     """
     if isinstance(rs, float):
-        if rs<2e3:
+        if rs<rs_extrap:
             return 1-xHII_std(rs)
         else:
             #Use Saha equilibrium
@@ -927,7 +936,7 @@ def xHI_std(rs):
             rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
             return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
     else:
-        extrap = rs>2e3
+        extrap = rs>rs_extrap
         if np.sum(extrap)==0:
             return 1-xHII_std(rs)
         else:

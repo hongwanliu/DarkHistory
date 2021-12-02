@@ -360,23 +360,26 @@ def get_history(
                 peebC = phys.peebles_C(xHII(yHII), rs)
                 beta_ion = phys.beta_ion(T_m, 'HI')
 
-                tau = atomic.tau_np_1s(2,rs)
+                tau = atomic.tau_np_1s(2,rs, 1-xe)
                 x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), T_m, xe, 1-xe, tau)
                 x2  = 4*x2s
+                
+                #print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
+                #print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
-                    -0*peebC * (
-                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
-                        -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
-                    )
+                    #-0*peebC * (
+                    #    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                    #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
+                    #)
                     - (
-                        alpha_MLA * xHII(yHII) * xe * nH
-                        - beta_MLA
+                        alpha_MLA(rs) * xHII(yHII) * xe * nH
+                        - np.exp(beta_MLA(np.log(rs)))
                     )
-                    - 0*(
-                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
-                        - beta_ion*x2
-                    )
+                    #- (
+                    #    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                    #    - beta_ion*x2
+                    #)
 
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                         / (phys.rydberg * nH)
