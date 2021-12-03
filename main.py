@@ -329,15 +329,6 @@ def evolve(
             dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
         )
 
-    def rate_func_eng_unclustered(rs):
-        # The rate excluding structure formation for s-wave annihilation. 
-        # This is the correct normalization for f_c(z). 
-        if struct_boost is not None:
-            return rate_func_eng(rs)/struct_boost(rs)
-        else:
-            return rate_func_eng(rs)
-
-
     # If there are no electrons, we get a speed-up by ignoring them. 
     if (in_spec_elec.totN() > 0) | distort:
         elec_processes = True
