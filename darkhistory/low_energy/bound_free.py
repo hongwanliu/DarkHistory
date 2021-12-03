@@ -549,7 +549,7 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
     Returns
     -------
     Spectrum
-        Recombination photon spectrum coefficient. 
+        Recombination photon spectrum. 
 
     Notes
     -----
@@ -577,7 +577,7 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
 
     kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
 
-    E_gamma = (kappa2 + 1./n**2) * rydb 
+    E_gamma = (kappa2 + 1./n**2) * rydb
 
     # Define the integral (as a function of kappa^2).
     if stimulated_emission:
