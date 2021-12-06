@@ -35,10 +35,12 @@ from darkhistory.history import tla
 def evolve(
     in_spec_elec=None, in_spec_phot=None,
     rate_func_N=None, rate_func_eng=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
-    struct_boost=None,
-    start_rs=None, end_rs=4, helium_TLA=False,
-    reion_switch=False, reion_rs=None, reion_method='Puchwein', heat_switch=False, DeltaT=0, alpha_bk=0.5,
+    DM_process=None, mDM=None, sigmav=None, 
+    lifetime=None, primary=None,
+    struct_boost=None, start_rs=None, 
+    end_rs=4, helium_TLA=False,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein', 
+    heat_switch=False, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
@@ -174,14 +176,9 @@ def evolve(
     ics_rel_ref_tf      = ics_tf_data['rel']
     engloss_ref_tf      = ics_tf_data['engloss']
 
-    ics_check = False
-
     # If compute_fs_method is 'HeII', must be using instantaneous reionization. 
     if compute_fs_method == 'HeII':
 
-        #if backreaction: 
-
-        #    raise ValueError('\'HeII\' method cannot be used with backreaction.')
         print('Using instantaneous reionization at 1+z = ', reion_rs)
 
         def xe_func(rs):
@@ -202,9 +199,11 @@ def evolve(
         # Get input spectra from PPPC. 
         in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
         in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
+
         # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs
         in_spec_phot.rs = start_rs
+
         # Convert to type 'N'. 
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
@@ -247,6 +246,7 @@ def evolve(
         # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs
         in_spec_phot.rs = start_rs
+
         # Convert to type 'N'. 
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
@@ -291,12 +291,16 @@ def evolve(
 
     # Initialize the initial x and Tm. 
     if init_cond is None:
+
         # Default to baseline
         xH_init  = phys.xHII_std(start_rs)
         xHe_init = phys.xHeII_std(start_rs)
+
         #xHeIII_init = phys.xHeII_std(start_rs)
         Tm_init  = phys.Tm_std(start_rs)
+
     else:
+
         # User-specified.
         xH_init  = init_cond[0]
         xHe_init = init_cond[1]
@@ -322,22 +326,20 @@ def evolve(
             total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
         ) 
 
-    def norm_fac(rs):
-        # Normalization to convert from per injection event to 
-        # per baryon per dlnz step. 
+    # Normalization to convert from per injection event to 
+    # per baryon per dlnz step.
+    def norm_fac(rs): 
         return rate_func_N(rs) * (
             dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
         )
 
     # If there are no electrons, we get a speed-up by ignoring them. 
-    if (in_spec_elec.totN() > 0) | distort:
+    if (in_spec_elec.totN() > 0) or distort:
         elec_processes = True
 
         # The excitation states we keep track of in hydrogen
         # We keep track of specific states for hydrogen, but not for HeI and HeII !!!
-        #method = 'MEDEA'
-        #method = 'AcharyaKhatri'
-        method = 'new'
+        method = 'new' # or 'MEDEA' or 'AcharyaKhatri'
 
         if method == 'AcharyaKhatri':
             H_states  = ['2s', '2p', '3p']
@@ -391,20 +393,30 @@ def evolve(
     out_highengphot_specs = Spectra([], spec_type='N')
     out_lowengphot_specs  = Spectra([], spec_type='N')
     out_lowengelec_specs  = Spectra([], spec_type='N')
+    if distort: out_distort_specs = Spectra([], spec_type='N')
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
     append_lowengphot_spec  = out_lowengphot_specs.append
     append_lowengelec_spec  = out_lowengelec_specs.append
+    if distort: append_distort_spec = out_distort_specs.append
 
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
 
     if distort:
+
         # Initialize Spectrum object that stores the distortion
-        distortion = Spectrum(photeng, np.zeros_like(photeng), rs=1, spec_type='N')
-        if recfast_TLA is None:
-            recfast_TLA = False
+
+        # The spectrum requires a lower bound lower than lowengphot, and finer binning
+        hplanck = phys.hbar * 2*np.pi
+        dist_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 500))
+        distortion = Spectrum(dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N')
+
+        # 2s1s spectrum
+        dist_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
+
+        if recfast_TLA is None: recfast_TLA = False
         elec_processes=True
 
         if MLA_funcs is None:
@@ -532,65 +544,21 @@ def evolve(
                 #prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
                 #Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
                 Delta_f = lambda ee : 0
+                alpha_MLA_data[0], beta_MLA_data[0] = alpha_MLA_data[1], beta_MLA_data[1]
 
-                ##print(prefac * (distortion.dNdE/photeng**2)[149:154])
-                #f_ion_atomic, exc_spec_elec, exc_spec_phot, H_absorption_phot_frac = atomic.process_excitations(
-                #    rs, x_arr[-1, 0], Tm_arr[-1], 
-                #    dlnz*coarsen_factor, rate_func_eng(rs), 
-                #    eleceng, photeng, 
-                #    nmax, H_states, deposited_exc_arr, 
-                #    lowengphot_spec_at_rs, lowengelec_spec_at_rs, Delta_f
-                #)
-                ## Get rid of the photons that were absorbed through photoexcitation
-                #lowengphot_spec_at_rs = (1-H_absorption_phot_frac) * lowengphot_spec_at_rs
-                alpha_MLA_data[0] = alpha_MLA_data[1]
-                beta_MLA_data[0]  = beta_MLA_data[1]
-
-                alpha_MLA_data[1][1], beta_MLA_data[1][1], exc_spec = atomic.get_distortion_and_ionization(
-                        rs, 1-x_arr[-1, 0], Tm_arr[-1], nmax, spec_2s1s, Delta_f
+                (
+                    alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
+                ) = atomic.get_distortion_and_ionization(
+                    rs, dt, 1-x_arr[-1, 0], Tm_arr[-1], nmax, dist_2s1s, Delta_f, cross_check
                 )
 
-                #if rs==start_rs:
-                #    xe_tmp = phys.xHII_std
-                #    Tm_tmp = phys.Tm_std
-                #else:
-                #    rs_vec = np.append(out_highengphot_specs.rs, rs)
-                #    xe_tmp = interp1d(rs_vec, x_arr[:,0]+x_arr[:,1], fill_value='extrapolate')
-                #    Tm_tmp = interp1d(rs_vec, Tm_arr, fill_value='extrapolate')
-
-                #def beta_MLA(rs):
-                #    xe = xe_tmp(rs)
-                #    Tm = Tm_tmp(rs)
-                #    crap1, beta, crap2 = atomic.get_distortion_and_ionization(
-                #            rs, 1-xe, Tm, nmax, spec_2s1s, Delta_f
-                #    )
-
-                #    return beta
-
                 alpha_MLA_data[1][0], beta_MLA_data[1][0] = rs, rs
-
-                #if False:
-                    #tau = atomic.tau_np_1s(2,rs)
-                    #xe = x_arr[-1, 0]
-                    #Tm_tmp = Tm_arr[-1]
                     
-                    #x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), Tm_tmp, 
-                    #        xe, 
-                    #        1-xe, tau)
-                    #x2  = 4*x2s
-                    #beta_ion = phys.beta_ion(Tm_tmp, 'HI')
-
-                    #beta_MLA_data[1][1] = np.log(beta_ion*x2)
-                    #alpha_MLA_data[1][1] = phys.alpha_recomb(Tm_arr[-1], 'HI')
-                    ##beta_MLA_data[1][1] = beta_MLA(np.log(beta_MLA_data[1,0]))
-                    ##alpha_MLA_data[1][1] = phys.alpha_recomb(Tm_arr[-1], 'HI')
-                    
-
-
                 alpha_MLA = interp1d(alpha_MLA_data[:,0], alpha_MLA_data[:,1], kind='linear', fill_value='extrapolate')
                 beta_MLA  = interp1d(
                         np.log(beta_MLA_data[:,0]), 
-                        np.log(beta_MLA_data[:,1]),  fill_value='extrapolate')
+                        np.log(beta_MLA_data[:,1]),  fill_value='extrapolate'
+                )
 
                 if not make_MLA:
                     alpha_MLA = MLA_funcs[0]
@@ -643,9 +611,6 @@ def evolve(
             highengphot_spec_at_rs += (
                 in_spec_phot + positronium_phot_spec
             ) * norm_fac(rs) + ics_phot_spec
-            if distort:
-                if not ics_check:
-                    lowengphot_spec_at_rs = lowengphot_spec_at_rs + exc_spec
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
@@ -685,11 +650,19 @@ def evolve(
 
         if distort:
             # Define the spectrum to add to the distortion at this step, without altering the redshift of the original spectrum
-            temp_spec = Spectrum(lowengphot_spec_at_rs.eng, lowengphot_spec_at_rs.N, rs=lowengphot_spec_at_rs.rs, spec_type='N')
-            # Redshift contribution to present day and add sub-13.6eV/rs energy photons to the distortion
+            dist_mask = dist_eng < phys.rydberg
+            temp_spec = Spectrum(
+                lowengphot_spec_at_rs.eng, 
+                lowengphot_spec_at_rs.N * dist_mask, 
+                rs=lowengphot_spec_at_rs.rs, 
+                spec_type='N'
+            )
+            temp_spec.rebin(dist_eng)
+            temp_spec.N += atomic_dist_spec.N
+            # Redshift contribution to present day and add sub-13.6eV energy photons to the distortion
             temp_spec.redshift(1)
-            dist_mask = photeng < phys.rydberg / temp_spec.rs
-            distortion.N[dist_mask] += temp_spec.N[dist_mask]
+            
+            distortion.N += temp_spec.N
 
         #####################################################################
         #####################################################################
