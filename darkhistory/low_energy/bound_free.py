@@ -559,10 +559,6 @@ def gamma_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
     kappa2 is our precomputed kappa2 values. 
     """
 
-    if T_r is not None and f_gamma is not None: 
-
-        raise ValueError('Please use either T_r or f_gamma, not both.')
-
     if f_gamma is not None and not stimulated_emission: 
 
         raise ValueError('Please use f_gamma with stimulated emission only.')
