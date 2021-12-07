@@ -779,6 +779,9 @@ def xe_Saha(rs, species):
     See astro-ph/9909275 and 1011.3758 for details.
     """
 
+    if type(rs) != np.ndarray:
+        rs = np.array([rs])
+
     T = TCMB(rs)
 
     de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
@@ -790,13 +793,16 @@ def xe_Saha(rs, species):
         b  = rhs
         q  = -rhs
 
-        if rhs < 1e8:
+        xe = np.ones_like(rs)
+        mask = rhs < 1e6
+
+        # if rhs < 1e8:
             
-            xe = (-b + np.sqrt(b**2 - 4*a*q))/(2*a)
+        xe[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
 
-        else:
+        # else:
 
-            xe = 1. - a/rhs + 2*(a/rhs)**2 - 5*(a/rhs)**3 #+ 14*(a/rhs)**4
+        xe[~mask] = 1. - a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3 #+ 14*(a/rhs)**4
 
     elif species == 'HeI':
         rhs = (
@@ -815,7 +821,10 @@ def xe_Saha(rs, species):
     else:
         raise TypeError('invalid species.')
 
-    return xe
+    if xe.size == 1:
+        return xe[0]
+    else:
+        return xe
 
 def d_xe_Saha_dz(rs, species):
     """`z`-derivative of the Saha equilibrium ionization value.
