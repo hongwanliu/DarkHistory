@@ -782,6 +782,7 @@ def xe_Saha(rs, species):
     if type(rs) != np.ndarray:
         rs = np.array([rs])
 
+    xe = np.ones_like(rs)
     T = TCMB(rs)
 
     de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
@@ -793,15 +794,9 @@ def xe_Saha(rs, species):
         b  = rhs
         q  = -rhs
 
-        xe = np.ones_like(rs)
         mask = rhs < 1e6
-
-        # if rhs < 1e8:
             
         xe[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
-
-        # else:
-
         xe[~mask] = 1. - a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3 #+ 14*(a/rhs)**4
 
     elif species == 'HeI':
@@ -810,14 +805,15 @@ def xe_Saha(rs, species):
             / (nH*rs**3) * np.exp(-He_ion_eng/T)
         )
 
-        if rhs < 1e9:
-            a   = 1. 
-            b   = rhs - 1. 
-            q   = -(1. + chi)*rhs
+        mask = rhs < 1e6
 
-            xe = (-b + np.sqrt(b**2 - 4*a*q))/(2*a)
-        else:
-            xe = (1 + chi)*(1 - (1 + chi)/rhs)
+        
+        a   = 1. 
+        b   = rhs - 1. 
+        q   = -(1. + chi)*rhs
+
+        xe[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
+        xe[~mask] = (1 + chi)*(1 - (1 + chi)/rhs[~mask])
     else:
         raise TypeError('invalid species.')
 
