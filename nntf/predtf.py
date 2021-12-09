@@ -6,7 +6,9 @@ import sys
 
 sys.path.append('..')
 from config import load_data
+import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
+import darkhistory.spec.spectools as spectools
 
 class PredTF: # abstract class for general predicting transfer functions
     """
@@ -31,7 +33,6 @@ class PredTF: # abstract class for general predicting transfer functions
 
     
 ########################################
-# small instances
 
 class LEPTF (PredTF):
     def __init__(self):
@@ -41,32 +42,22 @@ class LEPTF (PredTF):
         tf_helper_data = load_data('tf_helper')
         #self.lep_dis_interp = tf_helper_data['lep_dis']
     
-    def predict_TF(self, rs=4.0, xH=None, xHe=None):
-        #di1, di2 = self.lep_dis_interp.get_val(xH, xHe, rs)
-        self.rs = rs
-        self.TF = None
-        return self.TF
-    
-    
-########################################
-# below is not in use
-class ICSTF (PredTF):
-    def __init__(self, TF_type):
+    def predict_TF(self, rs=4.0, xH=None, xHe=None, E_arr=None, dlnz=0.001):
+        l = len(E_arr)
+        self.TF = np.zeros((l,l))
         
-        binning_data = load_data('binning')
-        if self.TF_type in ['ics']:
-            self.abscs = [binning_data['ics_eng'],
-                          binning_data['ics_eng']]
-        elif self.TF_type in ['ics_rel']:
-            self.abscs = [binning_data['ics_rel_eng'],
-                          binning_data['ics_rel_eng']]
-        else:
-            raise ValueError('Invalid TF_type.')
-            
-        print('Initializing constant transfer function: '+TF_type+'...')
-        self.predict_TF()
-        print('done.')
-    
-    def predict_TF(self):
-        if self.TF_type == 'ics':
-            pass
+        rs_step = np.exp(-dlnz)
+        # unnormalized cmb spec
+        cmb_un = spectools.discretize(self.abscs[1],
+                                      phys.CMB_spec,
+                                      phys.TCMB(rs*rs_step)) # next rs step
+        cmb_un_E = cmb_un.toteng()
+        for i in range(l):
+            if E_arr[i] > 0:
+                self.TF[i][i] = E_arr[i]/self.abscs[1][i]
+            elif E_arr[i] < 0:
+                cmb_E = E_arr[i]
+                tf[in_i] += (cmb_E/cmb_un_E) * cmb_un.N
+                
+        return self.TF
+                

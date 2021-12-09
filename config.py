@@ -278,8 +278,14 @@ def load_data(data_type, use_v1_data=False):
         if glob_dep_ctf_data is None:
             
             print('****** Loading compounded transfer function data... ******')
+            print('Using data at %s' % load_data_path)
+                
+            print('    for propagating photons (compounded)...  ', end='')
             hep_ctf_interp = pickle.load( open(load_data_path+'hep_p12_tf_interp.raw', 'rb'))
+            print('Done!')
+            print('    for propagating photons (propagator)...  ', end='')
             prp_ctf_interp = pickle.load( open(load_data_path+'hep_s11_tf_interp.raw', 'rb'))
+            print('Done!')
             print('****** Loading complete! ******')
             
             glob_dep_ctf_data = {

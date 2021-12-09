@@ -14,6 +14,8 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 import darkhistory.physics as phys
 
+from nntf.predtf import PredTF
+
 ####################
 ### CONSTANTS
 
@@ -36,6 +38,23 @@ def normalize_to_E(E_absc, N_arr, i_s, i_e, truth): # (absc, arr in N, [i_s:i_e+
     part = np.dot(E_absc[i_s:i_e+1], N_arr[i_s:i_e+1])
     part_target = part + (truth - np.dot(E_absc, N_arr))
     N_arr[i_s:i_e+1] *= (part_target/part)
+
+def ics_pred_Eout_max(Ein, TF_type): # Eout(Ein)
+    x = np.log10(Ein)
+    if TF_type == 'ics_thomson':
+        p = [1.07789781e-03, 1.32714060e+00, 9.95665255e-01, 7.48920711e-04, 1.13092342e+00]
+        y = (1+p[0]*np.exp(p[1]*x))/(p[2]+p[3]*np.exp(p[4]*x))
+    elif TF_type == 'ics_engloss':
+        p = [5.72857939e-08, -1.53672737e-06, -1.01678957e-05,\
+             2.00363041e-04, 1.09665195e-03, -3.42969564e-03,\
+             -1.64671173e-02,  5.13922029e-01, -1.38282978e+00]
+        y = np.poly1d(p)(x)
+    elif TF_type == 'ics_rel':
+        p = [1.97808661, -9.73260386]
+        y = np.minimum(np.poly1d(p)(x), x)
+    else:
+        raise ValueError('Invalid TF_type.')
+    return 10**y
 
 ####################
 ### CLASSES
@@ -72,7 +91,6 @@ class NNTFRaw:
     _pred_in_2D : 2D np.ndarray
         List of [log_Ein, log_Eout] for model prediction for faster prediction.
     """
-    # CTF LEE ICS ICSREL
     
     def __init__(self, model, TF_type):
         
@@ -89,9 +107,9 @@ class NNTFRaw:
         elif self.TF_type in ['lee']:
             self.abscs = [binning_data['phot'], binning_data['elec']]
         elif self.TF_type in ['ics_thomson', 'ics_engloss']:
-            self.abscs = [binning_data['ics_eng'], binning_data['ics_eng']]
+            self.abscs = [binning_data['ics_eng_1k'], binning_data['ics_eng_1k']]
         elif self.TF_type in ['ics_rel']:
-            self.abscs = [binning_data['ics_rel_eng'], binning_data['ics_rel_eng']]
+            self.abscs = [binning_data['ics_rel_eng_1k'], binning_data['ics_rel_eng_1k']]
         else:
             raise ValueError('Invalid TF_type.')
         self.io_abscs = np.log(self.abscs)
@@ -114,11 +132,10 @@ class NNTFRaw:
                 Eomax = (2 * Ein**2) / (phys.me + 2*Ein) # max kinetic energy of outgoing electron in compton scattering
                 oimax = np.searchsorted(binning_data['elec'], Eomax) # max oi
                 self.mask[ii,:oimax+1] += 1
-        elif self.TF_type in ['ics_thomson', 'ics_engloss']: # refine
-            self.mask += 1
-        elif self.TF_type in ['ics_rel']: # refine
-            for ii in range(5000):
-                self.mask[:ii+1] += 1
+        elif self.TF_type in ['ics_thomson', 'ics_engloss', 'ics_rel']: # refine
+            for ii in range(len(self.abscs[0])):
+                oimax = np.searchsorted(self.abscs[1], ics_pred_Eout_max(self.abscs[0][ii], TF_type)) + 1
+                self.mask[ii,:oimax+1] += 1
                 
         ####################
         ### _pred_in_2D
@@ -152,8 +169,11 @@ class NNTFRaw:
         elif self.TF_type in ['ics_thomson', 'ics_engloss', 'ics_rel']:
             pred_in = self._pred_in_2D
         
-        #pred_out = np.array(self.model.predict(pred_in, batch_size=len(pred_in))).flatten()
-        pred_out = np.array(self.model.predict_on_batch(pred_in)).flatten()
+        if len(pred_in) <= 1000**2:
+            pred_out = np.array(self.model.predict_on_batch(pred_in)).flatten()
+        else:
+            pred_out = np.array(self.model.predict(pred_in, batch_size=1000**2)).flatten()
+        
         
         # build raw_TF
         self.raw_TF = np.full(self.TF_shape, LOG_EPSILON)
@@ -200,12 +220,15 @@ class NNTF (PredTF, NNTFRaw):
                 self.TF[i][i] += 1
 
         ### adjust for E_arr
-        i_start = lci if self.TF_type in ['hep_p12', 'lee'] else 12
-        for i in range(i_start, 500):
-            if self.TF_type in ['hep_p12', 'hep_s11']:
-                normalize_to_E(self.abscs[0], self.TF[i], i-12, i, E_arr[i])
-            else:
-                normalize_to_E(self.abscs[0], self.TF[i], 135, 135, E_arr[i])
+        if E_arr is not None:
+            i_start = lci if self.TF_type in ['hep_p12', 'lee'] else 12
+            for i in range(i_start, 500):
+                if self.TF_type in ['hep_p12', 'hep_s11']:
+                    normalize_to_E(self.abscs[1], self.TF[i], i-12, i, E_arr[i])
+                elif self.TF_type in ['lee']:
+                    normalize_to_E(self.abscs[1], self.TF[i], 0, 135, E_arr[i])
+                    # the following need to find boundary
+                    #normalize_to_E(self.abscs[0], self.TF[i], 135, 135, E_arr[i])
 
 
 class NNTF_Rs (PredTF): # switch NNTF between multiple regimes
@@ -221,22 +244,20 @@ class NNTF_Rs (PredTF): # switch NNTF between multiple regimes
         ri = np.searchsorted(self.rs_nodes, rs)
         self.NNTFs[ri].predict_TF(rs=rs, **params)
         self.TF = self.NNTFs[ri].TF
-
         
-class NNTF_ref (PredTF, NNTFRaw): # predict once
+        
+class NNTF_ref (PredTF, NNTFRaw): # predict once as reference
     
     def __init__(self, model, TF_type):
         super().__init__(model, TF_type)
-        print('Initializing reference transfer function: '+TF_type+'...', end='', flush=True)
         self.predict_TF()
-        print('done.')
         
     def predict_TF(self):
         self.predict_raw_TF()
         self.TF = np.exp(self.raw_TF)
-        # tmp: get DH spectra
-        self.TFAR = TransFuncAtRedshift(self.TF,
-                                        in_eng=self.abscs[0],
-                                        eng=self.abscs[1],
-                                        rs=400,
-                                        spec_type='N')
+        
+        self.TFAR = TransFuncAtRedshift(
+            self.TF, in_eng=self.abscs[0], eng=self.abscs[1],
+            rs=np.full_like(self.abscs[0], 400), spec_type='dNdE',
+            with_interp_func=True
+        )
