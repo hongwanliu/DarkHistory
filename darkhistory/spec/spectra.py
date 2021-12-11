@@ -672,8 +672,9 @@ class Spectra:
 
         Parameters
         ----------
-        rs_arr : ndarray
+        rs_arr : ndarray, float
             Array of redshifts (1+z) to redshift each spectrum to. 
+            If a single rs is provided, redshift each spectrum to it.
 
         Returns
         -------
@@ -697,6 +698,9 @@ class Spectra:
         [0.    0.111 0.22  0.3  ]
 
         """
+
+        if type(rs_arr) != np.ndarray:
+            rs_arr = np.ones_like(self.rs) * rs_arr
 
         if rs_arr.size != self.rs.size:
             raise TypeError('rs_arr must have the same size as the number of Spectrum objects stored.')
