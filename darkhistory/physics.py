@@ -766,7 +766,7 @@ def xe_Saha(rs, species):
     ----------
     rs : float
         The redshift in 1+z.
-    species : {'HI', 'HeI'}
+    species : {'HI', 'HII', 'HeII'}
         The relevant species.
 
     Returns
@@ -782,12 +782,12 @@ def xe_Saha(rs, species):
     if type(rs) != np.ndarray:
         rs = np.array([rs])
 
-    xe = np.ones_like(rs)
+    x = np.ones_like(rs) * 1.
     T = TCMB(rs)
 
     de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
 
-    if species == 'HI':
+    if species in {'HI', 'HII'}:
 
         rhs = (1/de_broglie_wavelength)**3 / (nH*rs**3) * np.exp(-rydberg/T)
         a  = 1. 
@@ -795,11 +795,18 @@ def xe_Saha(rs, species):
         q  = -rhs
 
         mask = rhs < 1e6
-            
-        xe[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
-        xe[~mask] = 1. - a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3 #+ 14*(a/rhs)**4
+        
 
-    elif species == 'HeI':
+        if species == 'HII':
+            x[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
+            x[~mask] = 1. - a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3 #+ 14*(a/rhs)**4
+        
+        if species == 'HI':
+            x[mask] = 1. - (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
+            x[~mask] = a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3
+
+
+    elif species in {'HeII'}:
         rhs = (
             4 * (1/de_broglie_wavelength)**3 
             / (nH*rs**3) * np.exp(-He_ion_eng/T)
@@ -807,20 +814,20 @@ def xe_Saha(rs, species):
 
         mask = rhs < 1e6
 
-        
         a   = 1. 
         b   = rhs - 1. 
         q   = -(1. + chi)*rhs
 
-        xe[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
-        xe[~mask] = (1 + chi)*(1 - (1 + chi)/rhs[~mask])
+        x[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
+        x[~mask] = (1 + chi)*(1 - (1 + chi)/rhs[~mask])
+        
     else:
         raise TypeError('invalid species.')
 
-    if xe.size == 1:
-        return xe[0]
+    if x.size == 1:
+        return x[0]
     else:
-        return xe
+        return x
 
 def d_xe_Saha_dz(rs, species):
     """`z`-derivative of the Saha equilibrium ionization value.
