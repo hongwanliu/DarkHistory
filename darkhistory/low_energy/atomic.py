@@ -404,7 +404,7 @@ def get_distortion_and_ionization(
 
     if cross_check:
         xHI = phys.xHI_std(rs)
-        Tm = phys.TCMB(rs)
+        # Tm = phys.TCMB(rs)
 
     # Number of Hydrogen states at or below n=nmax
     num_states = int(nmax*(nmax+1)/2)
