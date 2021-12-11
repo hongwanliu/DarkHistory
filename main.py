@@ -546,10 +546,11 @@ def evolve(
                 Delta_f = lambda ee : 0
                 alpha_MLA_data[0], beta_MLA_data[0] = alpha_MLA_data[1], beta_MLA_data[1]
 
+                x_1s = 1-x_arr[-1, 0]
                 (
                     alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
                 ) = atomic.get_distortion_and_ionization(
-                    rs, dt, 1-x_arr[-1, 0], Tm_arr[-1], nmax, dist_2s1s, Delta_f, cross_check
+                    rs, dt, x_1s, Tm_arr[-1], nmax, dist_2s1s, Delta_f, cross_check
                 )
 
                 alpha_MLA_data[1][0], beta_MLA_data[1][0] = rs, rs
@@ -650,19 +651,22 @@ def evolve(
 
         if distort:
             # Define the spectrum to add to the distortion at this step, without altering the redshift of the original spectrum
-            dist_mask = dist_eng < phys.rydberg
             temp_spec = Spectrum(
                 lowengphot_spec_at_rs.eng, 
-                lowengphot_spec_at_rs.N * dist_mask, 
+                lowengphot_spec_at_rs.N, 
                 rs=lowengphot_spec_at_rs.rs, 
                 spec_type='N'
             )
             temp_spec.rebin(dist_eng)
             temp_spec.N += atomic_dist_spec.N
+
+            append_distort_spec(temp_spec)
+
             # Redshift contribution to present day and add sub-13.6eV energy photons to the distortion
             temp_spec.redshift(1)
             
-            distortion.N += temp_spec.N
+            dist_mask = dist_eng < phys.rydberg
+            distortion.N += temp_spec.N * dist_mask
 
         #####################################################################
         #####################################################################
@@ -823,12 +827,14 @@ def evolve(
             f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
             injection_rate=rate_func_eng,
             reion_switch=reion_switch, reion_rs=reion_rs, 
-            reion_method=reion_method, heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
+            reion_method=reion_method, heat_switch=heat_switch, 
+            DeltaT=DeltaT, alpha_bk=alpha_bk,
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol, 
-            recfast_TLA=recfast_TLA, fudge=fudge, alpha_MLA=alpha_MLA, beta_MLA=beta_MLA
+            recfast_TLA=recfast_TLA, fudge=fudge, 
+            alpha_MLA=alpha_MLA, beta_MLA=beta_MLA
         )
 
         #####################################################################
@@ -932,6 +938,7 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
+        'distortions': out_distort_specs,
         'distortion': distortion,
         'f': f
     }
