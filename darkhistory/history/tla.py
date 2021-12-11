@@ -45,15 +45,18 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond=None, baseline_f=False, baseline_struct=False,
-    inj_particle=None,
+    rs_vec, init_cond=None, baseline_f=False, 
+    baseline_struct=False, inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None, z_td=None,
+    DM_process=None, mDM=None, sigmav=None, 
+    lifetime=None, z_td=None,
     struct_boost=None, injection_rate=None, 
-    reion_switch=False, reion_rs=None, reion_method=None, heat_switch=False, DeltaT = 0, alpha_bk=1.,
+    reion_switch=False, reion_rs=None, reion_method=None, 
+    heat_switch=False, DeltaT = 0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
-    recfast_TLA=True, fudge=True, alpha_MLA=None, beta_MLA=None,
+    recfast_TLA=True, fudge=True, 
+    alpha_MLA=None, beta_MLA=None,
     mxstep = 1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
