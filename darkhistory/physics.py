@@ -963,7 +963,7 @@ def xHI_std(rs, rs_extrap = 1.555e3):
                 return output
 
 
-def xHeII_std(rs):
+def xHeII_std(rs, rs_extrap = 3e3):
     """Baseline nHeII/nH value.
 
     Parameters
@@ -977,6 +977,14 @@ def xHeII_std(rs):
         nHeII/nH. 
     """
 
+    if type(rs) != np.ndarray:
+        rs = np.array([rs])
+
+    xHeII = np.ones((rs.size))
+
+    mask_extrap = (rs >= rs_extrap)
+    xHeII[mask_extrap] = xe_Saha(rs[mask_extrap], 'HeII')
+
     global _xHeII_std
 
     if _xHeII_std is None:
@@ -986,7 +994,12 @@ def xHeII_std(rs):
 
         _xHeII_std = interp1d(rs_vec, xHeII_vec)
 
-    return _xHeII_std(rs)
+    xHeII[~mask_extrap] = _xHeII_std(rs[~mask_extrap])
+
+    if rs.size == 1:
+        return xHeII[0]
+    else:
+        return xHeII
 
 def Tm_std(rs):
     """Baseline Tm value.
