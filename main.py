@@ -722,7 +722,7 @@ def evolve(
             hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
             prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
             lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
-            lep_pdtf.predict_TF(E_arr=lee_E, dlnz=dlnz, **rsxHxHe_key)
+            lep_pdtf.predict_TF(E_arr=lep_E, dlnz=dlnz, **rsxHxHe_key)
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
             
             # tmp fix
