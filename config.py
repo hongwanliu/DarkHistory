@@ -270,6 +270,23 @@ def load_data(data_type, use_v1_data=False):
             }
 
         return glob_dep_tf_data
+    
+    elif data_type == 'hed_tf':
+
+        if glob_dep_tf_data is None:
+
+            print('****** Loading transfer functions... ******')
+            print('Using data at %s' % load_data_path)
+                
+            print('    for high-energy deposition... ', end=' ')
+            highengdep_interp     = pickle.load( open(load_data_path+"highengdep_interp.raw", "rb") )
+            print('Done!')
+
+            glob_dep_tf_data = {
+                'highengdep'  : highengdep_interp
+            }
+
+        return glob_dep_tf_data
 
     ##################################################
     ### TMP

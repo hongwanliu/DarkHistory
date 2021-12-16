@@ -153,6 +153,7 @@ def evolve(
     #####################################
     
     log_file = open(log_fn, 'w')
+    total_timer_start = time.time()
 
     binning = load_data('binning')
     photeng = binning['phot']
@@ -178,11 +179,13 @@ def evolve(
         print('coarsen_factor is set to 12 (for NN transfer functions).')
         coarsen_factor = 12
         # tmp
-        dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
-        highengphot_tf_interp = dep_tf_data['highengphot']
-        lowengphot_tf_interp  = dep_tf_data['lowengphot']
-        lowengelec_tf_interp  = dep_tf_data['lowengelec']
+        dep_tf_data = load_data( 'hed_tf', use_v1_data=(tf_mode=='table_v1') )
         highengdep_interp     = dep_tf_data['highengdep']
+        #dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
+        #highengphot_tf_interp = dep_tf_data['highengphot']
+        #lowengphot_tf_interp  = dep_tf_data['lowengphot']
+        #lowengelec_tf_interp  = dep_tf_data['lowengelec']
+        #highengdep_interp     = dep_tf_data['highengdep']
         #dep_ctf_data = load_data('dep_ctf')
         #hep_ctf_interp = dep_ctf_data['hep']
         #prp_ctf_interp = dep_ctf_data['prp']
@@ -202,22 +205,18 @@ def evolve(
         lee_nntf = nntf_data['lee']
         lep_pdtf = nntf_data['lep']
         
-        timer_start = time.time()
         nntf_data = load_model('ics_nntf')
         ics_thomson_ref_tf = nntf_data['ics_thomson'].TFAR
         engloss_ref_tf     = nntf_data['ics_engloss'].TFAR
         ics_rel_ref_tf     = nntf_data['ics_rel'].TFAR
-        timer_end = time.time()
-        print('ics_nntf load time:')
-        print('%.3f\n' % (timer_end - timer_start))
-        log_file.write('ics_nntf load time:\n')
-        log_file.write('%.3f\n\n' % (timer_end - timer_start))
         
     else:
         print('Invalid tf_mode!')
     
-    
-    ########################## Section: end ##########################
+    timer_dt = time.time()-total_timer_start
+    print('Loading time: %.3f s' % timer_dt)
+    log_file.write('Loading time: %.3f s\n' % timer_dt)
+    total_timer_start = time.time()
     
     #####################################
     # Initialization for DM_process     #
@@ -435,6 +434,11 @@ def evolve(
     #####################################
     tf_arr = []
     debug_arr = []
+    
+    timer_dt = time.time()-total_timer_start
+    print('Initialization time: %.3f s' % timer_dt)
+    log_file.write('Initialization time: %.3f s\n' % timer_dt)
+    total_timer_start = time.time()
     
     #########################################################################
     #########################################################################
@@ -699,6 +703,9 @@ def evolve(
             lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
             
+            # compute redshift energy loss
+            eng['rsl'] = 0
+            
         #############################
         # tf_mode: nntf             #
         #############################
@@ -759,6 +766,8 @@ def evolve(
         #############################
         
         # check energy conservation
+        if tf_mode in ['table', 'table_v1']:
+            rs_to_interp = rs
         dt_mid = dlnz * coarsen_factor / phys.hubble(rs_to_interp) # uses rs_to_interp instead of rs
         
         eng['in']  = out_highengphot_specs[-1].toteng()
@@ -825,6 +834,10 @@ def evolve(
     #########################################################################
     #########################################################################
 
+    timer_dt = time.time()-total_timer_start
+    print('Main loop time: %.3f s' % timer_dt)
+    log_file.write('Main loop time: %.3f s\n' % timer_dt)
+    total_timer_start = time.time()
 
     if use_tqdm:
         pbar.close()
