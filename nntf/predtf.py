@@ -57,7 +57,7 @@ class LEPTF (PredTF):
                 self.TF[i][i] = E_arr[i]/self.abscs[1][i]
             elif E_arr[i] < 0:
                 cmb_E = E_arr[i]
-                tf[in_i] += (cmb_E/cmb_un_E) * cmb_un.N
+                self.TF[i] += (cmb_E/cmb_un_E) * cmb_un.N
                 
         return self.TF
                 

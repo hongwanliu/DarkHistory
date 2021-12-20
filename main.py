@@ -5,6 +5,7 @@
 
 import numpy as np
 from numpy.linalg import matrix_power
+import pickle
 
 # from config import data_path, photeng, eleceng
 # from tf_data import *
@@ -43,8 +44,10 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
     tf_mode='table', # modes: 'table', 'table_v1', 'nntf'
-    verbose=1, # level: 1 (original), 2 (show energy flow)
-    log_fn='evolve.log' # log verbose level 2 information
+    verbose=1, # level: 1 (~original), 2 (show energy flow)
+    log_fn='evolve.log', # log verbose level 2 information
+    sol_fn=None,
+    use_tqdmx=None
 ):
     """
     Main function computing histories and spectra. 
@@ -155,66 +158,68 @@ def evolve(
     log_file = open(log_fn, 'w')
     total_timer_start = time.time()
 
-    binning = load_data('binning')
+    binning = load_data('binning', verbose=verbose)
     photeng = binning['phot']
     eleceng = binning['elec']
 
     if tf_mode in ['table', 'table_v1']:
-        dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
+        dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
         highengphot_tf_interp = dep_tf_data['highengphot']
         lowengphot_tf_interp  = dep_tf_data['lowengphot']
         lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
         
-        ics_tf_data = load_data('ics_tf')
+        ics_tf_data = load_data('ics_tf', verbose=verbose)
         ics_thomson_ref_tf = ics_tf_data['thomson']
         ics_rel_ref_tf     = ics_tf_data['rel']
         engloss_ref_tf     = ics_tf_data['engloss']
         
-        tf_helper_data = load_data('tf_helper')
+        tf_helper_data = load_data('tf_helper', verbose=verbose)
         tf_E_interp = tf_helper_data['tf_E']
         hep_lb_interp = tf_helper_data['hep_lb']
         
     elif tf_mode == 'nntf':
-        print('coarsen_factor is set to 12 (for NN transfer functions).')
+        if verbose >= 1:
+            print('coarsen_factor is set to 12 (for NN transfer functions).')
         coarsen_factor = 12
+        
         # tmp
-        dep_tf_data = load_data( 'hed_tf', use_v1_data=(tf_mode=='table_v1') )
-        highengdep_interp     = dep_tf_data['highengdep']
-        #dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1') )
+        dep_tf_data = load_data( 'hed_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
+        #dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
         #highengphot_tf_interp = dep_tf_data['highengphot']
         #lowengphot_tf_interp  = dep_tf_data['lowengphot']
         #lowengelec_tf_interp  = dep_tf_data['lowengelec']
-        #highengdep_interp     = dep_tf_data['highengdep']
-        #dep_ctf_data = load_data('dep_ctf')
-        #hep_ctf_interp = dep_ctf_data['hep']
-        #prp_ctf_interp = dep_ctf_data['prp']
+        highengdep_interp     = dep_tf_data['highengdep']
+        dep_ctf_data = load_data('dep_ctf')
+        hep_ctf_interp = dep_ctf_data['hep']
+        prp_ctf_interp = dep_ctf_data['prp']
         #ics_tf_data = load_data('ics_tf')
         #ics_thomson_ref_tf = ics_tf_data['thomson']
         #ics_rel_ref_tf     = ics_tf_data['rel']
         #engloss_ref_tf     = ics_tf_data['engloss']
         # tmp end
         
-        tf_helper_data = load_data('tf_helper')
+        tf_helper_data = load_data('tf_helper', verbose=verbose)
         tf_E_interp   = tf_helper_data['tf_E']
         hep_lb_interp = tf_helper_data['hep_lb']
         
-        nntf_data = load_model('dep_nntf')
+        nntf_data = load_model('dep_nntf', verbose=verbose)
         hep_nntf = nntf_data['hep']
         prp_nntf = nntf_data['prp']
         lee_nntf = nntf_data['lee']
         lep_pdtf = nntf_data['lep']
         
-        nntf_data = load_model('ics_nntf')
+        nntf_data = load_model('ics_nntf', verbose=verbose)
         ics_thomson_ref_tf = nntf_data['ics_thomson'].TFAR
         engloss_ref_tf     = nntf_data['ics_engloss'].TFAR
         ics_rel_ref_tf     = nntf_data['ics_rel'].TFAR
         
     else:
-        print('Invalid tf_mode!')
+        raise ValueError('Invalid tf_mode!')
     
     timer_dt = time.time()-total_timer_start
-    print('Loading time: %.3f s' % timer_dt)
+    if verbose >= 1:
+        print('Loading time: %.3f s' % timer_dt)
     log_file.write('Loading time: %.3f s\n' % timer_dt)
     total_timer_start = time.time()
     
@@ -436,7 +441,8 @@ def evolve(
     debug_arr = []
     
     timer_dt = time.time()-total_timer_start
-    print('Initialization time: %.3f s' % timer_dt)
+    if verbose >= 1:
+        print('Initialization time: %.3f s' % timer_dt)
     log_file.write('Initialization time: %.3f s\n' % timer_dt)
     total_timer_start = time.time()
     
@@ -686,6 +692,8 @@ def evolve(
         #############################
         if tf_mode in ['table', 'table_v1']:
             
+            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                 get_tf(
                     rs, xHII_to_interp, xHeII_to_interp,
@@ -704,7 +712,13 @@ def evolve(
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
             
             # compute redshift energy loss
-            eng['rsl'] = 0
+            hep_lb = hep_lb_interp.get_val(xHII_to_interp, xHeII_to_interp, rs_to_interp)
+            hep_lb_i = np.searchsorted(photeng, hep_lb)
+            relevantindices = np.zeros((500,))
+            relevantindices[hep_lb_i:] += 1
+            rsloss_tf = np.matmul(prop_tf, relevantindices*photeng*dlnz)
+            rsloss = np.dot(out_highengphot_specs[-1].N, rsloss_tf)
+            eng['rsl'] = rsloss
             
         #############################
         # tf_mode: nntf             #
@@ -725,6 +739,12 @@ def evolve(
             lep_pdtf.predict_TF(E_arr=lep_E, dlnz=dlnz, **rsxHxHe_key)
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
             
+            # record tfs used
+            tf_arr.append([hep_nntf.TF, 
+                           hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
+                           prp_nntf.TF,
+                           prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
+            
             # tmp fix
             #hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
             #prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
@@ -744,15 +764,6 @@ def evolve(
             rsloss_tf = np.matmul(prp_nntf.TF, relevantindices*photeng*dlnz)
             rsloss = np.dot(out_highengphot_specs[-1].N, rsloss_tf)
             eng['rsl'] = rsloss
-
-            # record tfs used
-            #highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-            #    get_tf(
-            #        rs, xHII_to_interp, xHeII_to_interp,
-            #        dlnz, coarsen_factor=12, use_v1_data=False
-            #    )
-            #)
-            #tf_arr.append([hep_nntf.TF, hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
             
             # apply tf
             highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
@@ -765,12 +776,12 @@ def evolve(
         # Outputs                   #
         #############################
         
-        # check energy conservation
-        if tf_mode in ['table', 'table_v1']:
-            rs_to_interp = rs
+        # check energy conservation for transfer functions
         dt_mid = dlnz * coarsen_factor / phys.hubble(rs_to_interp) # uses rs_to_interp instead of rs
         
         eng['in']  = out_highengphot_specs[-1].toteng()
+        #eng['in'] += np.sum([deposited_ion, deposited_exc, deposited_heat, deposited_ICS])
+        #eng['in'] += norm_fac(rs) * elec_processes_lowengelec_spec.toteng()
         eng['hep'] = highengphot_spec_at_rs.toteng()
         eng['lep'] = lowengphot_spec_at_rs.toteng()
         eng['lee'] = lowengelec_spec_at_rs.toteng()
@@ -790,9 +801,12 @@ def evolve(
         show_text += 'rsl=%.4f ' % (eng['rsl']/eng['in'])
         show_text += 'out=%.4f  ' % (eng['out']/eng['in'])
         
-        print(show_text, flush=True)
+        if verbose >= 2:
+            print(show_text, flush=True)
         log_file.write(show_text+'\n')
         
+        if use_tqdmx is not None:
+            print('tqdmx %d' % use_tqdmx, flush=True)
         
         #############################
         # Parameters for next step  #
@@ -835,7 +849,8 @@ def evolve(
     #########################################################################
 
     timer_dt = time.time()-total_timer_start
-    print('Main loop time: %.3f s' % timer_dt)
+    if verbose >= 1:
+        print('Main loop time: %.3f s' % timer_dt)
     log_file.write('Main loop time: %.3f s\n' % timer_dt)
     total_timer_start = time.time()
 
@@ -866,13 +881,17 @@ def evolve(
 
     data = {
         'rs': out_highengphot_specs.rs,
-        'x': x_arr, 'Tm': Tm_arr, 
+        'x': x_arr,
+        'Tm': Tm_arr, 
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
         'f': f,
         'tf': tf_arr
     }
+    
+    if sol_fn is not None:
+        pickle.dump(data, open(sol_fn, 'wb'))
 
     return data
 

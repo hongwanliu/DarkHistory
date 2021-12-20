@@ -168,7 +168,7 @@ class PchipInterpolator2D:
         )
     
 
-def load_data(data_type, use_v1_data=False):
+def load_data(data_type, use_v1_data=False, verbose=1):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -237,29 +237,30 @@ def load_data(data_type, use_v1_data=False):
 
         if glob_dep_tf_data is None:
 
-            print('****** Loading transfer functions... ******')
-            print('Using data at %s' % load_data_path)
-                
-            print('    for propagating photons... ', end =' ')
+            if verbose >= 1:
+                print('****** Loading transfer functions... ******')
+                print('Using data at %s' % load_data_path)
+                print('    for propagating photons... ', end =' ', flush=True)
             highengphot_tf_interp = pickle.load( open(load_data_path+'highengphot_tf_interp.raw', 'rb') )
-            print(' Done!')
-            
-            print('    for low-energy photons... ', end=' ')
+            if verbose >= 1:
+                print(' Done!')
+                print('    for low-energy photons... ', end=' ', flush=True)
             lowengphot_tf_interp  = pickle.load( open(load_data_path+'lowengphot_tf_interp.raw', 'rb') )
-            print('Done!')
-            
-            print('    for low-energy electrons... ', end=' ')
+            if verbose >= 1:
+                print('Done!')
+                print('    for low-energy electrons... ', end=' ', flush=True)
             lowengelec_tf_interp  = pickle.load( open(load_data_path+"lowengelec_tf_interp.raw", "rb") )
-            print('Done!')
-
-            print('    for high-energy deposition... ', end=' ')
+            if verbose >= 1:
+                print('Done!')
+                print('    for high-energy deposition... ', end=' ', flush=True)
             highengdep_interp     = pickle.load( open(load_data_path+"highengdep_interp.raw", "rb") )
-            print('Done!')
-
-            print('    for total upscattered CMB energy rate... ', end=' ')
+            if verbose >= 1:
+                print('Done!')
+                print('    for total upscattered CMB energy rate... ', end=' ', flush=True)
             CMB_engloss_interp    = pickle.load( open(load_data_path+"CMB_engloss_interp.raw", "rb") )
-            print('Done!')
-            print('****** Loading complete! ******')
+            if verbose >= 1:
+                print('Done!')
+                print('****** Loading complete! ******', flush=True)
 
             glob_dep_tf_data = {
                 'highengphot' : highengphot_tf_interp,
@@ -275,12 +276,13 @@ def load_data(data_type, use_v1_data=False):
 
         if glob_dep_tf_data is None:
 
-            print('****** Loading transfer functions... ******')
-            print('Using data at %s' % load_data_path)
-                
-            print('    for high-energy deposition... ', end=' ')
+            if verbose >= 1:
+                print('****** Loading transfer functions... ******')
+                print('Using data at %s' % load_data_path)
+                print('    for high-energy deposition... ', end=' ', flush=True)
             highengdep_interp     = pickle.load( open(load_data_path+"highengdep_interp.raw", "rb") )
-            print('Done!')
+            if verbose >= 1:
+                print('Done!', flush=True)
 
             glob_dep_tf_data = {
                 'highengdep'  : highengdep_interp
@@ -294,16 +296,18 @@ def load_data(data_type, use_v1_data=False):
 
         if glob_dep_ctf_data is None:
             
-            print('****** Loading compounded transfer function data... ******')
-            print('Using data at %s' % load_data_path)
-                
-            print('    for propagating photons (compounded)...  ', end='')
+            if verbose >= 1:
+                print('****** Loading compounded transfer function data... ******')
+                print('Using data at %s' % load_data_path)
+                print('    for propagating photons (compounded)...  ', end='', flush=True)
             hep_ctf_interp = pickle.load( open(load_data_path+'hep_p12_tf_interp.raw', 'rb'))
-            print('Done!')
-            print('    for propagating photons (propagator)...  ', end='')
+            if verbose >= 1:
+                print('Done!')
+                print('    for propagating photons (propagator)...  ', end='', flush=True)
             prp_ctf_interp = pickle.load( open(load_data_path+'hep_s11_tf_interp.raw', 'rb'))
-            print('Done!')
-            print('****** Loading complete! ******')
+            if verbose >= 1:
+                print('Done!')
+                print('****** Loading complete! ******', flush=True)
             
             glob_dep_ctf_data = {
                 'hep': hep_ctf_interp,
@@ -333,27 +337,27 @@ def load_data(data_type, use_v1_data=False):
 
         if glob_ics_tf_data is None:
 
-            print('****** Loading transfer functions... ******')
-
-            print('    for inverse Compton (Thomson)... ', end=' ')
+            if verbose >= 1:
+                print('****** Loading transfer functions... ******')
+                print('    for inverse Compton (Thomson)... ', end=' ', flush=True)
             ics_thomson_ref_tf = pickle.load(
                 open(load_data_path+"/ics_thomson_ref_tf.raw", "rb")
             )
-            print('Done!')
-
-            print('    for inverse Compton (relativistic)... ', end=' ')
+            if verbose >= 1:
+                print('Done!')
+                print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
             ics_rel_ref_tf     = pickle.load(
                 open(load_data_path+"/ics_rel_ref_tf.raw",     "rb")
             )
-            print('Done!')
-
-            print('    for inverse Compton (energy loss)... ', end=' ')
+            if verbose >= 1:
+                print('Done!')
+                print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
             engloss_ref_tf     = pickle.load(
                 open(load_data_path+"/engloss_ref_tf.raw",     "rb")
             )
-            print('Done!')
-
-            print('****** Loading complete! ******')
+            if verbose >= 1:
+                print('Done!')
+                print('****** Loading complete! ******', flush=True)
 
             glob_ics_tf_data = {
                 'thomson' : ics_thomson_ref_tf,
