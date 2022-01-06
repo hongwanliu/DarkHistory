@@ -277,6 +277,7 @@ def get_history(
         return chi/2 + chi/2*np.tanh(yHeIII)
 
     def tla_before_reion(rs, var):
+
         # Returns an array of values for [dT/dz, dyHII/dz,
         # dyHeII/dz, dyHeIII/dz].
         # var is the [temperature, xHII, xHeII, xHeIII] inputs.
@@ -810,20 +811,21 @@ def get_history(
 
     soln_high_rs = np.zeros((high_rs_vec.size, 4))
 
-    soln_high_rs[:,0] = phys.Tm_std(high_rs_vec)
-    soln_high_rs[:,1] = 1. - phys.xHI_std(high_rs_vec, high_rs)
-    soln_high_rs[:,2] = phys.xHeII_std(high_rs_vec)
-    soln_high_rs[:,3] = np.ones_like(high_rs_vec) * 1e-12 #!!! Need to make phys.xHeIII_std
-
-    if low_rs_vec.size == 0:
-        return soln_high_rs
-
-    soln_high_rs[:,0] = np.log(soln_high_rs[:,0])
-    soln_high_rs[:,1] = np.arctanh(2*(soln_high_rs[:,1] - 0.5))
-    soln_high_rs[:,2] = np.arctanh(2/chi * (soln_high_rs[:,2] - chi/2))
-    soln_high_rs[:,3] = np.arctanh(2/chi * (soln_high_rs[:,3] - chi/2))
-
     if high_rs_vec.size > 0:
+
+        soln_high_rs[:,0] = phys.Tm_std(high_rs_vec)
+        soln_high_rs[:,1] = 1. - phys.xHI_std(high_rs_vec, high_rs) + phys.post_Saha(high_rs_vec)
+        soln_high_rs[:,2] = phys.xHeII_std(high_rs_vec)
+        soln_high_rs[:,3] = np.ones_like(high_rs_vec) * 1e-12 #!!! Need to make phys.xHeIII_std
+
+        if low_rs_vec.size == 0:
+            return soln_high_rs
+
+        soln_high_rs[:,0] = np.log(soln_high_rs[:,0])
+        soln_high_rs[:,1] = np.arctanh(2*(soln_high_rs[:,1] - 0.5))
+        soln_high_rs[:,2] = np.arctanh(2/chi * (soln_high_rs[:,2] - chi/2))
+        soln_high_rs[:,3] = np.arctanh(2/chi * (soln_high_rs[:,3] - chi/2))
+
         # Start from where high_rs_vec left off
         low_rs_vec = np.append(high_rs_vec[-1], low_rs_vec)
         _init_cond = list(soln_high_rs[-1])
