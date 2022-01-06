@@ -807,6 +807,7 @@ def xe_Saha(rs, species):
 
 
     elif species in {'HeII'}:
+        #!!! Re-derive
         rhs = (
             4 * (1/de_broglie_wavelength)**3 
             / (nH*rs**3) * np.exp(-He_ion_eng/T)
@@ -818,8 +819,9 @@ def xe_Saha(rs, species):
         b   = rhs - 1. 
         q   = -(1. + chi)*rhs
 
-        x[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
-        x[~mask] = (1 + chi)*(1 - (1 + chi)/rhs[~mask])
+        #!!! The -1 are hacks!
+        x[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)-1
+        x[~mask] = (1 + chi)*(1 - (1 + chi)/rhs[~mask])-1
         
     else:
         raise TypeError('invalid species.')
@@ -865,6 +867,34 @@ def d_xe_Saha_dz(rs, species):
         return TypeError('invalid species.')
 
     return numer/denom
+
+
+# RHS of TLA
+def xdot(xe, rs, fudge = True):
+    Tm = Tm_std(rs) #!!! Should include corrections to Tm = T_CMB in this function
+
+    return - dtdz(rs) * peebles_C(xe, rs, fudge) * (
+        alpha_recomb(Tm, 'HI', fudge) * xe**2 * (nH * rs**3)
+        - 4 * beta_ion(Tm, 'HI', fudge) * (1-xe) * np.exp(-lya_eng/TCMB(rs))
+    )
+
+# Post-Saha correction: see App D of 1006.1355
+def post_Saha(rs, species = 'HII'):
+    xHII_S = xe_Saha(rs, 'HII')
+    xHI_S  = xe_Saha(rs, 'HI')
+
+    # Numerical derivative of RHS of TLA
+    eps = .01 * xHII_S * xHI_S
+    D1 = (xdot(xHII_S + eps, rs) - xdot(xHII_S - eps, rs))/(2*eps)
+
+    if species == 'HII':
+        return  d_xe_Saha_dz(rs,'HI')/D1
+
+    elif species == 'HI':
+        return -d_xe_Saha_dz(rs,'HI')/D1
+
+    else:
+        raise TypeError('Invalid Species')
 
 # Standard ionization and thermal histories
 
