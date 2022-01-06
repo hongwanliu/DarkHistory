@@ -394,13 +394,13 @@ def evolve(
     out_highengphot_specs = Spectra([], spec_type='N')
     out_lowengphot_specs  = Spectra([], spec_type='N')
     out_lowengelec_specs  = Spectra([], spec_type='N')
-    if distort: out_distort_specs = Spectra([], spec_type='N')
+    out_distort_specs = Spectra([], spec_type='N')
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
     append_lowengphot_spec  = out_lowengphot_specs.append
     append_lowengelec_spec  = out_lowengelec_specs.append
-    if distort: append_distort_spec = out_distort_specs.append
+    append_distort_spec = out_distort_specs.append
 
     # Initialize arrays to store f values. 
     f_c  = np.empty((0,5))
@@ -520,19 +520,18 @@ def evolve(
             ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs, eleceng, x_at_rs, method='He')
             tot_spec_elec = in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
 
-            if True:
-                def beta_MLA(logrs):
-                    rs = np.exp(logrs)
+            def beta_MLA(logrs):
+                rs = np.exp(logrs)
 
-                    tau = atomic.tau_np_1s(2,rs)
-                    xe = phys.xHII_std(rs)
-                    Tm = phys.Tm_std(rs)
-                    Tr = phys.TCMB(rs)
-                    x2s = atomic.x2s_steady_state(rs, Tr, Tm, xe, 1-xe, tau)
-                    x2 = 4*x2s
-                    beta_ion = phys.beta_ion(Tm, 'HI')
+                tau = atomic.tau_np_1s(2,rs)
+                xe = phys.xHII_std(rs)
+                Tm = phys.Tm_std(rs)
+                Tr = phys.TCMB(rs)
+                x2s = atomic.x2s_steady_state(rs, Tr, Tm, xe, 1-xe, tau)
+                x2 = 4*x2s
+                beta_ion = phys.beta_ion(Tm, 'HI')
 
-                    return np.log(beta_ion*x2)
+                return np.log(beta_ion*x2)
 
 
                 #def alpha_MLA(rs):
@@ -544,7 +543,8 @@ def evolve(
                 # Phase space density for the distortion
                 #prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
                 #Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
-                Delta_f = lambda ee : 0
+                # Delta_f = lambda ee : 0
+                Delta_f = None
                 alpha_MLA_data[0], beta_MLA_data[0] = alpha_MLA_data[1], beta_MLA_data[1]
 
                 x_1s = 1-x_arr[-1, 0]
