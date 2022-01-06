@@ -635,10 +635,6 @@ def xi_nl(n, l, T_r=None, f_gamma=None):
     kappa2 is our precomputed kappa2 values. 
     """
 
-    if T_r is not None and f_gamma is not None: 
-
-        raise ValueError('Please use either T_r or f_gamma, not both.')
-
     if T_r is None and f_gamma is None: 
 
         raise ValueError('Please use either T_r or f_gamma.')
