@@ -111,7 +111,7 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
             BB['dn'][n][n_p][0]   = 0.0                          #/* No l' < 0   */
             for l in np.arange(0,n_p,1): #/* Absorption obtained by detailed balance */
                 if (Tr < ZEROTEMP):  #/* if Tr = 0 */
-                    BB['up'][n_p][n][l] = BB['dn'][n_p][n][l+1] = 0.0;
+                    BB['up'][n_p][n][l] = BB['dn'][n_p][n][l+1] = 0.0
                 else:
                     #BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(-Ennp/Tr) * BB['dn'][n][n_p][l+1]
                     #BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(-Ennp/Tr) * BB['up'][n][n_p][l]
@@ -423,7 +423,7 @@ def get_distortion_and_ionization(
     nB = phys.nB * rs**3
 
     if Delta_f==None:
-        Delta_f = lambda l: 0
+        def Delta_f(E): return 0
 
     # Radiation Temperature
     Tr = phys.TCMB(rs)
@@ -529,9 +529,9 @@ def get_distortion_and_ionization(
             )/nB * dt
 
         BF_tmp = nH**2 * xe**2 * bf.gamma_nl(
-            n, l, Tm, T_r=Tr, f_gamma=None, stimulated_emission=True
+            n, l, Tm, T_r=Tr, f_gamma=f_gamma, stimulated_emission=True
         )/nB * dt
-        BF_tmp -= nH * x_full[nl] * bf.xi_nl(n, l, T_r=Tr, f_gamma=None)/nB * dt
+        BF_tmp -= nH * x_full[nl] * bf.xi_nl(n, l, T_r=Tr, f_gamma=f_gamma)/nB * dt
         BF_tmp.rebin(eng)
         BF_spec.dNdE += BF_tmp.dNdE
 
