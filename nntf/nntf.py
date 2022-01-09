@@ -160,6 +160,8 @@ class NNTFRaw:
             else:                  # regime 0
                 xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
                 xHe_in = np.arctanh(2*np.clip(xHe/(phys.YHe/(4*(1-phys.YHe))), XMIN, XMAX)-1)
+                #xH_in  = xH*10
+                #xHe_in = xHe*100
         
             pred_in_shape = (len(self._pred_in_2D),)
             pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
@@ -225,6 +227,7 @@ class NNTF (PredTF, NNTFRaw):
             for i in range(i_start, 500):
                 if self.TF_type in ['hep_p12', 'hep_s11']:
                     normalize_to_E(self.abscs[1], self.TF[i], i-12, i, E_arr[i])
+                    #normalize_to_E(self.abscs[1], self.TF[i], 0, i, E_arr[i])
                 elif self.TF_type in ['lee']:
                     normalize_to_E(self.abscs[1], self.TF[i], 0, 135, E_arr[i])
                     # the following need to find boundary

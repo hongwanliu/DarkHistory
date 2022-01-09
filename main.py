@@ -47,7 +47,7 @@ def evolve(
     verbose=1, # level: 1 (~original), 2 (show energy flow)
     log_fn='evolve.log', # log verbose level 2 information
     sol_fn=None,
-    use_tqdmx=None
+    use_tqdms=None
 ):
     """
     Main function computing histories and spectra. 
@@ -190,9 +190,9 @@ def evolve(
         #lowengphot_tf_interp  = dep_tf_data['lowengphot']
         #lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
-        dep_ctf_data = load_data('dep_ctf')
-        hep_ctf_interp = dep_ctf_data['hep']
-        prp_ctf_interp = dep_ctf_data['prp']
+        #dep_ctf_data = load_data('dep_ctf')
+        #hep_ctf_interp = dep_ctf_data['hep']
+        #prp_ctf_interp = dep_ctf_data['prp']
         #ics_tf_data = load_data('ics_tf')
         #ics_thomson_ref_tf = ics_tf_data['thomson']
         #ics_rel_ref_tf     = ics_tf_data['rel']
@@ -740,10 +740,10 @@ def evolve(
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
             
             # record tfs used
-            tf_arr.append([hep_nntf.TF, 
-                           hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
-                           prp_nntf.TF,
-                           prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
+            #tf_arr.append([hep_nntf.TF, 
+            #               hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
+            #               prp_nntf.TF,
+            #               prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
             
             # tmp fix
             #hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
@@ -805,8 +805,8 @@ def evolve(
             print(show_text, flush=True)
         log_file.write(show_text+'\n')
         
-        if use_tqdmx is not None:
-            print('tqdmx %d' % use_tqdmx, flush=True)
+        if use_tqdms is not None:
+            print('tqdms %d' % use_tqdms, flush=True)
         
         #############################
         # Parameters for next step  #
