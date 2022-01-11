@@ -37,7 +37,7 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
-    use_tqdm=True, cross_check=False
+    use_tqdm=True, cross_check=False, delta_injection = False
 ):
     """
     Main function computing histories and spectra. 
@@ -96,6 +96,8 @@ def evolve(
         Uses tqdm if *True*. Default is *True*. 
     cross_check : bool, optional
         If *True*, compare against 1604.02457 by using original MEDEA files, turning off partial binning, etc. Default is *False*.
+    delta_injection : bool, optional
+        If *True*, injection only occurs on the first step, with no further injection at subsequent redshifts.
 
     Examples
     --------
@@ -386,6 +388,13 @@ def evolve(
             lowengphot_spec_at_rs  = in_spec_phot*0
             lowengelec_spec_at_rs  = in_spec_elec*0
             highengdep_at_rs       = np.zeros(4)
+
+        else:
+
+            # For delta_injection, we set all input spectra after this to zero. 
+            in_spec_phot *= 0
+            in_spec_elec *= 0 
+            elec_processes = False
 
 
         #####################################################################
