@@ -1167,3 +1167,21 @@ class Spectrum:
 
         self.rebin(eng_orig)
         self.rs = new_rs
+
+    def copy(self):
+        """Copies the Spectrum object by value, not reference.
+
+        """
+
+        tmp_spec = Spectrum(
+            eng=self.eng.copy(),
+            data=self._data.copy(),
+            rs=self.rs,
+            in_eng=self.in_eng,
+            spec_type=self._spec_type,
+        )
+
+        tmp_spec.length = self.eng.size
+        tmp_spec.underflow = self.underflow
+
+        return tmp_spec

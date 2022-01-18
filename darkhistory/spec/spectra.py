@@ -1378,3 +1378,25 @@ class Spectra:
         else:
             raise TypeError('indtype must be either ind or rs.')
 
+    def copy(self):
+        """Copies the Spectra object by value, not reference.
+
+        """
+        
+        tmp_spec = Spectra(
+            self._grid_vals.copy(),
+            in_eng = self._in_eng.copy(),
+            rs = self._rs.copy(),
+            eng = self._eng.copy(),
+            spec_type = self._spec_type,
+        )
+
+        # tmp_spec._grid_vals = self._grid_vals.copy()
+        # tmp_spec._spec_type = self._spec_type
+        # tmp_spec._eng = self._eng.copy()
+        # tmp_spec._in_eng = self._in_eng.copy()
+        # tmp_spec._rs = self._rs.copy()
+        tmp_spec._N_underflow = self._N_underflow.copy()
+        tmp_spec._eng_underflow = self._eng_underflow.copy()
+
+        return tmp_spec
