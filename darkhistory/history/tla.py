@@ -45,18 +45,18 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     )
 
 def get_history(
-    rs_vec, init_cond=None, baseline_f=False, 
-    baseline_struct=False, inj_particle=None,
+    rs_vec, init_cond=None, high_rs=np.inf,
+    baseline_f=False, baseline_struct=False, inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
-    DM_process=None, mDM=None, sigmav=None, 
-    lifetime=None, z_td=None, high_rs=None,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None, 
     struct_boost=None, injection_rate=None, 
     reion_switch=False, reion_rs=None, reion_method=None, 
     heat_switch=False, DeltaT = 0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
     recfast_TLA=True, fudge=True, 
-    alpha_MLA=None, beta_MLA=None,
+    xdot_MLA=None,
+    # alpha_MLA=None, beta_MLA=None,
     mxstep = 1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
@@ -67,7 +67,9 @@ def get_history(
         Abscissa for the solution.
     init_cond : array, optional
         Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
-    baseline_f : bool
+    high_rs : float, optional
+        Redshift above which T and x are set to their default values plus corrections. Default to np.inf.
+    baseline_f : bool, optional
         If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
     baseline_struct : bool
         If True, uses the default structure formation with the baseline f values. Default is False.
@@ -260,14 +262,6 @@ def get_history(
             photoheat_rate_HeI  = photoheat_rate_func[1]
             photoheat_rate_HeII = photoheat_rate_func[2]
 
-    fac_td = 1
-    if z_td is not None:
-        if 1+z_td >= rs:
-            fac_td=0
-
-    if high_rs == None:
-        high_rs = np.inf
-
     # Define conversion functions between x and y. 
     def xHII(yHII):
             return 0.5 + 0.5*np.tanh(yHII)
@@ -335,7 +329,6 @@ def get_history(
 
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
-            ne = xe * nH
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
@@ -363,17 +356,18 @@ def get_history(
                     )
                 )
             else:
-                peebC = phys.peebles_C(xHII(yHII), rs)
-                beta_ion = phys.beta_ion(T_m, 'HI')
+                # peebC = phys.peebles_C(xHII(yHII), rs)
+                # beta_ion = phys.beta_ion(T_m, 'HI')
 
-                tau = atomic.tau_np_1s(2,rs, 1-xe)
-                x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), T_m, xe, 1-xe, tau)
-                x2  = 4*x2s
+                # tau = atomic.tau_np_1s(2,rs, 1-xe)
+                # x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), T_m, xe, 1-xe, tau)
+                # x2  = 4*x2s
                 
                 #print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
                 #print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
+                    # xdot_MLA(rs, xe)
                     #-0*peebC * (
                     #    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
@@ -389,7 +383,7 @@ def get_history(
 
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                         / (phys.rydberg * nH)
-                        )
+                    )
 
         def dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
 
@@ -831,10 +825,10 @@ def get_history(
         _init_cond = list(soln_high_rs[-1])
 
     # regime (ii)
-    rs_before_reion_vec = rs_vec[low_rs_vec > reion_rs]
+    rs_before_reion_vec = low_rs_vec[low_rs_vec > reion_rs]
 
     # regime (iii)
-    rs_reion_vec = rs_vec[low_rs_vec <= reion_rs]
+    rs_reion_vec = low_rs_vec[low_rs_vec <= reion_rs]
 
     # Lower redshift: use odeint
     if not reion_switch:
