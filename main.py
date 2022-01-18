@@ -38,7 +38,7 @@ def evolve(
     DM_process=None, mDM=None, sigmav=None, 
     lifetime=None, primary=None,
     struct_boost=None, 
-    start_rs=None, high_rs=None, end_rs=4, 
+    start_rs=None, high_rs=np.inf, end_rs=4, 
     helium_TLA=False, reion_switch=False, 
     reion_rs=None, reion_method='Puchwein', 
     heat_switch=False, DeltaT=0, alpha_bk=0.5,
@@ -444,7 +444,7 @@ def evolve(
         distortion=None
         # Object to help us interpolate over MEDEA results.
         MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
-        alpha_MLA, beta_MLA = None,None
+        alpha_MLA, beta_MLA = None, None
         if recfast_TLA is None:
             recfast_TLA=True
 
@@ -543,8 +543,7 @@ def evolve(
                 # Phase space density for the distortion
                 #prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
                 #Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
-                # Delta_f = lambda ee : 0
-                Delta_f = None
+                Delta_f = lambda ee : 0
                 alpha_MLA_data[0], beta_MLA_data[0] = alpha_MLA_data[1], beta_MLA_data[1]
 
                 x_1s = 1-x_arr[-1, 0]
@@ -556,13 +555,16 @@ def evolve(
 
                 alpha_MLA_data[1][0], beta_MLA_data[1][0] = rs, rs
                     
-                alpha_MLA = interp1d(alpha_MLA_data[:,0], alpha_MLA_data[:,1], kind='linear', fill_value='extrapolate')
-                beta_MLA  = interp1d(
-                        np.log(beta_MLA_data[:,0]), 
-                        np.log(beta_MLA_data[:,1]),  fill_value='extrapolate'
-                )
+                if make_MLA:
 
-                if not make_MLA:
+                    alpha_MLA = interp1d(alpha_MLA_data[:,0], alpha_MLA_data[:,1], kind='linear', fill_value='extrapolate')
+                    beta_MLA  = interp1d(
+                            np.log(beta_MLA_data[:,0]), 
+                            np.log(beta_MLA_data[:,1]),  fill_value='extrapolate'
+                    )
+
+                else:
+
                     alpha_MLA = MLA_funcs[0]
                     beta_MLA = MLA_funcs[1]
 
@@ -734,11 +736,6 @@ def evolve(
             f_Lya   = f_phot['H exc'] + f_elec['Lya']
             f_heat  = f_elec['heat']
             f_err   = f_elec['err']
-
-            if distort:
-                f_Lya=0
-                #print(rs, f_ion_atomic/f_H_ion)
-                #f_H_ion += f_ion_atomic
 
             if compute_fs_method == 'old':
                 # The old method neglects helium.
