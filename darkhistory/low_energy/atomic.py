@@ -244,6 +244,9 @@ def populate_beta(Tr, nmax, Delta_f=None):
     """ From prefac we see that the units are s^-1 """
     beta = np.zeros((nmax+1,nmax))
 
+    if Delta_f == None:
+        Delta_f = lambda l : 0
+
     def f_gamma(Ennp):
         return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
 
@@ -267,6 +270,10 @@ def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True):
     alpha = np.zeros((int(nmax+1),nmax))
 
     if stimulated_emission:
+
+        if Delta_f == None:
+            Delta_f = lambda l : 0
+
         def f_gamma(Ennp):
             return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
     else:
@@ -483,6 +490,7 @@ def get_distortion_and_ionization(
 
     mat = np.identity(num_states-1) - K[1:,1:]
     x_vec = np.linalg.solve(mat,b[1:])
+    #!!! I should be able to set xHI = 1 - sum(x_full) - xe, but instead I'm stuck with 1-xHII
     x_full = np.append(xHI, x_vec)
 
     ### Now calculate the total ionization and distortion ###
