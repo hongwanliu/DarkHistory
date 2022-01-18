@@ -1031,7 +1031,7 @@ def xHeII_std(rs, rs_extrap = 3e3):
     else:
         return xHeII
 
-def Tm_std(rs):
+def Tm_std(rs, rs_extrap=2e3):
     """Baseline Tm value.
 
     Parameters
@@ -1056,12 +1056,12 @@ def Tm_std(rs):
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
     if isinstance(rs*1.,float):
-        if rs<2e3:
+        if rs<rs_extrap:
             return _Tm_std(rs)
         else:
             return TCMB(rs)
     else:
-        extrap = rs>2e3
+        extrap = rs>rs_extrap
         if np.sum(extrap) == 0:
             return _Tm_std(rs)
         elif np.sum(~extrap) == 0:
