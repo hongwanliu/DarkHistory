@@ -55,8 +55,8 @@ def get_history(
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
     recfast_TLA=True, fudge=True, 
-    xdot_MLA=None,
-    # alpha_MLA=None, beta_MLA=None,
+    # xdot_MLA=None,
+    alpha_MLA=None, beta_MLA=None,
     mxstep = 1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
