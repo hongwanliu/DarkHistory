@@ -300,16 +300,13 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
         ])
 
         # Spectra weighted by prob.
-        phot_spec_HI   = phot_spec*prob[0]
-        phot_spec_HeI  = phot_spec*prob[1]
-        phot_spec_HeII = phot_spec*prob[2]
-
+        weighted_phot_spec = {state : phot_spec*prob[i] for i,state in enumerate(states)}
 
         # Spectrum object containing secondary electron 
         # from ionization. 
         ionized_elec   = {state: Spectrum(
             phot_spec.eng[ion_ind[state]:]-ion_eng[state],
-            phot_spec_HI.N[ion_ind[state]:],
+            weighted_phot_spec[state].N[ion_ind[state]:],
             rs=phot_spec.rs, spec_type='N'
         ) for state in states}
 
