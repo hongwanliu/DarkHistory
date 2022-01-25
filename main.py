@@ -24,6 +24,8 @@ from   darkhistory.spec.spectools import discretize
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
+from darkhistory.electrons.elec_coolingTMP import get_elec_cooling_tf as get_elec_cooling_tfTMP
+from darkhistory.low_energy.lowE_deposition import compute_fs as compute_fs_OLD
 import darkhistory.low_energy.atomic as atomic
 
 import darkhistory.photons.phot_dep as phot_dep
@@ -370,10 +372,18 @@ def evolve(
 
         # Contains information that makes converting an energy loss spectrum 
         # to a scattered electron spectrum fast. 
-        (
-            coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-            ics_engloss_data
-        ) = get_elec_cooling_data(eleceng, photeng, H_states)
+        if not cross_check:
+            (
+                coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+                ics_engloss_data
+            ) = get_elec_cooling_data(eleceng, photeng, H_states)
+        else:
+            import mainTMP
+            (
+                coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
+                ics_engloss_data
+            ) = mainTMP.get_elec_cooling_data(eleceng, photeng)
+
 
         #Spectrum of photons emitted from 2s -> 1s de-excitation
         spec_2s1s = generate_spec_2s1s(photeng)
@@ -507,21 +517,92 @@ def evolve(
                 xHeII_elec_cooling = phys.xHeII_std(rs)
 
             # Create the electron transfer functions
-            (
-                ics_sec_phot_tf,
-                deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
-                ICS_engloss_vec, ICS_err_vec,
-            ) = get_elec_cooling_tf(
-                    eleceng, photeng, rs,
-                    xHII_elec_cooling, xHeII=xHeII_elec_cooling,
-                    raw_thomson_tf=ics_thomson_ref_tf, 
-                    raw_rel_tf=ics_rel_ref_tf, 
-                    raw_engloss_tf=engloss_ref_tf,
-                    coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
-                    coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
-                    ics_engloss_data=ics_engloss_data,
-                    method=method, H_states=H_states, spec_2s1s = spec_2s1s
-                    #loweng=eleceng[0]
+            if not cross_check:
+                (
+                    ics_sec_phot_tf,
+                    deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
+                    ICS_engloss_vec, ICS_err_vec,
+                ) = get_elec_cooling_tf(
+                        eleceng, photeng, rs,
+                        xHII_elec_cooling, xHeII=xHeII_elec_cooling,
+                        raw_thomson_tf=ics_thomson_ref_tf, 
+                        raw_rel_tf=ics_rel_ref_tf, 
+                        raw_engloss_tf=engloss_ref_tf,
+                        coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
+                        coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
+                        ics_engloss_data=ics_engloss_data,
+                        method=method, H_states=H_states, spec_2s1s = spec_2s1s
+                        #loweng=eleceng[0]
+                    )
+
+
+                ### Apply the transfer functions to the input electron spectrum generated in this step ###
+
+                # deposited energy into ionization, *per baryon in this step*. 
+                deposited_H_ion  = np.dot(
+                    deposited_ion_arr['H'], tot_spec_elec.N
+                )
+                deposited_He_ion  = np.dot(
+                    deposited_ion_arr['He'], tot_spec_elec.N
+                )
+                # Lyman-alpha excitation 
+                deposited_Lya  = np.dot(
+                    deposited_exc_arr['2p'], tot_spec_elec.N
+                )
+                # heating
+                deposited_heat = np.dot(
+                    deposited_heat_arr, tot_spec_elec.N
+                )
+                # numerical error
+                deposited_err  = np.dot(
+                    ICS_err_vec, tot_spec_elec.N
+                )
+
+            else:
+                (
+                    ics_sec_phot_tf, elec_processes_lowengelec_tf,
+                    deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
+                    continuum_loss, deposited_ICS_arr
+                ) = get_elec_cooling_tfTMP(
+                        eleceng, photeng, rs,
+                        xHII_elec_cooling, xHeII=xHeII_elec_cooling,
+                        raw_thomson_tf=ics_thomson_ref_tf, 
+                        raw_rel_tf=ics_rel_ref_tf, 
+                        raw_engloss_tf=engloss_ref_tf,
+                        coll_ion_sec_elec_specs=coll_ion_sec_elec_specs, 
+                        coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
+                        ics_engloss_data=ics_engloss_data
+                    )
+
+                # Low energy electrons from electron cooling, per injection event.
+                elec_processes_lowengelec_spec = (
+                    elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
+                )
+
+                # Add this to lowengelec_at_rs. 
+                lowengelec_spec_at_rs += (
+                    elec_processes_lowengelec_spec*norm_fac(rs)
+                )
+
+                # High-energy deposition into ionization, 
+                # *per baryon in this step*. 
+                deposited_H_ion  = np.dot(
+                    deposited_ion_arr,  in_spec_elec.N*norm_fac(rs)
+                )
+                # High-energy deposition into excitation, 
+                # *per baryon in this step*. 
+                deposited_Lya  = np.dot(
+                    deposited_exc_arr,  in_spec_elec.N*norm_fac(rs)
+                )
+                # High-energy deposition into heating, 
+                # *per baryon in this step*. 
+                deposited_heat = np.dot(
+                    deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
+                )
+                # High-energy deposition numerical error, 
+                # *per baryon in this step*. 
+                deposited_err  = np.dot(
+                    deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
                 )
 
             def beta_MLA(logrs):
@@ -572,28 +653,6 @@ def evolve(
                     alpha_MLA = MLA_funcs[0]
                     beta_MLA = MLA_funcs[1]
 
-
-            ### Apply the transfer functions to the input electron spectrum generated in this step ###
-
-            # deposited energy into ionization, *per baryon in this step*. 
-            deposited_H_ion  = np.dot(
-                deposited_ion_arr['H'], tot_spec_elec.N
-            )
-            deposited_He_ion  = np.dot(
-                deposited_ion_arr['He'], tot_spec_elec.N
-            )
-            # Lyman-alpha excitation 
-            deposited_Lya  = np.dot(
-                deposited_exc_arr['2p'], tot_spec_elec.N
-            )
-            # heating
-            deposited_heat = np.dot(
-                deposited_heat_arr, tot_spec_elec.N
-            )
-            # numerical error
-            deposited_err  = np.dot(
-                ICS_err_vec, tot_spec_elec.N
-            )
 
             #######################################
             # Photons from Injected Electrons     #
@@ -693,7 +752,7 @@ def evolve(
             ])
 
         if elec_processes:
-            # High-energy deposition from input electrons. 
+            # High-energy deposition from input electrons.
             highengdep_at_rs += np.array([
                 deposited_H_ion/dt,
                 #deposited_He_ion/dt,
@@ -702,31 +761,35 @@ def evolve(
                 deposited_err/dt
             ])
 
-            # High-energy deposition from input electrons
-            norm = phys.nB*rs**3 / rate_func_eng(rs)
-            f_elec = {
-                    'H ion'  : highengdep_at_rs[0] * norm,
-                    'He ion' : deposited_He_ion/dt * norm,
-                    'Lya'    : highengdep_at_rs[1] * norm,
-                    'heat'   : highengdep_at_rs[2] * norm,
-                    'err'    : highengdep_at_rs[3] * norm
-                    }
+            if not cross_check:
 
-        else:
-            f_elec = lowE_electrons.compute_fs(
-                MEDEA_interp, tot_spec_elec, 1-x_vec_for_f[0], 
-                rate_func_eng(rs), dt
-            )
+                # High-energy deposition from input electrons
+                norm = phys.nB*rs**3 / rate_func_eng(rs)
+                f_elec = {
+                        'H ion'  : highengdep_at_rs[0] * norm,
+                        'He ion' : deposited_He_ion/dt * norm,
+                        'Lya'    : highengdep_at_rs[1] * norm,
+                        'heat'   : highengdep_at_rs[2] * norm,
+                        'err'    : highengdep_at_rs[3] * norm
+                        }
 
-            norm = phys.nB*rs**3 / rate_func_eng(rs)
-            f_elec = {
-                    'H ion'  : f_elec[2] + highengdep_at_rs[0] * norm,
-                    'He ion' : f_elec[3],
-                    'Lya'    : f_elec[1] + highengdep_at_rs[1] * norm,
-                    'heat'   : f_elec[4] + highengdep_at_rs[2] * norm,
-                    'cont'   : f_elec[0],
-                    'err'    : highengdep_at_rs[3] * norm
-            }
+            else:
+                input_spec = lowengelec_spec_at_rs+ionized_elec
+                input_spec.rs = rs
+                f_elec = lowE_electrons.compute_fs(
+                    MEDEA_interp, input_spec, 1-x_vec_for_f[0], 
+                    rate_func_eng(rs), dt
+                )
+
+                norm = phys.nB*rs**3 / rate_func_eng(rs)
+                f_elec = {
+                        'H ion'  : f_elec[2] + highengdep_at_rs[0] * norm,
+                        'He ion' : f_elec[3],
+                        'Lya'    : f_elec[1] + highengdep_at_rs[1] * norm,
+                        'heat'   : f_elec[4] + highengdep_at_rs[2] * norm,
+                        'cont'   : f_elec[0],
+                        'err'    : highengdep_at_rs[3] * norm
+                }
 
         # Combine the contributions from electrons and photons
         if compute_fs_method == 'HeII' and rs > reion_rs:
@@ -763,27 +826,26 @@ def evolve(
             f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
 
 
-        # if not distort:
-        #     from darkhistory.low_energy.lowE_deposition import compute_fs as compute_fs_OLD
+        if cross_check:
 
-        #     f_raw = compute_fs_OLD(
-        #         MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-        #         x_vec_for_f, rate_func_eng(rs), dt,
-        #         highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
-        #     )
+            f_raw = compute_fs_OLD(
+                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+                x_vec_for_f, rate_func_eng(rs), dt,
+                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
+            )
 
-        #     # Compute f for TLA: sum of low and high.
-        #     f_H_ion = f_raw[0][0] + f_raw[1][0]
-        #     f_Lya   = f_raw[0][2] + f_raw[1][2]
-        #     f_heat  = f_raw[0][3] + f_raw[1][3]
-        #     # This keeps track of numerical error from ICS,
-        #     # which is absent when there are no electrons
-        #     f_err   = 0 
+            # Compute f for TLA: sum of low and high.
+            f_H_ion = f_raw[0][0] + f_raw[1][0]
+            f_Lya   = f_raw[0][2] + f_raw[1][2]
+            f_heat  = f_raw[0][3] + f_raw[1][3]
+            # This keeps track of numerical error from ICS,
+            # which is absent when there are no electrons
+            f_err   = 0 
 
-        #     if compute_fs_method == 'old':
-        #         f_He_ion = 0.
-        #     else:
-        #         f_He_ion = f_raw[0][1] + f_raw[1][1]
+            if compute_fs_method == 'old':
+                f_He_ion = 0.
+            else:
+                f_He_ion = f_raw[0][1] + f_raw[1][1]
         
         # Save the f_c(z) values.
         f_c = np.concatenate((f_c, [[f_H_ion, f_He_ion, f_Lya, f_heat, f_err]]))
