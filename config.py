@@ -324,11 +324,13 @@ def load_data(data_type, use_v1_data=False, verbose=1):
             tf_E_interp   = pickle.load( open(load_data_path+'tf_E_interp.raw', 'rb') )
             hep_lb_interp = pickle.load( open(load_data_path+'hep_lb_interp.raw', 'rb') )
             lci_interp    = pickle.load( open(load_data_path+'lci_interp.raw', 'rb') )
+            hci_interp    = pickle.load( open(load_data_path+'hci_interp.raw', 'rb') )
             
             glob_tf_helper_data = {
                 'tf_E'   : tf_E_interp,
                 'hep_lb' : hep_lb_interp,
-                'lci'    : lci_interp
+                'lci'    : lci_interp,
+                'hci'    : hci_interp
             }
             
         return glob_tf_helper_data

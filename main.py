@@ -47,7 +47,8 @@ def evolve(
     verbose=1, # level: 1 (~original), 2 (show energy flow)
     log_fn='evolve.log', # log verbose level 2 information
     sol_fn=None,
-    use_tqdms=None
+    use_tqdms=None,
+    record_tfs=False
 ):
     """
     Main function computing histories and spectra. 
@@ -184,15 +185,17 @@ def evolve(
         coarsen_factor = 12
         
         # tmp
-        dep_tf_data = load_data( 'hed_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
-        #dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
+        #dep_tf_data = load_data( 'hed_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
+        dep_tf_data = load_data( 'dep_tf', use_v1_data=(tf_mode=='table_v1'), verbose=verbose )
         #highengphot_tf_interp = dep_tf_data['highengphot']
         #lowengphot_tf_interp  = dep_tf_data['lowengphot']
         #lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
-        #dep_ctf_data = load_data('dep_ctf')
-        #hep_ctf_interp = dep_ctf_data['hep']
-        #prp_ctf_interp = dep_ctf_data['prp']
+        if record_tfs:
+            lowengphot_tf_interp  = dep_tf_data['lowengphot']
+            dep_ctf_data = load_data('dep_ctf')
+            hep_ctf_interp = dep_ctf_data['hep']
+            prp_ctf_interp = dep_ctf_data['prp']
         #ics_tf_data = load_data('ics_tf')
         #ics_thomson_ref_tf = ics_tf_data['thomson']
         #ics_rel_ref_tf     = ics_tf_data['rel']
@@ -740,10 +743,11 @@ def evolve(
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
             
             # record tfs used
-            #tf_arr.append([hep_nntf.TF, 
-            #               hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
-            #               prp_nntf.TF,
-            #               prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
+            if record_tfs:
+                tf_arr.append([lep_pdtf.TF, 
+                               lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
+                               prp_nntf.TF,
+                               prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
             
             # tmp fix
             #hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals

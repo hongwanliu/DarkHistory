@@ -160,8 +160,9 @@ class NNTFRaw:
             else:                  # regime 0
                 xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
                 xHe_in = np.arctanh(2*np.clip(xHe/(phys.YHe/(4*(1-phys.YHe))), XMIN, XMAX)-1)
-                #xH_in  = xH*10
-                #xHe_in = xHe*100
+                if self.TF_type == 'hep_p12': # test for interp_trained
+                    xH_in  = xH*10
+                    xHe_in = xHe*100
         
             pred_in_shape = (len(self._pred_in_2D),)
             pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
@@ -206,6 +207,7 @@ class NNTF (PredTF, NNTFRaw):
         
         tf_helper_data = load_data('tf_helper')
         self.lci_interp = tf_helper_data['lci']
+        self.hci_interp = tf_helper_data['hci']
     
     def predict_TF(self, rs=4.0, xH=None, xHe=None, E_arr=None):
         
@@ -221,13 +223,18 @@ class NNTF (PredTF, NNTFRaw):
             for i in range(self.TF_shape[0]):
                 self.TF[i][i] += 1
 
+        hci = int(np.round(self.hci_interp.get_val(xH, xHe, rs)))
         ### adjust for E_arr
         if E_arr is not None:
             i_start = lci if self.TF_type in ['hep_p12', 'lee'] else 12
             for i in range(i_start, 500):
                 if self.TF_type in ['hep_p12', 'hep_s11']:
-                    normalize_to_E(self.abscs[1], self.TF[i], i-12, i, E_arr[i])
-                    #normalize_to_E(self.abscs[1], self.TF[i], 0, i, E_arr[i])
+                    if i <= hci:
+                        normalize_to_E(self.abscs[1], self.TF[i], i-12, i, E_arr[i])
+                    else:
+                        if i < 499:
+                            self.TF[i,i:] = 0
+                        normalize_to_E(self.abscs[1], self.TF[i], 0, i, E_arr[i])
                 elif self.TF_type in ['lee']:
                     normalize_to_E(self.abscs[1], self.TF[i], 0, 135, E_arr[i])
                     # the following need to find boundary
