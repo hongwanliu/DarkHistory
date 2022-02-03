@@ -391,10 +391,12 @@ def evolve(
 
         else:
 
-            # For delta_injection, we set all input spectra after this to zero. 
-            in_spec_phot *= 0
-            in_spec_elec *= 0 
-            elec_processes = False
+            if delta_injection:
+
+                # For delta_injection, we set all input spectra after this to zero. 
+                in_spec_phot *= 0
+                in_spec_elec *= 0 
+                elec_processes = False
 
 
         #####################################################################

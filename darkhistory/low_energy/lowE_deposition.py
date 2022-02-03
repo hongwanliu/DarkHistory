@@ -72,7 +72,7 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
             phot_spec.totN(bound_type="eng", bound_arr=ion_bounds),
             rs=phot_spec.rs,
             spec_type='N'
-        )
+        ) * 0.
 
         new_eng = ion_engs - phys.rydberg
         ionized_elec.shift_eng(new_eng)
