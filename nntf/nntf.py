@@ -149,8 +149,9 @@ class NNTFRaw:
         
     def predict_raw_TF(self, rs=4.0, xH=None, xHe=None):
         
-        if self.TF_type in ['hep_p12', 'hep_s11', 'lee']:
+        if self.TF_type in ['lee']:
             rs_in = np.log(rs)
+            pred_in_shape = (len(self._pred_in_2D),)
             if rs > RS_NODES[1]:   # regime 2
                 xH_in  = 4.0
                 xHe_in = 4.0
@@ -160,15 +161,30 @@ class NNTFRaw:
             else:                  # regime 0
                 xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
                 xHe_in = np.arctanh(2*np.clip(xHe/(phys.YHe/(4*(1-phys.YHe))), XMIN, XMAX)-1)
-                if self.TF_type == 'hep_p12': # test for interp_trained
-                    xH_in  = xH*10
-                    xHe_in = xHe*100
-        
-            pred_in_shape = (len(self._pred_in_2D),)
             pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
                              np.full( pred_in_shape, xHe_in, dtype=np.float32 ),
                              np.full( pred_in_shape, rs_in , dtype=np.float32 ),
                              self._pred_in_2D ]
+            
+        elif self.TF_type in ['hep_p12', 'hep_s11']:
+            rs_in = np.log(rs)
+            pred_in_shape = (len(self._pred_in_2D),)
+            if rs > RS_NODES[1]:   # regime 2
+                pred_in = np.c_[ np.full( pred_in_shape, rs_in, dtype=np.float32 ),
+                                 self._pred_in_2D ]
+            elif rs > RS_NODES[0]: # regime 1
+                xH_in  = xH*10
+                pred_in = np.c_[ np.full( pred_in_shape, xH_in, dtype=np.float32 ),
+                                 np.full( pred_in_shape, rs_in, dtype=np.float32 ),
+                                 self._pred_in_2D ]
+            else:                  # regime 0
+                xH_in  = xH*10
+                xHe_in = xHe*100
+                pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
+                                 np.full( pred_in_shape, xHe_in, dtype=np.float32 ),
+                                 np.full( pred_in_shape, rs_in , dtype=np.float32 ),
+                                 self._pred_in_2D ]
+                
         elif self.TF_type in ['ics_thomson', 'ics_engloss', 'ics_rel']:
             pred_in = self._pred_in_2D
         
@@ -271,3 +287,35 @@ class NNTF_ref (PredTF, NNTFRaw): # predict once as reference
             rs=np.full_like(self.abscs[0], 400), spec_type='dNdE',
             with_interp_func=True
         )
+
+"""
+    def predict_raw_TF(self, rs=4.0, xH=None, xHe=None):
+        
+        if self.TF_type in ['hep_p12', 'hep_s11', 'lee']:
+            rs_in = np.log(rs)
+            if rs > RS_NODES[1]:   # regime 2
+                xH_in  = 4.0
+                xHe_in = 4.0
+            elif rs > RS_NODES[0]: # regime 1
+                xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
+                xHe_in = -5.0
+                if self.TF_type in ['hep_s11']: ##### TEST INTERPTRAIN
+                    xH_in  = xH*10
+                    xHe_in = xHe*100
+            else:                  # regime 0
+                xH_in  = np.arctanh(2*np.clip(xH, XMIN, XMAX)-1)
+                xHe_in = np.arctanh(2*np.clip(xHe/(phys.YHe/(4*(1-phys.YHe))), XMIN, XMAX)-1)
+                if self.TF_type in ['hep_p12', 'hep_s11']: ##### TEST INTERPTRAIN
+                    xH_in  = xH*10
+                    xHe_in = xHe*100
+        
+            pred_in_shape = (len(self._pred_in_2D),)
+            pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
+                             np.full( pred_in_shape, xHe_in, dtype=np.float32 ),
+                             np.full( pred_in_shape, rs_in , dtype=np.float32 ),
+                             self._pred_in_2D ]
+            if rs <= RS_NODES[1] and rs > RS_NODES[0] and self.TF_type in ['hep_s11']:
+                pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
+                                 np.full( pred_in_shape, rs_in , dtype=np.float32 ),
+                                 self._pred_in_2D ]
+"""

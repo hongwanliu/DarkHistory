@@ -751,7 +751,8 @@ def evolve(
             
             # tmp fix
             #hep_nntf.TF = hep_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
-            #prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            if rs_to_interp > 40:
+                prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
             #lee_nntf.TF = lowengelec_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
             #lep_pdtf.TF = lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
 
