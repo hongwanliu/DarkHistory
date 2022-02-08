@@ -882,14 +882,15 @@ def evolve(
                 deposited_exc_arr[state], tot_spec_elec.N
             ) for state in H_states}
 
-            P_ion = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
+            # Probabilities that nl state cascades to 2p state
+            Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
                      '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
                      '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
 
             f_cont += sum([
                 deposited_exc[state] * (
-                    1-P_ion[state]  # 2s->1s
-                    + P_ion[state] * (1-phys.lya_eng/phys.H_exc_eng(state))
+                    1-Ps[state]  # 2s->1s
+                    + Ps[state] * (1-phys.lya_eng/phys.H_exc_eng(state))
                 )
                 for state in H_states]) / dt * norm
 
