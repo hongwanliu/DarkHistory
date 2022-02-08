@@ -314,7 +314,7 @@ def get_transition_energies(nmax):
     H_engs = np.concatenate((H_engs,[20]))
     return H_engs[1:]
 
-def f_exc_to_b(
+def f_exc_to_b_OLD(
         rs, xHII, Tm, 
         dlnz, inj_rate,
         eleceng, photeng, 
@@ -327,15 +327,18 @@ def f_exc_to_b(
     Then compute how these numbers convert to the inhomogeneous term in our steady-state Mx=b equation.
     """
 
+    xHI = 1-xHII
+    dt = dlnz/phys.hubble(rs)
+
     # Total number of excitations (from electron collisions or photoexcitation) that resulted in an ionization *per baryon*
     N_exc_tot_ion = 0
 
-    ### Electron Contribution ###
+    ###---Electron Contribution---###
     exc_grid_elec = np.zeros_like(H_states)
     for i, state in enumerate(H_states):
         exc_grid_elec[i] += deposited_exc_vec_elec[state]/phys.H_exc_eng(state)
 
-    ### Photon Contribution ###
+    ###---Photon Contribution---###
     Tr = phys.TCMB(rs)
     bnds = spectools.get_bin_bound(photeng)
 
@@ -376,8 +379,8 @@ def f_exc_to_b(
 
             N_exc_tot_ion += N_exc_phot * P_ion[state]
 
-            # Spectrum produced for this state
-            exc_spec_phot.N += N_exc_phot * one_transition[state].N
+            # # Spectrum produced for this state
+            # exc_spec_phot.N += N_exc_phot * one_transition[state].N
 
     # Convert N_exc_tot (number per baryon) to dE/dVdt, then divide by dE/dVdt|_inj in this step
     f_ion =  (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
@@ -571,6 +574,111 @@ def get_distortion_and_ionization(
     transition_spec.N += amp_2s1s * spec_2s1s.N
 
     return alpha_MLA, beta_MLA, transition_spec
+
+
+def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
+    """ Allow ground state atoms to absorb distortion photons 
+    
+        Identify the bins that contain resonant photons, calculate what fraction
+        of them get absorbed, subtract them from distortion.N, and return f_{exc,i} 
+        to account for the energy that got absorbed.
+    """
+    rs = distortion.rs
+    if rs == -1:
+        raise TypeError('must initialize the redshift\'s distortion properly')
+
+    photeng = distortion.eng
+
+    # Photon phase space density
+    prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+    Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
+
+    # energy bin boundaries
+    bnds = spectools.get_bin_bound(photeng)
+
+    # amount of energy that got absorbed
+    dE_absorbed = {state : 0 for state in H_states}
+
+    # Container object for photons that get absorbed
+    spec_absorbed = distortion.copy() * 0
+
+    # energy bins that contain each Lyman series line
+    line_bins = np.array([
+        [int(state[:-1]),sum(bnds<phys.H_exc_eng(state))-1] 
+    for state in H_states if state[-1]=='p'])
+
+    for state in H_states:
+        if state[-1] == 'p':
+
+            n = int(state[:-1])
+
+            # all excitation lines that share the same bin
+            ns = line_bins[line_bins[:,1]==line_bins[n-2,1],0]
+
+            # Energy of absorbing photons
+            E_1np = (1 - 1/ns**2) * phys.rydberg
+
+            # Bin containing this excitation line
+            line_bin = sum(bnds<phys.H_exc_eng(state))-1
+
+            # Calculate the fraction of photons that get absorbed
+            # Note: the CMB component is untouched (in equilibrium emission and 
+            #   absorption balances out), we only modify the distortion.
+
+            # Technically, I should subtract off inverse process (stimulated emission)
+            #   but there are so few x_np states that I neglect this process.
+            # I include the heaviside step function to only allow positive distortions 
+            #   to be absorbed (those correspond to actual photons getting absorbed)
+            absorption_rates = A_1snp[ns-2] * x1s * np.heaviside(Delta_f(E_1np),0)
+            escape_frac = np.exp(-sum(absorption_rates)*dt)
+            absorbed_frac = 1-escape_frac
+
+            # If there's more than one line in this energy bin, compute the fraction absorbed by each line
+            line_frac = A_1snp[n-2]/sum(A_1snp[ns-2])
+            
+            # Photon energy absorbed *per baryon*
+            dE_absorbed[state] = (
+                absorbed_frac * line_frac 
+                * distortion.N[line_bin] * distortion.eng[line_bin]
+            )
+
+            spec_absorbed.N[line_bin] += distortion.N[line_bin] * absorbed_frac * line_frac
+
+    distortion.N -= spec_absorbed.N
+    return dE_absorbed
+
+
+def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
+    H_states, dt, rate_func_eng, A_1snp, x1s):
+
+    rs = elec_spec.rs
+    nB = phys.nB * rs**3
+    nH = phys.nH * rs**3
+
+    # Convert from energy per baryon to (dimensionless) fraction of injected energy
+    norm = nB / rate_func_eng(rs) / dt
+
+    # fraction of energy deposited into excitation into the i-th state
+    f_exc = {state : 0 for state in H_states}
+
+    ###---Electron Contribution---###
+
+    # Calculate the electron contribution to f_exc for the i-th state
+    for state in H_states:
+        f_exc[state] = np.dot(deposited_exc_arr[state], elec_spec.N) * norm
+
+
+    ###---Photon Contribution---###
+
+    # source term in the MLA equation
+    b = np.zeros_like(H_states)
+
+    # Calculate the electron contribution to f_exc for the i-th state
+    for i,state in enumerate(H_states):
+        b[i] = f_exc[i] * rate_func_eng(rs)/nH/phys.H_exc_eng[state]
+
+    return b
+
 
 def process_excitations(
         rs, xHII, Tm, 
