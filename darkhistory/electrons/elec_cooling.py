@@ -217,7 +217,8 @@ def get_elec_cooling_tf(
     #   -What's the outgoing electron energy?  Dunno, because we could have had
     #    any CMB photon in the initial state !!!
     phot_ICS_tf = ics_spec(
-        eleceng, photeng, T, thomson_tf = raw_thomson_tf, rel_tf = raw_rel_tf, T_ref=phys.TCMB(400)
+        eleceng, photeng, T, thomson_tf=raw_thomson_tf,
+        rel_tf=raw_rel_tf, T_ref=phys.TCMB(400)
     )
 
     # Energy loss transfer function for single primary electron
@@ -444,35 +445,38 @@ def get_elec_cooling_tf(
     )
     #print(elec_ICS_tf.grid_vals)
     #print(dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:]))
-    
-    # Secondary photon spectrum (from ICS). 
+
+    # Secondary photon spectrum (from ICS).
     sec_phot_spec_N_arr = phot_ICS_tf.grid_vals - upscattered_CMB_grid
-    sec_phot_spec_N_arr[beta_ele<.1] = loweng_ICS_distortion(eleceng[beta_ele<.1], photeng, phys.TCMB(rs))
-    crap = sec_phot_spec_N_arr.copy()
-    
+    sec_phot_spec_N_arr[beta_ele < .1] = loweng_ICS_distortion(
+        eleceng[beta_ele < .1], photeng, phys.TCMB(rs))
+    #crap = sec_phot_spec_N_arr.copy()
+
     # Deposited ICS array.
     ICS_err_arr = (
-        #Total amount of energy of the electrons that got scattered
+        # Total amount of energy of the electrons that got scattered
         np.sum(elec_ICS_tf.grid_vals, axis=1)*eleceng
 
-        #Total amount of energy in the secondary electron spectrum
+        # Total amount of energy in the secondary electron spectrum
         - np.dot(elec_ICS_tf.grid_vals, eleceng)
         # The difference is the amount of energy that the electron lost
-        # through scattering, and that should be equal to the energy gained by photons
+        # through scattering, and that should be equal to the energy gained
+        # by photons
 
         # This is -[the energy gained by photons]
-        # (Total amount of energy in the upscattered photons - the energy these photons started with)
+        # (Total amount of energy in the upscattered photons -
+        # the energy these photons started with)
         - np.dot(sec_phot_spec_N_arr, photeng)
     )
     # This is only non-zero due to numerical errors. It is very small.
 
     # Energy loss is not taken into account for eleceng > 20*phys.me
-    ICS_err_arr[eleceng > 20*phys.me - phys.me] -= ( 
+    ICS_err_arr[eleceng > 20*phys.me - phys.me] -= (
         CMB_upscatter_eng_rate
     )
     # !!! A legacy of Tracy's code: For electrons with a boost of 20 or more
-    # We pretend the initial CMB photon had zero energy.  To do this, get rid of 
-    # CMB_upscatter_eng.
+    # We pretend the initial CMB photon had zero energy.
+    # To do this, get rid of CMB_upscatter_eng.
 
     # Continuum energy loss array.
     continuum_engloss_arr = CMB_upscatter_eng_rate*np.ones_like(eleceng)
