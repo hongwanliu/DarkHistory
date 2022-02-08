@@ -103,7 +103,7 @@ def compute_fs(
             f_phot[3]+f_phot[4]+f_elec[3],
             f_phot[1]+f_elec[1],
             f_elec[4],
-            f_phot[0]+f_elec[0] 
+            f_phot[0]+f_elec[0]
                 - cmbloss*phys.nB*phot_spec.rs**3 / dE_dVdt_inj
         ])
 
@@ -358,10 +358,10 @@ def get_ionized_elec(phot_spec, eleceng, x, method='He'):
 
     if method == 'no_He':
 
-        if x[0]>.005:
-            ion_pot = phys.rydberg
-        else:
-            ion_pot = 4*phys.rydberg
+        # if x[0]>.005:
+        ion_pot = phys.rydberg
+        # else:
+        #     ion_pot = 4*phys.rydberg
 
         ion_bounds = spectools.get_bounds_between(
             phot_spec.eng, ion_pot
