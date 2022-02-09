@@ -324,7 +324,7 @@ def f_exc_to_b_OLD(
         ):
     """
     Compute how the injected excitation energy converts to numbers of excited states.
-    Then compute how these numbers convert to the inhomogeneous term in our steady-state Mx=b equation.
+    Then compute how these numbers convert to the source term in our steady-state Mx=b equation.
     """
 
     xHI = 1-xHII
@@ -387,19 +387,22 @@ def f_exc_to_b_OLD(
 
 
 def get_distortion_and_ionization(
-        rs, dt, xHI, Tm, nmax, spec_2s1s, Delta_f = None, cross_check = False
+        rs, dt, xHI, Tm, nmax, spec_2s1s,
+        Delta_f=None, cross_check=False,
+        fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
+        distortion=None, H_states=None, rate_func_eng=None, A_1snp=None
         ):
     """
-    Solve the steady state equation Mx=b, then compute the ionization rate beta^T x and the 
-    net distortion produced by transitions.
+    Solve the steady state equation Mx=b, then compute the ionization rate
+    beta^T x and the net distortion produced by transitions.
 
     Parameters
     ----------
-    rs : float 
+    rs : float
         redshift
-    xHI : float 
+    xHI : float
         neutral fraction of hydrogen
-    Tm : float 
+    Tm : float
         matter temperature
     nmax : int
         Highest excited state to be included
@@ -419,11 +422,23 @@ def get_distortion_and_ionization(
     # Number of Hydrogen states at or below n=nmax
     num_states = int(nmax*(nmax+1)/2)
 
-    # Indices of the bound states 
-    # e.g. (1s, 2s, 2p, 3s...) are states (0, 1, 2, 3...), 
+    # Mapping from spectroscopic letters to numbers
+    # spectroscopic_map = {'s': 0, 'p': 1, 'd': 2, 'f': 3}
+    spectroscopic_map = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
+
+    def num_to_l(ll):
+        if ll < 4:
+            return spectroscopic_map[l]
+
+        else:
+            return '-'
+
+    # Indices of the bound states
+    # e.g. (1s, 2s, 2p, 3s...) are states (0, 1, 2, 3...),
     # so states_n[3], states_l[3] = 3,0 for '3s'
-    states_n = np.concatenate([list(map(int,k*np.ones(k))) for k in range(1,nmax+1,1)])
-    states_l = np.concatenate([np.arange(k) for k in range(1,nmax+1)])
+    states_n = np.concatenate([
+        list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)])
+    states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
 
     # Bound state energies
     def E(n): return phys.rydberg/n**2
@@ -432,68 +447,82 @@ def get_distortion_and_ionization(
     nH = phys.nH * rs**3
     nB = phys.nB * rs**3
 
-    if Delta_f==None:
+    if Delta_f is None:
         def Delta_f(E): return 0
 
     # Radiation Temperature
     Tr = phys.TCMB(rs)
 
     # Get the transition rates
-    #!!! Think about parallelizing
+    # !!! Think about parallelizing
     R = populate_radial(nmax)
     BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
-    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, stimulated_emission=True)
+    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f,
+                           stimulated_emission=True)
     beta = populate_beta(Tr, nmax, Delta_f=Delta_f)
 
-    #Include sobolev optical depth
-    for n in np.arange(2,nmax+1,1):
+    # Include sobolev optical depth
+    for n in np.arange(2, nmax+1, 1):
         BB['dn'][n][1][1] *= p_np_1s(n, rs, xHI=xHI)
         BB['up'][1][n][0] *= p_np_1s(n, rs, xHI=xHI)
 
-    ### Build matrix K_ij = R_ji/R_i,tot and inhomogeneous term ###
+    ### Build matrix K_ij = R_ji/R_i,tot and source term ###
     K = np.zeros((num_states, num_states))
 
-    # excitations from energy injection -- both photoexcitation and electron collisions
-    #b = f_exc_to_b()
     b = np.zeros(num_states)
-    
+
+    # excitations from energy injection -- both photoexcitation and
+    # electron collisions
+    delta_b = f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
+                                   H_states, dt, rate_func_eng, A_1snp, xHI)
+
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
-        tot_rate = np.sum(BB['dn'][n,:,l]) + np.sum(BB['up'][n,:,l]) + beta[n][l]
-            
-        # Construct the matrix
-        if l!= 0:
-            K[nl,states_l == l-1] = BB['up'][l:,n,l-1]/tot_rate
+        tot_rate = (
+            np.sum(BB['dn'][n, :, l]) + np.sum(BB['up'][n, :, l]) + beta[n][l]
+        )
 
-        if l!= nmax-1:
-            K[nl,states_l == l+1] = BB['dn'][l+2:,n,l+1]/tot_rate
-        
+        # Construct the matrix
+        if l != 0:
+            K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate
+
+        if l != nmax-1:
+            K[nl, states_l == l+1] = BB['dn'][l+2:, n, l+1]/tot_rate
 
         # Special 2s->1s transition
         if nl == 0:
-            K[0][1] = BB['dn'][2][1][0]/ tot_rate
-        if nl == 1:
-            #Detalied Balance
-            K[1][0] = BB['dn'][2][1][0]*np.exp((E(2)-E(1))/Tr) / tot_rate
-            
+            K[0][1] = BB['dn'][2][1][0] / tot_rate
 
-        ## Construct the inhomogeneous term ##
+        if nl == 1:
+            # Detalied Balance
+            K[1][0] = BB['dn'][2][1][0]*np.exp((E(2)-E(1))/Tr) / tot_rate
+
+
+        ## Construct the source term ##
 
         # excitations from direct recombinations
         b[nl] += xe**2 * nH * alpha[n][l]
 
         # excitations from 1s->nl transitions
-        if l==1:
+        if l == 1:
             b[nl] += xHI*BB['up'][1, n, 0]
-        elif nl==1:
+
+        elif nl == 1:
             # 1s to 2s transition from detailed balance
             b[nl] += xHI*BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr)
 
+        # Add DM contribution to source term
+        spec_ind = str(n) + num_to_l(l)
+        if spec_ind in delta_b.keys():
+            print('atomic: ', spec_ind)
+            b[nl] += delta_b[spec_ind]
+
         b[nl] /= tot_rate
 
-    mat = np.identity(num_states-1) - K[1:,1:]
-    x_vec = np.linalg.solve(mat,b[1:])
-    #!!! I should be able to set xHI = 1 - sum(x_full) - xe, but instead I'm stuck with 1-xHII
+    mat = np.identity(num_states-1) - K[1:, 1:]
+    x_vec = np.linalg.solve(mat, b[1:])
+    # !!! I should be able to set xHI = 1 - sum(x_full) - xe,
+    # but instead I'm stuck with 1-xHII
     x_full = np.append(xHI, x_vec)
 
     ### Now calculate the total ionization and distortion ###
@@ -513,47 +542,57 @@ def get_distortion_and_ionization(
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
-            beta_MLA  += x_full[nl] * beta[n][l]
+            beta_MLA += x_full[nl] * beta[n][l]
             alpha_MLA += alpha[n][l]
 
         # Add new transition energies to H_engs
         if E_current != E(n):
-            if n>1:
+            if n > 1:
                 ind_current += nmax-n+1
 
             E_current = E(n)
-            H_engs[ind_current:ind_current + nmax-n] = E(n)-E(np.arange(n+1,nmax+1))
+            H_engs[ind_current:ind_current + nmax-n] = (
+                E(n)-E(np.arange(n+1, nmax+1)))
 
         # photons from l <-> l+1 transitions (per baryon per second)
-        if l<nmax-1:
+        if l < nmax-1:
             Nphot_cascade[ind_current:ind_current + nmax-n] += nH*(
-                x_full[(states_l == l+1) * (states_n>n)] * BB['dn'][n+1:,n,l+1] #Downscattering adds photons
-                -x_full[nl] * BB['up'][n,n+1:,l] #upscattering subtracts them
+                # Downscattering adds photons
+                x_full[(states_l == l+1) * (
+                    states_n > n)] * BB['dn'][n+1:, n, l+1]
+
+                # Upscattering adds them
+                - x_full[nl] * BB['up'][n, n+1:, l]
             )/nB * dt
-        #note: 'dn' and 'up' have nothing to do with down- or up-scattering, just if the l quantum number go up or down
+        # note: 'dn' and 'up' have nothing to do with down- or up-scattering,
+        # just if the l quantum number go up or down
 
         # photons from l <-> l-1 transitions
-        if l>0:
+        if l > 0:
             Nphot_cascade[ind_current:ind_current + nmax-n] += nH * (
-                x_full[(states_l == l-1) * (states_n>n)] * BB['up'][n+1:,n,l-1]
-                -x_full[nl] * BB['dn'][n,n+1:,l]
+                x_full[(states_l == l-1) * (
+                    states_n > n)] * BB['up'][n+1:, n, l-1]
+                - x_full[nl] * BB['dn'][n, n+1:, l]
             )/nB * dt
 
         BF_tmp = nH**2 * xe**2 * bf.gamma_nl(
             n, l, Tm, T_r=Tr, f_gamma=f_gamma, stimulated_emission=True
         )/nB * dt
-        BF_tmp -= nH * x_full[nl] * bf.xi_nl(n, l, T_r=Tr, f_gamma=f_gamma)/nB * dt
+        BF_tmp -= nH * x_full[nl] * bf.xi_nl(
+            n, l, T_r=Tr, f_gamma=f_gamma)/nB * dt
         BF_tmp.rebin(eng)
         BF_spec.dNdE += BF_tmp.dNdE
 
     # Make a spectrum
-    data = sorted(np.flipud(np.transpose([H_engs,Nphot_cascade])), key=lambda pair:pair[0])
+    data = sorted(np.flipud(np.transpose([H_engs, Nphot_cascade])),
+                  key=lambda pair: pair[0])
 
-    # Consolidate duplicates (e.g. 6 <-> 9 transition is same energy as 8 <-> 72)
+    # Consolidate duplicates (e.g. 6 <-> 9 transition
+    # is same energy as 8 <-> 72)
     i = 0
     sz = num_states
-    while i<sz-1:
-        while (i < sz-1) and (data[i][0]==data[i+1][0]):
+    while i < sz-1:
+        while (i < sz-1) and (data[i][0] == data[i+1][0]):
             data[i][1] += data[i+1][1]
             data.pop(i+1)
             sz -= 1
@@ -562,7 +601,7 @@ def get_distortion_and_ionization(
 
     data = np.array(data)
 
-    transition_spec = Spectrum(data[:,0], data[:,1], spec_type='N')
+    transition_spec = Spectrum(data[:, 0], data[:, 1], spec_type='N')
     transition_spec.rebin(eng)
 
     # Add the bound-free photons
@@ -570,18 +609,20 @@ def get_distortion_and_ionization(
     transition_spec.N += BF_spec.N
 
     # Add the 2s-1s component
-    amp_2s1s = nH * BB['dn'][2,1,0] * (x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)) / nB * dt
+    amp_2s1s = nH * BB['dn'][2, 1, 0] * (
+        x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
+    ) / nB * dt
     transition_spec.N += amp_2s1s * spec_2s1s.N
 
     return alpha_MLA, beta_MLA, transition_spec
 
 
 def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
-    """ Allow ground state atoms to absorb distortion photons 
-    
-        Identify the bins that contain resonant photons, calculate what fraction
-        of them get absorbed, subtract them from distortion.N, and return f_{exc,i} 
-        to account for the energy that got absorbed.
+    """ Allow ground state atoms to absorb distortion photons
+
+        Identify the bins that contain resonant photons, calculate what
+        fraction of them get absorbed, subtract them from distortion.N, and
+        return f_{exc,i} to account for the energy that got absorbed.
     """
     rs = distortion.rs
     if rs == -1:
@@ -625,59 +666,66 @@ def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
             # Note: the CMB component is untouched (in equilibrium emission and 
             #   absorption balances out), we only modify the distortion.
 
-            # Technically, I should subtract off inverse process (stimulated emission)
-            #   but there are so few x_np states that I neglect this process.
-            # I include the heaviside step function to only allow positive distortions 
-            #   to be absorbed (those correspond to actual photons getting absorbed)
-            absorption_rates = A_1snp[ns-2] * x1s * np.heaviside(Delta_f(E_1np),0)
+            # Technically, I should subtract off inverse process
+            #   (stimulated emission) but there are so few x_np
+            #   states that I neglect this process.
+            # I include the heaviside step function to only allow
+            #   positive distortions to be absorbed (those correspond
+            #   to actual photons getting absorbed)
+            absorption_rates = A_1snp[ns-2] * x1s * np.heaviside(
+                Delta_f(E_1np), 0)
             escape_frac = np.exp(-sum(absorption_rates)*dt)
             absorbed_frac = 1-escape_frac
 
-            # If there's more than one line in this energy bin, compute the fraction absorbed by each line
+            # If there's more than one line in this energy bin, compute the
+            # fraction absorbed by each line
             line_frac = A_1snp[n-2]/sum(A_1snp[ns-2])
-            
+
             # Photon energy absorbed *per baryon*
             dE_absorbed[state] = (
-                absorbed_frac * line_frac 
-                * distortion.N[line_bin] * distortion.eng[line_bin]
-            )
+                absorbed_frac * line_frac
+                * distortion.N[line_bin] * distortion.eng[line_bin])
 
-            spec_absorbed.N[line_bin] += distortion.N[line_bin] * absorbed_frac * line_frac
+            spec_absorbed.N[line_bin] += (
+                distortion.N[line_bin] * absorbed_frac * line_frac)
 
     distortion.N -= spec_absorbed.N
     return dE_absorbed
 
 
 def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
-    H_states, dt, rate_func_eng, A_1snp, x1s):
+                         H_states, dt, rate_func_eng, A_1snp, x1s):
 
     rs = elec_spec.rs
     nB = phys.nB * rs**3
     nH = phys.nH * rs**3
 
-    # Convert from energy per baryon to (dimensionless) fraction of injected energy
+    # Convert from energy per baryon to
+    # (dimensionless) fraction of injected energy
     norm = nB / rate_func_eng(rs) / dt
 
     # fraction of energy deposited into excitation into the i-th state
-    f_exc = {state : 0 for state in H_states}
+    f_exc = {state: 0 for state in H_states}
 
-    ###---Electron Contribution---###
+    # Allow H(1s) to absorb line photons from distortion (E per baryon)
+    dE_absorbed = absorb_photons(distortion, H_states, A_1snp, dt, x1s)
 
-    # Calculate the electron contribution to f_exc for the i-th state
     for state in H_states:
+
+        # electron contribution to f_exc for the i-th state
         f_exc[state] = np.dot(deposited_exc_arr[state], elec_spec.N) * norm
 
+        # photon contribution
+        f_exc[state] += dE_absorbed[state] * norm
 
-    ###---Photon Contribution---###
-
-    # source term in the MLA equation
-    b = np.zeros_like(H_states)
+    # f_exc contribution to source term in the MLA equation
+    delta_b = np.zeros_like(H_states)
 
     # Calculate the electron contribution to f_exc for the i-th state
-    for i,state in enumerate(H_states):
-        b[i] = f_exc[i] * rate_func_eng(rs)/nH/phys.H_exc_eng[state]
+    for i, state in enumerate(H_states):
+        delta_b[i] = f_exc[i] * rate_func_eng(rs)/nH/phys.H_exc_eng[state]
 
-    return b
+    return delta_b
 
 
 def process_excitations(
@@ -781,37 +829,39 @@ def process_excitations(
             exc_spec_phot.N += N_exc_phot * one_transition[state].N
 
     # Convert N_exc_tot (number per baryon) to dE/dVdt, then divide by dE/dVdt|_inj in this step
-    f_ion =  (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
+    f_ion = (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
 
-    #Return: 
-    #   (i)   the contribution to f_ion from 
-    #   (ii)  the distortion spectrum produced by excitations due to electrons and photons, individually
-    #   (iii) the fraction of photons aborbed from phot_spec at each bin
+    # Return:
+    #    (i)   the contribution to f_ion from
+    #    (ii)  the distortion spectrum produced by excitations due to
+    #          electrons and photons, individually
+    #    (iii) the fraction of photons aborbed from phot_spec at each bin
     return f_ion, exc_spec_elec, exc_spec_phot, absorbed_frac
+
 
 def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
 
-    #Boltzmann Factor at lya energy
+    # Boltzmann Factor at lya energy
     B_Lya = np.exp(-phys.lya_eng/Tr)
-    
-    #Photon occupation number
+
+    # Photon occupation number
     f_Lya = B_Lya/(1-B_Lya)
-    
-    #2p-1s rate, including Sobolev optical depth
+
+    # 2p-1s rate, including Sobolev optical depth
     R_Lya = 2**9/3**8 * phys.alpha**3 * phys.rydberg/phys.hbar * (1+f_Lya)
     R_Lya *= (1-np.exp(-tau_S))/tau_S
 
-    #Total deexcitation rate including 2s->1s rate
+    # Total deexcitation rate including 2s->1s rate
     sum_rates = (3*R_Lya + phys.width_2s1s_H)/4
 
-    #Denominator of Peebles C factor
-    denom = sum_rates + phys.beta_ion(Tr,'HI')
+    # Denominator of Peebles C factor
+    denom = sum_rates + phys.beta_ion(Tr, 'HI')
 
-    #Two numerator terms for x2 steady state solution
+    # Two numerator terms for x2 steady state solution
     nH = phys.nH * rs**3
     term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI')
     term2 = 4 * x1s * np.exp(-phys.lya_eng/Tr) * sum_rates
-    # print(term1, term2)
+    #print(term1, term2)
 
     # Factor of 4 converts from x2 to x2s
     return (term1 + term2)/denom / 4.
