@@ -779,8 +779,8 @@ def evolve(
 
             append_distort_spec(temp_spec)
 
-            # Redshift contribution to present day and add sub-13.6eV
-            # energy photons to the distortion
+            # Redshift contribution to present day, mask out photons>13.6eV,
+            # add to distortion
             temp_spec.redshift(1)
 
             dist_mask = dist_eng < phys.rydberg
@@ -795,7 +795,7 @@ def evolve(
         # Values of (xHI, xHeI, xHeII) to use for computing f.
         if backreaction or (compute_fs_method == 'HeII' and rs <= reion_rs):
             # Use the previous values with backreaction, or if we are using
-            # the HeII method after the reionization redshift. 
+            # the HeII method after the reionization redshift.
             x_vec_for_f = np.array(
                 [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
             )
