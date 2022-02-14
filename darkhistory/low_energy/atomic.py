@@ -383,12 +383,12 @@ def f_exc_to_b_OLD(
             # exc_spec_phot.N += N_exc_phot * one_transition[state].N
 
     # Convert N_exc_tot (number per baryon) to dE/dVdt, then divide by dE/dVdt|_inj in this step
-    f_ion =  (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
+    f_ion = (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
 
 
 def get_distortion_and_ionization(
         rs, dt, xHI, Tm, nmax, spec_2s1s,
-        Delta_f=None, cross_check=False,
+        Delta_f=None, cross_check=False, include_2s1s=True, include_BF=True,
         fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         distortion=None, H_states=None, rate_func_eng=None, A_1snp=None
         ):
@@ -455,7 +455,7 @@ def get_distortion_and_ionization(
 
     # Get the transition rates
     # !!! Think about parallelizing
-    R = populate_radial(nmax)
+    R = populate_radial(nmax)  # Need not be recomputed every time
     BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
     alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f,
                            stimulated_emission=True)
@@ -473,8 +473,11 @@ def get_distortion_and_ionization(
 
     # excitations from energy injection -- both photoexcitation and
     # electron collisions
-    delta_b = f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
-                                   H_states, dt, rate_func_eng, A_1snp, xHI)
+    if fexc_switch:
+        delta_b = f_exc_to_b_numerator(deposited_exc_arr,
+                                       elec_spec, distortion,
+                                       H_states, dt, rate_func_eng,
+                                       nmax, xHI)
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
@@ -512,10 +515,10 @@ def get_distortion_and_ionization(
             b[nl] += xHI*BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr)
 
         # Add DM contribution to source term
-        spec_ind = str(n) + num_to_l(l)
-        if spec_ind in delta_b.keys():
-            print('atomic: ', spec_ind)
-            b[nl] += delta_b[spec_ind]
+        if fexc_switch:
+            spec_ind = str(n) + num_to_l(l)
+            if spec_ind in delta_b.keys():
+                b[nl] += delta_b[spec_ind]
 
         b[nl] /= tot_rate
 
@@ -525,7 +528,9 @@ def get_distortion_and_ionization(
     # but instead I'm stuck with 1-xHII
     x_full = np.append(xHI, x_vec)
 
-    ### Now calculate the total ionization and distortion ###
+    ###
+    # Now calculate the total ionization and distortion
+    ###
 
     E_current = 0
     ind_current = 0
@@ -601,18 +606,20 @@ def get_distortion_and_ionization(
 
     data = np.array(data)
 
-    transition_spec = Spectrum(data[:, 0], data[:, 1], spec_type='N')
+    transition_spec = Spectrum(data[:, 0], data[:, 1], spec_type='N', rs=rs)
     transition_spec.rebin(eng)
 
     # Add the bound-free photons
     BF_spec.rebin(eng)
-    transition_spec.N += BF_spec.N
+    if include_BF:
+        transition_spec.N += BF_spec.N
 
     # Add the 2s-1s component
     amp_2s1s = nH * BB['dn'][2, 1, 0] * (
         x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
     ) / nB * dt
-    transition_spec.N += amp_2s1s * spec_2s1s.N
+    if include_2s1s:
+        transition_spec.N += amp_2s1s * spec_2s1s.N
 
     return alpha_MLA, beta_MLA, transition_spec
 
@@ -694,11 +701,18 @@ def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
 
 
 def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
-                         H_states, dt, rate_func_eng, A_1snp, x1s):
+                         H_states, dt, rate_func_eng, nmax, x1s):
 
     rs = elec_spec.rs
     nB = phys.nB * rs**3
     nH = phys.nH * rs**3
+
+    # np -> 1s decay rate
+    R_1snp = Hey_R_initial(np.arange(2, nmax+1), 1)
+
+    A_1snp = 1/3 * phys.rydberg / phys.hbar * (
+        phys.alpha * (1-1/np.arange(2, nmax+1)**2)
+    )**3 * R_1snp**2  # need not be recomputed every time
 
     # Convert from energy per baryon to
     # (dimensionless) fraction of injected energy
@@ -719,11 +733,13 @@ def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
         f_exc[state] += dE_absorbed[state] * norm
 
     # f_exc contribution to source term in the MLA equation
-    delta_b = np.zeros_like(H_states)
+    delta_b = {state: 0 for state in H_states}
 
     # Calculate the electron contribution to f_exc for the i-th state
-    for i, state in enumerate(H_states):
-        delta_b[i] = f_exc[i] * rate_func_eng(rs)/nH/phys.H_exc_eng[state]
+    for state in H_states:
+        delta_b[state] = (
+            f_exc[state] * rate_func_eng(rs)/nH/phys.H_exc_eng(state)
+        )
 
     return delta_b
 
