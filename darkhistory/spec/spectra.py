@@ -1046,18 +1046,24 @@ class Spectra:
         if weight is None:
             weight = np.ones_like(self.rs)
 
+        if np.all(self.rs == self.rs[0]):
+            new_rs = self.rs[0]
+        else:
+            new_rs = -1.
+
         if isinstance(weight, np.ndarray):
             new_data = np.dot(weight, self.grid_vals)
-            return Spectrum(self.eng, new_data, spec_type=self.spec_type)
+            return Spectrum(self.eng, new_data, spec_type=self.spec_type,
+                            rs=new_rs)
         elif isinstance(weight, Spectrum):
             if not np.array_equal(self.in_eng, weight.eng):
                 raise TypeError('spectra.in_eng must equal weight.eng')
 
             # new_data = np.dot(weight._data, self.grid_vals)
-            # Should always take the dot with type 'N'. 
+            # Should always take the dot with type 'N'.
             new_data = np.dot(weight.N, self.grid_vals)
             return Spectrum(
-                self.eng, new_data, spec_type=weight.spec_type
+                self.eng, new_data, spec_type=weight.spec_type, rs=new_rs
             )
         else:
             raise TypeError('weight must be an ndarray or Spectrum.')
