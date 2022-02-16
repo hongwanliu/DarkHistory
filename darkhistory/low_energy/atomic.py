@@ -1,23 +1,21 @@
-"""Atomic excitation state transitions, ionization, and recombination functions."""
+"""H excitation state transitions, ionization, and recombination functions."""
 
-import numpy as np 
+import numpy as np
 from scipy.interpolate import interp1d
 
-from darkhistory import physics as phys 
+from darkhistory import physics as phys
 from darkhistory.spec.spectrum import Spectrum
-from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.spectools as spectools
 import scipy.special
 
-from config import load_data
-from datetime import datetime
 import darkhistory.low_energy.bound_free as bf
 
 NBINS = 100
 Nkappa = 10 * NBINS + 1
 
 hplanck = phys.hbar*2*np.pi
-mu_e      = phys.me/(1+phys.me/phys.mp)
+mu_e = phys.me/(1+phys.me/phys.mp)
+lgamma = scipy.special.loggamma
 
 #*************************************************#
 #A_{nl} coefficient defined in Hey (2006), Eq. (9)#
@@ -31,16 +29,17 @@ def Hey_A(n, l):
 #Assumes n > np.
 #******************************************************************#
 
-lgamma = scipy.special.loggamma
+
 def Hey_R_initial(n, n_p):
-#     return (-1)**(n-n_p-1) * 2**(2*n_p+2) * np.sqrt(
-#         fact(n+n_p)/fact(n-n_p-1)/fact(2*n_p-1)) * (
-#         n_p/n)**(n_p+2) * (1-n_p/n)**(n-n_p-2)/(1+n_p/n)**(n+n_p+2)
+    # return (-1)**(n-n_p-1) * 2**(2*n_p+2) * np.sqrt(
+    # fact(n+n_p)/fact(n-n_p-1)/fact(2*n_p-1)) * (
+    # n_p/n)**(n_p+2) * (1-n_p/n)**(n-n_p-2)/(1+n_p/n)**(n+n_p+2)
     return np.exp(
         (2.0*n_p + 2.0) * np.log(2.0) +
         0.5 * (lgamma(n+n_p+1) - lgamma(n-n_p) - lgamma(2.0*n_p))
         + (n_p + 2.0) * np.log(n_p/n)
-        + (n-n_p - 2.0) * np.log(1.0 - n_p/n) - (n + n_p + 2.0) * np.log(1.0 + n_p/n)
+        + (n-n_p - 2.0) * np.log(1.0 - n_p/n)
+        - (n + n_p + 2.0) * np.log(1.0 + n_p/n)
     )
 
 #/*********************************************************************
@@ -52,74 +51,82 @@ def Hey_R_initial(n, n_p):
 #**********************************************************************/
 
 def populate_radial(nmax):
-    R_up = np.zeros((nmax+1,nmax,nmax))
-    R_dn = np.zeros((nmax+1,nmax,nmax))
+    R_up = np.zeros((nmax+1, nmax, nmax))
+    R_dn = np.zeros((nmax+1, nmax, nmax))
 
-    for n in np.arange(2,nmax+1,1):
-        for n_p in np.arange(1,n):
-            #/* Initial conditions: Hey (2006) Eq. (B.4). */
+    for n in np.arange(2, nmax+1, 1):
+        for n_p in np.arange(1, n):
+            # Initial conditions: Hey (2006) Eq. (B.4)
             R_dn[n][n_p][n_p] = Hey_R_initial(n, n_p)
             R_up[n][n_p][n_p-1] = R_up[n][n_p][n_p] = 0
-            for l in np.arange(n_p-1,0,-1):
-                #/* Hey (52-53) */
-                R_dn[n][n_p][l] = ((2*l+1) * Hey_A(n, l+1) * R_dn[n][n_p][l+1]
-                    + Hey_A(n_p, l+1) * R_up[n][n_p][l]) / (2.0 * l * Hey_A(n_p, l))
+            for l in np.arange(n_p-1, 0, -1):
+                # Hey (52-53)
+                R_dn[n][n_p][l] = (
+                    (2*l+1) * Hey_A(n, l+1) * R_dn[n][n_p][l+1]
+                    + Hey_A(n_p, l+1) * R_up[n][n_p][l]
+                    ) / (2.0 * l * Hey_A(n_p, l))
 
-                R_up[n][n_p][l-1] = ((2*l+1) * Hey_A(n_p, l + 1) * R_up[n][n_p][l]
-                    + Hey_A(n, l+1) * R_dn[n][n_p][l+1]) / (2.0 * l * Hey_A(n, l))
+                R_up[n][n_p][l-1] = (
+                    (2*l+1) * Hey_A(n_p, l + 1) * R_up[n][n_p][l]
+                    + Hey_A(n, l+1) * R_dn[n][n_p][l+1]
+                    ) / (2.0 * l * Hey_A(n, l))
 
     return {'up': R_up, 'dn': R_dn}
 
 # /***************************************************************************************************************
-# Populates two matrices with the bound-bound rates for emission and absorption,
+# Populates two matrices with the bound-bound rates for emission and absorption
 #  in a generic radiation field.
-# Inputs : two [nmax+1][nmax+1][nmax] matrices BB_up and BB_dn, nmax, Tr (IN EV !),
+# Inputs : two [nmax+1][nmax+1][nmax] matrices BB_up, BB_dn, nmax, Tr (in eV),
 #  and the two precomputed matrices of radial matrix elements R_up and R_dn.
-# BB_up[n][n'][l] = A([n,l]-> [n',l+1]) * (1 + f(E_{nn'}))                if n > n'
-#                 = (2l+3)/(2l+1) exp(-E_{nn'}/Tr) * BB_dn[n'][n][l+1]    if n < n'
-# BB_dn[n][n'][l] = A([n,l]-> [n',l-1]) * (1 + f(E_{nn'}))                if n > n'
-#                 = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB_up[n'][n][l-1]    if n < n'
+# BB_up[n][n'][l] = A([n,l]-> [n',l+1]) * (1 + f(E_{nn'}))              if n>n'
+#                 = (2l+3)/(2l+1) exp(-E_{nn'}/Tr) * BB_dn[n'][n][l+1]  if n<n'
+# BB_dn[n][n'][l] = A([n,l]-> [n',l-1]) * (1 + f(E_{nn'}))              if n>n'
+#                 = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB_up[n'][n][l-1]  if n<n'
 #  *****************************************************************************************************************/
 
-def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
-    BB = {key: np.zeros((nmax+1,nmax+1,nmax)) for key in ['up', 'dn']}
 
-    for n in np.arange(2,nmax+1,1):
+def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
+    BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in ['up', 'dn']}
+
+    for n in np.arange(2, nmax+1, 1):
         n2 = n**2
-        for n_p in np.arange(1,n,1):
+        for n_p in np.arange(1, n, 1):
             n_p2 = n_p**2
             Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            if (Tr < ZEROTEMP):    #/* if Tr = 0*/
+            if (Tr < ZEROTEMP):    # if Tr = 0
                 fEnnp = 0.0
             else:
-                if Delta_f != None:
-                    fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
+                if Delta_f is not None:
+                    fEnnp = np.exp(-Ennp/Tr)/(
+                        1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
                 else:
                     fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr))
-                #fEnnp = 1/(np.exp(Ennp/Tr)-1)
+                    # fEnnp = 1/(np.exp(Ennp/Tr)-1)
 
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
 
-            for l in np.arange(0,n_p+1,1): #/* Spont + stim emission */
+            for l in np.arange(0, n_p+1, 1):  # Spont + stim emission
                 A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
-                A_dn = prefac *   l   / (2*l+1) * R['dn'][n][n_p][l]**2
+                A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
                 BB['up'][n][n_p][l] = A_up * (1+fEnnp)
                 BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
 
-            BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   #/* No l' >= n' */
-            BB['dn'][n][n_p][0]   = 0.0                          #/* No l' < 0   */
-            for l in np.arange(0,n_p,1): #/* Absorption obtained by detailed balance */
-                if (Tr < ZEROTEMP):  #/* if Tr = 0 */
+            BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
+            BB['dn'][n][n_p][0] = 0.0                          # No l' < 0
+            for l in np.arange(0, n_p, 1):  # absorption: use detailed balance
+                if (Tr < ZEROTEMP):  # if Tr = 0
                     BB['up'][n_p][n][l] = BB['dn'][n_p][n][l+1] = 0.0
                 else:
-                    #BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(-Ennp/Tr) * BB['dn'][n][n_p][l+1]
-                    #BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(-Ennp/Tr) * BB['up'][n][n_p][l]
-                    
+                    # BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(
+                    # -Ennp/Tr) * BB['dn'][n][n_p][l+1]
+                    # BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(
+                    # -Ennp/Tr) * BB['up'][n][n_p][l]
+
                     # When adding a distortion, detailed balance is inconvenient.
-                    # Instead, take away the 1+fEnnp from a couple of lines above, 
+                    # Instead, take away the 1+fEnnp from a couple of lines above,
                     # then replace it with fEnnp (that's all detailed balance was doing).
-                    BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp
+                    BB['up'][n_p][n][l] = (2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp
                     BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * BB['up'][n][n_p][l]  /(1+fEnnp) * fEnnp
 
     #Include forbidden 2s->1s transition
@@ -145,14 +152,14 @@ def tau_np_1s(n, rs, xHI=None):
     R = Hey_R_initial(n, 1) # R['dn'][n][1][l]
     A_dn = A_prefac * l/(2*l+1) * R**2
     g = (2*l+1)/(2*l-1)
-    return pre * A_dn * g 
+    return pre * A_dn * g
 
 # Eq. 41
 def p_np_1s(n, rs, xHI=None):
     tau = tau_np_1s(n, rs, xHI=xHI)
     return (1-np.exp(-tau))/tau
 
-# Notice that p ~ 1/tau so 
+# Notice that p ~ 1/tau so
 # R*p = A*(1+f)/tau ~ 1/(pre*g)
 #     = 8 pi H / (3 n_1s lam^3)
 
@@ -311,79 +318,8 @@ def get_transition_energies(nmax):
         
     H_engs = np.sort(np.unique(H_engs))
     # Add a separate energy bin to temporarily represent 2s->1s
-    H_engs = np.concatenate((H_engs,[20]))
+    H_engs = np.concatenate((H_engs, [20]))
     return H_engs[1:]
-
-def f_exc_to_b_OLD(
-        rs, xHII, Tm, 
-        dlnz, inj_rate,
-        eleceng, photeng, 
-        nmax, H_states, R, 
-        deposited_exc_vec_elec, 
-        phot_spec, elec_spec, Delta_f
-        ):
-    """
-    Compute how the injected excitation energy converts to numbers of excited states.
-    Then compute how these numbers convert to the source term in our steady-state Mx=b equation.
-    """
-
-    xHI = 1-xHII
-    dt = dlnz/phys.hubble(rs)
-
-    # Total number of excitations (from electron collisions or photoexcitation) that resulted in an ionization *per baryon*
-    N_exc_tot_ion = 0
-
-    ###---Electron Contribution---###
-    exc_grid_elec = np.zeros_like(H_states)
-    for i, state in enumerate(H_states):
-        exc_grid_elec[i] += deposited_exc_vec_elec[state]/phys.H_exc_eng(state)
-
-    ###---Photon Contribution---###
-    Tr = phys.TCMB(rs)
-    bnds = spectools.get_bin_bound(photeng)
-
-    # multiply by f_BB and x_1s to get the rate of transition from 1s->np
-    As = xHI * 1/3 * phys.rydberg / phys.hbar * (
-        phys.alpha * (1-1/np.arange(2,nmax+1)**2)
-    )**3 * R['dn'][2:,1,1]**2
-
-    # Fraction of photons that got absorbed
-    absorbed_frac = np.zeros_like(photeng)
-
-    # energy bins that contain each Lyman series line
-    line_bins = np.array([[int(state[:-1]),sum(bnds<phys.H_exc_eng(state))-1] 
-        for i, state in enumerate(H_states) if state[-1]=='p'])
-
-    for i, state in enumerate(H_states):
-        if state[-1] == 'p':
-
-            n = int(state[:-1])
-
-            # Bin containing this excitation line
-            line_bin = sum(bnds<phys.H_exc_eng(state))-1
-
-            # all excitation lines that share the same bin
-            ns = line_bins[line_bins[:,1]==line_bins[n-2,1],0]
-
-            # Calculate the fraction of photons that get absorbed
-            # Note: we only keep track of the rate at which extra photons on top of the CMB are absorbed
-            E_1np = (1 - 1/ns**2) * phys.rydberg
-            absorption_rates = As[ns-2] * xHI * Delta_f(E_1np)
-            absorbed_frac[line_bin] = 1-np.exp(-sum(absorption_rates)*dt)
-
-            # If there's more than one line in this energy bin, compute the fraction absorbed by each line
-            frac_line = As[n-2]/sum(As[ns-2])
-            
-            # Number of excitations *per baryon*
-            N_exc_phot = absorbed_frac[line_bin] * frac_line * phot_spec.N[line_bin]
-
-            N_exc_tot_ion += N_exc_phot * P_ion[state]
-
-            # # Spectrum produced for this state
-            # exc_spec_phot.N += N_exc_phot * one_transition[state].N
-
-    # Convert N_exc_tot (number per baryon) to dE/dVdt, then divide by dE/dVdt|_inj in this step
-    f_ion = (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
 
 
 def get_distortion_and_ionization(
@@ -756,117 +692,6 @@ def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
     return delta_b
 
 
-def process_excitations(
-        rs, xHII, Tm, 
-        dlnz, inj_rate,
-        eleceng, photeng, 
-        nmax, H_states, deposited_exc_vec_elec, 
-        phot_spec, elec_spec, Delta_f
-):
-    """ Process the excitations caused by electrons and photons into 
-        a total number of deexcitations to the ground state, ionizations, 
-        and a total distortion spectrum
-    """
-    xHI = 1-xHII
-    nB = phys.nB*rs**3
-    dt = dlnz/phys.hubble(rs)
-
-    # Spectra that result from ONE atom in an excited state cascading to 1s or continuum
-    P_1s, P_ion, one_transition = get_total_transition(rs, xHI, Tm, nmax, Delta_f)
-
-    # Transfer Function: dot into a number of excited atoms, get out the excitation spectrum
-    exc_spectra_elec = Spectra(
-        spec_arr = np.zeros((eleceng.size,photeng.size)), eng=photeng,
-        in_eng=eleceng, spec_type='N',
-        rs=np.ones_like(eleceng)*rs
-    )
-    exc_grid_elec = np.zeros((len(H_states), eleceng.size))
-
-    # Total number of excitations (from electron collisions or photoexcitation) that resulted in an ionization *per baryon*
-    N_exc_tot_ion = 0
-
-    ### Electron Contribution ###
-    for i, state in enumerate(H_states):
-
-        #Use energy deposited in excitation to infer the number of excited (n>2) atoms
-        exc_grid_elec[i] += deposited_exc_vec_elec[state]/phys.H_exc_eng(state)
-
-        # Multiply by P_ion[i], the probability that for state i, the atom ends up ionized
-        N_exc_tot_ion += np.dot(exc_grid_elec[i], elec_spec.N) * P_ion[state]
-
-        #Multiply number of excited atoms by corresponding spectra and add it in
-        exc_spectra_elec += Spectra(
-            spec_arr=np.outer(exc_grid_elec[i], one_transition[state].N), eng=photeng,
-            in_eng=eleceng, spec_type='N',
-            rs=np.ones_like(eleceng)*rs
-        )
-
-    # Full spectrum produced by electrons
-    exc_spec_elec = exc_spectra_elec.sum_specs(elec_spec)
-
-    ### Photon Contribution ###
-    Tr = phys.TCMB(rs)
-    bnds = spectools.get_bin_bound(photeng)
-
-    # Actual Spectrum (not transfer function!). Normalized *per baryon*
-    exc_spec_phot = Spectrum(
-            photeng, np.zeros(photeng.size), spec_type='N', rs=rs
-    )
-
-    # Radial matrix element
-    R = populate_radial(nmax)
-
-    # multiply by f_BB and x_1s to get the rate of transition from 1s->np
-    As = xHI * 1/3 * phys.rydberg / phys.hbar * (
-        phys.alpha * (1-1/np.arange(2,nmax+1)**2)
-    )**3 * R['dn'][2:,1,1]**2
-
-    # Fraction of photons that got absorbed
-    absorbed_frac = np.zeros_like(photeng)
-
-    # energy bins that contain each Lyman series line
-    line_bins = np.array([[int(state[:-1]),sum(bnds<phys.H_exc_eng(state))-1] 
-        for i, state in enumerate(H_states) if state[-1]=='p'])
-
-    for i, state in enumerate(H_states):
-        if state[-1] == 'p':
-
-            n = int(state[:-1])
-
-            # Bin containing this excitation line
-            line_bin = sum(bnds<phys.H_exc_eng(state))-1
-
-            # all excitation lines that share the same bin
-            ns = line_bins[line_bins[:,1]==line_bins[n-2,1],0]
-
-            # Calculate the fraction of photons that get absorbed
-            # Note: we only keep track of the rate at which extra photons on top of the CMB are absorbed
-            E_1np = (1 - 1/ns**2) * phys.rydberg
-            absorption_rates = As[ns-2] * xHI * Delta_f(E_1np)
-            absorbed_frac[line_bin] = 1-np.exp(-sum(absorption_rates)*dt)
-
-            # If there's more than one line in this energy bin, compute the fraction absorbed by each line
-            frac_line = As[n-2]/sum(As[ns-2])
-            
-            # Number of excitations *per baryon*
-            N_exc_phot = absorbed_frac[line_bin] * frac_line * phot_spec.N[line_bin]
-
-            N_exc_tot_ion += N_exc_phot * P_ion[state]
-
-            # Spectrum produced for this state
-            exc_spec_phot.N += N_exc_phot * one_transition[state].N
-
-    # Convert N_exc_tot (number per baryon) to dE/dVdt, then divide by dE/dVdt|_inj in this step
-    f_ion = (N_exc_tot_ion * nB/dt * phys.rydberg) / inj_rate
-
-    # Return:
-    #    (i)   the contribution to f_ion from
-    #    (ii)  the distortion spectrum produced by excitations due to
-    #          electrons and photons, individually
-    #    (iii) the fraction of photons aborbed from phot_spec at each bin
-    return f_ion, exc_spec_elec, exc_spec_phot, absorbed_frac
-
-
 def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
 
     # Boltzmann Factor at lya energy
@@ -889,7 +714,7 @@ def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
     nH = phys.nH * rs**3
     term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI')
     term2 = 4 * x1s * np.exp(-phys.lya_eng/Tr) * sum_rates
-    #print(term1, term2)
+    # print(term1, term2)
 
     # Factor of 4 converts from x2 to x2s
     return (term1 + term2)/denom / 4.
