@@ -908,8 +908,9 @@ def post_Saha(rs, species = 'HII'):
 _xHII_std  = None
 _xHeII_std = None
 _Tm_std    = None
+rs_extrap = 1.555e3
 
-def xHII_std(rs, rs_extrap = 1.555e3):
+def xHII_std(rs, rs_extrap = rs_extrap):
     """Baseline nHII/nH value.
 
     Parameters
@@ -955,56 +956,56 @@ def xHII_std(rs, rs_extrap = 1.555e3):
                 # output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
                 output[extrap] = 1 - xHI
                 return output
-        
-def xHI_std(rs, rs_extrap = 1.555e3):
+
+def xHI_std(rs, rs_extrap=rs_extrap):
     """Baseline nHI/nH value.
 
     Parameters
     ----------
     rs : float
-        The redshift (1+z). 
+        The redshift (1+z).
 
     Returns
     -------
     float
-        nHI/nH. 
+        nHI/nH.
     """
     if isinstance(rs, float):
-        if rs<rs_extrap:
+        if rs < rs_extrap:
             return 1-xHII_std(rs)
         else:
-            #Use Saha equilibrium
+            # Use Saha equilibrium
             lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs))
             rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
             return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
     else:
-        extrap = rs>rs_extrap
-        if np.sum(extrap)==0:
+        ext = rs > rs_extrap
+        if np.sum(ext) == 0:
             return 1-xHII_std(rs)
         else:
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs[extrap]))
-            rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
-            if np.sum(~extrap) == 0:
+            lam_T = c*2*np.pi*hbar / np.sqrt(2*np.pi * mu_ep * TCMB(rs[ext]))
+            rhs = lam_T**-3 / (nH*rs[ext]**3) * np.exp(-rydberg/TCMB(rs[ext]))
+            if np.sum(~ext) == 0:
                 return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
             else:
                 output = np.zeros_like(rs)
-                output[~extrap] = 1-xHII_std(rs[~extrap])
-                output[extrap] = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
+                output[~ext] = 1-xHII_std(rs[~ext])
+                output[ext] = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
                 return output
 
 
-def xHeII_std(rs, rs_extrap = 3e3):
+def xHeII_std(rs, rs_extrap=3e3):
     """Baseline nHeII/nH value.
 
     Parameters
     ----------
     rs : float
-        The redshift (1+z). 
+        The redshift (1+z).
 
     Returns
     -------
     float
-        nHeII/nH. 
+        nHeII/nH.
     """
 
     if type(rs) != np.ndarray:
@@ -1031,7 +1032,7 @@ def xHeII_std(rs, rs_extrap = 3e3):
     else:
         return xHeII
 
-def Tm_std(rs, rs_extrap=2e3):
+def Tm_std(rs, rs_extrap=rs_extrap):
     """Baseline Tm value.
 
     Parameters

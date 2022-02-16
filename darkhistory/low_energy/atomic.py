@@ -405,7 +405,19 @@ def get_distortion_and_ionization(
     Tm : float
         matter temperature
     nmax : int
-        Highest excited state to be included
+        Highest excited state to be included (principle quantum number)
+    spec_2s1s : Spectrum
+        2s -> 1s emission spectrum of photons, normalized so spec_2s1s.totN()=2
+    Delta_f : function
+        photon phase space density as a function of energy, minus f_BB
+    cross_check : bool
+        if True, set xHI to its standard value
+    include_2s1s : bool
+        includes the 2s -> 1s photons to the output distortion
+    include_BF : bool
+        includes the bound-free transition photons to the output distortion
+    fexc_switch : bool
+    deposited_exc_arr elec_spec distortion H_states rate_func_eng A_1snp
 
     Returns
     -------
@@ -645,15 +657,15 @@ def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
     bnds = spectools.get_bin_bound(photeng)
 
     # amount of energy that got absorbed
-    dE_absorbed = {state : 0 for state in H_states}
+    dE_absorbed = {state: 0 for state in H_states}
 
     # Container object for photons that get absorbed
     spec_absorbed = distortion.copy() * 0
 
     # energy bins that contain each Lyman series line
     line_bins = np.array([
-        [int(state[:-1]),sum(bnds<phys.H_exc_eng(state))-1] 
-    for state in H_states if state[-1]=='p'])
+        [int(state[:-1]), sum(bnds < phys.H_exc_eng(state))-1]
+        for state in H_states if state[-1] == 'p'])
 
     for state in H_states:
         if state[-1] == 'p':
@@ -661,16 +673,16 @@ def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
             n = int(state[:-1])
 
             # all excitation lines that share the same bin
-            ns = line_bins[line_bins[:,1]==line_bins[n-2,1],0]
+            ns = line_bins[line_bins[:, 1] == line_bins[n-2, 1], 0]
 
             # Energy of absorbing photons
             E_1np = (1 - 1/ns**2) * phys.rydberg
 
             # Bin containing this excitation line
-            line_bin = sum(bnds<phys.H_exc_eng(state))-1
+            line_bin = sum(bnds < phys.H_exc_eng(state))-1
 
             # Calculate the fraction of photons that get absorbed
-            # Note: the CMB component is untouched (in equilibrium emission and 
+            # Note: the CMB component is untouched (in equilibrium emission and
             #   absorption balances out), we only modify the distortion.
 
             # Technically, I should subtract off inverse process
