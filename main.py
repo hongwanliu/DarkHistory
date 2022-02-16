@@ -47,7 +47,7 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
-    distort=False, fudge=True, nmax=9, MLA_funcs=None,
+    distort=False, fudge=True, nmax=10, fexc_switch=False, MLA_funcs=None,
     use_tqdm=True, cross_check=False, recfast_TLA=None
 ):
     """
@@ -382,6 +382,7 @@ def evolve(
                         '3s', '3p', '3d',
                         '4s', '4p', '4d', '4f',
                         '5p', '6p', '7p', '8p', '9p', '10p']
+
     else:
         elec_processes = False
 
@@ -472,13 +473,26 @@ def evolve(
         tau = atomic.tau_np_1s(2, rs)
         xe_init = xH_init + xHe_init
         x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), Tm_init,
-                                      xe_init, 1-xe_init, tau)
+                                      xe_init, phys.xHI_std(rs), tau)
         x2 = 4*x2s
         beta_ion = phys.beta_ion(Tm_init, 'HI')
         beta_MLA_data = np.array([
             [rs, beta_ion*x2],
             [rs, beta_ion*x2]
         ])
+
+        MLA_data = [[phys.alpha_recomb(Tm_init, 'HI')],
+                    [beta_ion*x2]]
+
+        if fexc_switch:
+            R_1snp = atomic.Hey_R_initial(np.arange(2, nmax+1), 1)
+
+            A_1snp = 1/3 * phys.rydberg / phys.hbar * (
+                phys.alpha * (1-1/np.arange(2, nmax+1)**2)
+            )**3 * R_1snp**2
+
+        else:
+            A_1snp = None
 
     else:
         distortion = None
@@ -679,12 +693,23 @@ def evolve(
                     alpha_MLA_data[1], beta_MLA_data[1])
 
                 x_1s = 1-x_arr[-1, 0]
+                in_distortion = distortion.copy()
                 (
                     alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
                 ) = atomic.get_distortion_and_ionization(
                     rs, dt, x_1s, Tm_arr[-1], nmax,
-                    dist_2s1s, Delta_f, cross_check
+                    dist_2s1s, Delta_f, cross_check,
+                    fexc_switch=fexc_switch,
+                    deposited_exc_arr=deposited_exc_arr,
+                    elec_spec=tot_spec_elec, distortion=distortion,
+                    H_states=H_states, rate_func_eng=rate_func_eng,
+                    A_1snp=A_1snp
                 )
+                MLA_data[0].append(alpha_MLA_data[1][1])
+                MLA_data[1].append(beta_MLA_data[1][1])
+
+                # Subtract off absorbed photons
+                atomic_dist_spec.N -= in_distortion.N - distortion.N
 
                 alpha_MLA_data[1][0], beta_MLA_data[1][0] = rs, rs
 
@@ -779,12 +804,13 @@ def evolve(
 
             append_distort_spec(temp_spec)
 
-            # Redshift contribution to present day, mask out photons>13.6eV,
-            # add to distortion
-            temp_spec.redshift(1)
-
+            # Redshift all contributions to current rs, mask photons>13.6eV,
+            # add together to get current distortion
             dist_mask = dist_eng < phys.rydberg
-            distortion.N += temp_spec.N * dist_mask
+
+            tmp_distortion = out_distort_specs.copy()
+            tmp_distortion.redshift(rs)
+            distortion = tmp_distortion.sum_specs() * dist_mask
 
         #####################################################################
         #####################################################################
@@ -800,10 +826,10 @@ def evolve(
                 [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
             )
         else:
-            # Use baseline values if no backreaction. 
+            # Use baseline values if no backreaction.
             x_vec_for_f = np.array([
-                    1. - phys.xHII_std(rs), 
-                    phys.chi - phys.xHeII_std(rs), 
+                    1. - phys.xHII_std(rs),
+                    phys.chi - phys.xHeII_std(rs),
                     phys.xHeII_std(rs)
             ])
 
@@ -884,8 +910,8 @@ def evolve(
 
             # Probabilities that nl state cascades to 2p state
             Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
-                     '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
-                     '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
+                  '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
+                  '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
 
             f_cont += sum([
                 deposited_exc[state] * (
@@ -1035,7 +1061,6 @@ def evolve(
 
             # Get the spectra for the next step by applying the
             # transfer functions.
-            #print(out_highengphot_specs[-1].toteng())
             highengdep_at_rs = np.dot(
                 np.swapaxes(highengdep_arr, 0, 1),
                 out_highengphot_specs[-1].N
@@ -1064,17 +1089,17 @@ def evolve(
             Tm_arr = np.append(Tm_arr, new_vals[-1, 0])
 
             if helium_TLA:
-                # Append the calculated xHe to x_arr. 
-                x_arr  = np.append(
-                        x_arr,  [[new_vals[-1,1], new_vals[-1,2]]], axis=0
+                # Append the calculated xHe to x_arr.
+                x_arr = np.append(
+                        x_arr,  [[new_vals[-1, 1], new_vals[-1, 2]]], axis=0
                     )
             else:
-                # Append the baseline solution value. 
-                x_arr  = np.append(
-                    x_arr,  [[new_vals[-1,1], phys.xHeII_std(next_rs)]], axis=0
+                # Append the baseline solution value.
+                x_arr = np.append(
+                    x_arr, [[new_vals[-1, 1], phys.xHeII_std(next_rs)]], axis=0
                 )
 
-        # Re-define existing variables. 
+        # Re-define existing variables.
         rs = next_rs
         dt = dlnz * coarsen_factor/phys.hubble(rs)
 
@@ -1098,6 +1123,10 @@ def evolve(
         'err':    f_c[:, 5]
     }
 
+    # Redshift the distortion to today
+    if distort:
+        distortion.redshift(1)
+
     data = {
         'rs': out_highengphot_specs.rs,
         'x': x_arr, 'Tm': Tm_arr,
@@ -1106,6 +1135,7 @@ def evolve(
         'lowengelec': out_lowengelec_specs,
         'distortions': out_distort_specs,
         'distortion': distortion,
+        'MLA': np.array(MLA_data),
         'f': f
     }
 
