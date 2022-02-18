@@ -44,20 +44,21 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
         * phys.TCMB(rs)**4
     )
 
+
 def get_history(
     rs_vec, init_cond=None, high_rs=np.inf,
     baseline_f=False, baseline_struct=False, inj_particle=None,
     f_H_ion=None, f_H_exc=None, f_heating=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None, 
-    struct_boost=None, injection_rate=None, 
-    reion_switch=False, reion_rs=None, reion_method=None, 
-    heat_switch=False, DeltaT = 0, alpha_bk=1.,
+    DM_process=None, mDM=None, sigmav=None, lifetime=None,
+    struct_boost=None, injection_rate=None,
+    reion_switch=False, reion_rs=None, reion_method=None,
+    heat_switch=False, DeltaT=0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
-    recfast_TLA=True, fudge=True, 
+    recfast_TLA=True, fudge=True,
     # xdot_MLA=None,
     alpha_MLA=None, beta_MLA=None,
-    mxstep = 1000, rtol=1e-4
+    mxstep=1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -66,31 +67,40 @@ def get_history(
     rs_vec : ndarray
         Abscissa for the solution.
     init_cond : array, optional
-        Array containing [initial temperature, initial xHII, initial xHeII, initial xHeIII]. Defaults to standard values if None.
+        Array containing [initial temperature, initial xHII, initial xHeII,
+        initial xHeIII]. Defaults to standard values if None.
     high_rs : float, optional
-        Redshift above which T and x are set to their default values plus corrections. Default to np.inf.
+        Redshift above which T and x are set to their default values plus
+        corrections. Default to np.inf.
     baseline_f : bool, optional
-        If True, uses the baseline f values with no backreaction returned by :func:`.f_std`. Default is False. 
+        If True, uses the baseline f values with no backreaction returned by
+        :func:`.f_std`. Default is False.
     baseline_struct : bool
-        If True, uses the default structure formation with the baseline f values. Default is False.
+        If True, uses the default structure formation with the baseline f
+        values. Default is False.
     inj_particle : {'elec', 'phot'}, optional
-        Specifies which set of f to use: electron/positron or photon. 
+        Specifies which set of f to use: electron/positron or photon.
     f_H_ion : function or float, optional
-        f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as constant if float.
+        f(rs, x_HI, x_HeI, x_HeII) for hydrogen ionization. Treated as
+        constant if float.
     f_H_exc : function or float, optional
-        f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation. Treated as constant if float.
+        f(rs, x_HI, x_HeI, x_HeII) for hydrogen Lyman-alpha excitation.
+        Treated as constant if float.
     f_heating : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. Default is None.
     sigmav : float, optional
-        Thermally averaged cross section for ``DM_process == 'swave'``. Default is None.
+        Thermally averaged cross section for ``DM_process == 'swave'``.
+        Default is None.
     lifetime : float, optional
         Decay lifetime for ``DM_process == 'decay'``. Default is None.
     struct_boost : function, optional
-        Energy injection boost factor due to structure formation. Default is None.
+        Energy injection boost factor due to structure formation.
+        Default is None.
     injection_rate : function or float, optional
-        Injection rate of DM as a function of redshift. Treated as constant if float. Default is None. 
+        Injection rate of DM as a function of redshift. Treated as constant if
+        float. Default is None.
     reion_switch : bool
         Reionization model included if True.
     reion_rs : float, optional
@@ -98,21 +108,30 @@ def get_history(
     reion_method : {'Puchwein', 'early', 'middle', 'late'}, optional
         Specify which reionization model
     heat_switch : True or False, optional
-        If True, include photoheating from reionization sources; if False, only include photoionization.
+        If True, include photoheating from reionization sources; if False,
+        only include photoionization.
     photoion_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoionization rate in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
+        Functions take redshift 1+z as input, return the photoionization rate
+        in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified,
+        defaults to `darkhistory.history.reionization.photoion_rate`.
     photoheat_rate_func : tuple of functions, optional
-        Functions take redshift 1+z as input, return the photoheating rate in eV s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
+        Functions take redshift 1+z as input, return the photoheating rate in
+        eV s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified,
+        defaults to `darkhistory.history.reionization.photoheat_rate`.
     xe_reion_func : function, optional
-        Specifies a fixed ionization history after reion_rs. The argument of this function should be a float. 
+        Specifies a fixed ionization history after reion_rs.
+        The argument of this function should be a float.
     helium_TLA : bool, optional
-        Specifies whether to track helium before reionization. 
+        Specifies whether to track helium before reionization.
     f_He_ion : function or float, optional
-        f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant if float. If None, treated as zero.
+        f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant
+        if float. If None, treated as zero.
     mxstep : int, optional
-        The maximum number of steps allowed for each integration point. See *scipy.integrate.odeint* for more information.
+        The maximum number of steps allowed for each integration point. See
+        *scipy.integrate.odeint* for more information.
     rtol : float, optional
-        The relative error of the solution. See *scipy.integrate.odeint* for more information.
+        The relative error of the solution. See *scipy.integrate.odeint* for
+        more information.
 
     Returns
     -------
@@ -121,12 +140,14 @@ def get_history(
 
     Notes
     -----
-    The actual differential equation that we solve is expressed in terms of y = arctanh(f*(x - f)), where f = 0.5 for x = xHII, and f = nHe/nH * 0.5 for x = xHeII or xHeIII, where nHe/nH is approximately 0.083.
+    The actual differential equation that we solve is expressed in terms of
+    y = arctanh(f*(x - f)), where f = 0.5 for x = xHII, and f = nHe/nH * 0.5
+    for x = xHeII or xHeIII, where nHe/nH is approximately 0.083.
 
     """
 
-    # Defines the f(z) functions, which return a constant, 
-    # if the input fz's are floats. 
+    # Defines the f(z) functions, which return a constant,
+    # if the input fz's are floats.
 
     if baseline_f and mDM is None:
         raise ValueError('Specify mDM to use baseline_f.')
@@ -138,7 +159,7 @@ def get_history(
         raise ValueError('Use either baseline_f or specify f manually.')
 
     if (
-        baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave')) 
+        baseline_f and ((DM_process == 'swave') or (DM_process == 'pwave'))
         and baseline_struct
     ):
         struct_bool = True
@@ -148,8 +169,8 @@ def get_history(
     def _f_H_ion(rs, xHI, xHeI, xHeII):
         if baseline_f:
             return phys.f_std(
-                mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
-                channel='H ion'
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                struct=struct_bool, channel='H ion'
             )
         if f_H_ion is None:
             return 0.
@@ -159,10 +180,10 @@ def get_history(
             return f_H_ion
 
     def _f_H_exc(rs, xHI, xHeI, xHeII):
-        if baseline_f: 
+        if baseline_f:
             return phys.f_std(
-                mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
-                channel='exc'
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                struct=struct_bool, channel='exc'
             )
         if f_H_exc is None:
             return 0.
@@ -172,10 +193,10 @@ def get_history(
             return f_H_exc
 
     def _f_heating(rs, xHI, xHeI, xHeII):
-        if baseline_f: 
+        if baseline_f:
             return phys.f_std(
-                mDM, rs, inj_particle=inj_particle, inj_type=DM_process, struct=struct_bool,
-                channel='heat'
+                mDM, rs, inj_particle=inj_particle, inj_type=DM_process,
+                struct=struct_bool, channel='heat'
             )
         if f_heating is None:
             return 0.
@@ -183,7 +204,7 @@ def get_history(
             return f_heating(rs, xHI, xHeI, xHeII)
         else:
             return f_heating
-        
+
     def _f_He_ion(rs, xHI, xHeI, xHeII):
         if f_He_ion is None:
             return 0.
@@ -203,7 +224,7 @@ def get_history(
 
     # struct_boost should be defined to just return 1 if undefined.
     if struct_boost is None:
-        def struct_boost(rs): 
+        def struct_boost(rs):
             return 1.
 
     def _injection_rate(rs):
@@ -231,9 +252,9 @@ def get_history(
                 return 0.
             elif callable(injection_rate):
                 return injection_rate(rs)
-            else: 
+            else:
                 return injection_rate
-        
+
     chi = phys.chi
 
     if reion_switch:
@@ -262,11 +283,13 @@ def get_history(
             photoheat_rate_HeI  = photoheat_rate_func[1]
             photoheat_rate_HeII = photoheat_rate_func[2]
 
-    # Define conversion functions between x and y. 
+    # Define conversion functions between x and y.
     def xHII(yHII):
-            return 0.5 + 0.5*np.tanh(yHII)
+        return 0.5 + 0.5*np.tanh(yHII)
+
     def xHeII(yHeII):
         return chi/2 + chi/2*np.tanh(yHeII)
+
     def xHeIII(yHeIII):
         return chi/2 + chi/2*np.tanh(yHeIII)
 
@@ -289,7 +312,6 @@ def get_history(
 
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
-            #print('DM before: ', _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate/(3/2 * nH * (1 + chi + xe))*phys.dtdz(rs))
 
             return 1 / T_m * adiabatic_cooling_rate + 1 / T_m * (
                 phys.dtdz(rs)*(
@@ -298,12 +320,11 @@ def get_history(
                     )
                     + _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                 )
-            )/ (3/2 * nH * (1 + chi + xe))
-
+            ) / (3/2 * nH * (1 + chi + xe))
 
         def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
             # recfast_TLA == True:  adopt the Peebles C factor treatment (see 1904.xxxx)
-            # recfast_TLA == False: keep track of the higher excited states similarly to Hyrec, 
+            # recfast_TLA == False: keep track of the higher excited states similarly to Hyrec,
             #      must provide beta_MLA = beta_i M^-1_ij b_j (see xxxx.xxxx)
 
             T_m = np.exp(log_T_m)
@@ -313,20 +334,19 @@ def get_history(
                 return 0
             # if yHII > 14. or yHII < -14.:
             #     # Stops the solver from wandering too far.
-            #     return 0    
+            #     return 0
             if xHeII(yHeII) > 0.99*chi and rs > 1500:
                 # This is prior to helium recombination.
                 # Assume H completely ionized.
                 return 0
 
             if helium_TLA and xHII(yHII) > 0.999 and rs > 1500:
-                # Use the Saha value. 
+                # Use the Saha value.
                 return 2 * np.cosh(yHII)**2 * phys.d_xe_Saha_dz(rs, 'HI')
 
             if not helium_TLA and xHII(yHII) > 0.99 and rs > 1500:
-                # Use the Saha value. 
+                # Use the Saha value.
                 return 2 * np.cosh(yHII)**2 * phys.d_xe_Saha_dz(rs, 'HI')
-
 
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             xHI = 1 - xHII(yHII)
@@ -362,9 +382,9 @@ def get_history(
                 # tau = atomic.tau_np_1s(2,rs, 1-xe)
                 # x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), T_m, xe, 1-xe, tau)
                 # x2  = 4*x2s
-                
-                #print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
-                #print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
+
+                # print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
+                # print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                     # xdot_MLA(rs, xe)
