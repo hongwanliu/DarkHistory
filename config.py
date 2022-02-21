@@ -16,7 +16,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path    = '/zfs/yitians/darkhistory/DHdata_CSalt/' ##### CP # CSalt data
+data_path    = '/zfs/yitians/darkhistory/DHdata_alt_hep/' ##### CP # CSalt data
 data_path_v1 = '/zfs/yitians/darkhistory/DHdata/'       ##### CP # DarkHistory v1.0 version data
 
 # Global variables for data.
