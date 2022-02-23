@@ -116,7 +116,8 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
             BB['dn'][n][n_p][0] = 0.0                          # No l' < 0
             for l in np.arange(0, n_p, 1):  # absorption: use detailed balance
                 if (Tr < ZEROTEMP):  # if Tr = 0
-                    BB['up'][n_p][n][l] = BB['dn'][n_p][n][l+1] = 0.0
+                    BB['up'][n_p][n][l] = 0.0   
+                    BB['dn'][n_p][n][l+1] = 0.0
                 else:
                     # BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(
                     # -Ennp/Tr) * BB['dn'][n][n_p][l+1]
@@ -418,6 +419,7 @@ def get_distortion_and_ionization(
     K = np.zeros((num_states, num_states))
 
     b = np.zeros(num_states)
+    db = np.zeros(num_states)
 
     # excitations from energy injection -- both photoexcitation and
     # electron collisions
@@ -466,15 +468,17 @@ def get_distortion_and_ionization(
         if fexc_switch:
             spec_ind = str(n) + num_to_l(l)
             if spec_ind in delta_b.keys():
-                b[nl] += delta_b[spec_ind]
+                db[nl] = delta_b[spec_ind]
 
+        db[nl] /= tot_rate
         b[nl] /= tot_rate
 
     mat = np.identity(num_states-1) - K[1:, 1:]
-    x_vec = np.linalg.solve(mat, b[1:])
+    x_vec = np.linalg.solve(mat, b[1:] + db[1:])
     # !!! I should be able to set xHI = 1 - sum(x_full) - xe,
     # but instead I'm stuck with 1-xHII
     x_full = np.append(xHI, x_vec)
+    x_full0 = np.append(xHI, np.linalg.solve(mat, b[1:]))
 
     ###
     # Now calculate the total ionization and distortion
