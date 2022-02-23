@@ -664,16 +664,16 @@ def evolve(
                     deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
                 )
 
-            def beta_MLA(logrs):
-                rs = np.exp(logrs)
+            # def beta_MLA(logrs):
+            #    rs = np.exp(logrs)
 
-                tau = atomic.tau_np_1s(2, rs)
-                xe = phys.xHII_std(rs)
-                Tm = phys.Tm_std(rs)
-                Tr = phys.TCMB(rs)
-                x2s = atomic.x2s_steady_state(rs, Tr, Tm, xe, 1-xe, tau)
-                x2 = 4*x2s
-                beta_ion = phys.beta_ion(Tm, 'HI')
+            #    tau = atomic.tau_np_1s(2, rs)
+            #    xe = phys.xHII_std(rs)
+            #    Tm = phys.Tm_std(rs)
+            #    Tr = phys.TCMB(rs)
+            #    x2s = atomic.x2s_steady_state(rs, Tr, Tm, xe, 1-xe, tau)
+            #    x2 = 4*x2s
+            #    beta_ion = phys.beta_ion(Tm, 'HI')
 
                 return np.log(beta_ion*x2)
 
@@ -720,6 +720,7 @@ def evolve(
                         alpha_MLA_data[:, 1],
                         kind='linear',
                         fill_value='extrapolate')
+
                     beta_MLA = interp1d(
                             np.log(beta_MLA_data[:, 0]),
                             np.log(beta_MLA_data[:, 1]),
@@ -833,7 +834,11 @@ def evolve(
                     phys.xHeII_std(rs)
             ])
 
-        if elec_processes:
+        if not elec_processes:
+            f_elec = {chan: 0 for chan in [
+                'H ion', 'He ion', 'Lya', 'heat', 'cont', 'err']}
+
+        else:
             # High-energy deposition from input electrons.
             highengdep_at_rs += np.array([
                 deposited_H_ion/dt,
@@ -903,7 +908,7 @@ def evolve(
         # which is absent when there are no electrons
         f_err = f_elec['err']
 
-        if not cross_check:
+        if elec_processes and not cross_check:
             deposited_exc = {state: np.dot(
                 deposited_exc_arr[state], tot_spec_elec.N
             ) for state in H_states}
@@ -1135,9 +1140,11 @@ def evolve(
         'lowengelec': out_lowengelec_specs,
         'distortions': out_distort_specs,
         'distortion': distortion,
-        'MLA': np.array(MLA_data),
         'f': f
     }
+
+    if elec_processes:
+        data['MLA'] = np.array(MLA_data)
 
     return data
 
