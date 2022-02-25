@@ -487,7 +487,7 @@ width_21s_1s_He = 51.3
 # Recombination/Ionization              #
 #########################################
 
-def alpha_recomb(T_m, species, fudge=True):
+def alpha_recomb(T_m, species, fudge=1.125):
     """Case-B recombination coefficient.
 
     Parameters
@@ -510,16 +510,12 @@ def alpha_recomb(T_m, species, fudge=True):
 
     if species == 'HI':
 
-        # Fudge factor recommended in 1011.3758
-        fudge_fac = 1.0
-        if fudge:
-            #fudge_fac = 1.125
-            fudge_fac = 1.14
+        # Fudge factor recommended in 1011.3758 is 1.125
 
         conv_fac = 1.0e-4/kB
 
         return (
-            fudge_fac * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
+            fudge * 1.0e-13 * 4.309 * (conv_fac*T_m)**(-0.6166)
             / (1 + 0.6703 * (conv_fac*T_m)**0.5300)
         )
 
@@ -553,7 +549,7 @@ def alpha_recomb(T_m, species, fudge=True):
 
     
 
-def beta_ion(T_rad, species, fudge=True):
+def beta_ion(T_rad, species, fudge=1.125):
     """Case-B photoionization coefficient.
 
     Parameters
@@ -605,7 +601,7 @@ def beta_ion(T_rad, species, fudge=True):
 
         return TypeError('invalid species.')
 
-def peebles_C(xHII, rs, fudge=True):
+def peebles_C(xHII, rs, fudge=1.125):
     """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
@@ -870,7 +866,7 @@ def d_xe_Saha_dz(rs, species):
 
 
 # RHS of TLA
-def xdot(xe, rs, fudge = True):
+def xdot(xe, rs, fudge = 1.125):
     Tm = Tm_std(rs) #!!! Should include corrections to Tm = T_CMB in this function
 
     return - dtdz(rs) * peebles_C(xe, rs, fudge) * (

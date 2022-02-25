@@ -47,7 +47,7 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
-    distort=False, fudge=True, nmax=10, fexc_switch=False, MLA_funcs=None,
+    distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
     use_tqdm=True, cross_check=False, recfast_TLA=None
 ):
     """
@@ -368,7 +368,7 @@ def evolve(
         # The excitation states we keep track of in hydrogen
         # We keep track of specific states for hydrogen, but not for
         # HeI and HeII !!!
-        method = 'MEDEA'  # or 'MEDEA' or 'AcharyaKhatri' or 'new'
+        method = 'new'  # or 'MEDEA' or 'AcharyaKhatri' or 'new'
 
         if method == 'AcharyaKhatri':
             H_states = ['2s', '2p', '3p']
@@ -908,7 +908,7 @@ def evolve(
         # which is absent when there are no electrons
         f_err = f_elec['err']
 
-        if elec_processes and not cross_check:
+        if elec_processes and not cross_check and False:
             deposited_exc = {state: np.dot(
                 deposited_exc_arr[state], tot_spec_elec.N
             ) for state in H_states}
