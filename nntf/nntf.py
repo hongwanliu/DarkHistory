@@ -56,6 +56,16 @@ def ics_pred_Eout_max(Ein, TF_type): # Eout(Ein)
         raise ValueError('Invalid TF_type.')
     return 10**y
 
+def distortion_zero_est(rs):
+    p = np.array([-0.0082342 ,  0.21588987,  3.68529367])
+    return int(np.round(np.exp(np.polyval(p, np.log(rs)))))
+
+def distortion_zero(a, iz):
+    if a[iz] < a[iz-1]:
+        return iz + next(offset for offset in range(30) if a[iz+offset] < a[iz+offset+1])
+    else:
+        return iz - next(offset for offset in range(1,30) if a[iz-offset] < a[iz-offset-1])
+
 ####################
 ### CLASSES
     
@@ -230,6 +240,14 @@ class NNTF (PredTF, NNTFRaw):
         self.predict_raw_TF(rs=rs, xH=xH, xHe=xHe)
         self.TF = np.exp(self.raw_TF)
         self.rs = rs
+        
+        # restore negative values
+        iz = distortion_zero_est(rs)
+        if self.TF_type in ['hep_p12', 'hep_s11']:
+            for i in range(223, 500):
+                iz = distortion_zero(self.TF[i], iz)
+                self.TF[i][:iz] *= -1
+                self.TF[i][iz] = self.TF[i][iz-1] + (self.TF[i][iz+1]-self.TF[i][iz-1]) / (self.abscs[-1][iz+1]-self.abscs[-1][iz-1]) * (self.abscs[-1][iz]-self.abscs[-1][iz-1])
         
         ### cut below lci
         lci = int(np.round(self.lci_interp.get_val(xH, xHe, rs)))
