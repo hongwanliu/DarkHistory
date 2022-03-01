@@ -55,7 +55,7 @@ def get_history(
     heat_switch=False, DeltaT=0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
-    recfast_TLA=True, fudge=True,
+    recfast_TLA=True, fudge=1.125,
     # xdot_MLA=None,
     alpha_MLA=None, beta_MLA=None,
     mxstep=1000, rtol=1e-4
@@ -377,11 +377,12 @@ def get_history(
                 )
             else:
                 # peebC = phys.peebles_C(xHII(yHII), rs)
-                # beta_ion = phys.beta_ion(T_m, 'HI')
+                beta_ion = phys.beta_ion(T_m, 'HI')
 
-                # tau = atomic.tau_np_1s(2,rs, 1-xe)
-                # x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), T_m, xe, 1-xe, tau)
-                # x2  = 4*x2s
+                tau = atomic.tau_np_1s(2, rs, xHI)
+                x2s = atomic.x2s_steady_state(
+                    rs, phys.TCMB(rs), T_m, xe, xHI, tau)
+                x2  = 4*x2s
 
                 # print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
                 # print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
@@ -392,14 +393,14 @@ def get_history(
                     #    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
                     #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
                     #)
-                    - (
-                        alpha_MLA(rs) * xHII(yHII) * xe * nH
-                        - np.exp(beta_MLA(np.log(rs)))
-                    )
                     #- (
-                    #    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
-                    #    - beta_ion*x2
+                    #    alpha_MLA(rs) * xHII(yHII) * xe * nH
+                    #    - np.exp(beta_MLA(np.log(rs)))
                     #)
+                    - (
+                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                        - beta_ion*x2
+                    )
 
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                         / (phys.rydberg * nH)

@@ -693,6 +693,8 @@ def evolve(
                     alpha_MLA_data[1], beta_MLA_data[1])
 
                 x_1s = 1-x_arr[-1, 0]
+                # resonant photons will be absorbed when passed through this
+                # the following function
                 in_distortion = distortion.copy()
                 (
                     alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec

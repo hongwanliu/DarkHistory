@@ -483,6 +483,7 @@ A_He_23P1 = 177.58
 width_21s_1s_He = 51.3 
 """Width of He 2\ :sup:`1`\ s :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 
+
 #########################################
 # Recombination/Ionization              #
 #########################################
@@ -495,7 +496,7 @@ def alpha_recomb(T_m, species, fudge=1.125):
     T_m : float
         The matter temperature (eV).
     species : {'HI', 'HeI_21s', 'HeI_23s'}
-        The species of interest. 
+        The species of interest.
 
     Returns
     -------
@@ -532,7 +533,7 @@ def alpha_recomb(T_m, species, fudge=1.125):
 
             q = 10**-16.306
             p = 0.761
-            T_2 = 3 # in K
+            T_2 = 3  # in K
             T_1 = 10**5.114
 
         else:
@@ -542,12 +543,11 @@ def alpha_recomb(T_m, species, fudge=1.125):
         T_in_K = T_m/kB
 
         return 1e6 * q / (
-            np.sqrt(T_in_K/T_2) 
-            * (1 + T_in_K/T_2)**(1-p) 
+            np.sqrt(T_in_K/T_2)
+            * (1 + T_in_K/T_2)**(1-p)
             * (1 + T_in_K/T_1)**(1+p)
         )
 
-    
 
 def beta_ion(T_rad, species, fudge=1.125):
     """Case-B photoionization coefficient.
