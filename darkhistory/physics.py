@@ -621,13 +621,13 @@ def peebles_C(xHII, rs, fudge=1.125):
     # Rate 2s to 1s transition.
     rate_2s1s = width_2s1s_H
 
-    # Rate of 2p to 1s transition, times (1 - xHII). 
+    # Rate of 2p to 1s transition, times (1 - xHII).
     rate_2p1s_times_x1s = (
-        8 * np.pi * hubble(rs)/
+        8 * np.pi * hubble(rs) /
         (3*(nH * rs**3 * (c/lya_freq)**3))
     )
 
-    # Gaussian corrections. 
+    # Gaussian corrections.
     gauss_corr_1 = -0.14*np.exp(-((np.log(rs) - 7.28)/0.18)**2)
     gauss_corr_2 = 0.079*np.exp(-((np.log(rs) - 6.73)/0.33)**2)
 
@@ -638,6 +638,7 @@ def peebles_C(xHII, rs, fudge=1.125):
     rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI', fudge)
 
     return rate_exc/(rate_exc + rate_ion)
+
 
 def C_He(xHII, xHeII, rs, species):
     """Helium C coefficients. 
@@ -966,7 +967,7 @@ def xHI_std(rs, rs_extrap=rs_extrap):
     float
         nHI/nH.
     """
-    if isinstance(rs, float):
+    if type(rs) in {int, float}:
         if rs < rs_extrap:
             return 1-xHII_std(rs)
         else:

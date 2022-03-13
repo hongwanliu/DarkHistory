@@ -136,21 +136,22 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
 
     return BB
 
-#astro-ph/9912182 Eq. 40
+
+# astro-ph/9912182 Eq. 40
 def tau_np_1s(n, rs, xHI=None):
-    l=1
+    l = 1
     nu = (1 - 1/n**2) * phys.rydberg/hplanck
     lam = phys.c/nu
-    if xHI == None:
+    if xHI is None:
         # xHI = 1-phys.xHII_std(rs)
         xHI = phys.xHI_std(rs)
     nHI = xHI * phys.nH*rs**3
     pre = lam**3 * nHI / (8*np.pi*phys.hubble(rs))
-    
+
     A_prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
         phys.alpha * (1 - 1/n**2))**3
-    
-    R = Hey_R_initial(n, 1) # R['dn'][n][1][l]
+
+    R = Hey_R_initial(n, 1)  # R['dn'][n][1][l]
     A_dn = A_prefac * l/(2*l+1) * R**2
     g = (2*l+1)/(2*l-1)
     return pre * A_dn * g
@@ -696,7 +697,7 @@ def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
     return delta_b
 
 
-def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
+def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S, fudge=1.125):
 
     # Boltzmann Factor at lya energy
     B_Lya = np.exp(-phys.lya_eng/Tr)
@@ -705,20 +706,27 @@ def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S):
     f_Lya = B_Lya/(1-B_Lya)
 
     # 2p-1s rate, including Sobolev optical depth
-    R_Lya = 2**9/3**8 * phys.alpha**3 * phys.rydberg/phys.hbar * (1+f_Lya)
+    R_Lya = 2*(2/3)**8 * phys.alpha**3 * phys.rydberg/phys.hbar * (1+f_Lya)
     R_Lya *= (1-np.exp(-tau_S))/tau_S
 
     # Total deexcitation rate including 2s->1s rate
     sum_rates = (3*R_Lya + phys.width_2s1s_H)/4
 
     # Denominator of Peebles C factor
-    denom = sum_rates + phys.beta_ion(Tr, 'HI')
+    denom = sum_rates + phys.beta_ion(Tm, 'HI', fudge)
 
     # Two numerator terms for x2 steady state solution
     nH = phys.nH * rs**3
-    term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI')
+    term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI', fudge)
     term2 = 4 * x1s * np.exp(-phys.lya_eng/Tr) * sum_rates
     # print(term1, term2)
 
     # Factor of 4 converts from x2 to x2s
-    return (term1 + term2)/denom / 4.
+    ans = (term1 + term2)/denom / 4.
+    if type(ans) is np.ndarray:
+        if len(ans) == 1:
+            return ans[0]
+        else:
+            return ans
+    else:
+        return ans

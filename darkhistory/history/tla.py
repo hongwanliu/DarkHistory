@@ -376,12 +376,13 @@ def get_history(
                     )
                 )
             else:
-                # peebC = phys.peebles_C(xHII(yHII), rs)
-                beta_ion = phys.beta_ion(T_m, 'HI')
+                fudge=1.0
+                peebC = phys.peebles_C(xHII(yHII), rs, fudge)
+                beta_ion = phys.beta_ion(T_m, 'HI', fudge)
 
                 tau = atomic.tau_np_1s(2, rs, xHI)
                 x2s = atomic.x2s_steady_state(
-                    rs, phys.TCMB(rs), T_m, xe, xHI, tau)
+                    rs, phys.TCMB(rs), T_m, xe, xHI, tau, fudge)
                 x2  = 4*x2s
 
                 # print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
@@ -389,8 +390,8 @@ def get_history(
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                     # xdot_MLA(rs, xe)
-                    #-0*peebC * (
-                    #    phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                    #-peebC * (
+                    #    phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
                     #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
                     #)
                     #- (
@@ -398,7 +399,7 @@ def get_history(
                     #    - np.exp(beta_MLA(np.log(rs)))
                     #)
                     - (
-                        phys.alpha_recomb(T_m, 'HI') * xHII(yHII) * xe * nH
+                        phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
                         - beta_ion*x2
                     )
 

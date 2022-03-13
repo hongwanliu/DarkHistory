@@ -724,9 +724,9 @@ def evolve(
                         fill_value='extrapolate')
 
                     beta_MLA = interp1d(
-                            np.log(beta_MLA_data[:, 0]),
-                            np.log(beta_MLA_data[:, 1]),
-                            fill_value='extrapolate'
+                        np.log(beta_MLA_data[:, 0]),
+                        np.log(beta_MLA_data[:, 1]),
+                        fill_value='extrapolate'
                     )
 
                 else:
