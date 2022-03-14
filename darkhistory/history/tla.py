@@ -396,14 +396,14 @@ def get_history(
                     #    phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
                     #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
                     #)
-                    #- (
-                    #    alpha_MLA(rs) * xHII(yHII) * xe * nH
-                    #    - np.exp(beta_MLA(np.log(rs)))
-                    #)
                     - (
-                        phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
-                        - beta_ion*x2
+                        alpha_MLA(rs) * xHII(yHII) * xe * nH
+                        - np.exp(beta_MLA(np.log(rs)))
                     )
+                    #- (
+                    #    phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
+                    #    - beta_ion*x2
+                    #)
 
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                         / (phys.rydberg * nH)
