@@ -355,20 +355,23 @@ def get_history(
             if recfast_TLA:
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge)
                 beta_ion = phys.beta_ion(T_m, 'HI', fudge)
+                alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
-                    # Recombination processes. 
+                    # Recombination processes.
                     # Boltzmann factor is T_r, agrees with HyREC paper.
                     # Commented out lines to agree with ExoCLASS
                     - peebC * (
-                        phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
+                        alpha * xHII(yHII)*xe*nH
                         - 4 * beta_ion * xHI
-                            # * np.exp(-phys.lya_eng/T_m)
-                            * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                        # * np.exp(-phys.lya_eng/T_m)
+                        * np.exp(-phys.lya_eng/phys.TCMB(rs))
                     )
+
                     # DM injection. Note that C = 1 at late times.
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
-                        / (phys.rydberg * nH)
+                    / (phys.rydberg * nH)
+
                     # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
                     + (1. - peebC) * (
                         _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
@@ -376,14 +379,13 @@ def get_history(
                     )
                 )
             else:
-                fudge=1.0
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge)
                 beta_ion = phys.beta_ion(T_m, 'HI', fudge)
 
                 tau = atomic.tau_np_1s(2, rs, xHI)
                 x2s = atomic.x2s_steady_state(
                     rs, phys.TCMB(rs), T_m, xe, xHI, tau, fudge)
-                x2  = 4*x2s
+                x2 = 4*x2s
 
                 # print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
                 # print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
