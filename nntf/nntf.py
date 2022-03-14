@@ -61,10 +61,72 @@ def distortion_zero_est(rs):
     return int(np.round(np.exp(np.polyval(p, np.log(rs)))))
 
 def distortion_zero(a, iz):
-    if a[iz] < a[iz-1]:
-        return iz + next(offset for offset in range(30) if a[iz+offset] < a[iz+offset+1])
-    else:
-        return iz - next(offset for offset in range(1,30) if a[iz-offset] < a[iz-offset-1])
+    try:
+        if a[iz] < a[iz-1]:
+            return iz + next((offset for offset in range(5) if a[iz+offset] < a[iz+offset+1]), 0)
+        else:
+            return iz - next((offset for offset in range(1,5) if a[iz-offset] < a[iz-offset-1]), 0)
+    except:
+        print(a)
+        #print(iz, offset, a[iz-offset], a[iz-offset-1])
+        exit()
+        
+def scale_to_01(x, xmin, xmax):
+    return (x-xmin)/xmax
+
+def inv_scale_to_01(y, xmin, xmax):
+    return y*xmax + xmin
+
+def log_scale_to_01(x, xmin, xmax):
+    return (np.log(x)-np.log(xmin))/np.log(xmax)
+
+def inv_log_scale_to_01(y, xmin, xmax):
+    return np.exp(y*np.log(xmax) + np.log(xmin))
+
+YHe = 0.24
+xHe_ratio = YHe/(4*(1-YHe))
+abscs = load_data('binning')
+
+normalize_data = True
+if normalize_data:
+    infuncs = {
+        'xH' : lambda x: scale_to_01(x, 0, 1),
+        'xHe': lambda x: scale_to_01(x, 0, xHe_ratio),
+        'rs' : lambda x: log_scale_to_01(x, 4, 3000),
+        'photeng': lambda x: log_scale_to_01(x, abscs['phot'][0], abscs['phot'][-1]),
+        'eleceng': lambda x: log_scale_to_01(x, abscs['elec'][0], abscs['elec'][-1]),
+        'hep_tf' : lambda x: log_scale_to_01(np.clip(np.abs(x), 1e-60, None), 1e-20, 1e10),
+        'lee_tf' : lambda x: log_scale_to_01(np.clip(np.abs(x), 1e-20, None), 1e-10, 1e3)
+    }
+    outfuncs = {
+        'xH' : lambda x: inv_scale_to_01(x, 0, 1),
+        'xHe': lambda x: inv_scale_to_01(x, 0, xHe_ratio),
+        'rs' : lambda x: inv_log_scale_to_01(x, 4, 3000),
+        'photeng': lambda x: inv_log_scale_to_01(x, abscs['phot'][0], abscs['phot'][-1]),
+        'eleceng': lambda x: inv_log_scale_to_01(x, abscs['elec'][0], abscs['elec'][-1]),
+        'hep_tf' : lambda x: inv_log_scale_to_01(x, 1e-20, 1e10),
+        'hep_tf_wolog' : lambda x: x*np.log(1e10) + np.log(1e-20),
+        'lee_tf' : lambda x: inv_log_scale_to_01(x, 1e-10, 1e3)
+    }
+else:
+    infuncs = {
+        'xH' : lambda x: x*10,
+        'xHe': lambda x: x*100,
+        'rs' : np.log,
+        'photeng': np.log,
+        'eleceng': np.log,
+        'hep_tf' : lambda x: np.log(np.clip(np.abs(x), 1e-60, None)),
+        'lee_tf' : lambda x: np.log(np.clip(np.abs(x), 1e-20, None))
+    }
+    outfuncs = {
+        'xH' : lambda x: x/10,
+        'xHe': lambda x: x/100,
+        'rs' : np.exp,
+        'photeng': np.exp,
+        'eleceng': np.exp,
+        'hep_tf' : np.exp,
+        'lee_tf' : np.exp
+    }
 
 ####################
 ### CLASSES
@@ -155,6 +217,7 @@ class NNTFRaw:
                 if self.mask[ii][oi]:
                     self._pred_in_2D.append( [self.io_abscs[0][ii], self.io_abscs[1][oi]] )
         self._pred_in_2D = np.array(self._pred_in_2D, dtype=np.float32)
+        self._pred_in_2D_alt = None
         
         
     def predict_raw_TF(self, rs=4.0, xH=None, xHe=None):
@@ -183,10 +246,15 @@ class NNTFRaw:
                 pred_in = np.c_[ np.full( pred_in_shape, rs_in, dtype=np.float32 ),
                                  self._pred_in_2D ]
             elif rs > RS_NODES[0]: # regime 1
-                xH_in  = xH*10
+                #xH_in  = xH*10
+                # tmp fix for r1
+                xH_in = infuncs['xH'](xH)
+                rs_in = infuncs['rs'](rs)
+                if self._pred_in_2D_alt is None:
+                    self._pred_in_2D_alt = infuncs['photeng'](np.exp(self._pred_in_2D))
                 pred_in = np.c_[ np.full( pred_in_shape, xH_in, dtype=np.float32 ),
                                  np.full( pred_in_shape, rs_in, dtype=np.float32 ),
-                                 self._pred_in_2D ]
+                                 self._pred_in_2D_alt ]
             else:                  # regime 0
                 xH_in  = xH*10
                 xHe_in = xHe*100
@@ -202,6 +270,9 @@ class NNTFRaw:
             pred_out = np.array(self.model.predict_on_batch(pred_in)).flatten()
         else:
             pred_out = np.array(self.model.predict(pred_in, batch_size=1000**2)).flatten()
+        # tmp fix for r1
+        if rs > RS_NODES[0] and rs < RS_NODES[1]:
+            pred_out = outfuncs['hep_tf_wolog'](pred_out)
         
         
         # build raw_TF
