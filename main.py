@@ -48,7 +48,8 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
-    use_tqdm=True, cross_check=False, recfast_TLA=None
+    use_tqdm=True, cross_check=False, recfast_TLA=None,
+    reprocess_distortion=True
 ):
     """
     Main function computing histories and spectra.
@@ -450,6 +451,8 @@ def evolve(
         hplanck = phys.hbar * 2*np.pi
         dist_eng = np.exp(np.linspace(np.log(hplanck*1e8),
                                       np.log(phys.rydberg), 500))
+        #dist_eng = np.sort(np.append(dist_eng,
+        #                             atomic.get_transition_energies(nmax)))
         distortion = Spectrum(dist_eng, np.zeros_like(dist_eng),
                               rs=1, spec_type='N')
 
@@ -684,16 +687,22 @@ def evolve(
             if distort:
 
                 # Phase space density for the distortion
-                # prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
-                # Delta_f = interp1d(
-                #   photeng, prefac * distortion.dNdE/photeng**2)
-                def Delta_f(ee):
-                    return 0
+                if reprocess_distortion:
+                    prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+                    Delta_f = interp1d(
+                        dist_eng, prefac * distortion.dNdE/dist_eng**2,
+                        bounds_error=False, fill_value=(0, 0)
+                    )
+                else:
+                    def Delta_f(ee):
+                        return 0
+
                 alpha_MLA_data[0], beta_MLA_data[0] = (
-                    alpha_MLA_data[1], beta_MLA_data[1])
+                    alpha_MLA_data[1], beta_MLA_data[1]
+                )
 
                 x_1s = 1-x_arr[-1, 0]
-                # resonant photons will be absorbed when passed through this
+                # resonant photons will be absorbed when passed through
                 # the following function
                 in_distortion = distortion.copy()
                 (
@@ -705,7 +714,7 @@ def evolve(
                     deposited_exc_arr=deposited_exc_arr,
                     elec_spec=tot_spec_elec, distortion=distortion,
                     H_states=H_states, rate_func_eng=rate_func_eng,
-                    A_1snp=A_1snp
+                    A_1snp=A_1snp, stimulated_emission=True
                 )
                 MLA_data[0].append(alpha_MLA_data[1][1])
                 MLA_data[1].append(beta_MLA_data[1][1])
