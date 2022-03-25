@@ -604,7 +604,8 @@ def beta_ion(T_rad, species, fudge=1.125):
 def peebles_C(xHII, rs, fudge=1.125):
     """Hydrogen Peebles C coefficient.
 
-    This is the ratio of the total rate for transitions from n = 2 to the ground state to the total rate of all transitions, including ionization.
+    This is the ratio of the total rate for transitions from n = 2 to the
+    ground state to the total rate of all transitions, including ionization.
 
     Parameters
     ----------
@@ -2060,11 +2061,12 @@ def ymu_distortion(nu, amp, T, dist_type):
     x = 2 * np.pi * hbar * nu / kB / T
     
     # can we add i-type distortions as well?
+    # From section 3.1 of 1304.6120
     
     if dist_type == 'y':
         return (amp * 4. * np.pi * hbar * nu**3 / c**2
-                * x * np.exp(x) / (np.exp(x) - 1.)**2
-                *(x * (np.exp(x) + 1.) / (np.exp(x) - 1.) - 4.)
+                * x * np.exp(-x) / (1. - np.exp(-x))**2
+                *(x * (1. + np.exp(-x)) / (1. - np.exp(-x)) - 4.)
                )
     
     elif dist_type == 'mu':
