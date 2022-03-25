@@ -101,7 +101,6 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
                         1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
                 else:
                     fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr))
-                    # fEnnp = 1/(np.exp(Ennp/Tr)-1)
 
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
@@ -124,11 +123,16 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
                     # BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(
                     # -Ennp/Tr) * BB['up'][n][n_p][l]
 
-                    # When adding a distortion, detailed balance is inconvenient.
-                    # Instead, take away the 1+fEnnp from a couple of lines above,
-                    # then replace it with fEnnp (that's all detailed balance was doing).
-                    BB['up'][n_p][n][l] = (2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp
-                    BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * BB['up'][n][n_p][l]  /(1+fEnnp) * fEnnp
+                    # When adding distortion, detailed balance takes thought.
+                    # To do it, take away the 1+fEnnp from a couple of lines
+                    # above, then replace it with fEnnp (that's all detailed
+                    # balance was doing).
+                    BB['up'][n_p][n][l] = (
+                        (2*l+3)/(2*l+1) *
+                        BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
+                    BB['dn'][n_p][n][l+1] = (
+                        (2*l+1)/(2*l+3) *
+                        BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
 
     #Include forbidden 2s->1s transition
     BB['dn'][2][1][0] = phys.width_2s1s_H
@@ -242,19 +246,23 @@ def Newton_Cotes_11pt(x, f):
                       - 48525.0 * (f[2] + f[8]) + 272400.0 * (f[3] + f[7])
                       - 260550.0 * (f[4] + f[6]) + 427368.0 * f[5]) / 299376.0)
 
-# /********************************************************************************************* 
-# Populating the photoionization rates beta(n, l, Tr)
-# Input: beta[nmax+1][nmax], Tr in eV, nmax
-# and the precomputed tables n2k2, g_up[nmax+1][Nkappa][nmax], g_dn[nmax+1][Nkappa][nmax], 
-# where Nkappa = 10 * NBINS + 1
-# *********************************************************************************************/
 
 def populate_beta(Tr, nmax, Delta_f=None):
-    """ From prefac we see that the units are s^-1 """
-    beta = np.zeros((nmax+1,nmax))
+    """ Populating the photoionization rates beta(n, l, Tr)
+        From prefac we see that the units are s^-1
 
-    if Delta_f == None:
-        Delta_f = lambda l : 0
+        Parameters
+        ----------
+
+        Tr : float
+            radiation temperature in eV
+        nmax : int
+            maximum principle quantum number (energy level)
+    """
+    beta = np.zeros((nmax+1, nmax))
+
+    if Delta_f is None:
+        def Delta_f(E): return 0
 
     def f_gamma(Ennp):
         return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
@@ -265,33 +273,41 @@ def populate_beta(Tr, nmax, Delta_f=None):
 
     return beta
 
-# /********************************************************************************************* 
-# Populating the recombination coefficients alpha(n, l, Tm, Tr) 
-# Input: alpha[nmax+1][nmax], Tm, Tr in eV, nmax
-# and the precomputed tables n2k2, g_up[nmax+1][Nkappa][nmax], g_dn[nmax+1][Nkappa][nmax], 
-# where Nkappa = 10 * NBINS + 1
-# *********************************************************************************************/
-
-
-# /****************************************************************************************/
 
 def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True):
-    alpha = np.zeros((int(nmax+1),nmax))
+    """ Populate the recombination coefficients alpha(n, l, Tm, Tr)
+
+        Parameters
+        ----------
+
+        Tm : float
+            matter temperature [eV]
+        Tr : float
+            radiation temperature of background blackbody [eV]
+        nmax : int
+            maximum principle quantum number (energy level)
+        Delta_f : function
+            deviation of photon phase space density from blackbody
+        stimulated_emission : bool
+            if True, include stimulated emission factors, 1+f
+    """
+    alpha = np.zeros((int(nmax+1), nmax))
 
     if stimulated_emission:
 
-        if Delta_f == None:
-            Delta_f = lambda l : 0
+        if Delta_f is None:
+            def Delta_f(E): return 0
 
         def f_gamma(Ennp):
-            return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+            return np.exp(-Ennp/Tr)/(1.0 - np.exp(-Ennp/Tr)) + Delta_f(Ennp)
     else:
         f_gamma = None
 
-    for n in np.arange(1,nmax+1):
+    for n in np.arange(1, nmax+1):
         for l in np.arange(n):
             alpha[n][l] = bf.alpha_nl(
-                n, l, Tm, f_gamma=f_gamma, stimulated_emission=stimulated_emission
+                n, l, Tm, f_gamma=f_gamma,
+                stimulated_emission=stimulated_emission
             )
 
     return alpha
@@ -299,7 +315,7 @@ def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True):
 
 def get_transition_energies(nmax):
     """
-    Compute the exact energy bins for transitions between excited state of hydrogen.
+    Compute the exact energy bins for transitions between excited state of H.
     This includes an extra bin at 20 eV to represent bound-free transitions.
 
     Parameters
@@ -312,15 +328,17 @@ def get_transition_energies(nmax):
     H_engs : array
     """
 
-    H_engs = np.zeros((nmax+1,nmax+1))
-    for n1 in np.arange(1,nmax+1):
+    H_engs = np.zeros((nmax+1, nmax+1))
+    for n1 in np.arange(1, nmax+1):
         #H_engs[0,n1] = phys.rydberg / n1**2
-        for n2 in range(1,n1):
-            H_engs[n1,n2] = phys.rydberg * ((1/n2)**2 - (1/n1)**2)
-        
+        for n2 in range(1, n1):
+            H_engs[n1, n2] = phys.rydberg * ((1/n2)**2 - (1/n1)**2)
+
     H_engs = np.sort(np.unique(H_engs))
     # Add a separate energy bin to temporarily represent 2s->1s
-    H_engs = np.concatenate((H_engs, [20]))
+    #H_engs = np.concatenate((H_engs, [20]))
+
+    # Get rid of zero energy
     return H_engs[1:]
 
 
@@ -328,7 +346,8 @@ def get_distortion_and_ionization(
         rs, dt, xHI, Tm, nmax, spec_2s1s,
         Delta_f=None, cross_check=False, include_2s1s=True, include_BF=True,
         fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
-        distortion=None, H_states=None, rate_func_eng=None, A_1snp=None
+        distortion=None, H_states=None, rate_func_eng=None, A_1snp=None,
+        stimulated_emission=True
         ):
     """
     Solve the steady state equation Mx=b, then compute the ionization rate
@@ -408,7 +427,7 @@ def get_distortion_and_ionization(
     R = populate_radial(nmax)  # Need not be recomputed every time
     BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
     alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f,
-                           stimulated_emission=True)
+                           stimulated_emission=stimulated_emission)
     beta = populate_beta(Tr, nmax, Delta_f=Delta_f)
 
     # Include sobolev optical depth
@@ -419,11 +438,14 @@ def get_distortion_and_ionization(
     ### Build matrix K_ij = R_ji/R_i,tot and source term ###
     K = np.zeros((num_states, num_states))
 
+    # source term
     b = np.zeros(num_states)
+    # piece of source term coming from f_exc
     db = np.zeros(num_states)
 
     # excitations from energy injection -- both photoexcitation and
     # electron collisions
+    # 1s-np line photons get absorbed here
     if fexc_switch:
         delta_b = f_exc_to_b_numerator(deposited_exc_arr,
                                        elec_spec, distortion,
@@ -466,6 +488,7 @@ def get_distortion_and_ionization(
             b[nl] += xHI*BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr)
 
         # Add DM contribution to source term
+        # i.e. f_exc -> distortion and ionization
         if fexc_switch:
             spec_ind = str(n) + num_to_l(l)
             if spec_ind in delta_b.keys():
@@ -479,7 +502,7 @@ def get_distortion_and_ionization(
     # !!! I should be able to set xHI = 1 - sum(x_full) - xe,
     # but instead I'm stuck with 1-xHII
     x_full = np.append(xHI, x_vec)
-    x_full0 = np.append(xHI, np.linalg.solve(mat, b[1:]))
+    #x_full0 = np.append(xHI, np.linalg.solve(mat, b[1:]))
 
     ###
     # Now calculate the total ionization and distortion
@@ -533,11 +556,18 @@ def get_distortion_and_ionization(
                 - x_full[nl] * BB['dn'][n, n+1:, l]
             )/nB * dt
 
+        if not stimulated_emission:
+            f_gam = None
+        else:
+            f_gam = f_gamma
+
+        # This is where f_ion -> distortion
         BF_tmp = nH**2 * xe**2 * bf.gamma_nl(
-            n, l, Tm, T_r=Tr, f_gamma=f_gamma, stimulated_emission=True
+            n, l, Tm, T_r=Tr, f_gamma=f_gam,
+            stimulated_emission=stimulated_emission
         )/nB * dt
         BF_tmp -= nH * x_full[nl] * bf.xi_nl(
-            n, l, T_r=Tr, f_gamma=f_gamma)/nB * dt
+            n, l, T_r=Tr, f_gamma=f_gam)/nB * dt
         BF_tmp.rebin(eng)
         BF_spec.dNdE += BF_tmp.dNdE
 
@@ -626,10 +656,10 @@ def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
             # Note: the CMB component is untouched (in equilibrium emission and
             #   absorption balances out), we only modify the distortion.
 
-            # Technically, I should subtract off inverse process
+            # !!! Technically, I should subtract off inverse process
             #   (stimulated emission) but there are so few x_np
             #   states that I neglect this process.
-            # I include the heaviside step function to only allow
+            # I !!! include the heaviside step function to only allow
             #   positive distortions to be absorbed (those correspond
             #   to actual photons getting absorbed)
             absorption_rates = A_1snp[ns-2] * x1s * np.heaviside(
