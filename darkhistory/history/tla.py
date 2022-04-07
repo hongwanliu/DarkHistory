@@ -859,9 +859,9 @@ def get_history(
 
         # No reionization model implemented.
         soln_low_rs = odeint(
-                tla_before_reion, _init_cond, low_rs_vec, 
-                mxstep = mxstep, tfirst=True, rtol=rtol
-            )
+            tla_before_reion, _init_cond, low_rs_vec,
+            mxstep=mxstep, tfirst=True, rtol=rtol
+        )
         # print(init_cond)
         # print(rs_vec)
         # soln = solve_ivp(
@@ -871,14 +871,14 @@ def get_history(
         # print(soln)
 
     elif xe_reion_func is not None:
-        # Fixed xe reionization model implemented. 
+        # Fixed xe reionization model implemented.
         # First, solve without reionization.
 
-        # tfirst=True means that tla_before_reion accepts rs as 
+        # tfirst=True means that tla_before_reion accepts rs as
         # first argument.
         soln_no_reion = odeint(
-            tla_before_reion, _init_cond, low_rs_vec, 
-            mxstep = mxstep, tfirst=True, rtol=rtol
+            tla_before_reion, _init_cond, low_rs_vec,
+            mxstep=mxstep, tfirst=True, rtol=rtol
         )
         # soln_no_reion = solve_ivp(
         #     tla_before_reion, (rs_vec[0], rs_vec[-1]),
