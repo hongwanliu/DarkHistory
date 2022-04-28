@@ -343,8 +343,9 @@ def get_transition_energies(nmax):
 
 
 def get_distortion_and_ionization(
-        rs, dt, xHI, Tm, nmax, spec_2s1s,
-        Delta_f=None, cross_check=False, include_2s1s=True, include_BF=True,
+        rs, dt, xHI, Tm, nmax, eng,
+        Delta_f=None, cross_check=False,
+        include_2s1s=True, include_BF=True, spec_2s1s=None,
         fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         distortion=None, H_states=None, rate_func_eng=None, A_1snp=None,
         stimulated_emission=True
@@ -363,6 +364,8 @@ def get_distortion_and_ionization(
         matter temperature
     nmax : int
         Highest excited state to be included (principle quantum number)
+    eng : array
+        abscissa of output distortion spectrum
     spec_2s1s : Spectrum
         2s -> 1s emission spectrum of photons, normalized so spec_2s1s.totN()=2
     Delta_f : function
@@ -383,6 +386,12 @@ def get_distortion_and_ionization(
     transition_specs : dictionary of photon spectra, labeled by
         initial excited state (in N, not dNdE)
     """
+
+    if include_2s1s and (spec_2s1s is None):
+        raise TypeError('If including 2s1s, define spec_2s1s')
+
+    if include_2s1s and np.any(spec_2s1s.eng != eng):
+        raise TypeError('eng must be abscissa of spec_2s1s')
 
     if cross_check:
         xHI = phys.xHI_std(rs)
