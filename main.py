@@ -708,13 +708,13 @@ def evolve(
                 (
                     alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
                 ) = atomic.get_distortion_and_ionization(
-                    rs, dt, x_1s, Tm_arr[-1], nmax,
-                    dist_2s1s, Delta_f, cross_check,
-                    fexc_switch=fexc_switch,
-                    deposited_exc_arr=deposited_exc_arr,
-                    elec_spec=tot_spec_elec, distortion=distortion,
-                    H_states=H_states, rate_func_eng=rate_func_eng,
-                    A_1snp=A_1snp, stimulated_emission=True
+                    rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng,
+                    Delta_f, cross_check,
+                    True, True, dist_2s1s,
+                    fexc_switch, deposited_exc_arr,
+                    tot_spec_elec, distortion,
+                    H_states, rate_func_eng,
+                    A_1snp, stimulated_emission=True
                 )
                 MLA_data[0].append(alpha_MLA_data[1][1])
                 MLA_data[1].append(beta_MLA_data[1][1])
