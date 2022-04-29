@@ -49,7 +49,7 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
     use_tqdm=True, cross_check=False, recfast_TLA=None,
-    reprocess_distortion=True
+    reprocess_distortion=False, Delta_f_2D=None
 ):
     """
     Main function computing histories and spectra.
@@ -259,7 +259,7 @@ def evolve(
         # The decay rate is insensitive to structure formation
         def struct_boost(rs):
             return 1
- 
+
         # Get spectra from PPPC.
         in_spec_elec = pppc.get_pppc_spec(
             mDM, eleceng, primary, 'elec', decay=True
@@ -284,7 +284,7 @@ def evolve(
 
         def rate_func_eng(rs):
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
-    
+
     #####################################
     # Input Checks                      #
     #####################################
@@ -306,6 +306,14 @@ def evolve(
 
     if in_spec_elec.rs != in_spec_phot.rs:
         raise ValueError('Input spectra must have the same rs.')
+
+    if reprocess_distortion and (Delta_f_2D is not None):
+        raise ValueError('Please choose to reprocess the distortion or put \
+                         in a custom Delta_f, not both')
+
+    if recfast_TLA and (MLA_funcs is not None):
+        raise ValueError('Please use set recfast_TLA to true or provide MLA_funcs, \
+                         not both')
 
     if cross_check:
         print('cross_check has been set to True -- No longer using all MEDEA \
@@ -693,6 +701,13 @@ def evolve(
                         dist_eng, prefac * distortion.dNdE/dist_eng**2,
                         bounds_error=False, fill_value=(0, 0)
                     )
+
+                elif (Delta_f_2D is not None):
+                    Delta_f = interp1d(
+                        dist_eng, Delta_f_2D(rs, dist_eng).squeeze(),
+                        bounds_error=False, fill_value=(0, 0)
+                    )
+
                 else:
                     def Delta_f(ee):
                         return 0
@@ -702,8 +717,8 @@ def evolve(
                 )
 
                 x_1s = 1-x_arr[-1, 0]
-                # resonant photons will be absorbed when passed through
-                # the following function
+                # resonant photons are absorbed when passed through the
+                # following function - keep a copy of the unperturbed spectrum
                 in_distortion = distortion.copy()
                 (
                     alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
@@ -732,11 +747,14 @@ def evolve(
                         kind='linear',
                         fill_value='extrapolate')
 
-                    beta_MLA = interp1d(
+                    beta_func = interp1d(
                         np.log(beta_MLA_data[:, 0]),
                         np.log(beta_MLA_data[:, 1]),
                         fill_value='extrapolate'
                     )
+
+                    def beta_MLA(rs):
+                        return np.exp(beta_func(np.log(rs)))
 
                 else:
 
