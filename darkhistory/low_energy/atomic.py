@@ -456,10 +456,12 @@ def get_distortion_and_ionization(
     # electron collisions
     # 1s-np line photons get absorbed here
     if fexc_switch:
-        delta_b = f_exc_to_b_numerator(deposited_exc_arr,
-                                       elec_spec, distortion,
-                                       H_states, dt, rate_func_eng,
-                                       nmax, xHI)
+        delta_b = f_exc_to_b_numerator(
+            deposited_exc_arr,
+            elec_spec, distortion,
+            H_states, dt, rate_func_eng,
+            nmax, xHI
+        )
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
