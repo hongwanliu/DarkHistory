@@ -3,7 +3,7 @@
 """
 import numpy as np
 from numpy.linalg import matrix_power
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, interp2d
 
 # from config import data_path, photeng, eleceng
 # from tf_data import *
@@ -1347,3 +1347,69 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     #     highengphot_tf, lowengphot_tf, lowengelec_tf,
     #     cmbloss_arr, highengdep_arr
     # )
+
+
+def iterate(
+    run,
+    pri, DM_process, mDM, param,
+    start_rs, end_rs, coarsen_factor,
+    nmax, high_rs=1.555e3, recfast_TLA=False
+):
+    """ !!!Missing Documentation
+    """
+    from tqdm import tqdm_notebook as tqdm
+
+    # First, convert the distortion to a phase space density,
+    # as a function of redshift and energy
+
+    # x and y dimensions
+    mask = (start_rs >= run['rs']) & (run['rs'] >= end_rs)
+    rs_vec = run['rs']
+    eng = run['distortion'].eng
+
+    # empty container
+    f_data = np.zeros((sum(mask), len(eng)))
+
+    # helps convert from dNdE to f^gamma, phase space density
+    prefac = phys.nB * (phys.hbar*phys.c)**3 * np.pi**2 / eng**2
+
+    # fill in f_data(rs, eng), one rs at a time
+    for i, rs in enumerate(tqdm(rs_vec[mask])):
+
+        dist_copy = run['distortions'].copy()
+        # !!!optimize redshift()
+        dist_copy.redshift(rs)
+        distortion = dist_copy.sum_specs(rs_vec >= rs)
+
+        f_data[i] = prefac * rs**3 * distortion.dNdE
+
+    Delta_f_2D = interp2d(
+        rs_vec[mask], eng, np.transpose(f_data),
+        bounds_error=False, fill_value=0
+    )
+
+    if not recfast_TLA:
+        MLA_data = run['MLA']
+        alpha_MLA = interp1d(rs_vec, MLA_data[0][1:],
+                             bounds_error=False, fill_value='extrapolate')
+        beta_func = interp1d(np.log(rs_vec), np.log(MLA_data[1][1:]),
+                             bounds_error=False, fill_value='extrapolate')
+
+        def beta_MLA(rs):
+            return np.exp(beta_func(np.log(rs)))
+        MLA_funcs = [alpha_MLA, beta_MLA]
+
+    else:
+        MLA_funcs = None
+
+    return evolve(
+        DM_process=DM_process, mDM=mDM,
+        lifetime=param,
+        sigmav=param,
+        primary=pri+'_delta',
+        start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
+        coarsen_factor=coarsen_factor,
+        distort=True, recfast_TLA=recfast_TLA, MLA_funcs=MLA_funcs,
+        fexc_switch=True, reprocess_distortion=False, nmax=nmax,
+        Delta_f_2D=Delta_f_2D
+    )
