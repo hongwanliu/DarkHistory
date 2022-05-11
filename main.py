@@ -19,7 +19,7 @@ from darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
 
 from darkhistory.spec.spectools import EnglossRebinData
-from darkhistory.spec.spectools import discretize
+from darkhistory.spec.spectools import discretize, get_bin_bound
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
@@ -464,6 +464,17 @@ def evolve(
         distortion = Spectrum(dist_eng, np.zeros_like(dist_eng),
                               rs=1, spec_type='N')
 
+        # for masking out n-1 line photons and E>rydberg photons
+        dist_mask = np.ones_like(dist_eng)
+
+        bnds = get_bin_bound(dist_eng)
+        E_1n = phys.rydberg * (1 - 1/np.arange(2, nmax)**2)
+        for E in E_1n:
+            ind = (sum(bnds <= E)-1)
+            dist_mask[ind] = 0
+
+        dist_mask *= dist_eng < phys.rydberg  # keep E<13.6eV photons
+
         # 2s1s spectrum
         dist_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
 
@@ -494,6 +505,9 @@ def evolve(
 
         MLA_data = [[phys.alpha_recomb(Tm_init, 'HI')],
                     [beta_ion*x2]]
+
+        # Radial Matrix elements
+        R = atomic.populate_radial(nmax)
 
         if fexc_switch:
             R_1snp = atomic.Hey_R_initial(np.arange(2, nmax+1), 1)
@@ -697,14 +711,22 @@ def evolve(
                 # Phase space density for the distortion
                 if reprocess_distortion:
                     prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
+                    # Make sure to mask out E_1n resonant photons, otherwise
+                    # they will be absorbed twice !!! (implement better)
                     Delta_f = interp1d(
-                        dist_eng, prefac * distortion.dNdE/dist_eng**2,
+                        dist_eng, prefac*distortion.dNdE/dist_eng**2*dist_mask,
                         bounds_error=False, fill_value=(0, 0)
                     )
 
+                    #def Delta_f(E):
+                    #    return 0
+                    #    #res = Delta_f0(E)
+                    #    #res[E>10] = 0
+                    #    #return res
+
                 elif (Delta_f_2D is not None):
                     Delta_f = interp1d(
-                        dist_eng, Delta_f_2D(rs, dist_eng).squeeze(),
+                        dist_eng, Delta_f_2D(rs, dist_eng).squeeze()*dist_mask,
                         bounds_error=False, fill_value=(0, 0)
                     )
 
@@ -720,10 +742,19 @@ def evolve(
                 # resonant photons are absorbed when passed through the
                 # following function - keep a copy of the unperturbed spectrum
                 in_distortion = distortion.copy()
+
+                ## Absorb excitation photons
+                #delta_b = atomic.f_exc_to_b_numerator(
+                #    deposited_exc_arr,
+                #    tot_spec_elec, distortion,
+                #    H_states, dt, rate_func_eng,
+                #    nmax, xHI
+                #)
+
                 (
                     alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
                 ) = atomic.get_distortion_and_ionization(
-                    rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng,
+                    rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R,
                     Delta_f, cross_check,
                     True, True, dist_2s1s,
                     fexc_switch, deposited_exc_arr,
@@ -826,21 +857,18 @@ def evolve(
         append_lowengelec_spec(lowengelec_spec_at_rs)
 
         if distort:
-            # Define the spectrum to add to the distortion at this step,
-            # without altering the redshift of the original spectrum
+            # Contribution to the distortion from this step
             temp_spec = lowengphot_spec_at_rs.copy()
             temp_spec.rebin(dist_eng)
             temp_spec.N += atomic_dist_spec.N
+            # temp_spec.N *= dist_mask
 
             append_distort_spec(temp_spec)
 
-            # Redshift all contributions to current rs, mask photons>13.6eV,
-            # add together to get current distortion
-            dist_mask = dist_eng < phys.rydberg
-
+            # Total distortion at this step
             tmp_distortion = out_distort_specs.copy()
             tmp_distortion.redshift(rs)
-            distortion = tmp_distortion.sum_specs() * dist_mask
+            distortion = tmp_distortion.sum_specs()
 
         #####################################################################
         #####################################################################
@@ -1353,40 +1381,46 @@ def iterate(
     run,
     pri, DM_process, mDM, param,
     start_rs, end_rs, coarsen_factor,
-    nmax, high_rs=1.555e3, recfast_TLA=False
+    nmax, high_rs=1.555e3, recfast_TLA=False,
+    reprocess_distortion=False, fexc_switch=True,
+    rtol=1e-4
 ):
     """ !!!Missing Documentation
     """
     from tqdm import tqdm_notebook as tqdm
-
-    # First, convert the distortion to a phase space density,
-    # as a function of redshift and energy
-
     # x and y dimensions
     mask = (start_rs >= run['rs']) & (run['rs'] >= end_rs)
     rs_vec = run['rs']
     eng = run['distortion'].eng
 
-    # empty container
-    f_data = np.zeros((sum(mask), len(eng)))
+    if not reprocess_distortion or False:
+        # First, convert the distortion to a phase space density,
+        # as a function of redshift and energy
 
-    # helps convert from dNdE to f^gamma, phase space density
-    prefac = phys.nB * (phys.hbar*phys.c)**3 * np.pi**2 / eng**2
+        # empty container
+        f_data = np.zeros((sum(mask), len(eng)))
 
-    # fill in f_data(rs, eng), one rs at a time
-    for i, rs in enumerate(tqdm(rs_vec[mask])):
+        # helps convert from dNdE to f^gamma, phase space density
+        prefac = phys.nB * (phys.hbar*phys.c)**3 * np.pi**2 / eng**2
 
-        dist_copy = run['distortions'].copy()
-        # !!!optimize redshift()
-        dist_copy.redshift(rs)
-        distortion = dist_copy.sum_specs(rs_vec >= rs)
+        # fill in f_data(rs, eng), one rs at a time
+        for i, rs in enumerate(tqdm(rs_vec[mask])):
 
-        f_data[i] = prefac * rs**3 * distortion.dNdE
+            dist_copy = run['distortions'].copy()
+            # !!!optimize redshift()
+            dist_copy.redshift(rs)
+            distortion = dist_copy.sum_specs(rs_vec >= rs)
 
-    Delta_f_2D = interp2d(
-        rs_vec[mask], eng, np.transpose(f_data),
-        bounds_error=False, fill_value=0
-    )
+            f_data[i] = prefac * rs**3 * distortion.dNdE
+
+        Delta_f_2D = interp2d(
+            rs_vec[mask], eng, np.transpose(f_data),
+            bounds_error=False, fill_value=0
+        )
+
+    else:
+
+        Delta_f_2D=None
 
     if not recfast_TLA:
         MLA_data = run['MLA']
@@ -1410,6 +1444,6 @@ def iterate(
         start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
         coarsen_factor=coarsen_factor,
         distort=True, recfast_TLA=recfast_TLA, MLA_funcs=MLA_funcs,
-        fexc_switch=True, reprocess_distortion=False, nmax=nmax,
-        Delta_f_2D=Delta_f_2D
+        fexc_switch=fexc_switch, reprocess_distortion=reprocess_distortion, nmax=nmax,
+        Delta_f_2D=Delta_f_2D, rtol=rtol
     )
