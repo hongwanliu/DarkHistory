@@ -908,6 +908,7 @@ _xHeII_std = None
 _Tm_std    = None
 rs_extrap = 1.555e3
 
+# !!!Use np.asanyarray wherever you test isinstance( . , float)
 def xHII_std(rs, rs_extrap = rs_extrap):
     """Baseline nHII/nH value.
 
