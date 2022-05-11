@@ -102,27 +102,28 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
 
-            for l in np.arange(0, n_p+1):  # Spont + stim emission
-                A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
-                A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
-                BB['up'][n][n_p][l] = A_up * (1+fEnnp)
-                BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
+            ### Spont + stim emission ###
+            l = np.arange(n_p+1)
+            A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
+            A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
+            BB['up'][n][n_p][l] = A_up * (1+fEnnp)
+            BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
 
             BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
             BB['dn'][n][n_p][0] = 0.0                          # No l' < 0
 
-            for l in np.arange(0, n_p):  # absorption: use detailed balance
-
-                # When adding distortion, detailed balance takes thought.
-                # To do it, take away the 1+fEnnp from a couple of lines
-                # above, then replace it with fEnnp (that's all detailed
-                # balance was doing).
-                BB['up'][n_p][n][l] = (
-                    (2*l+3)/(2*l+1) *
-                    BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
-                BB['dn'][n_p][n][l+1] = (
-                    (2*l+1)/(2*l+3) *
-                    BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+            ### Absorption ###
+            # When adding distortion, detailed balance takes thought.
+            # To do it, take away the 1+fEnnp from a couple of lines
+            # above, then replace it with fEnnp (that's all detailed
+            # balance was doing).
+            l = np.arange(n_p)
+            BB['up'][n_p][n][l] = (
+                (2*l+3)/(2*l+1) *
+                BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
+            BB['dn'][n_p][n][l+1] = (
+                (2*l+1)/(2*l+3) *
+                BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
 
     # Include forbidden 2s->1s transition
     BB['dn'][2][1][0] = phys.width_2s1s_H
