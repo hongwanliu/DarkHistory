@@ -85,27 +85,24 @@ def populate_radial(nmax):
 #  *****************************************************************************************************************/
 
 
-def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
+def populate_bound_bound(nmax, Tr, R, Delta_f=None):
     BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in ['up', 'dn']}
+    if Delta_f is None:
+        def Delta_f(E):
+            return 0
 
-    for n in np.arange(2, nmax+1, 1):
+    # !!! parallelize these loops
+    for n in np.arange(2, nmax+1):
         n2 = n**2
-        for n_p in np.arange(1, n, 1):
+        for n_p in np.arange(1, n):
             n_p2 = n_p**2
             Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            if (Tr < ZEROTEMP):    # if Tr = 0
-                fEnnp = 0.0
-            else:
-                if Delta_f is not None:
-                    fEnnp = np.exp(-Ennp/Tr)/(
-                        1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
-                else:
-                    fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr))
+            fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
 
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
 
-            for l in np.arange(0, n_p+1, 1):  # Spont + stim emission
+            for l in np.arange(0, n_p+1):  # Spont + stim emission
                 A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
                 A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
                 BB['up'][n][n_p][l] = A_up * (1+fEnnp)
@@ -113,30 +110,23 @@ def populate_bound_bound(nmax, Tr, R, ZEROTEMP=1e-10, Delta_f=None):
 
             BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
             BB['dn'][n][n_p][0] = 0.0                          # No l' < 0
-            for l in np.arange(0, n_p, 1):  # absorption: use detailed balance
-                if (Tr < ZEROTEMP):  # if Tr = 0
-                    BB['up'][n_p][n][l] = 0.0   
-                    BB['dn'][n_p][n][l+1] = 0.0
-                else:
-                    # BB['up'][n_p][n][l]   = (2*l+3)/(2*l+1) * np.exp(
-                    # -Ennp/Tr) * BB['dn'][n][n_p][l+1]
-                    # BB['dn'][n_p][n][l+1] = (2*l+1)/(2*l+3) * np.exp(
-                    # -Ennp/Tr) * BB['up'][n][n_p][l]
 
-                    # When adding distortion, detailed balance takes thought.
-                    # To do it, take away the 1+fEnnp from a couple of lines
-                    # above, then replace it with fEnnp (that's all detailed
-                    # balance was doing).
-                    BB['up'][n_p][n][l] = (
-                        (2*l+3)/(2*l+1) *
-                        BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
-                    BB['dn'][n_p][n][l+1] = (
-                        (2*l+1)/(2*l+3) *
-                        BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+            for l in np.arange(0, n_p):  # absorption: use detailed balance
 
-    #Include forbidden 2s->1s transition
+                # When adding distortion, detailed balance takes thought.
+                # To do it, take away the 1+fEnnp from a couple of lines
+                # above, then replace it with fEnnp (that's all detailed
+                # balance was doing).
+                BB['up'][n_p][n][l] = (
+                    (2*l+3)/(2*l+1) *
+                    BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
+                BB['dn'][n_p][n][l+1] = (
+                    (2*l+1)/(2*l+3) *
+                    BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+
+    # Include forbidden 2s->1s transition
     BB['dn'][2][1][0] = phys.width_2s1s_H
-    #!!! What about the inverse process?
+    # !!! What about the inverse process?
 
     return BB
 
@@ -343,7 +333,7 @@ def get_transition_energies(nmax):
 
 
 def get_distortion_and_ionization(
-        rs, dt, xHI, Tm, nmax, eng,
+        rs, dt, xHI, Tm, nmax, eng, R,
         Delta_f=None, cross_check=False,
         include_2s1s=True, include_BF=True, spec_2s1s=None,
         fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
@@ -393,9 +383,11 @@ def get_distortion_and_ionization(
     if include_2s1s and np.any(spec_2s1s.eng != eng):
         raise TypeError('eng must be abscissa of spec_2s1s')
 
+    #cross_check=True
+    #fexc_switch=False
     if cross_check:
         xHI = phys.xHI_std(rs)
-        # Tm = phys.TCMB(rs)
+        #Tm = phys.TCMB(rs)
 
     # Number of Hydrogen states at or below n=nmax
     num_states = int(nmax*(nmax+1)/2)
@@ -433,7 +425,7 @@ def get_distortion_and_ionization(
 
     # Get the transition rates
     # !!! Think about parallelizing
-    R = populate_radial(nmax)  # Need not be recomputed every time
+    #R = populate_radial(nmax)  # Need not be recomputed every time
     BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
     alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f,
                            stimulated_emission=stimulated_emission)
@@ -531,6 +523,7 @@ def get_distortion_and_ionization(
     def f_gamma(Ennp):
         return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
 
+    # !!! Parallelize this loop
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
