@@ -487,24 +487,17 @@ def evolve(
         else:
             make_MLA = False
 
-        alpha_MLA_data = np.array([
-            [rs, phys.alpha_recomb(Tm_init, 'HI')],
-            [rs, phys.alpha_recomb(Tm_init, 'HI')]
-        ])
-
-        tau = atomic.tau_np_1s(2, rs)
-        xe_init = xH_init + xHe_init
-        x2s = atomic.x2s_steady_state(rs, phys.TCMB(rs), Tm_init,
-                                      xe_init, phys.xHI_std(rs), tau)
-        x2 = 4*x2s
-        beta_ion = phys.beta_ion(Tm_init, 'HI')
-        beta_MLA_data = np.array([
-            [rs, beta_ion*x2],
-            [rs, beta_ion*x2]
-        ])
-
-        MLA_data = [[phys.alpha_recomb(Tm_init, 'HI')],
-                    [beta_ion*x2]]
+        # rs, alpha, beta, beta_DM
+        rs_in = rs*np.exp(dlnz)
+        Tm_in = phys.Tm_std(rs_in)
+        peebC = phys.peebles_C(phys.xHII_std(rs_in), rs_in)
+        MLA_data = [
+            [rs_in],
+            [peebC * phys.alpha_recomb(Tm_in, 'HI')],
+            [peebC * 4 * np.exp(-phys.lya_eng/Tm_in) * phys.beta_ion(
+                Tm_in, 'HI', fudge)],
+            [0.]
+        ]
 
         # Radial Matrix elements
         R = atomic.populate_radial(nmax)
@@ -689,22 +682,6 @@ def evolve(
                     deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
                 )
 
-            # def beta_MLA(logrs):
-            #    rs = np.exp(logrs)
-
-            #    tau = atomic.tau_np_1s(2, rs)
-            #    xe = phys.xHII_std(rs)
-            #    Tm = phys.Tm_std(rs)
-            #    Tr = phys.TCMB(rs)
-            #    x2s = atomic.x2s_steady_state(rs, Tr, Tm, xe, 1-xe, tau)
-            #    x2 = 4*x2s
-            #    beta_ion = phys.beta_ion(Tm, 'HI')
-
-                return np.log(beta_ion*x2)
-
-                # def alpha_MLA(rs):
-                #     return phys.alpha_recomb(phys.Tm_std(rs), 'HI')
-
             # !!! Need to deal with distort == False case
             if distort:
 
@@ -734,10 +711,6 @@ def evolve(
                     def Delta_f(ee):
                         return 0
 
-                alpha_MLA_data[0], beta_MLA_data[0] = (
-                    alpha_MLA_data[1], beta_MLA_data[1]
-                )
-
                 x_1s = 1-x_arr[-1, 0]
                 # resonant photons are absorbed when passed through the
                 # following function - keep a copy of the unperturbed spectrum
@@ -752,7 +725,7 @@ def evolve(
                 #)
 
                 (
-                    alpha_MLA_data[1][1], beta_MLA_data[1][1], atomic_dist_spec
+                    MLA_step, atomic_dist_spec
                 ) = atomic.get_distortion_and_ionization(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R,
                     Delta_f, cross_check,
@@ -762,35 +735,33 @@ def evolve(
                     H_states, rate_func_eng,
                     A_1snp, stimulated_emission=True
                 )
-                MLA_data[0].append(alpha_MLA_data[1][1])
-                MLA_data[1].append(beta_MLA_data[1][1])
+                MLA_data[0].append(rs)
+                for i in np.arange(3):
+                    MLA_data[i+1].append(MLA_step[i])
 
                 # Subtract off absorbed photons
                 atomic_dist_spec.N -= in_distortion.N - distortion.N
 
-                alpha_MLA_data[1][0], beta_MLA_data[1][0] = rs, rs
-
                 if make_MLA:
 
                     alpha_MLA = interp1d(
-                        alpha_MLA_data[:, 0],
-                        alpha_MLA_data[:, 1],
-                        kind='linear',
+                        MLA_data[0],
+                        MLA_data[1],
                         fill_value='extrapolate')
 
-                    beta_func = interp1d(
-                        np.log(beta_MLA_data[:, 0]),
-                        np.log(beta_MLA_data[:, 1]),
+                    beta_MLA = interp1d(
+                        MLA_data[0],
+                        MLA_data[2],
                         fill_value='extrapolate'
                     )
 
-                    def beta_MLA(rs):
-                        return np.exp(beta_func(np.log(rs)))
+                    beta_DM = interp1d(
+                        MLA_data[0],
+                        MLA_data[3],
+                        fill_value='extrapolate'
+                    )
 
-                else:
-
-                    alpha_MLA = MLA_funcs[0]
-                    beta_MLA = MLA_funcs[1]
+                    MLA_funcs = [alpha_MLA, beta_MLA, beta_DM]
 
             #######################################
             # Photons from Injected Electrons     #
@@ -798,7 +769,6 @@ def evolve(
 
             # ICS secondary photon spectrum after electron cooling, per baryon
             ics_phot_spec = ics_sec_phot_tf.sum_specs(tot_spec_elec)
-            # print(ics_phot_spec.N)
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
@@ -1087,7 +1057,7 @@ def evolve(
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
             recfast_TLA=recfast_TLA, fudge=fudge,
-            alpha_MLA=alpha_MLA, beta_MLA=beta_MLA
+            MLA_funcs=MLA_funcs
         )
 
         #####################################################################
@@ -1424,14 +1394,11 @@ def iterate(
 
     if not recfast_TLA:
         MLA_data = run['MLA']
-        alpha_MLA = interp1d(rs_vec, MLA_data[0][1:],
-                             bounds_error=False, fill_value='extrapolate')
-        beta_func = interp1d(np.log(rs_vec), np.log(MLA_data[1][1:]),
-                             bounds_error=False, fill_value='extrapolate')
-
-        def beta_MLA(rs):
-            return np.exp(beta_func(np.log(rs)))
-        MLA_funcs = [alpha_MLA, beta_MLA]
+        MLA_funcs = [
+            interp1d(MLA_data[0], MLA_data[i],
+                     fill_value='extrapolate')
+            for i in np.arange(1, 4)
+        ]  # first alpha, then beta, then beta_DM
 
     else:
         MLA_funcs = None
@@ -1444,6 +1411,6 @@ def iterate(
         start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
         coarsen_factor=coarsen_factor,
         distort=True, recfast_TLA=recfast_TLA, MLA_funcs=MLA_funcs,
-        fexc_switch=fexc_switch, reprocess_distortion=reprocess_distortion, nmax=nmax,
-        Delta_f_2D=Delta_f_2D, rtol=rtol
+        fexc_switch=fexc_switch, reprocess_distortion=reprocess_distortion,
+        nmax=nmax, Delta_f_2D=Delta_f_2D, rtol=rtol
     )

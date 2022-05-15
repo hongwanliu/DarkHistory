@@ -57,7 +57,7 @@ def get_history(
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
     recfast_TLA=True, fudge=1.125,
     # xdot_MLA=None,
-    alpha_MLA=None, beta_MLA=None,
+    MLA_funcs=None,
     mxstep=1000, rtol=1e-4
 ):
     """Returns the ionization and thermal history of the IGM.
@@ -381,6 +381,7 @@ def get_history(
             else:
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge)
                 beta_ion = phys.beta_ion(T_m, 'HI', fudge)
+                x1s = 1-xe
 
                 # tau = atomic.tau_np_1s(2, rs, xHI)
                 # x2s = atomic.x2s_steady_state(
@@ -397,8 +398,8 @@ def get_history(
                     #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
                     # )
                     - (
-                        alpha_MLA(rs) * xHII(yHII) * xe * nH
-                        - beta_MLA(rs)
+                        MLA_funcs[0](rs) * xHII(yHII) * xe * nH
+                        - MLA_funcs[1](rs) * x1s - MLA_funcs[2](rs)
                     )
                     # - (
                     #    phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH

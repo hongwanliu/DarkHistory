@@ -117,7 +117,7 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
             # To do it, take away the 1+fEnnp from a couple of lines
             # above, then replace it with fEnnp (that's all detailed
             # balance was doing).
-            l = np.arange(n_p)
+            l = np.arange(n_p)  # absorption: use detailed balance
             BB['up'][n_p][n][l] = (
                 (2*l+3)/(2*l+1) *
                 BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
@@ -441,9 +441,9 @@ def get_distortion_and_ionization(
     K = np.zeros((num_states, num_states))
 
     # source term
-    b = np.zeros(num_states)
-    # piece of source term coming from f_exc
-    db = np.zeros(num_states)
+    b_exc = np.zeros(num_states)  # from CMB-photon + 1s -> nl
+    b_rec = np.zeros(num_states)  # from e+p -> nl
+    b_DM = np.zeros(num_states)   # from DM-product + 1s -> nl
 
     # excitations from energy injection -- both photoexcitation and
     # electron collisions
@@ -481,32 +481,43 @@ def get_distortion_and_ionization(
         ## Construct the source term ##
 
         # excitations from direct recombinations
-        b[nl] += xe**2 * nH * alpha[n][l]
+        b_rec[nl] += alpha[n][l]  # * xe**2 * nH
 
         # excitations from 1s->nl transitions
         if l == 1:
-            b[nl] += xHI*BB['up'][1, n, 0]
+            b_exc[nl] += BB['up'][1, n, 0]  # *xHI
 
         elif nl == 1:
             # 1s to 2s transition from detailed balance
-            b[nl] += xHI*BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr)
+            b_exc[nl] += BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr)  # *xHI
 
         # Add DM contribution to source term
         # i.e. f_exc -> distortion and ionization
         if fexc_switch:
             spec_ind = str(n) + num_to_l(l)
             if spec_ind in delta_b.keys():
-                db[nl] = delta_b[spec_ind]
+                b_DM[nl] = delta_b[spec_ind]
 
-        db[nl] /= tot_rate
-        b[nl] /= tot_rate
+        b_exc[nl] /= tot_rate
+        b_rec[nl] /= tot_rate
+        b_DM[nl] /= tot_rate
 
     mat = np.identity(num_states-1) - K[1:, 1:]
-    x_vec = np.linalg.solve(mat, b[1:] + db[1:])
+    # b_tot = b_exc * xHI + b_rec * xe**2 * nH + b_DM
+    # x_vec = np.linalg.solve(mat, b_tot[1:])
+    
+    # components of x_vec
+    dx_exc = np.linalg.solve(mat, b_exc[1:])
+    dx_rec = np.linalg.solve(mat, b_rec[1:])
+    dx_DM = np.linalg.solve(mat, b_DM[1:])
+
+    # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
+    x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
+
     # !!! I should be able to set xHI = 1 - sum(x_full) - xe,
-    # but instead I'm stuck with 1-xHII
+    # but instead I'm stuck with 1-xHII.
+    # Is it because I assumed xHI = 1-xe above?
     x_full = np.append(xHI, x_vec)
-    #x_full0 = np.append(xHI, np.linalg.solve(mat, b[1:]))
 
     ###
     # Now calculate the total ionization and distortion
@@ -519,7 +530,7 @@ def get_distortion_and_ionization(
 
     Nphot_cascade = np.zeros(num_states)
     BF_spec = Spectrum(eng, np.zeros_like(eng), spec_type='dNdE')
-    beta_MLA, alpha_MLA = 0, 0
+    alpha_MLA, beta_MLA, beta_DM = 0, 0, 0
 
     def f_gamma(Ennp):
         return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
@@ -528,8 +539,10 @@ def get_distortion_and_ionization(
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
-            beta_MLA += x_full[nl] * beta[n][l]
-            alpha_MLA += alpha[n][l]
+            #beta_MLA += x_full[nl] * beta[n][l]
+            beta_MLA += beta[n][l] * dx_exc[nl-1]
+            alpha_MLA += alpha[n][l] - beta[n][l] * dx_rec[nl-1]
+            beta_DM += beta[n][l] * dx_DM[nl-1]
 
         # Add new transition energies to H_engs
         if E_current != E(n):
@@ -609,7 +622,7 @@ def get_distortion_and_ionization(
     if include_2s1s:
         transition_spec.N += amp_2s1s * spec_2s1s.N
 
-    return alpha_MLA, beta_MLA, transition_spec
+    return [alpha_MLA, beta_MLA, beta_DM], transition_spec
 
 
 def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
