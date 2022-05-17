@@ -692,14 +692,11 @@ def evolve(
                     # they will be absorbed twice !!! (implement better)
                     Delta_f = interp1d(
                         dist_eng, prefac*distortion.dNdE/dist_eng**2*dist_mask,
-                        bounds_error=False, fill_value=(0, 0)
+                        bounds_error=False, fill_value=(0, 0), kind = 'nearest'
                     )
 
-                    #def Delta_f(E):
+                    # def Delta_f(E):
                     #    return 0
-                    #    #res = Delta_f0(E)
-                    #    #res[E>10] = 0
-                    #    #return res
 
                 elif (Delta_f_2D is not None):
                     Delta_f = interp1d(
@@ -714,54 +711,46 @@ def evolve(
                 x_1s = 1-x_arr[-1, 0]
                 # resonant photons are absorbed when passed through the
                 # following function - keep a copy of the unperturbed spectrum
-                in_distortion = distortion.copy()
+                # in_distortion = distortion.copy()
+                streaming_lowengphot = lowengphot_spec_at_rs.copy()
+                streaming_lowengphot.rebin(dist_eng)
 
-                ## Absorb excitation photons
-                #delta_b = atomic.f_exc_to_b_numerator(
-                #    deposited_exc_arr,
-                #    tot_spec_elec, distortion,
-                #    H_states, dt, rate_func_eng,
-                #    nmax, xHI
-                #)
+                # Absorb excitation photons and electron collision energy
+                if fexc_switch:
+                    # Note: photons from streaming_lowengphot get absorbed here
+                    delta_b = atomic.f_exc_to_b_numerator(
+                        deposited_exc_arr,
+                        tot_spec_elec, streaming_lowengphot,
+                        H_states, dt, rate_func_eng,
+                        nmax, x_1s
+                    )
 
-                (
-                    MLA_step, atomic_dist_spec
-                ) = atomic.get_distortion_and_ionization(
+                else:
+                    delta_b = {}
+
+                MLA_step, atomic_dist_spec = atomic.process_MLA(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R,
                     Delta_f, cross_check,
                     True, True, dist_2s1s,
-                    fexc_switch, deposited_exc_arr,
-                    tot_spec_elec, distortion,
-                    H_states, rate_func_eng,
-                    A_1snp, stimulated_emission=True
+                    #fexc_switch, deposited_exc_arr,
+                    #tot_spec_elec, distortion,
+                    #H_states, rate_func_eng,
+                    delta_b, stimulated_emission=True
                 )
                 MLA_data[0].append(rs)
                 for i in np.arange(3):
                     MLA_data[i+1].append(MLA_step[i])
 
-                # Subtract off absorbed photons
-                atomic_dist_spec.N -= in_distortion.N - distortion.N
+                # # Subtract off absorbed photons
+                # atomic_dist_spec.N -= in_distortion.N - distortion.N
 
                 if make_MLA:
 
-                    alpha_MLA = interp1d(
-                        MLA_data[0],
-                        MLA_data[1],
-                        fill_value='extrapolate')
-
-                    beta_MLA = interp1d(
-                        MLA_data[0],
-                        MLA_data[2],
-                        fill_value='extrapolate'
-                    )
-
-                    beta_DM = interp1d(
-                        MLA_data[0],
-                        MLA_data[3],
-                        fill_value='extrapolate'
-                    )
-
-                    MLA_funcs = [alpha_MLA, beta_MLA, beta_DM]
+                    MLA_funcs = []
+                    for i in np.arange(1,4):  # alpha, beta, beta_DM
+                        MLA_funcs.append(
+                            interp1d(MLA_data[0], MLA_data[i], fill_value='extrapolate')
+                        )
 
             #######################################
             # Photons from Injected Electrons     #
@@ -828,12 +817,12 @@ def evolve(
 
         if distort:
             # Contribution to the distortion from this step
-            temp_spec = lowengphot_spec_at_rs.copy()
-            temp_spec.rebin(dist_eng)
-            temp_spec.N += atomic_dist_spec.N
+            # temp_spec = lowengphot_spec_at_rs.copy()
+            # temp_spec.rebin(dist_eng)
+            streaming_lowengphot.N += atomic_dist_spec.N
             # temp_spec.N *= dist_mask
 
-            append_distort_spec(temp_spec)
+            append_distort_spec(streaming_lowengphot)
 
             # Total distortion at this step
             tmp_distortion = out_distort_specs.copy()
@@ -1011,35 +1000,6 @@ def evolve(
         init_cond_TLA = np.array(
             [Tm_arr[-1], x_arr[-1, 0], x_arr[-1, 1], 0]
         )
-
-        # !!!
-        # from scipy.interpolate import interp1d
-        # prefac = np.pi**2 * phys.nB*(phys.hbar*phys.c*rs)**3
-        # E2 = phys.rydberg-phys.lya_eng
-        # eng = lowengphot_spec_at_rs.eng
-        # dNdE_DM = lowengphot_spec_at_rs.dNdE
-        # dnde = interp1d(eng,dNdE_DM)(E2)
-        # T2 = E2/np.log(1+E2**2/prefac/dnde)
-        # T2=None
-        # print(rs, phys.TCMB(rs), T2)
-        # if rs>2.5e3 or T2<phys.TCMB(rs):
-        #    T2=None
-
-        # Solve the TLA for x, Tm for the *next* step.
-        # print(alpha_MLA, phys.alpha_recomb(phys.TCMB(rs),'HI'))
-
-        tau_S = atomic.tau_np_1s(2, rs, 1-x_arr[-1, 0])
-        Tr = phys.TCMB(rs)
-
-        x2s = atomic.x2s_steady_state(rs, Tr, Tm_arr[-1],
-                                      x_arr[-1, 0], 1-x_arr[-1, 0], tau_S)
-        # if alpha_MLA is not None:
-        #     print(rs, alpha_MLA(rs)/phys.alpha_recomb(Tm_arr[-1],'HI'),
-        #             beta_MLA(rs)/(phys.beta_ion(Tr,'HI')*x2s*4)
-        #             )
-        # print(phys.peebles_C(x_arr[-1,0],rs))
-        # print(rs, init_cond_TLA)
-        # print(rs, rate_func_eng(rs))
 
         if(np.any(np.isnan(init_cond_TLA))):
             print(rs, init_cond_TLA)

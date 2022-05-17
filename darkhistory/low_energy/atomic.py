@@ -333,13 +333,13 @@ def get_transition_energies(nmax):
     return H_engs[1:]
 
 
-def get_distortion_and_ionization(
+def process_MLA(
         rs, dt, xHI, Tm, nmax, eng, R,
         Delta_f=None, cross_check=False,
         include_2s1s=True, include_BF=True, spec_2s1s=None,
-        fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
-        distortion=None, H_states=None, rate_func_eng=None, A_1snp=None,
-        stimulated_emission=True
+        # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
+        # distortion=None, H_states=None, rate_func_eng=None,
+        delta_b={}, stimulated_emission=True
         ):
     """
     Solve the steady state equation Mx=b, then compute the ionization rate
@@ -368,7 +368,7 @@ def get_distortion_and_ionization(
     include_BF : bool
         includes the bound-free transition photons to the output distortion
     fexc_switch : bool
-    deposited_exc_arr elec_spec distortion H_states rate_func_eng A_1snp
+    deposited_exc_arr elec_spec distortion H_states rate_func_eng
 
     Returns
     -------
@@ -384,11 +384,9 @@ def get_distortion_and_ionization(
     if include_2s1s and np.any(spec_2s1s.eng != eng):
         raise TypeError('eng must be abscissa of spec_2s1s')
 
-    #cross_check=True
-    #fexc_switch=False
     if cross_check:
         xHI = phys.xHI_std(rs)
-        #Tm = phys.TCMB(rs)
+        # Tm = phys.TCMB(rs)
 
     # Number of Hydrogen states at or below n=nmax
     num_states = int(nmax*(nmax+1)/2)
@@ -445,16 +443,13 @@ def get_distortion_and_ionization(
     b_rec = np.zeros(num_states)  # from e+p -> nl
     b_DM = np.zeros(num_states)   # from DM-product + 1s -> nl
 
-    # excitations from energy injection -- both photoexcitation and
-    # electron collisions
-    # 1s-np line photons get absorbed here
-    if fexc_switch:
-        delta_b = f_exc_to_b_numerator(
-            deposited_exc_arr,
-            elec_spec, distortion,
-            H_states, dt, rate_func_eng,
-            nmax, xHI
-        )
+    #if fexc_switch:
+    #    delta_b = f_exc_to_b_numerator(
+    #        deposited_exc_arr,
+    #        elec_spec, distortion,
+    #        H_states, dt, rate_func_eng,
+    #        nmax, xHI
+    #    )
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
@@ -493,10 +488,8 @@ def get_distortion_and_ionization(
 
         # Add DM contribution to source term
         # i.e. f_exc -> distortion and ionization
-        if fexc_switch:
-            spec_ind = str(n) + num_to_l(l)
-            if spec_ind in delta_b.keys():
-                b_DM[nl] = delta_b[spec_ind]
+        spec_ind = str(n) + num_to_l(l)
+        b_DM[nl] = delta_b.get(spec_ind, 0)  # if key not in delta_b, return 0
 
         b_exc[nl] /= tot_rate
         b_rec[nl] /= tot_rate
@@ -505,7 +498,7 @@ def get_distortion_and_ionization(
     mat = np.identity(num_states-1) - K[1:, 1:]
     # b_tot = b_exc * xHI + b_rec * xe**2 * nH + b_DM
     # x_vec = np.linalg.solve(mat, b_tot[1:])
-    
+
     # components of x_vec
     dx_exc = np.linalg.solve(mat, b_exc[1:])
     dx_rec = np.linalg.solve(mat, b_rec[1:])
@@ -539,7 +532,7 @@ def get_distortion_and_ionization(
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
-            #beta_MLA += x_full[nl] * beta[n][l]
+            # beta_MLA += x_full[nl] * beta[n][l]
             beta_MLA += beta[n][l] * dx_exc[nl-1]
             alpha_MLA += alpha[n][l] - beta[n][l] * dx_rec[nl-1]
             beta_DM += beta[n][l] * dx_DM[nl-1]
@@ -625,7 +618,7 @@ def get_distortion_and_ionization(
     return [alpha_MLA, beta_MLA, beta_DM], transition_spec
 
 
-def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
+def absorb_photons(distortion, H_states, dt, x1s, nmax):
     """ Allow ground state atoms to absorb distortion photons
 
         Identify the bins that contain resonant photons, calculate what
@@ -641,6 +634,13 @@ def absorb_photons(distortion, H_states, A_1snp, dt, x1s):
     # Photon phase space density
     prefac = phys.nB * (phys.hbar*phys.c*rs)**3 * np.pi**2
     Delta_f = interp1d(photeng, prefac * distortion.dNdE/photeng**2)
+
+    # np -> 1s decay rate
+    R_1snp = Hey_R_initial(np.arange(2, nmax+1), 1)
+
+    A_1snp = 1/3 * phys.rydberg / phys.hbar * (
+        phys.alpha * (1-1/np.arange(2, nmax+1)**2)
+    )**3 * R_1snp**2  # need not be recomputed every time
 
     # energy bin boundaries
     bnds = spectools.get_bin_bound(photeng)
@@ -708,13 +708,6 @@ def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
     nB = phys.nB * rs**3
     nH = phys.nH * rs**3
 
-    # np -> 1s decay rate
-    R_1snp = Hey_R_initial(np.arange(2, nmax+1), 1)
-
-    A_1snp = 1/3 * phys.rydberg / phys.hbar * (
-        phys.alpha * (1-1/np.arange(2, nmax+1)**2)
-    )**3 * R_1snp**2  # need not be recomputed every time
-
     # Convert from energy per baryon to
     # (dimensionless) fraction of injected energy
     norm = nB / rate_func_eng(rs) / dt
@@ -723,7 +716,7 @@ def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
     f_exc = {state: 0 for state in H_states}
 
     # Allow H(1s) to absorb line photons from distortion (E per baryon)
-    dE_absorbed = absorb_photons(distortion, H_states, A_1snp, dt, x1s)
+    dE_absorbed = absorb_photons(distortion, H_states, dt, x1s, nmax)
 
     for state in H_states:
 
