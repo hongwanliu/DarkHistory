@@ -194,8 +194,8 @@ def evolve(
         if record_tfs:
             lowengphot_tf_interp  = dep_tf_data['lowengphot']
             dep_ctf_data = load_data('dep_ctf')
-            hep_ctf_interp = dep_ctf_data['hep']
-            prp_ctf_interp = dep_ctf_data['prp']
+            hep_ctf_interp = dep_ctf_data['hep_p12']
+            prp_ctf_interp = dep_ctf_data['hep_s11']
         #ics_tf_data = load_data('ics_tf')
         #ics_thomson_ref_tf = ics_tf_data['thomson']
         #ics_rel_ref_tf     = ics_tf_data['rel']
@@ -207,10 +207,10 @@ def evolve(
         hep_lb_interp = tf_helper_data['hep_lb']
         
         nntf_data = load_model('dep_nntf', verbose=verbose)
-        hep_nntf = nntf_data['hep']
-        prp_nntf = nntf_data['prp']
+        hep_nntf = nntf_data['hep_p12']
+        prp_nntf = nntf_data['hep_s11']
         lee_nntf = nntf_data['lee']
-        lep_pdtf = nntf_data['lep']
+        lep_tf   = nntf_data['lep']
         
         nntf_data = load_model('ics_nntf', verbose=verbose)
         ics_thomson_ref_tf = nntf_data['ics_thomson'].TFAR
@@ -739,12 +739,12 @@ def evolve(
             hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
             prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
             lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
-            lep_pdtf.predict_TF(E_arr=lep_E, dlnz=dlnz, **rsxHxHe_key)
+            lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
             
             # record tfs used
             if record_tfs:
-                tf_arr.append([lep_pdtf.TF, 
+                tf_arr.append([lep_tf.TF, 
                                lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
                                prp_nntf.TF,
                                prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
@@ -754,10 +754,10 @@ def evolve(
             #if rs_to_interp > 40:
             #    prp_nntf.TF = prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals
             #lee_nntf.TF = lowengelec_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
-            #lep_pdtf.TF = lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
+            #lep_tf.TF = lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals
 
             # compounding
-            lep_pdtf.TF = np.matmul( prp_nntf.TF, lep_pdtf.TF )
+            lep_tf.TF = np.matmul( prp_nntf.TF, lep_tf.TF )
             lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF )
             hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
             
@@ -773,7 +773,7 @@ def evolve(
             # apply tf
             highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lep_pdtf( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
             highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
                                        out_highengphot_specs[-1].N )
         
@@ -809,9 +809,6 @@ def evolve(
         if verbose >= 2:
             print(show_text, flush=True)
         log_file.write(show_text+'\n')
-        
-        if use_tqdms is not None:
-            print('tqdms %d' % use_tqdms, flush=True)
         
         #############################
         # Parameters for next step  #
