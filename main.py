@@ -23,10 +23,11 @@ from darkhistory.spec.spectools import discretize, get_bin_bound
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
-from darkhistory.electrons.elec_coolingTMP import get_elec_cooling_tf as \
-        get_elec_cooling_tfTMP
+#from darkhistory.electrons.elec_coolingTMP import get_elec_cooling_tf as \
+#        get_elec_cooling_tfTMP
 from darkhistory.low_energy.lowE_deposition import compute_fs as compute_fs_OLD
 import darkhistory.low_energy.atomic as atomic
+import darkhistory.low_energy.bound_free as bf
 
 import darkhistory.photons.phot_dep as phot_dep
 import darkhistory.low_energy.lowE_electrons as lowE_electrons
@@ -501,16 +502,7 @@ def evolve(
 
         # Radial Matrix elements
         R = atomic.populate_radial(nmax)
-
-        if fexc_switch:
-            R_1snp = atomic.Hey_R_initial(np.arange(2, nmax+1), 1)
-
-            A_1snp = 1/3 * phys.rydberg / phys.hbar * (
-                phys.alpha * (1-1/np.arange(2, nmax+1)**2)
-            )**3 * R_1snp**2
-
-        else:
-            A_1snp = None
+        Thetas = bf.populate_thetas(nmax)
 
     else:
         distortion = None
@@ -518,7 +510,6 @@ def evolve(
         MEDEA_interp = lowE_electrons.make_interpolator(
             interp_type='2D', cross_check=False
         )
-        alpha_MLA, beta_MLA = None, None
         if recfast_TLA is None:
             recfast_TLA = True
 
@@ -692,11 +683,8 @@ def evolve(
                     # they will be absorbed twice !!! (implement better)
                     Delta_f = interp1d(
                         dist_eng, prefac*distortion.dNdE/dist_eng**2*dist_mask,
-                        bounds_error=False, fill_value=(0, 0), kind = 'nearest'
+                        bounds_error=False, fill_value=(0, 0), kind='nearest'
                     )
-
-                    # def Delta_f(E):
-                    #    return 0
 
                 elif (Delta_f_2D is not None):
                     Delta_f = interp1d(
@@ -729,7 +717,7 @@ def evolve(
                     delta_b = {}
 
                 MLA_step, atomic_dist_spec = atomic.process_MLA(
-                    rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R,
+                    rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R, Thetas,
                     Delta_f, cross_check,
                     True, True, dist_2s1s,
                     #fexc_switch, deposited_exc_arr,
@@ -747,9 +735,10 @@ def evolve(
                 if make_MLA:
 
                     MLA_funcs = []
-                    for i in np.arange(1,4):  # alpha, beta, beta_DM
+                    for i in np.arange(1, 4):  # alpha, beta, beta_DM
                         MLA_funcs.append(
-                            interp1d(MLA_data[0], MLA_data[i], fill_value='extrapolate')
+                            interp1d(MLA_data[0], MLA_data[i],
+                                     fill_value='extrapolate')
                         )
 
             #######################################

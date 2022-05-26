@@ -1,8 +1,5 @@
 import numpy as np
-from math import factorial as fac
 from scipy.special import loggamma
-
-from scipy.interpolate import interp1d
 
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
@@ -179,13 +176,30 @@ def Theta(l, lp, n, kappa=None):
 
         # Use default kappa^2 binning.
 
-        kappa = np.sqrt(load_data('bnd_free')['kappa2_bin_edges_ary'][n])
+        kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
 
-        return (1 + n**2 * kappa**2) * load_data('bnd_free')['g_table_dict'][n][l][lp]**2
+        return (1 + n**2 * kappa2) * load_data('bnd_free')['g_table_dict'][n][l][lp]**2
 
     else:
 
         return (1 + n**2 * kappa**2) * g(l, lp, n, kappa=kappa)**2
+
+def populate_thetas(nmax):
+    """ needs documentation !!!
+    """
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary']
+    g_table = load_data('bnd_free')['g_table_dict']
+
+    Theta_up = np.zeros((nmax+1, nmax, kappa2.shape[1]))
+    Theta_dn = np.zeros((nmax+1, nmax, kappa2.shape[1]))
+
+    for n in np.arange(1,nmax+1):
+        prefac = (1 + n**2 * kappa2[n])
+        for l in np.arange(n):
+            Theta_up[n][l] = prefac * g_table[n][l][l+1]**2
+            Theta_dn[n][l] = prefac * g_table[n][l][l-1]**2
+
+    return {'up': Theta_up, 'dn': Theta_dn}
 
 # Set-up the Newton-Cotes weights. We use an 11-point Newton-Cotes integration
 # over each of the 50 bins.
@@ -357,6 +371,72 @@ def alpha_nl(n, l, T_m, T_r=None, f_gamma=None, stimulated_emission=True):
         + I_Burgess(n, l, l+1, T_m, T_r=T_r, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
     )
 
+
+def alpha_n(n, T_m, Thetas, T_r=None, f_gamma=None, stimulated_emission=True):
+    """
+    same as alpha_nl, but now vectorized across l substates.
+    See alpha_nl and I_Burgess for documentation.
+    """
+    if stimulated_emission:
+
+        if T_r is not None and f_gamma is not None:
+
+            raise ValueError('Please use either T_r or f_gamma, not both.')
+
+        if T_r is None and f_gamma is None:
+
+            raise ValueError('Please use either T_r or f_gamma.')
+
+    else:
+
+        if f_gamma is not None:
+
+            raise ValueError('Please use f_gamma with stimulated emission only.')
+
+    prefac = 2 * np.sqrt(np.pi) * phys.alpha**4 * phys.bohr_rad**2 * phys.c / 3.
+
+    y = phys.rydberg / T_m
+    l = np.arange(n)[:, np.newaxis]
+
+    # Define the integral (as a function of kappa^2).
+    def integ(kappa2, key):
+
+        if stimulated_emission:
+            # With stimulated emission, we integrate over 1+f_gamma.
+
+            E_gamma = (1. / n**2 + kappa2) * phys.rydberg
+
+            if f_gamma is not None:
+
+                fac = 1. + f_gamma(E_gamma)
+
+            else:
+
+                # Blackbody occupation number.
+                fac = 1. + np.exp(-E_gamma/T_r) / (1. - np.exp(-E_gamma/T_r))
+
+        else:
+
+            fac = 1.
+
+        return fac * (1. + n**2 * kappa2)**2 * np.exp(-kappa2 * y) * (
+            Thetas[key][n][l]
+        )
+
+    # Multiply the computed Newton-Cotes weights above by the size of the interval.
+    weights = newton_cotes_11_weights * load_data('bnd_free')['h_ary'][n]
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
+
+    # Perform the Newton-Cotes integral.
+    integral = {key: np.dot(integ(kappa2, key), weights)
+                for key in ['up', 'dn']}
+
+    res = (l+1) * y * integral['up']
+    res += l * y * integral['dn'] * (l > 0)
+
+    return prefac * 2 * np.sqrt(y) / n**2 * res.flatten()
+
+
 def beta_nl(n, l, T_r=None, f_gamma=None):
     """
     Photoionization rate for the nl state.
@@ -424,6 +504,55 @@ def beta_nl(n, l, T_r=None, f_gamma=None):
 
     return prefac*integral
 
+
+def beta_n(n, Thetas, T_r=None, f_gamma=None):
+    """
+    Photoionization rate for the nl state but vectorized across l substates.
+    See beta_nl for documentation.
+    """
+
+    l = np.arange(n)[:, np.newaxis]
+
+    if T_r is not None and f_gamma is not None:
+
+        raise ValueError('Please use either T_r or f_gamma, not both.')
+
+    if T_r is None and f_gamma is None:
+
+        raise ValueError('Please use either T_r or f_gamma.')
+
+    prefac = 4 * np.pi * phys.alpha * phys.bohr_rad**2 / 3 * n**2 / (2*l.flatten() + 1)
+
+    # Define the integral (as a function of kappa2 and f_gamma)
+    def integ(kappa2, f_gamma):
+
+        # The photon energy to produce an electron with energy kappa^2.
+        E_gamma = (1. / n**2 + kappa2) * phys.rydberg
+
+        if f_gamma is None:
+
+            # Blackbody occupation number.
+            f_gam_fac = np.exp(-E_gamma/T_r) / (1. - np.exp(-E_gamma/T_r))
+
+        else:
+
+            f_gam_fac = f_gamma(E_gamma)
+
+        # Using the fact that dn_gamma / dE_gamma = (1/n^2 + K^2)^2 I_H^3 / pi^2 f
+        # times a conversion to get into natural units.
+
+        return (kappa2 + 1/n**2)**2 * phys.rydberg**2 / np.pi**2 * f_gam_fac*(
+            (l+1)*Thetas['up'][n][l.flatten()] + l*Thetas['dn'][n][l.flatten()]
+        ) * phys.rydberg / phys.hbar**3 / phys.c**2
+
+    # Multiply the computed Newton-Cotes weights above by the size of the interval.
+    weights = newton_cotes_11_weights * load_data('bnd_free')['h_ary'][n]
+
+    # Perform the Newton-Cotes integral.
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
+    integral = np.dot(integ(kappa2, f_gamma), weights)
+
+    return prefac*integral
 
 def alpha_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
     """
@@ -664,6 +793,94 @@ def xi_nl(n, l, T_r=None, f_gamma=None):
     res = d_beta_d_kappa2 / phys.rydberg
 
     return Spectrum(eng, res[ind],spec_type='dNdE')
+
+
+def net_spec_n(n, T_m, xe, x_full, nH, Thetas, T_r=None, f_gamma=None, stimulated_emission=True):
+    """
+    Recombination photon spectrum coefficient in cm^3 eV^-1 sec^-1.
+
+    Parameters
+    ----------
+    n : int
+        The initial energy level of the hydrogen atom.
+    T_m : float
+        The matter temperature in eV.
+    T_r : float, optional
+        The radiation temperature in eV for a blackbody distribution.
+    f_gamma : function, optional
+        Photon occupation number as a function of energy.
+    stimulated_emission : boolean
+        If True, includes stimulated emission for a blackbody distribution.
+
+    Returns
+    -------
+    Spectrum
+        Net recombination photon spectrum, summed over l states.
+
+    Notes
+    -----
+    """
+
+    if f_gamma is not None and not stimulated_emission:
+
+        raise ValueError('Please use f_gamma with stimulated emission only.')
+
+    if T_r is None and f_gamma is None:
+
+        raise ValueError('Please use either T_r or f_gamma.')
+
+    rydb = phys.rydberg
+
+    y = rydb / T_m
+
+    kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
+
+    E_gamma = (kappa2 + 1./n**2) * rydb
+
+    # Remove the first few entries, which are repeated because kappa2 << 1/n^2.
+    eng, ind = np.unique(E_gamma, return_index=True)
+
+    if f_gamma is None:
+
+        # Blackbody occupation number.
+        f_gam_fac = np.exp(-E_gamma/T_r) / (1. - np.exp(-E_gamma/T_r))
+
+    else:
+
+        f_gam_fac = f_gamma(E_gamma)
+
+    # Define the integral (as a function of kappa^2).
+    if stimulated_emission:
+        # With stimulated emission, we integrate over 1+f_gamma.
+        fac_gamma = 1. + f_gam_fac
+
+    else:
+
+        fac_gamma = 1.
+
+    prefac = (
+        2 * np.sqrt(np.pi) * phys.alpha**4 * phys.bohr_rad**2 * phys.c / 3.
+        * 2 * np.sqrt(y) / n**2
+        * y * (1 + n**2 * kappa2)**2 * np.exp(-kappa2 * y)
+    ) / phys.rydberg
+
+    l = np.arange(n)[:,np.newaxis]
+    res = prefac * fac_gamma * (
+        l * Thetas['dn'][n][l.flatten()] +
+        (l+1) * Thetas['up'][n][l.flatten()]
+    )
+    res = (xe * nH)**2 * np.sum(res, axis=0)
+
+    prefac2 = 4 * np.pi * phys.alpha * phys.bohr_rad**2 / 3 * n**2 / (2*l + 1)
+
+    d_beta_d_kappa2 = prefac2 * (kappa2 + 1./n**2)**2 * phys.rydberg**2 / np.pi**2 * f_gam_fac * (
+        (l+1)*Thetas['up'][n][l.flatten()] +
+        l*Thetas['dn'][n][l.flatten()]
+    ) * phys.rydberg / phys.hbar**3 / phys.c**2
+    x_nl = x_full[n*(n-1)//2 + l]
+
+    res -= nH * np.sum(x_nl * d_beta_d_kappa2, axis=0) / phys.rydberg
+    return Spectrum(eng, res[ind], spec_type='dNdE')
 
 def gamma_B(eng, T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
     """

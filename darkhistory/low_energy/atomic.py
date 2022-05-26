@@ -7,6 +7,7 @@ from darkhistory import physics as phys
 from darkhistory.spec.spectrum import Spectrum
 import darkhistory.spec.spectools as spectools
 import scipy.special
+import scipy.sparse as sp
 
 import darkhistory.low_energy.bound_free as bf
 
@@ -17,21 +18,22 @@ hplanck = phys.hbar*2*np.pi
 mu_e = phys.me/(1+phys.me/phys.mp)
 lgamma = scipy.special.loggamma
 
-#*************************************************#
-#A_{nl} coefficient defined in Hey (2006), Eq. (9)#
-#*************************************************#
 
 def Hey_A(n, l):
+    """
+    A_{nl} coefficient defined in Hey (2006), Eq. (9)
+    """
     return np.sqrt(n**2-l**2)/(n*l)
-
-#/*****************************************************************#
-#Absolute value of R_{n', n'- 1}^{n n'} as in Hey (2006), Eq. (B.4)
-#Assumes n > np.
-#******************************************************************#
 
 
 def Hey_R_initial(n, n_p):
-    # return (-1)**(n-n_p-1) * 2**(2*n_p+2) * np.sqrt(
+    """
+    Absolute value of R_{n', n'- 1}^{n n'} as in Hey (2006), Eq. (B.4).
+    Assumes n > n_p.
+    """
+
+    # Evaluates to
+    # (-1)**(n-n_p-1) * 2**(2*n_p+2) * np.sqrt(
     # fact(n+n_p)/fact(n-n_p-1)/fact(2*n_p-1)) * (
     # n_p/n)**(n_p+2) * (1-n_p/n)**(n-n_p-2)/(1+n_p/n)**(n+n_p+2)
     return np.exp(
@@ -42,15 +44,17 @@ def Hey_R_initial(n, n_p):
         - (n + n_p + 2.0) * np.log(1.0 + n_p/n)
     )
 
-#/*********************************************************************
-#Populates a matrix with the radial matrix elements.
-#Inputs: two [nmax+1][nmax+1][nmax] matrices Rup, Rdn, nmax.
-#Rup is populated s.t. R_up[n][n'][l] = R([n,l],[n',l+1])
-#Rdn is populated s.t. R_dn[n][n'][l] = R([n,l],[n',l-1])
-#Assumption: n > n'
-#**********************************************************************/
 
 def populate_radial(nmax):
+    """
+    Populates a matrix with the radial matrix elements.
+
+    Returns
+    -------
+    dict
+        R['up'][n][n'][l] = R([n,l],[n',l+1])
+        R['dn'][n][n'][l] = R([n,l],[n',l-1])
+    """
     R_up = np.zeros((nmax+1, nmax, nmax))
     R_dn = np.zeros((nmax+1, nmax, nmax))
 
@@ -60,32 +64,45 @@ def populate_radial(nmax):
             R_dn[n][n_p][n_p] = Hey_R_initial(n, n_p)
             R_up[n][n_p][n_p-1] = R_up[n][n_p][n_p] = 0
             for l in np.arange(n_p-1, 0, -1):
-                # Hey (52-53)
+
                 R_dn[n][n_p][l] = (
                     (2*l+1) * Hey_A(n, l+1) * R_dn[n][n_p][l+1]
                     + Hey_A(n_p, l+1) * R_up[n][n_p][l]
-                    ) / (2.0 * l * Hey_A(n_p, l))
+                    ) / (2.0 * l * Hey_A(n_p, l))  # Hey Eq.(52)
 
                 R_up[n][n_p][l-1] = (
                     (2*l+1) * Hey_A(n_p, l + 1) * R_up[n][n_p][l]
                     + Hey_A(n, l+1) * R_dn[n][n_p][l+1]
-                    ) / (2.0 * l * Hey_A(n, l))
+                    ) / (2.0 * l * Hey_A(n, l))  # Hey Eq.(53)
 
     return {'up': R_up, 'dn': R_dn}
 
-# /***************************************************************************************************************
-# Populates two matrices with the bound-bound rates for emission and absorption
-#  in a generic radiation field.
-# Inputs : two [nmax+1][nmax+1][nmax] matrices BB_up, BB_dn, nmax, Tr (in eV),
-#  and the two precomputed matrices of radial matrix elements R_up and R_dn.
-# BB_up[n][n'][l] = A([n,l]-> [n',l+1]) * (1 + f(E_{nn'}))              if n>n'
-#                 = (2l+3)/(2l+1) exp(-E_{nn'}/Tr) * BB_dn[n'][n][l+1]  if n<n'
-# BB_dn[n][n'][l] = A([n,l]-> [n',l-1]) * (1 + f(E_{nn'}))              if n>n'
-#                 = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB_up[n'][n][l-1]  if n<n'
-#  *****************************************************************************************************************/
-
 
 def populate_bound_bound(nmax, Tr, R, Delta_f=None):
+    """
+    Populates two matrices with the bound-bound rates for emission and
+    absorption in a generic radiation field.
+
+    Parameters
+    ----------
+    nmax : int
+        Maximum energy level of hydrogen atom to populate
+    Tr : float
+        Blackbody radiation temperature
+    R : dict of 3-index arrays
+        precomputed radial matrix elements (see populate_radial)
+    Delta_f : function
+        Deviation from blackbody phase space density as a function of energy,
+        e.g. f_BB(E) = 1/(e^E/T - 1), so f(E) = f_BB(E) + Delta_f(E)
+
+    Returns
+    -------
+    dict
+        BB['up'][n][n'][l] = A([n,l]-> [n',l+1]) * (1 + f(E_{nn'}))  if n>n'
+            = (2l+3)/(2l+1) exp(-E_{nn'}/Tr) * BB['dn'][n'][n][l+1]  if n<n'
+        BB['dn'][n][n'][l] = A([n,l]-> [n',l-1]) * (1 + f(E_{nn'}))  if n>n'
+            = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB['up'][n'][n][l-1]  if n<n'
+    """
     BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in ['up', 'dn']}
     if Delta_f is None:
         def Delta_f(E):
@@ -132,14 +149,16 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
     return BB
 
 
-# astro-ph/9912182 Eq. 40
 def tau_np_1s(n, rs, xHI=None):
+    """
+    Sobolev optical depth of np-1s line photons, see astro-ph/9912182 Eq. 40
+    """
     l = 1
     nu = (1 - 1/n**2) * phys.rydberg/hplanck
     lam = phys.c/nu
     if xHI is None:
-        # xHI = 1-phys.xHII_std(rs)
         xHI = phys.xHI_std(rs)
+
     nHI = xHI * phys.nH*rs**3
     pre = lam**3 * nHI / (8*np.pi*phys.hubble(rs))
 
@@ -151,8 +170,11 @@ def tau_np_1s(n, rs, xHI=None):
     g = (2*l+1)/(2*l-1)
     return pre * A_dn * g
 
-# Eq. 41
+
 def p_np_1s(n, rs, xHI=None):
+    """
+    Escape probability of np-1s line photon, see astro-ph/9912182 Eq. 41,
+    """
     tau = tau_np_1s(n, rs, xHI=xHI)
     return (1-np.exp(-tau))/tau
 
@@ -160,59 +182,80 @@ def p_np_1s(n, rs, xHI=None):
 # R*p = A*(1+f)/tau ~ 1/(pre*g)
 #     = 8 pi H / (3 n_1s lam^3)
 
-#~~~ BOUND_FREE FUNCTIONS ~~~
+# BOUND_FREE FUNCTIONS
 
-# /*********************************************************************************************************************
-# Populates two matrices with the coefficients g(n, l; kappa, l+1) and g(n, l; kappa, l-1).
-# Input: two [nmax] matrices g_up and g_dn, n, kappa.
-# The matrices are populated s.t. g_up[l] = g(n, l; kappa, l+1)
-#                                 g_dn[l] = g(n, l; kappa, l-1).
-# Reference: Burgess A.,1965, MmRAS..69....1B, Eqs. (28)-(34).
-# **********************************************************************************************************************/
 
 def populate_gnlk(nmax, n, kappa):
+    """
+    Populates two matrices with the coefficients g(n, l; kappa, l+1)
+    and g(n, l; kappa, l-1).
+
+    Parameters
+    ----------
+    !!! incomplete
+
+    Returns
+    -------
+    Two matrices
+        g_up[l] = g(n, l; kappa, l+1)
+        g_dn[l] = g(n, l; kappa, l-1)
+
+    Notes
+    -----
+    Reference: Burgess A.,1965, MmRAS..69....1B, Eqs. (28)-(34).
+    """
     gnk_up = np.zeros((nmax, len(kappa)))
     gnk_dn = np.zeros((nmax, len(kappa)))
-    
+
     k2 = kappa**2
     n2 = n**2
-        
+
     log_product = 0.
+
     for s in range(1, n+1):
         log_product += np.log(1.0 + s**2 * k2)
-    log_init = (0.5 * (np.log(np.pi/2) - lgamma(2.0 * n)) + np.log(4.0) + n * np.log(4.0 * n) + 0.5 * log_product
-             - 0.5 * np.log(1.0 - np.exp(-2.0 * np.pi / kappa)) - 2.0 * np.arctan(n * kappa) / kappa 
-             - (n + 2.0) * np.log(1.0 + n2 * k2))
+
+    log_init = (0.5 * (np.log(np.pi/2) - lgamma(2.0 * n)) + np.log(4.0)
+                + n * np.log(4.0 * n) + 0.5 * log_product
+                - 0.5 * np.log(1.0 - np.exp(-2.0 * np.pi / kappa))
+                - 2.0 * np.arctan(n * kappa) / kappa
+                - (n + 2.0) * np.log(1.0 + n2 * k2))
+
     gnk_up[n-1] = np.exp(log_init)
-    gnk_dn[n-1] = 0.5 * np.sqrt((1.0 + n2 * k2) / (1.0 + (n - 1.0) * (n - 1.0) * k2)) / n * gnk_up[n-1]
- 
+    gnk_dn[n-1] = 0.5 * np.sqrt((1.0 + n2 * k2) / (
+        1.0 + (n - 1.0) * (n - 1.0) * k2)) / n * gnk_up[n-1]
+
     if n > 1:
-        gnk_up[n-2] = 0.5 * np.sqrt((2.0 * n - 1.0) * (1.0 + n2 * k2)) * gnk_up[n-1]    
-        gnk_dn[n-2] = 0.5 * (4.0 + (n - 1.0) * (1.0 + n2 * k2)) * np.sqrt(
-            (2.0 * n - 1.0) / (1.0 + (n - 2.0) * (n - 2.0) * k2)) / n * gnk_dn[n-1]  
-        for l in range(n-1,1,-1): 
+        gnk_up[n-2] = 0.5 * np.sqrt((2*n - 1) * (1 + n2 * k2)) * gnk_up[n-1]
+        gnk_dn[n-2] = 0.5 * (4 + (n - 1) * (1 + n2 * k2)) * np.sqrt(
+            (2 * n - 1) / (1 + (n - 2) * (n - 2) * k2)) / n * gnk_dn[n-1]
+
+        for l in range(n-1, 1, -1):
             l2 = l**2
-            gnk_up[l-2] = 0.5 * (((4.0 * (n2 - l2) + l * (2.0 * l - 1.0) * (1.0 + n2 * k2)) * gnk_up[l-1]
-                              - 2.0 * n * np.sqrt((n2 - l2) * (1.0 + (l + 1.0) * (l + 1.0) * k2)) * gnk_up[l])
-                                / np.sqrt((n2 - (l - 1.0) * (l - 1.0)) * (1.0 + l2 * k2)) / n)
-        
-        for l in range(n-2,0,-1):  
+            gnk_up[l-2] = 0.5 * (
+                ((4 * (n2 - l2) + l * (2*l - 1) * (1 + n2 * k2)) * gnk_up[l-1]
+                 - 2*n * np.sqrt((n2 - l2) * (1 + (l+1)**2 * k2)) * gnk_up[l])
+                / np.sqrt((n2 - (l - 1.0) * (l - 1.0)) * (1.0 + l2 * k2)) / n)
+
+        for l in range(n-2, 0, -1):
             l2 = l**2
-            gnk_dn[l-1] = 0.5 * (((4.0 * (n2 - l2) + l * (2.0 * l + 1.0) * (1.0 + n2 * k2)) * gnk_dn[l]
-                              - 2.0 * n * np.sqrt((n2 - (l + 1.0) * (l + 1.0)) * (1.0 + l2 * k2)) * gnk_dn[l+1])
-                              / np.sqrt((n2 - l2) * (1.0 + (l - 1.0) * (l - 1.0) * k2)) / n)
+            gnk_dn[l-1] = 0.5 * (
+                ((4 * (n2 - l2) + l * (2*l + 1) * (1 + n2 * k2)) * gnk_dn[l]
+                 - 2*n * np.sqrt((n2 - (l+1)**2) * (1 + l2*k2)) * gnk_dn[l+1])
+                / np.sqrt((n2 - l2) * (1.0 + (l-1)**2 * k2)) / n)
+
     return np.transpose(gnk_up), np.transpose(gnk_dn)
 
-# /********************************************************************************************
-# k2[n][ik] because boundaries depend on n
-#  ********************************************************************************************/
 
 def populate_k2_and_g(nmax, Tm):
-    k2_tab = np.zeros((nmax+1,10 * (NBINS-1) + 11))
-    g = {key: np.zeros((nmax+1,Nkappa,nmax)) for key in ['up', 'dn']}
-    k2max = 7e2*Tm/phys.rydberg        
+    """
+    k2[n][ik] because boundaries depend on n
+    """
+    k2_tab = np.zeros((nmax+1, 10 * (NBINS-1) + 11))
+    g = {key: np.zeros((nmax+1, Nkappa, nmax)) for key in ['up', 'dn']}
+    k2max = 7e2*Tm/phys.rydberg
 
-    for n in range(1,nmax+1):
+    for n in range(1, nmax+1):
         k2min = 1e-25/n**2
         bigBins = np.logspace(np.log10(k2min), np.log10(k2max), NBINS + 1)
         iBig = np.arange(NBINS)
@@ -220,25 +263,30 @@ def populate_k2_and_g(nmax, Tm):
         for i in range(11):
             k2_tab[n][10 * iBig + i] = temp[i]
         ik = np.arange(10 * NBINS + 1)
-        g['up'][n,ik], g['dn'][n,ik] = populate_gnlk(nmax, n, np.sqrt(k2_tab[n,ik]))  
+        g['up'][n, ik], g['dn'][n, ik] = populate_gnlk(
+            nmax, n, np.sqrt(k2_tab[n, ik]))
     return k2_tab, g
 
 
-# /******************************************************************************************* 
-# 11 point Newton-Cotes integration.
-# Inputs: an 11-point array x, an 11-point array f(x).
-# Output: \int f(x) dx over the interval provided.
-# ********************************************************************************************/
-
 def Newton_Cotes_11pt(x, f):
-    h = (x[10] - x[0])/10.0 #/* step size */
+    """
+    11 point Newton-Cotes integration.
+    Parameters
+    ----------
+    an 11-point array x, an 11-point array f(x).
 
-    return (5.0 * h * (16067.0 * (f[0] + f[10]) + 106300.0 * (f[1] + f[9]) 
-                      - 48525.0 * (f[2] + f[8]) + 272400.0 * (f[3] + f[7])
-                      - 260550.0 * (f[4] + f[6]) + 427368.0 * f[5]) / 299376.0)
+    Returns
+    -------
+    \int f(x) dx over the interval provided.
+    """
+    h = (x[10] - x[0])/10  # step size
+
+    return (5 * h * (16067 * (f[0] + f[10]) + 106300 * (f[1] + f[9])
+                     - 48525 * (f[2] + f[8]) + 272400 * (f[3] + f[7])
+                     - 260550 * (f[4] + f[6]) + 427368 * f[5]) / 299376)
 
 
-def populate_beta(Tr, nmax, Delta_f=None):
+def populate_beta(Tr, nmax, Delta_f=None, Thetas=None):
     """ Populating the photoionization rates beta(n, l, Tr)
         From prefac we see that the units are s^-1
 
@@ -259,13 +307,15 @@ def populate_beta(Tr, nmax, Delta_f=None):
         return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
 
     for n in range(1, nmax+1):
-        for l in range(n):
-            beta[n][l] = bf.beta_nl(n, l, f_gamma=f_gamma)
+        l = np.arange(n)
+        beta[n][l] = bf.beta_n(n, Thetas, f_gamma=f_gamma)
+    #    for l in range(n):
+    #        beta[n][l] = bf.beta_nl(n, l, f_gamma=f_gamma)
 
     return beta
 
 
-def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True):
+def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True, Thetas=None):
     """ Populate the recombination coefficients alpha(n, l, Tm, Tr)
 
         Parameters
@@ -295,11 +345,17 @@ def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True):
         f_gamma = None
 
     for n in np.arange(1, nmax+1):
-        for l in np.arange(n):
-            alpha[n][l] = bf.alpha_nl(
-                n, l, Tm, f_gamma=f_gamma,
-                stimulated_emission=stimulated_emission
-            )
+        l = np.arange(n)
+        alpha[n][l] = bf.alpha_n(
+            n, Tm, Thetas, f_gamma=f_gamma,
+            stimulated_emission=stimulated_emission
+        )
+    # # Slower implementation
+    #    for l in np.arange(n):
+    #        alpha[n][l] = bf.alpha_nl(
+    #            n, l, Tm, f_gamma=f_gamma,
+    #            stimulated_emission=stimulated_emission
+    #        )
 
     return alpha
 
@@ -334,7 +390,7 @@ def get_transition_energies(nmax):
 
 
 def process_MLA(
-        rs, dt, xHI, Tm, nmax, eng, R,
+        rs, dt, xHI, Tm, nmax, eng, R, Thetas,
         Delta_f=None, cross_check=False,
         include_2s1s=True, include_BF=True, spec_2s1s=None,
         # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
@@ -426,9 +482,9 @@ def process_MLA(
     # !!! Think about parallelizing
     #R = populate_radial(nmax)  # Need not be recomputed every time
     BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
-    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f,
+    alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas,
                            stimulated_emission=stimulated_emission)
-    beta = populate_beta(Tr, nmax, Delta_f=Delta_f)
+    beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
 
     # Include sobolev optical depth
     for n in np.arange(2, nmax+1, 1):
@@ -442,14 +498,6 @@ def process_MLA(
     b_exc = np.zeros(num_states)  # from CMB-photon + 1s -> nl
     b_rec = np.zeros(num_states)  # from e+p -> nl
     b_DM = np.zeros(num_states)   # from DM-product + 1s -> nl
-
-    #if fexc_switch:
-    #    delta_b = f_exc_to_b_numerator(
-    #        deposited_exc_arr,
-    #        elec_spec, distortion,
-    #        H_states, dt, rate_func_eng,
-    #        nmax, xHI
-    #    )
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
@@ -495,21 +543,22 @@ def process_MLA(
         b_rec[nl] /= tot_rate
         b_DM[nl] /= tot_rate
 
-    mat = np.identity(num_states-1) - K[1:, 1:]
+    # sparse matrix
+    mat = sp.csr_matrix(np.identity(num_states-1) - K[1:, 1:])
     # b_tot = b_exc * xHI + b_rec * xe**2 * nH + b_DM
     # x_vec = np.linalg.solve(mat, b_tot[1:])
 
     # components of x_vec
-    dx_exc = np.linalg.solve(mat, b_exc[1:])
-    dx_rec = np.linalg.solve(mat, b_rec[1:])
-    dx_DM = np.linalg.solve(mat, b_DM[1:])
+    dx_exc = sp.linalg.spsolve(mat, b_exc[1:])  # np.linalg.solve if dense mat
+    dx_rec = sp.linalg.spsolve(mat, b_rec[1:])
+    dx_DM = sp.linalg.spsolve(mat, b_DM[1:])
 
     # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
     x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
 
-    # !!! I should be able to set xHI = 1 - sum(x_full) - xe,
-    # but instead I'm stuck with 1-xHII.
-    # Is it because I assumed xHI = 1-xe above?
+    # naively you'd want x_full[0] = 1 - sum(x_full) - xe, but
+    # we already assumed xe = 1 - xHI above, so we'd run into
+    # detailed balance issues if we didn't set x_full[0] = xHI
     x_full = np.append(xHI, x_vec)
 
     ###
@@ -572,15 +621,23 @@ def process_MLA(
         else:
             f_gam = f_gamma
 
-        # This is where f_ion -> distortion
-        BF_tmp = nH**2 * xe**2 * bf.gamma_nl(
-            n, l, Tm, T_r=Tr, f_gamma=f_gam,
-            stimulated_emission=stimulated_emission
-        )/nB * dt
-        BF_tmp -= nH * x_full[nl] * bf.xi_nl(
-            n, l, T_r=Tr, f_gamma=f_gam)/nB * dt
-        BF_tmp.rebin(eng)
-        BF_spec.dNdE += BF_tmp.dNdE
+        if l == 0:  # once for each n
+            BF_contribution = bf.net_spec_n(
+                n, Tm, xe, x_full, nH, Thetas, Tr, f_gamma=f_gam,
+                stimulated_emission=stimulated_emission
+            )/nB * dt
+            BF_contribution.rebin(eng)
+            BF_spec.dNdE += BF_contribution.dNdE
+
+        ## This is where f_ion -> distortion
+        #BF_tmp = nH**2 * xe**2 * bf.gamma_nl(
+        #    n, l, Tm, T_r=Tr, f_gamma=f_gam,
+        #    stimulated_emission=stimulated_emission
+        #)/nB * dt
+        #BF_tmp -= nH * x_full[nl] * bf.xi_nl(
+        #    n, l, T_r=Tr, f_gamma=f_gam)/nB * dt
+        #BF_tmp.rebin(eng)
+        #BF_spec.dNdE += BF_tmp.dNdE
 
     # Make a spectrum
     data = sorted(np.flipud(np.transpose([H_engs, Nphot_cascade])),
