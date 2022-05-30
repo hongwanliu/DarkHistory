@@ -11,7 +11,6 @@ import pickle
 # from tf_data import *
 
 from config import load_data
-from nntf.load import load_model
 
 import darkhistory.physics as phys
 
@@ -180,6 +179,9 @@ def evolve(
         hep_lb_interp = tf_helper_data['hep_lb']
         
     elif tf_mode == 'nntf':
+        
+        from nntf.load import load_model
+        
         if verbose >= 1:
             print('coarsen_factor is set to 12 (for NN transfer functions).')
         coarsen_factor = 12
@@ -213,15 +215,15 @@ def evolve(
         lep_tf   = nntf_data['lep']
         
         nntf_data = load_model('ics_nntf', verbose=verbose)
-        ics_thomson_ref_tf = nntf_data['ics_thomson'].TFAR
-        engloss_ref_tf     = nntf_data['ics_engloss'].TFAR
-        ics_rel_ref_tf     = nntf_data['ics_rel'].TFAR
+        ics_thomson_ref_tf = nntf_data['ics_thomson'].TransFuncAtRedshift()
+        engloss_ref_tf     = nntf_data['ics_engloss'].TransFuncAtRedshift()
+        ics_rel_ref_tf     = nntf_data['ics_rel'].TransFuncAtRedshift()
         
     else:
         raise ValueError('Invalid tf_mode!')
     
     timer_dt = time.time()-total_timer_start
-    if verbose >= 1:
+    if verbose >= 2:
         print('Loading time: %.3f s' % timer_dt)
     log_file.write('Loading time: %.3f s\n' % timer_dt)
     total_timer_start = time.time()
@@ -359,7 +361,8 @@ def evolve(
 
     # tqdm set-up.
     if use_tqdm:
-        from tqdm import tqdm_notebook as tqdm
+        #from tqdm import tqdm_notebook as tqdm
+        from tqdm import tqdm
         pbar = tqdm(
             total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
         ) 
@@ -444,7 +447,7 @@ def evolve(
     debug_arr = []
     
     timer_dt = time.time()-total_timer_start
-    if verbose >= 1:
+    if verbose >= 2:
         print('Initialization time: %.3f s' % timer_dt)
     log_file.write('Initialization time: %.3f s\n' % timer_dt)
     total_timer_start = time.time()
@@ -851,7 +854,7 @@ def evolve(
     #########################################################################
 
     timer_dt = time.time()-total_timer_start
-    if verbose >= 1:
+    if verbose >= 2:
         print('Main loop time: %.3f s' % timer_dt)
     log_file.write('Main loop time: %.3f s\n' % timer_dt)
     total_timer_start = time.time()

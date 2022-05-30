@@ -98,7 +98,10 @@ class NNTFBase (TFBase):
         
         self.rs = params['rs']
         self._set_pred_in(**params)
-        pred_out = self.model.predict(self.pred_in, batch_size=min(int(1e6), len(self.pred_in)))
+        if len(self.pred_in) > 1e6:
+            pred_out = self.model.predict(self.pred_in, batch_size=1e6)
+        else:
+            pred_out = self.model.predict_on_batch(self.pred_in)
         pred_out = np.array(pred_out).flatten()
         
         raw_TF = np.full(self.TF_shape, LOG_EPSILON)
