@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 
 import sys
@@ -98,6 +99,7 @@ class NNTFBase (TFBase):
         
         self.rs = params['rs']
         self._set_pred_in(**params)
+        #self.pred_in = tf.Tensor(self.pred_in)
         if len(self.pred_in) > 1e6:
             pred_out = self.model.predict(self.pred_in, batch_size=1e6)
         else:

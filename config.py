@@ -13,11 +13,11 @@ from scipy.interpolate import PchipInterpolator
 from scipy.interpolate import pchip_interpolate
 from scipy.interpolate import RegularGridInterpolator
 
+
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
-data_path    = '/zfs/yitians/darkhistory/DHdata_alt'
-data_path_v1 = '/zfs/yitians/darkhistory/DHdata'
+data_path = '/zfs/yitians/darkhistory/DHdata_alt'
 
 # Global variables for data.
 glob_binning_data = None
@@ -27,7 +27,7 @@ glob_struct_data  = None
 glob_hist_data    = None
 glob_pppc_data    = None
 glob_f_data       = None
-glob_dep_ctf_data = None ##### TMP?
+glob_dep_ctf_data = None
 glob_tf_helper_data = None
 
 class PchipInterpolator2D: 
@@ -37,14 +37,13 @@ class PchipInterpolator2D:
     Parameters
     -----------
     coords_data : ndarray, size (M,N)
-
         
     values_data : ndarray
     pri : string
         Specifies primary annihilation channel. See :func:`.get_pppc_spec` for the full list.
     sec : {'elec', 'phot'}
         Specifies which secondary spectrum to obtain (electrons/positrons or photons).
-
+        
     Attributes
     ----------
     pri : string
@@ -52,12 +51,12 @@ class PchipInterpolator2D:
     sec : {'elec', 'phot'}
         Specifies which secondary spectrum to obtain (electrons/positrons or photons).
     get_val : function
-        Returns the interpolation value at (coord, value) based 
-
+        Returns the interpolation value at (coord, value) based
+        
     Notes
     -------
     PCHIP stands for piecewise cubic hermite interpolating polynomial. This class was built to mimic the Mathematica interpolation of the PPPC4DMID data. 
-
+    
     """
     
     def __init__(self, coords_data, values_data, pri, sec):
@@ -168,7 +167,7 @@ class PchipInterpolator2D:
         )
     
 
-def load_data(data_type, use_v1_data=False, verbose=1):
+def load_data(data_type, verbose=1):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -192,9 +191,6 @@ def load_data(data_type, use_v1_data=False, verbose=1):
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
         
-    use_v1_data : bool
-        If True, use data files from version 1.0 of DarkHistory, which does not include ['tf_helper'], ['binning']['ics_eng'], ['binning']['ics_rel_eng']
-
     Returns
     --------
     dict
@@ -207,17 +203,14 @@ def load_data(data_type, use_v1_data=False, verbose=1):
     """
 
     global data_path
-    global data_path_v1
-    
-    load_data_path = data_path_v1 if use_v1_data else data_path
     
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
     global glob_dep_ctf_data, glob_tf_helper_data
     global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
 
-    if load_data_path == '' or not os.path.isdir(load_data_path):
+    if data_path == '' or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py to avoid this step.')
-        load_data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
+        data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
 
     ##################################################
     ### binning
@@ -225,7 +218,7 @@ def load_data(data_type, use_v1_data=False, verbose=1):
     if data_type == 'binning':
 
         if glob_binning_data is None:
-            glob_binning_data = pickle.load(open(load_data_path+'/default_binning.p', 'rb'))
+            glob_binning_data = pickle.load(open(data_path+'/binning.p', 'rb'))
 
         return glob_binning_data # keys: 'phot', 'elec', 'ics_eng', 'ics_rel_eng'
         # if use_v1_data==True, return keys: 'phot', 'elec'
@@ -239,25 +232,25 @@ def load_data(data_type, use_v1_data=False, verbose=1):
 
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
-                print('Using data at %s' % load_data_path)
+                print('Using data at %s' % data_path)
                 print('    for propagating photons... ', end =' ', flush=True)
-            highengphot_tf_interp = pickle.load( open(load_data_path+'/highengphot_tf_interp.raw', 'rb') )
+            highengphot_tf_interp = pickle.load( open(data_path+'/highengphot_tf_interp.raw', 'rb') )
             if verbose >= 1:
                 print(' Done!')
                 print('    for low-energy photons... ', end=' ', flush=True)
-            lowengphot_tf_interp  = pickle.load( open(load_data_path+'/lowengphot_tf_interp.raw', 'rb') )
+            lowengphot_tf_interp  = pickle.load( open(data_path+'/lowengphot_tf_interp.raw', 'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('    for low-energy electrons... ', end=' ', flush=True)
-            lowengelec_tf_interp  = pickle.load( open(load_data_path+"/lowengelec_tf_interp.raw", "rb") )
+            lowengelec_tf_interp  = pickle.load( open(data_path+'/lowengelec_tf_interp.raw', 'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('    for high-energy deposition... ', end=' ', flush=True)
-            highengdep_interp     = pickle.load( open(load_data_path+"/highengdep_interp.raw", "rb") )
+            highengdep_interp     = pickle.load( open(data_path+'/highengdep_interp.raw', 'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('    for total upscattered CMB energy rate... ', end=' ', flush=True)
-            CMB_engloss_interp    = pickle.load( open(load_data_path+"/CMB_engloss_interp.raw", "rb") )
+            CMB_engloss_interp    = pickle.load( open(data_path+'/CMB_engloss_interp.raw', 'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('****** Loading complete! ******', flush=True)
@@ -278,9 +271,9 @@ def load_data(data_type, use_v1_data=False, verbose=1):
 
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
-                print('Using data at %s' % load_data_path)
+                print('Using data at %s' % data_path)
                 print('    for high-energy deposition... ', end=' ', flush=True)
-            highengdep_interp     = pickle.load( open(load_data_path+"/highengdep_interp.raw", "rb") )
+            highengdep_interp     = pickle.load( open(data_path+'/highengdep_interp.raw', 'rb') )
             if verbose >= 1:
                 print('Done!', flush=True)
 
@@ -290,21 +283,19 @@ def load_data(data_type, use_v1_data=False, verbose=1):
 
         return glob_dep_tf_data
 
-    ##################################################
-    ### TMP
-    elif data_type == 'dep_ctf':
+    elif data_type == 'dep_ctf': # for debug
 
         if glob_dep_ctf_data is None:
             
             if verbose >= 1:
                 print('****** Loading compounded transfer function data... ******')
-                print('Using data at %s' % load_data_path)
+                print('Using data at %s' % data_path)
                 print('    for propagating photons (compounded)...  ', end='', flush=True)
-            hep_p12_ctf_interp = pickle.load( open(load_data_path+'/hep_p12_tf_interp.raw', 'rb'))
+            hep_p12_ctf_interp = pickle.load( open(data_path+'/hep_p12_tf_interp.raw', 'rb'))
             if verbose >= 1:
                 print('Done!')
                 print('    for propagating photons (propagator)...  ', end='', flush=True)
-            hep_s11_ctf_interp = pickle.load( open(load_data_path+'/hep_s11_tf_interp.raw', 'rb'))
+            hep_s11_ctf_interp = pickle.load( open(data_path+'/hep_s11_tf_interp.raw', 'rb'))
             if verbose >= 1:
                 print('Done!')
                 print('****** Loading complete! ******', flush=True)
@@ -315,16 +306,15 @@ def load_data(data_type, use_v1_data=False, verbose=1):
             }
 
         return glob_dep_ctf_data
-    ##################################################
     
     elif data_type == 'tf_helper':
         
         if glob_tf_helper_data is None:
             
-            tf_E_interp   = pickle.load( open(load_data_path+'/tf_E_interp.raw', 'rb') )
-            hep_lb_interp = pickle.load( open(load_data_path+'/hep_lb_interp.raw', 'rb') )
-            lci_interp    = pickle.load( open(load_data_path+'/lci_interp.raw', 'rb') )
-            hci_interp    = pickle.load( open(load_data_path+'/hci_interp.raw', 'rb') )
+            tf_E_interp   = pickle.load( open(data_path+'/tf_E_interp.raw', 'rb') )
+            hep_lb_interp = pickle.load( open(data_path+'/hep_lb_interp.raw', 'rb') )
+            lci_interp    = pickle.load( open(data_path+'/lci_interp.raw', 'rb') )
+            hci_interp    = pickle.load( open(data_path+'/hci_interp.raw', 'rb') )
             
             glob_tf_helper_data = {
                 'tf_E'   : tf_E_interp,
@@ -342,21 +332,15 @@ def load_data(data_type, use_v1_data=False, verbose=1):
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
                 print('    for inverse Compton (Thomson)... ', end=' ', flush=True)
-            ics_thomson_ref_tf = pickle.load(
-                open(load_data_path+"/ics_thomson_ref_tf.raw", "rb")
-            )
+            ics_thomson_ref_tf = pickle.load( open(data_path+'/ics_thomson_ref_tf.raw', 'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
-            ics_rel_ref_tf     = pickle.load(
-                open(load_data_path+"/ics_rel_ref_tf.raw",     "rb")
-            )
+            ics_rel_ref_tf     = pickle.load( open(data_path+'/ics_rel_ref_tf.raw',     'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
-            engloss_ref_tf     = pickle.load(
-                open(load_data_path+"/engloss_ref_tf.raw",     "rb")
-            )
+            engloss_ref_tf     = pickle.load( open(data_path+'/engloss_ref_tf.raw',     'rb') )
             if verbose >= 1:
                 print('Done!')
                 print('****** Loading complete! ******', flush=True)
@@ -377,10 +361,10 @@ def load_data(data_type, use_v1_data=False, verbose=1):
         if glob_struct_data is None:
 
             boost_data = np.loadtxt(
-                open(load_data_path+'/boost_data.txt', 'rb')
+                open(data_path+'/boost_data.txt', 'rb')
             )
             # einasto_subs = np.loadtxt(
-            #     open(load_data_path+'/boost_Einasto_subs.txt', 'rb')
+            #     open(data_path+'/boost_Einasto_subs.txt', 'rb')
             # )
 
             glob_struct_data = {
@@ -396,7 +380,7 @@ def load_data(data_type, use_v1_data=False, verbose=1):
 
         if glob_hist_data is None:
 
-            soln_baseline = pickle.load(open(load_data_path+'/std_soln_He.p', 'rb'))
+            soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
             glob_hist_data = {
                 'rs'    : soln_baseline[0,:],
@@ -419,12 +403,12 @@ def load_data(data_type, use_v1_data=False, verbose=1):
             log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
             log10eng[-1] = 12.601505994846297
 
-            f_phot_decay        = pickle.load(open(load_data_path+'/f_phot_decay_std.p', 'rb'))
-            f_phot_swave        = pickle.load(open(load_data_path+'/f_phot_swave_std.p', 'rb'))
-            f_phot_swave_struct = pickle.load(open(load_data_path+'/f_phot_swave_std_einasto_subs.p', 'rb'))
-            f_elec_decay        = pickle.load(open(load_data_path+'/f_elec_decay_std.p', 'rb'))
-            f_elec_swave        = pickle.load(open(load_data_path+'/f_elec_swave_std.p', 'rb'))
-            f_elec_swave_struct = pickle.load(open(load_data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
+            f_phot_decay        = pickle.load(open(data_path+'/f_phot_decay_std.p', 'rb'))
+            f_phot_swave        = pickle.load(open(data_path+'/f_phot_swave_std.p', 'rb'))
+            f_phot_swave_struct = pickle.load(open(data_path+'/f_phot_swave_std_einasto_subs.p', 'rb'))
+            f_elec_decay        = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
+            f_elec_swave        = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
+            f_elec_swave_struct = pickle.load(open(data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
 
             f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
             f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_phot_swave))
@@ -448,10 +432,10 @@ def load_data(data_type, use_v1_data=False, verbose=1):
         if glob_pppc_data is None:
 
             coords_file_name = (
-                load_data_path+'/dlNdlxIEW_coords_table.txt'
+                data_path+'/dlNdlxIEW_coords_table.txt'
             )
             values_file_name = (
-                load_data_path+'/dlNdlxIEW_values_table.txt'
+                data_path+'/dlNdlxIEW_values_table.txt'
             )
 
             with open(coords_file_name) as data_file:    
