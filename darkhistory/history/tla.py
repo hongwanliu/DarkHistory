@@ -55,7 +55,7 @@ def get_history(
     heat_switch=False, DeltaT=0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
-    recfast_TLA=True, fudge=1.125,
+    recfast_TLA=True, fudge=1.125, gauss_fudge=True,
     # xdot_MLA=None,
     MLA_funcs=None,
     mxstep=1000, rtol=1e-4
@@ -151,6 +151,9 @@ def get_history(
 
     if baseline_f and mDM is None:
         raise ValueError('Specify mDM to use baseline_f.')
+
+    if (reion_rs is not None) and (high_rs <= reion_rs):
+        raise ValueError('reionization should happen well after the Saha assumption is dropped')
 
     if baseline_f and (
         f_H_ion is not None or f_H_exc is not None
@@ -353,7 +356,7 @@ def get_history(
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
             if recfast_TLA:
-                peebC = phys.peebles_C(xHII(yHII), rs, fudge)
+                peebC = phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)
                 beta_ion = phys.beta_ion(T_m, 'HI', fudge)
                 alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
@@ -379,7 +382,7 @@ def get_history(
                     )
                 )
             else:
-                peebC = phys.peebles_C(xHII(yHII), rs, fudge)
+                peebC = phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)
                 beta_ion = phys.beta_ion(T_m, 'HI', fudge)
                 x1s = 1-xe
 
@@ -529,7 +532,6 @@ def get_history(
                 + xHeI * photoheat_rate_HeI(rs)
                 + xHeII(yHeII) * photoheat_rate_HeII(rs)
             )
-           # print(rs, xHI, xHeI, xHeII(yHeII), photoheat_total_rate)
 
             compton_rate = phys.dtdz(rs)*(
                 compton_cooling_rate(
@@ -570,7 +572,6 @@ def get_history(
                 # At this point, leave at 1 - 1e-6
                 return 0
 
-
             xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             ne = xe * nH
             xHI = 1 - xHII(yHII)
@@ -581,7 +582,7 @@ def get_history(
                 + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * (
                     inj_rate / (phys.rydberg * nH)
                 )
-                + (1 - phys.peebles_C(xHII(yHII), rs)) * (
+                + (1 - phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)) * (
                     _f_H_exc(rs, xHI, xHeI, xHeII(yHeII))
                     * inj_rate / (phys.lya_eng * nH)
                 )
@@ -700,7 +701,7 @@ def get_history(
                 _f_H_ion(rs, xHI, xHeI, xHeII) * (
                     inj_rate / (phys.rydberg * nH)
                 )
-                + (1 - phys.peebles_C(xHII, rs)) * (
+                + (1 - phys.peebles_C(xHII, rs, fudge, gauss_fudge)) * (
                     _f_H_exc(rs, xHI, xHeI, xHeII)
                     * inj_rate / (phys.lya_eng * nH)
                 )
@@ -865,13 +866,10 @@ def get_history(
             tla_before_reion, _init_cond, low_rs_vec,
             mxstep=mxstep, tfirst=True, rtol=rtol
         )
-        # print(init_cond)
-        # print(rs_vec)
         # soln = solve_ivp(
         #     tla_before_reion, [rs_vec[0], rs_vec[-1]],
         #     init_cond, method='Radau'
         # )
-        # print(soln)
 
     elif xe_reion_func is not None:
         # Fixed xe reionization model implemented.
@@ -906,7 +904,7 @@ def get_history(
 
             xe_no_reion = xHII_no_reion + xHeII_no_reion + xHeIII_no_reion
 
-            #xe_reion    = np.array([xe_reion_func(rs) for rs in low_rs_vec])
+            # xe_reion   = np.array([xe_reion_func(rs) for rs in low_rs_vec])
             xe_reion = xe_reion_func(low_rs_vec)
             # Find where to solve the TLA. Must lie below reion_rs and
             # have xe_reion > xe_no_reion.
@@ -955,7 +953,6 @@ def get_history(
                 soln_low_rs[~where_new_soln, 2]
             )
             soln_low_rs[:, 3] = chi/2 + chi/2*np.tanh(soln_low_rs[:, 3])
-
 
             # Solve for all subsequent redshifts.
             if rs_above_std_xe_vec.size > 0:

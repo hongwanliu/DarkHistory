@@ -601,7 +601,7 @@ def beta_ion(T_rad, species, fudge=1.125):
 
         return TypeError('invalid species.')
 
-def peebles_C(xHII, rs, fudge=1.125):
+def peebles_C(xHII, rs, fudge=1.125, gauss_fudge=True):
     """Hydrogen Peebles C coefficient.
 
     This is the ratio of the total rate for transitions from n = 2 to the
@@ -618,31 +618,34 @@ def peebles_C(xHII, rs, fudge=1.125):
     -------
     float
         The Peebles C factor.
+
+    Notes
+    -----
+    See https://www.astro.ubc.ca/people/scott/recfast.for for
+    definition of the Recfast Gaussian fudge factors we use.
     """
-    # Rate 2s to 1s transition.
+
     rate_2s1s = width_2s1s_H
 
-    # Rate of 2p to 1s transition, times (1 - xHII).
     rate_2p1s_times_x1s = (
         8 * np.pi * hubble(rs) /
         (3*(nH * rs**3 * (c/lya_freq)**3))
     )
 
     # Gaussian corrections.
-    gauss_corr_1 = -0.14*np.exp(-((np.log(rs) - 7.28)/0.18)**2)
-    gauss_corr_2 = 0.079*np.exp(-((np.log(rs) - 6.73)/0.33)**2)
+    if gauss_fudge:
+        gauss_corr_1 = -0.14*np.exp(-((np.log(rs) - 7.28)/0.18)**2)
+        gauss_corr_2 = 0.079*np.exp(-((np.log(rs) - 6.73)/0.33)**2)
+        rate_2p1s_times_x1s /= (1 + gauss_corr_1 + gauss_corr_2)
 
-    rate_2p1s_times_x1s /= (1 + gauss_corr_1 + gauss_corr_2)
+    rate_exc_times_x1s = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
+    rate_ion_times_x1s = (1-xHII) * beta_ion(TCMB(rs), 'HI', fudge)
 
-    rate_exc = 3 * rate_2p1s_times_x1s/4 + (1-xHII) * rate_2s1s/4
-
-    rate_ion = (1-xHII) * beta_ion(TCMB(rs), 'HI', fudge)
-
-    return rate_exc/(rate_exc + rate_ion)
+    return rate_exc_times_x1s/(rate_exc_times_x1s + rate_ion_times_x1s)
 
 
 def C_He(xHII, xHeII, rs, species):
-    """Helium C coefficients. 
+    """Helium C coefficients.
 
     These coefficients play a similar role to the Peebles C factor.
 
@@ -1932,30 +1935,10 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
         rs[rs<5.2] = 5.2
     rs[rs>3000] = 3000
 
-
     return np.exp(
-            f_data_baseline((np.log10(Einj), np.log(rs)))[:,ind]
+            f_data_baseline((np.log10(Einj), np.log(rs)))[:, ind]
     )
 
-# Unused for now.
-
-
-
-# def tau_sobolev(rs):
-#     """Sobolev optical depth.
-
-#     Parameters
-#     ----------
-#     rs : float
-#         Redshift (1+z).
-#     Returns
-#     -------
-#     float
-#     """
-#     xsec = 2 * np.pi * 0.416 * np.pi * alpha * hbar * c ** 2 / me
-#     lya_omega = lya_eng / hbar
-
-#     return nH * rs ** 3 * xsec * c / (hubble(rs) * lya_omega)
 
 def dNdE_2s1s(eng, Spitz_Green=False):
     """Hydrogen 2s to 1s two-photon decay profile
@@ -1973,21 +1956,25 @@ def dNdE_2s1s(eng, Spitz_Green=False):
     -------
     phi(y) : ndarray
         dN/dE profile of two-photon transition.
+
+    Notes
+    -----
+    See Nussbaumer H., Schmutz W., 1984, A&A, 138, 495
+    or Spitzer L. J., Greenstein J. L., 1951, ApJ, 114, 407
     """
     if not Spitz_Green:
-        # Nussbaumer H., Schmutz W., 1984, A&A, 138, 495 #
         C, alpha, beta, gamma = 24.5561, 0.88, 1.53, 0.8
         y = eng/lya_eng
 
         # Extrapolation
         if isinstance(y, np.ndarray):
-            y[y>1] = 1
-            y[y<0] = 0
+            y[y > 1] = 1
+            y[y < 0] = 0
         else:
-            if y>1:
-                y=1
-            elif y<0:
-                y=0
+            if y > 1:
+                y = 1
+            elif y < 0:
+                y = 0
 
         # Fitting function
         omega = y*(1-y)
@@ -1997,7 +1984,6 @@ def dNdE_2s1s(eng, Spitz_Green=False):
         )
 
     else:
-        # Spitzer L. J., Greenstein J. L., 1951, ApJ, 114, 407 #
         #coeff = 9 * alpha**6 * rydberg /(
         # 2**10 * 2 * np.pi * hbar
         #) * width_2s1s_H/8.26548398114 / lya_freq
@@ -2010,16 +1996,10 @@ def dNdE_2s1s(eng, Spitz_Green=False):
                     4.889, 4.824, 4.711, 4.546, 4.306, 3.961, 3.481, 2.783, 1.725, 0])
 
         #     # evaluation outside of interpolation window yields 0.
-        f = interp1d(y, psi, kind='cubic', bounds_error=False, fill_value=(0,0))
+        f = interp1d(y, psi, kind='cubic', bounds_error=False, fill_value=(0, 0))
         #def dLam2s_dnu(nu):
         #nu = eng/(hbar*2*np.pi)
         return coeff * f(eng/lya_eng)
-
-     #return dLam2s_dnu
-
-
-# # CMB
-
 
 
 # def A_2s(y):
