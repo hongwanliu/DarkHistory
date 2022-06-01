@@ -52,19 +52,20 @@ class HEP_NNTF (NNTFBase):
         rs_in = np.log(rs)
         xH_in = xH * 10
         xHe_in = xHe * 100
-        pred_in_shape = (len(self._pred_in_2D),)
+        col_shape = tf.TensorShape( [self._pred_in_2D.shape[0], 1] )
+        
         if rs > RS_NODES[1]:
-            self.pred_in = np.c_[ np.full( pred_in_shape, rs_in, dtype=np.float32 ),
-                                  self._pred_in_2D ]
+            rs_col = tf.cast(tf.fill(col_shape, rs_in), tf.float32)
+            self.pred_in = tf.concat([rs_col, self._pred_in_2D], axis=1)
         elif rs > RS_NODES[0]:
-            self.pred_in = np.c_[ np.full( pred_in_shape, xH_in, dtype=np.float32 ),
-                                  np.full( pred_in_shape, rs_in, dtype=np.float32 ),
-                                  self._pred_in_2D ]
+            xH_col = tf.cast(tf.fill(col_shape, xH_in), tf.float32)
+            rs_col = tf.cast(tf.fill(col_shape, rs_in), tf.float32)
+            self.pred_in = tf.concat([xH_col, rs_col, self._pred_in_2D], axis=1)
         else:
-            self.pred_in = np.c_[ np.full( pred_in_shape, xH_in , dtype=np.float32 ),
-                                  np.full( pred_in_shape, xHe_in, dtype=np.float32 ),
-                                  np.full( pred_in_shape, rs_in , dtype=np.float32 ),
-                                  self._pred_in_2D ]
+            xH_col  = tf.cast(tf.fill(col_shape, xH_in),  tf.float32)
+            xHe_col = tf.cast(tf.fill(col_shape, xHe_in), tf.float32)
+            rs_col  = tf.cast(tf.fill(col_shape, rs_in),  tf.float32)
+            self.pred_in = tf.concat([xH_col, xHe_col, rs_col, self._pred_in_2D], axis=1)
         
     def _postprocess_TF(self, rs=4, xH=0, xHe=0, E_arr=None):
         ## restore negative values

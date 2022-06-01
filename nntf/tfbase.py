@@ -79,7 +79,13 @@ class NNTFBase (TFBase):
             for oi in range(self.TF_shape[1]):
                 if self.mask[ii][oi]:
                     self._pred_in_2D.append( [self.io_abscs[0][ii], self.io_abscs[1][oi]] )
-        self._pred_in_2D = np.array(self._pred_in_2D, dtype=np.float32)
+        self._pred_in_2D = tf.convert_to_tensor(self._pred_in_2D, dtype=tf.float32)
+        
+        if len(self._pred_in_2D) > 1e6:
+            self.predict_func = lambda x: self.model.predict(x, batch_size=1e6)
+        else:
+            self.predict_func = self.model.predict_on_batch
+            #self.predict_func = self.model.__call__
         
     def _init_helpers(self):
         pass
@@ -93,18 +99,13 @@ class NNTFBase (TFBase):
     def _init_mask(self):
         self.mask = np.zeros(self.TF_shape)
         
-        
     def predict_TF(self, **params):
         """ Core prediction function. Expect kwargs from rs, xH, xHe, E_arr depending on usage. """
         
         self.rs = params['rs']
         self._set_pred_in(**params)
-        #self.pred_in = tf.Tensor(self.pred_in)
-        if len(self.pred_in) > 1e6:
-            pred_out = self.model.predict(self.pred_in, batch_size=1e6)
-        else:
-            pred_out = self.model.predict_on_batch(self.pred_in)
-        pred_out = np.array(pred_out).flatten()
+        
+        pred_out = np.array(self.predict_func(self.pred_in)).flatten()
         
         raw_TF = np.full(self.TF_shape, LOG_EPSILON)
         pred_out_i = 0
