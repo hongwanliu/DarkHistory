@@ -422,8 +422,6 @@ def evolve(
                 ics_engloss_data
             ) = mainTMP.get_elec_cooling_data(eleceng, photeng)
 
-        # Spectrum of photons emitted from 2s -> 1s de-excitation
-        spec_2s1s = generate_spec_2s1s(photeng)
 
     #########################################################################
     #########################################################################
@@ -475,9 +473,6 @@ def evolve(
             dist_mask[ind] = 0
 
         dist_mask *= dist_eng < phys.rydberg  # keep E<13.6eV photons
-
-        # 2s1s spectrum
-        dist_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
 
         if recfast_TLA is None:
             recfast_TLA = False
@@ -589,7 +584,7 @@ def evolve(
                         coll_ion_sec_elec_specs=coll_ion_sec_elec_specs,
                         coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                         ics_engloss_data=ics_engloss_data,
-                        method=method, H_states=H_states, spec_2s1s=spec_2s1s
+                        method=method, H_states=H_states
                         # loweng=eleceng[0]
                     )
 
@@ -719,12 +714,13 @@ def evolve(
                 MLA_step, atomic_dist_spec = atomic.process_MLA(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R, Thetas,
                     Delta_f, cross_check,
-                    True, True, dist_2s1s,
+                    include_2s1s=True, include_BF=False,
                     #fexc_switch, deposited_exc_arr,
                     #tot_spec_elec, distortion,
                     #H_states, rate_func_eng,
-                    delta_b, stimulated_emission=True
+                    delta_b=delta_b, stimulated_emission=True
                 )
+
                 MLA_data[0].append(rs)
                 for i in np.arange(3):
                     MLA_data[i+1].append(MLA_step[i])
@@ -1123,21 +1119,6 @@ def evolve(
         data['MLA'] = np.array(MLA_data)
 
     return data
-
-
-# This speeds up the code if main.evolve is used more than once
-spec_2s1s = None
-
-
-def generate_spec_2s1s(photeng):
-    global spec_2s1s
-    if spec_2s1s is not None:
-        return spec_2s1s
-    else:
-        # A discretized form of the spectrum of 2-photons emitted in the
-        # 2s->1s de-excitation process.
-        spec_2s1s = discretize(photeng, phys.dNdE_2s1s)/2.
-        return spec_2s1s
 
 
 def get_elec_cooling_data(eleceng, photeng, H_states):

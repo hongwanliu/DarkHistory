@@ -21,11 +21,11 @@ from scipy.linalg import solve_triangular
 
 
 def get_elec_cooling_tf(
-    eleceng, photeng, rs, xHII, xHeII=0, 
+    eleceng, photeng, rs, xHII, xHeII=0,
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
-    ics_engloss_data=None, #loweng=3000, 
-    method='new', H_states=None, spec_2s1s=None,
+    ics_engloss_data=None, #loweng=3000,
+    method='new', H_states=None,
     check_conservation_eng = False, simple_ICS=False, verbose=False
 ):
 
@@ -152,9 +152,6 @@ def get_elec_cooling_tf(
     # Deposited energy in various channels
     deposited_exc_eng_arr = {exc : np.zeros_like(eleceng) for exc in exc_types}
     deposited_heat_eng_arr = np.zeros_like(eleceng)
-
-    if spec_2s1s == None:
-        spec_2s1s = spectools.discretize(photeng,phys.dNdE_2s1s)/2.
 
     if coll_ion_sec_elec_specs is None:
 

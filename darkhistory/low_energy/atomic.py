@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.integrate import quad
 
 from darkhistory import physics as phys
 from darkhistory.spec.spectrum import Spectrum
@@ -17,6 +18,140 @@ Nkappa = 10 * NBINS + 1
 hplanck = phys.hbar*2*np.pi
 mu_e = phys.me/(1+phys.me/phys.mp)
 lgamma = scipy.special.loggamma
+
+
+#####################
+# 2s->1s transition #
+#####################
+
+# Define coefficient of integral
+A0 = 9 * phys.alpha**6 * (phys.rydberg/hplanck) / 2**10  # ~4.3663 s^-1
+
+# Newton-Cotes 11-point integration weights
+NC11_weights = 5. / 299376. * np.array([
+    16067., 106300., -48525., 272400., -260550.,
+    427368.,
+    -260550., 272400., -48525., 106300., 16067.
+])
+
+
+def f_BB(E, Tr):
+    """
+    Blackbody phase space density
+    """
+    return np.exp(-E/Tr) / (1 - np.exp(-E/Tr))
+
+
+def phi(y):
+    """
+    Proportional to the probability density of emitting one photon at
+    dimensionless frequency y. Normalizes to 2 since two photons are emitted.
+    When integrated and multiplied by A0/2, evaluates to the 2s->1s decay rate.
+
+    Notes
+    -----
+    See Eq. 4 of astro-ph/0508144
+    """
+
+    if isinstance(y, float):
+        y = np.array([y])
+
+    w = y*(1-y)  # y = eng / phys.lya_eng
+    C, alp, bet, gam = 46.26, 0.88, 1.53, 0.8
+    res = C * (w * (1 - 4**gam * w**gam) + alp * w**(bet + gam) * 4**gam)
+
+    res[(y <= 0) | (y >= 1)] = 0  # deal with energies above E_lya
+
+    return res
+
+
+def A_2s1s(f_gamma, direc='dn', use_quad=False, n_bins=100):
+    """
+    Function that takes photon spectrum and energies as input
+    and returns 2s to 1s transition rate
+
+    Parameters
+    ----------
+    f_gamma : function
+        f_gamma(E) = photon phase space density evaluated at energy E
+    direc : string
+        if 'dn', return A_{2s->1s}, else return A_{1s->2s}
+    use_quad : bool
+        if True, use scipy.integrate.quad,
+        else use Newton-Cotes 11-point integration, which is faster
+    n_bins : int
+        subdivide the integration interval this many times,
+        perform NC11 integration on each subdivision
+
+    Notes
+    -----
+    See Eq. 2 of astro-ph/0508144
+    set quad=False if detailed balance is important (within machine precision)
+    """
+
+    fac = 0
+    if direc == 'dn':
+        fac = 1
+
+    if not use_quad:
+
+        # can't start the integration right at E=0, so start at E=eps
+        eps = 1e-12
+
+        engs = np.linspace(eps, phys.lya_eng-eps, n_bins*(11-1) + 1)
+        dy = (engs[1]-engs[0]) / phys.lya_eng
+
+        integrand = (
+            phi(engs / phys.lya_eng) *
+            (fac + f_gamma(engs)) *
+            (fac + f_gamma(phys.lya_eng - engs))
+        )
+
+        integral = 0
+        for i in range(n_bins):
+            integral += dy * np.dot(
+                NC11_weights, integrand[i*(11-1): (i+1)*11 - i]
+            )
+
+        return A0/2 * integral
+
+    else:
+
+        def integrand(eng):
+            return (
+                phi(eng / phys.lya_eng) *
+                (fac + f_gamma(eng)) *
+                (fac + f_gamma(phys.lya_eng - eng))
+            )
+
+        return (A0 / 2) * quad(integrand, 0, phys.lya_eng)[0] / phys.lya_eng
+
+
+def N_2s1s(engs, f_gamma, x_2s, x_1s):
+    """
+    distortion per baryon per second from two-photon emission,
+    including stimulated emission effects
+    """
+
+    if f_gamma is None:
+        def f_gamma(E):
+            return 0
+
+    # Interpolate integrand, since we need to know behavior between 0 and Lya
+    phase_facs = (
+        x_2s * (1 + f_gamma(engs)) * (1 + f_gamma(phys.lya_eng - engs)) -
+        x_1s * f_gamma(engs) * f_gamma(phys.lya_eng - engs)
+    )
+
+    bin_bounds = spectools.get_bin_bound(engs)
+    dy = (bin_bounds[1:]-bin_bounds[:-1]) / phys.lya_eng
+    norm = phys.nH/phys.nB
+    return norm * A0 * phase_facs * phi(engs / phys.lya_eng)*dy
+
+
+###############################
+# The other bound-bound rates #
+###############################
 
 
 def Hey_A(n, l):
@@ -102,11 +237,21 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
             = (2l+3)/(2l+1) exp(-E_{nn'}/Tr) * BB['dn'][n'][n][l+1]  if n<n'
         BB['dn'][n][n'][l] = A([n,l]-> [n',l-1]) * (1 + f(E_{nn'}))  if n>n'
             = (2l-1)/(2l+1) exp(-E_{nn'}/Tr) * BB['up'][n'][n][l-1]  if n<n'
+
+    Notes
+    -----
+    The sobolev optical depth suppression factor has not been included yet
     """
-    BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in ['up', 'dn']}
+    keys = ['up', 'dn']
+
+    BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in keys}
+    BB_2s1s = {key : 0 for key in keys}
     if Delta_f is None:
         def Delta_f(E):
             return 0
+
+    def f_gamma(E):
+        return f_BB(E, Tr) + Delta_f(E)
 
     # !!! parallelize these loops
     for n in np.arange(2, nmax+1):
@@ -114,7 +259,7 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
         for n_p in np.arange(1, n):
             n_p2 = n_p**2
             Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            fEnnp = np.exp(-Ennp/Tr)/(1-np.exp(-Ennp/Tr)) + Delta_f(Ennp)
+            fEnnp = f_gamma(Ennp)
 
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
@@ -127,7 +272,7 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
             BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
 
             BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
-            BB['dn'][n][n_p][0] = 0.0                          # No l' < 0
+            BB['dn'][n][n_p][0] = 0.0                               # No l' < 0
 
             ### Absorption ###
             # When adding distortion, detailed balance takes thought.
@@ -142,16 +287,19 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
                 (2*l+1)/(2*l+3) *
                 BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
 
-    # Include forbidden 2s->1s transition
-    BB['dn'][2][1][0] = phys.width_2s1s_H
-    # !!! What about the inverse process?
+    for key in ['up', 'dn']:
+        BB_2s1s[key] = A_2s1s(f_gamma, key)
 
-    return BB
+    return BB, BB_2s1s
 
 
 def tau_np_1s(n, rs, xHI=None):
     """
-    Sobolev optical depth of np-1s line photons, see astro-ph/9912182 Eq. 40
+    Sobolev optical depth of np-1s line photons
+
+    Notes
+    -----
+    see astro-ph/9912182 Eq. 40
     """
     l = 1
     nu = (1 - 1/n**2) * phys.rydberg/hplanck
@@ -173,14 +321,22 @@ def tau_np_1s(n, rs, xHI=None):
 
 def p_np_1s(n, rs, xHI=None):
     """
-    Escape probability of np-1s line photon, see astro-ph/9912182 Eq. 41,
+    Escape probability of np-1s line photon
+
+    Notes
+    -----
+    See astro-ph/9912182 Eq. 41
+
+    Notice that p ~ 1/tau so
+
+    R*p = A*(1+f)/tau ~ 1/(pre*g)
+        = 8 pi H / (3 n_1s lam^3)
+
+    where pre and g are defined above in tau_np_1s
     """
     tau = tau_np_1s(n, rs, xHI=xHI)
     return (1-np.exp(-tau))/tau
 
-# Notice that p ~ 1/tau so
-# R*p = A*(1+f)/tau ~ 1/(pre*g)
-#     = 8 pi H / (3 n_1s lam^3)
 
 # BOUND_FREE FUNCTIONS
 
@@ -392,7 +548,7 @@ def get_transition_energies(nmax):
 def process_MLA(
         rs, dt, xHI, Tm, nmax, eng, R, Thetas,
         Delta_f=None, cross_check=False,
-        include_2s1s=True, include_BF=True, spec_2s1s=None,
+        include_2s1s=True, include_BF=True,
         # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         # distortion=None, H_states=None, rate_func_eng=None,
         delta_b={}, stimulated_emission=True
@@ -413,8 +569,6 @@ def process_MLA(
         Highest excited state to be included (principle quantum number)
     eng : array
         abscissa of output distortion spectrum
-    spec_2s1s : Spectrum
-        2s -> 1s emission spectrum of photons, normalized so spec_2s1s.totN()=2
     Delta_f : function
         photon phase space density as a function of energy, minus f_BB
     cross_check : bool
@@ -433,12 +587,6 @@ def process_MLA(
     transition_specs : dictionary of photon spectra, labeled by
         initial excited state (in N, not dNdE)
     """
-
-    if include_2s1s and (spec_2s1s is None):
-        raise TypeError('If including 2s1s, define spec_2s1s')
-
-    if include_2s1s and np.any(spec_2s1s.eng != eng):
-        raise TypeError('eng must be abscissa of spec_2s1s')
 
     if cross_check:
         xHI = phys.xHI_std(rs)
@@ -481,7 +629,7 @@ def process_MLA(
     # Get the transition rates
     # !!! Think about parallelizing
     #R = populate_radial(nmax)  # Need not be recomputed every time
-    BB = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
+    BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
     alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas,
                            stimulated_emission=stimulated_emission)
     beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
@@ -505,34 +653,35 @@ def process_MLA(
             np.sum(BB['dn'][n, :, l]) + np.sum(BB['up'][n, :, l]) + beta[n][l]
         )
 
+        ###
         # Construct the matrix
+        ###
+        if nl == 0:  # special case: 1s -> 2s
+            tot_rate += BB_2s1s['up']
+            K[0][1] = BB_2s1s['up'] / tot_rate
+
+        if nl == 1:  # special case: 2s -> 1s
+            tot_rate += BB_2s1s['dn']
+            K[1][0] = BB_2s1s['dn'] / tot_rate
+
         if l != 0:
             K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate
 
         if l != nmax-1:
             K[nl, states_l == l+1] = BB['dn'][l+2:, n, l+1]/tot_rate
 
-        # Special 2s->1s transition
-        if nl == 0:
-            K[0][1] = BB['dn'][2][1][0] / tot_rate
-
-        if nl == 1:
-            # Detalied Balance
-            K[1][0] = BB['dn'][2][1][0]*np.exp((E(2)-E(1))/Tr) / tot_rate
-
-
-        ## Construct the source term ##
+        ###
+        # Construct the source terms
+        ###
 
         # excitations from direct recombinations
-        b_rec[nl] += alpha[n][l]  # * xe**2 * nH
+        b_rec[nl] += alpha[n][l]
 
-        # excitations from 1s->nl transitions
-        if l == 1:
-            b_exc[nl] += BB['up'][1, n, 0]  # *xHI
+        if l == 1:  # excitations from 1s->np transitions
+            b_exc[nl] += BB['up'][1, n, 0]
 
-        elif nl == 1:
-            # 1s to 2s transition from detailed balance
-            b_exc[nl] += BB['dn'][2][1][0]*np.exp(-phys.lya_eng/Tr)  # *xHI
+        elif nl == 1:  # excitations from 1s->2s
+            b_exc[nl] += BB_2s1s['up']
 
         # Add DM contribution to source term
         # i.e. f_exc -> distortion and ionization
@@ -568,14 +717,13 @@ def process_MLA(
     E_current = 0
     ind_current = 0
     H_engs = np.zeros(num_states)
-    eng = spec_2s1s.eng
 
     Nphot_cascade = np.zeros(num_states)
     BF_spec = Spectrum(eng, np.zeros_like(eng), spec_type='dNdE')
     alpha_MLA, beta_MLA, beta_DM = 0, 0, 0
 
-    def f_gamma(Ennp):
-        return np.exp(-Ennp / Tr)/(1.0 - np.exp(-Ennp / Tr)) + Delta_f(Ennp)
+    def f_gamma(E):
+        return f_BB(E, Tr) + Delta_f(E)
 
     # !!! Parallelize this loop
     for nl in np.arange(num_states):
@@ -661,16 +809,17 @@ def process_MLA(
     transition_spec.rebin(eng)
 
     # Add the bound-free photons
-    BF_spec.rebin(eng)
     if include_BF:
         transition_spec.N += BF_spec.N
 
     # Add the 2s-1s component
-    amp_2s1s = nH * BB['dn'][2, 1, 0] * (
-        x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
-    ) / nB * dt
     if include_2s1s:
-        transition_spec.N += amp_2s1s * spec_2s1s.N
+        #spec_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
+        #amp_2s1s = nH * phys.width_2s1s_H * (
+        #    x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
+        #) / nB * dt
+        #transition_spec.N += amp_2s1s * spec_2s1s.N
+        transition_spec.N += N_2s1s(eng, f_gam, x_full[1], x_full[0]) * dt
 
     return [alpha_MLA, beta_MLA, beta_DM], transition_spec
 
