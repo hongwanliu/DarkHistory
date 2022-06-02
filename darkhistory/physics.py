@@ -906,24 +906,25 @@ def post_Saha(rs, species = 'HII'):
 #     _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
 #     _Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
 
-_xHII_std  = None
+
+_xHII_std = None
 _xHeII_std = None
-_Tm_std    = None
+_Tm_std = None
 rs_extrap = 1.555e3
 
-# !!!Use np.asanyarray wherever you test isinstance( . , float)
-def xHII_std(rs, rs_extrap = rs_extrap):
+
+def xHII_std(rs, rs_extrap=rs_extrap):
     """Baseline nHII/nH value.
 
     Parameters
     ----------
     rs : float
-        The redshift (1+z). 
+        The redshift (1+z).
 
     Returns
     -------
     float
-        nHII/nH. 
+        nHII/nH.
     """
 
     global _xHII_std
@@ -932,7 +933,7 @@ def xHII_std(rs, rs_extrap = rs_extrap):
         _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
 
     if isinstance(rs*1.,float):
-        if rs<rs_extrap:
+        if rs < rs_extrap:
             return _xHII_std(rs)
         else:
             # return xe_Saha(rs, 'HI')
@@ -1059,12 +1060,12 @@ def Tm_std(rs, rs_extrap=rs_extrap):
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
     if isinstance(rs*1.,float):
-        if rs<rs_extrap:
+        if rs < rs_extrap:
             return _Tm_std(rs)
         else:
             return TCMB(rs)
     else:
-        extrap = rs>rs_extrap
+        extrap = rs > rs_extrap
         if np.sum(extrap) == 0:
             return _Tm_std(rs)
         elif np.sum(~extrap) == 0:
@@ -1083,7 +1084,7 @@ def Tm_std(rs, rs_extrap=rs_extrap):
     #        return _Tm_std(rs)
     #else:
     #    Tm_list = TCMB(rs)
-    #    Tm_list[rs<3e3] = _Tm_std(rs)
+    #    Tm_list[rs < 3e3] = _Tm_std(rs)
     #    return Tm_list
 
 
@@ -1352,19 +1353,19 @@ def coll_exc_xsec(eng, species=None, method = 'old', state=None):
 
         if method == 'AcharyaKhatri':
             exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng) # in units of cm^2
-            exc_xsec[eng<exc_eng] = 0
+            exc_xsec[eng < exc_eng] = 0
             # CCC cross-sections end around 1 keV
             if species == 'HI':
-                exc_xsec[eng>999] = xsec_asympt(species, state, eng[eng>999])
+                exc_xsec[eng > 999] = xsec_asympt(species, state, eng[eng > 999])
             else:
-                exc_xsec[eng>900] = xsec_asympt(species, state, eng[eng>900])
+                exc_xsec[eng > 900] = xsec_asympt(species, state, eng[eng > 900])
 
             # !!! bad extrapolation
-            exc_xsec[eng<14] = load_data('exc_AcharyaKhatri')[species][state](14)
+            exc_xsec[eng < 14] = load_data('exc_AcharyaKhatri')[species][state](14)
         else:
             exc_xsec = load_data('exc')[species][state](eng) # in units of cm^-2
-            exc_xsec[eng<exc_eng] = 0
-            exc_xsec[eng>3e3] = xsec_asympt(species, state, eng[eng>3e3])
+            exc_xsec[eng < exc_eng] = 0
+            exc_xsec[eng > 3e3] = xsec_asympt(species, state, eng[eng > 3e3])
 
         return exc_xsec
     
@@ -1505,13 +1506,13 @@ def coll_ion_xsec(eng, species=None, method='old'):
         xsec = ionHI(eng)
         
         # Low Values
-        xsec[eng<rydberg] = 0
+        xsec[eng < rydberg] = 0
 
         # High Values
-        neng = eng[eng>999]/rydberg
+        neng = eng[eng > 999]/rydberg
         C_i = np.exp(3.048)
         gamma_i = -1.63 - np.log(neng)
-        xsec[eng>999.0] = 4*np.pi * bohr_rad**2/neng * (
+        xsec[eng > 999.0] = 4*np.pi * bohr_rad**2/neng * (
                 0.28*np.log(4*C_i*neng) + gamma_i/neng
         )
         return xsec
@@ -1926,14 +1927,14 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
     ind = ind_dict[channel]
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
 
-    Einj[Einj<5.001e3] = 5.001e3
-    Einj[Einj>10**12.6015] = 10**12.6015
+    Einj[Einj < 5.001e3] = 5.001e3
+    Einj[Einj > 10**12.6015] = 10**12.6015
 
     if inj_particle != 'phot' or inj_type != 'swave':
-        rs[rs<4.017] = 4.017
+        rs[rs < 4.017] = 4.017
     else:
-        rs[rs<5.2] = 5.2
-    rs[rs>3000] = 3000
+        rs[rs < 5.2] = 5.2
+    rs[rs > 3000] = 3000
 
     return np.exp(
             f_data_baseline((np.log10(Einj), np.log(rs)))[:, ind]
