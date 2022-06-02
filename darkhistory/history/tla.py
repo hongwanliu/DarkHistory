@@ -5,7 +5,6 @@
 import numpy as np
 import darkhistory.physics as phys
 import darkhistory.history.reionization as reion
-import darkhistory.low_energy.atomic as atomic
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
 from scipy.misc import derivative
@@ -51,8 +50,8 @@ def get_history(
     f_H_ion=None, f_H_exc=None, f_heating=None,
     DM_process=None, mDM=None, sigmav=None, lifetime=None,
     struct_boost=None, injection_rate=None,
-    reion_switch=False, reion_rs=None, reion_method=None,
-    heat_switch=False, DeltaT=0, alpha_bk=1.,
+    reion_switch=False, reion_rs=None, reion_method='Puchwein',
+    heat_switch=True, DeltaT=0, alpha_bk=1.,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
     recfast_TLA=True, fudge=1.125, gauss_fudge=True,
@@ -386,28 +385,12 @@ def get_history(
                 beta_ion = phys.beta_ion(T_m, 'HI', fudge)
                 x1s = 1-xe
 
-                # tau = atomic.tau_np_1s(2, rs, xHI)
-                # x2s = atomic.x2s_steady_state(
-                #     rs, phys.TCMB(rs), T_m, xe, xHI, tau, fudge)
-                # x2 = 4*x2s
-
-                # print(rs, beta_ion*x2, np.exp(beta_MLA(rs)))
-                # print(rs, phys.alpha_recomb(T_m, 'HI'), alpha_MLA(rs))
-
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
-                    # xdot_MLA(rs, xe)
-                    # -peebC * (
-                    #    phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
-                    #    -4* beta_ion * xHI* np.exp(-phys.lya_eng/phys.TCMB(rs))
-                    # )
                     - (
                         MLA_funcs[0](rs) * xHII(yHII) * xe * nH
-                        - MLA_funcs[1](rs) * x1s - MLA_funcs[2](rs)
+                        - MLA_funcs[1](rs) * x1s
+                        - MLA_funcs[2](rs)
                     )
-                    # - (
-                    #    phys.alpha_recomb(T_m, 'HI', fudge) * xHII(yHII) * xe * nH
-                    #    - beta_ion*x2
-                    # )
 
                     + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
                     / (phys.rydberg * nH)
@@ -577,15 +560,24 @@ def get_history(
             xHI = 1 - xHII(yHII)
             xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
 
+            if recfast_TLA:
+                # Note that C=1 at late times
+                DM_exc_to_ion_rate = (
+                    (1 - phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge))
+                    * _f_H_exc(rs, xHI, xHeI, xHeII(yHeII))
+                    * inj_rate / (phys.lya_eng * nH)
+                )
+
+            else:
+                DM_exc_to_ion_rate = MLA_funcs[2](rs)
+
             return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
-                # DM injection. Note that C = 1 at late times.
+                # DM injection.
                 + _f_H_ion(rs, xHI, xHeI, xHeII(yHeII)) * (
                     inj_rate / (phys.rydberg * nH)
                 )
-                + (1 - phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)) * (
-                    _f_H_exc(rs, xHI, xHeI, xHeII(yHeII))
-                    * inj_rate / (phys.lya_eng * nH)
-                )
+                + DM_exc_to_ion_rate
+
                 # Reionization rates.
                 + (
                     # Photoionization.
