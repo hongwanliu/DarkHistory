@@ -544,7 +544,10 @@ def load_data(data_type):
             for n in 1 + np.arange(300):
 
                 # Using the same boundaries as arXiv:0911.1359. However, we integrate over kappa^2.
-                kappa2_big_bin_edges = np.logspace(np.log10(1e-25/n**2), np.log10(4.96e8/n**2), num=glob_bnd_free_data['n_kap']+1)
+                kappa2_big_bin_edges = np.logspace(
+                    np.log10(1e-25/n**2), np.log10(4.96e8/n**2),
+                    num=glob_bnd_free_data['n_kap']+1
+                )
 
                 for i,_ in enumerate(kappa2_big_bin_edges[:-1]):
 
