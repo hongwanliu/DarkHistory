@@ -19,6 +19,7 @@ from scipy.interpolate import RegularGridInterpolator
 # Or use DH_DATA_DIR environment variable.
 
 data_path = None
+use_v1_0_data = False
 
 if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
     data_path = os.environ['DH_DATA_DIR']
@@ -184,6 +185,8 @@ def load_data(data_type, verbose=1):
 
         - *'dep_tf'* -- Transfer functions for propagating photons and deposition into low-energy photons, low-energy electrons, high-energy deposition and upscattered CMB energy rate;
         
+        - *'hed_tf'* -- Transfer functions for high-energy deposition only;
+        
         - *'tf_helper'* -- Helper functions used in reconstructing transfer functions (from neural network);
 
         - *'ics_tf'* -- Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
@@ -226,10 +229,22 @@ def load_data(data_type, verbose=1):
     if data_type == 'binning':
 
         if glob_binning_data is None:
-            glob_binning_data = pickle.load(open(data_path+'/binning.p', 'rb'))
+            
+            try:
+                if use_v1_0_data:
+                    binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
+                    glob_binning_data =  {
+                        'phot' : binning[0],
+                        'elec' : binning[1]
+                    }
+                else: # binning data expanded for v1.1
+                    glob_binning_data = pickle.load(open(data_path+'/binning.p', 'rb'))
+                    
+            except FileNotFoundError as err:
+                print(type(err).__name__, ':', err)
+                raise FileNotFoundError('Please make sure to match the data set version with use_v1_0_data value in config.py!')
 
         return glob_binning_data # keys: 'phot', 'elec', 'ics_eng', 'ics_rel_eng'
-        # if use_v1_data==True, return keys: 'phot', 'elec'
 
     ##################################################
     ### transfer functions
@@ -295,10 +310,15 @@ def load_data(data_type, verbose=1):
         
         if glob_tf_helper_data is None:
             
-            tf_E_interp   = pickle.load( open(data_path+'/tf_E_interp.raw', 'rb') )
-            hep_lb_interp = pickle.load( open(data_path+'/hep_lb_interp.raw', 'rb') )
-            lci_interp    = pickle.load( open(data_path+'/lci_interp.raw', 'rb') )
-            hci_interp    = pickle.load( open(data_path+'/hci_interp.raw', 'rb') )
+            try:
+                tf_E_interp   = pickle.load( open(data_path+'/tf_E_interp.raw', 'rb') )
+                hep_lb_interp = pickle.load( open(data_path+'/hep_lb_interp.raw', 'rb') )
+                lci_interp    = pickle.load( open(data_path+'/lci_interp.raw', 'rb') )
+                hci_interp    = pickle.load( open(data_path+'/hci_interp.raw', 'rb') )
+                
+            except FileNotFoundError as err:
+                print(type(err).__name__, ':', err)
+                raise FileNotFoundError('Neural network transfer function functionalities requires v1.1 data set!')
             
             glob_tf_helper_data = {
                 'tf_E'   : tf_E_interp,
