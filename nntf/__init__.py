@@ -1,2 +1,2 @@
-""" Neural Network Transfer Function package.
+""" Neural Network transfer function module.
 """

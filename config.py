@@ -15,9 +15,14 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
-# LOOK FOR THESE DATA FILES HERE. 
+# LOOK FOR THESE DATA FILES HERE.
+# Or use DH_DATA_DIR environment variable.
 
-data_path = '/zfs/yitians/darkhistory/DHdata_alt'
+data_path = None
+
+if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
+    data_path = os.environ['DH_DATA_DIR']
+    
 
 # Global variables for data.
 glob_binning_data = None
@@ -191,6 +196,9 @@ def load_data(data_type, verbose=1):
 
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
         
+    verbose : {0, 1}
+        Set verbosity.
+        
     Returns
     --------
     dict
@@ -208,8 +216,8 @@ def load_data(data_type, verbose=1):
     global glob_dep_ctf_data, glob_tf_helper_data
     global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
 
-    if data_path == '' or not os.path.isdir(data_path):
-        print('NOTE: enter data directory in config.py to avoid this step.')
+    if data_path == None or not os.path.isdir(data_path):
+        print('NOTE: enter data directory in config.py or set DH_DATA_DIR environment variable to avoid this step.')
         data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
 
     ##################################################
@@ -282,30 +290,6 @@ def load_data(data_type, verbose=1):
             }
 
         return glob_dep_tf_data
-
-    elif data_type == 'dep_ctf': # for debug
-
-        if glob_dep_ctf_data is None:
-            
-            if verbose >= 1:
-                print('****** Loading compounded transfer function data... ******')
-                print('Using data at %s' % data_path)
-                print('    for propagating photons (compounded)...  ', end='', flush=True)
-            hep_p12_ctf_interp = pickle.load( open(data_path+'/hep_p12_tf_interp.raw', 'rb'))
-            if verbose >= 1:
-                print('Done!')
-                print('    for propagating photons (propagator)...  ', end='', flush=True)
-            hep_s11_ctf_interp = pickle.load( open(data_path+'/hep_s11_tf_interp.raw', 'rb'))
-            if verbose >= 1:
-                print('Done!')
-                print('****** Loading complete! ******', flush=True)
-            
-            glob_dep_ctf_data = {
-                'hep_p12': hep_p12_ctf_interp,
-                'hep_s11': hep_s11_ctf_interp
-            }
-
-        return glob_dep_ctf_data
     
     elif data_type == 'tf_helper':
         
@@ -482,4 +466,4 @@ def load_data(data_type, verbose=1):
 
     else:
 
-        raise ValueError('invalid data_type.')
+        raise ValueError('Invalid data_type.')

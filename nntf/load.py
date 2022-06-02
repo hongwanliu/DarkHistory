@@ -1,4 +1,4 @@
-""" Loading Neural Network transfer functions.
+""" Load Neural Network transfer functions (NNTFs).
 """
 
 import sys
@@ -16,14 +16,14 @@ def load_model(model_type, verbose=1):
     Parameters
     ----------
     model_type : {'dep_nntf', 'ics_nntf'}
-        Type of data to load. The options are: 
+        Type of models to load. The options are: 
 
-        - *'dep_nntf'* -- NNTF_Rs/TFRaw instances for propagating photons and deposition into low-energy photons, low-energy electrons. Corresponding to *'dep_tf'* in load_data;
+        - *'dep_nntf'* -- NNTFMultiR / LEP_TF instances for propagating photon (or high energy photon) and low energy photon, low energy electron transfer functions. Corresponding to *'dep_tf'* in load_data;
 
-        - *'ics_nntf'* -- NNTF_Rs instances for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum;
+        - *'ics_nntf'* -- ICS_NNTF instances for ICS secondary spectra in the Thomson regime and relativistic regime, and scattered electron energy-loss spectra;
         
-    verbose : int
-        Controls verbose level.
+    verbose : {0, 1}
+        Set verbosity.
 
     Returns
     --------

@@ -60,7 +60,12 @@ class TFBase:
     
         
 class NNTFBase (TFBase):
-    """ Neural Network transfer function (NNTF) base class. """
+    """ Neural Network transfer function (NNTF) base class.
+    
+    Methods
+    --------
+    predict_TF : Let the NN model predict the tranfer function of given rs, xH, xHe key arguments.
+    """
     
     def __init__(self, model_dir, TF_type):
         
@@ -100,7 +105,7 @@ class NNTFBase (TFBase):
         self.mask = np.zeros(self.TF_shape)
         
     def predict_TF(self, **params):
-        """ Core prediction function. Expect kwargs from rs, xH, xHe, E_arr depending on usage. """
+        """ Core prediction function. Expect kwargs from rs, xH, xHe, and possibly E_arr depending on usage. """
         
         self.rs = params['rs']
         self._set_pred_in(**params)

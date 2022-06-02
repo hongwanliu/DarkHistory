@@ -29,7 +29,7 @@ class LEP_TF (TFBase):
         
         
 class HEP_NNTF (NNTFBase):
-    """ High energy photon NNTF """
+    """ High energy photon NNTF. """
         
     def _init_helpers(self):
         tf_helper_data = load_data('tf_helper')
@@ -95,7 +95,7 @@ class HEP_NNTF (NNTFBase):
     
     
 class LEE_NNTF (HEP_NNTF):
-    """ Low energy electron NNTF """
+    """ Low energy electron NNTF. """
         
     def _init_abscs(self):
         binning_data = load_data('binning')
@@ -122,7 +122,7 @@ class LEE_NNTF (HEP_NNTF):
     
     
 class ICS_NNTF (NNTFBase):
-    """ Inverse compton scattering NNTF """
+    """ Inverse compton scattering NNTF. """
     
     def __init__(self, model_str, TF_type):
         super().__init__(model_str, TF_type)

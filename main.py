@@ -42,8 +42,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
-    tf_mode='table', verbose=0,
-    record_tfs=False # debug
+    tf_mode='table', verbose=0
 ):
     """
     Main function computing histories and spectra. 
@@ -184,22 +183,8 @@ def evolve(
             print('Warning: coarsen_factor is set to 12 (required for using nntf).')
             coarsen_factor = 12
         
-        # tmp # debug
-        dep_tf_data = load_data('dep_tf', verbose=verbose)
-        #highengphot_tf_interp = dep_tf_data['highengphot']
-        #lowengphot_tf_interp  = dep_tf_data['lowengphot']
-        #lowengelec_tf_interp  = dep_tf_data['lowengelec']
-        highengdep_interp     = dep_tf_data['highengdep']
-        if record_tfs:
-            lowengphot_tf_interp  = dep_tf_data['lowengphot']
-            dep_ctf_data = load_data('dep_ctf')
-            hep_ctf_interp = dep_ctf_data['hep_p12']
-            prp_ctf_interp = dep_ctf_data['hep_s11']
-        #ics_tf_data = load_data('ics_tf')
-        #ics_thomson_ref_tf = ics_tf_data['thomson']
-        #ics_rel_ref_tf     = ics_tf_data['rel']
-        #engloss_ref_tf     = ics_tf_data['engloss']
-        # tmp end
+        dep_tf_data = load_data('hed_tf', verbose=verbose)
+        highengdep_interp = dep_tf_data['highengdep']
         
         tf_helper_data = load_data('tf_helper', verbose=verbose)
         tf_E_interp   = tf_helper_data['tf_E']
@@ -217,7 +202,7 @@ def evolve(
         ics_rel_ref_tf     = nntf_data['ics_rel'].TransFuncAtRedshift()
         
     else:
-        raise ValueError('Invalid tf_mode!')
+        raise ValueError('Invalid transfer function mode (tf_mode)!')
     
     if verbose >= 1:
         print('Loading time: %.3f s' % (time.time()-timer_start))
@@ -357,7 +342,7 @@ def evolve(
 
     # tqdm set-up.
     if use_tqdm:
-        from tqdm.auto import tqdm # auto detect notebook or terminal
+        from tqdm.auto import tqdm # Auto detect notebook or terminal.
         pbar = tqdm(
             total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
         ) 
@@ -433,8 +418,6 @@ def evolve(
 
     # Object to help us interpolate over MEDEA results. 
     MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
-    
-    tf_arr = [] # debug
     
     if verbose >= 1:
         print('Initialization time: %.3f s' % (time.time()-timer_start))
@@ -701,31 +684,24 @@ def evolve(
             
             rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             
-            ## obtain TF
+            # Predict transfer functions
             rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
             rsxHxHe_key = { 'rs' : rs_to_interp,
                             'xH' : xHII_to_interp,
                             'xHe': xHeII_to_interp }
-            hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc) # what is the xHe convention
+            hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc)
             hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
             prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
             lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
             lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
-            
-            # debug: record tfs used
-            if record_tfs:
-                tf_arr.append([lep_tf.TF, 
-                               lowengphot_tf_interp.get_tf(*rsxHxHe_loc)._grid_vals,
-                               prp_nntf.TF,
-                               prp_ctf_interp.get_tf(*rsxHxHe_loc)._grid_vals])
 
-            # compounding
+            # Compound transfer functions
             lep_tf.TF = np.matmul( prp_nntf.TF, lep_tf.TF )
             lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF )
             hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
             
-            # apply tf
+            # Apply transfer functions
             highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
             lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
@@ -803,8 +779,7 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
-        'f': f,
-        'tf': tf_arr # debug
+        'f': f
     }
 
     return data
@@ -968,69 +943,3 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
         highengphot_tf, lowengphot_tf,
         lowengelec_tf, highengdep_arr, prop_tf
     )
-
-# below used in debugging
-
-def get_ctf(rs, xHII, xHeII):
-    """
-    Returns the interpolated compounded transfer functions. 
-
-    Parameters
-    ----------
-    rs : float
-        The current redshift (1+z) to obtain the functions. 
-    xHII : float
-        The ionization fraction nHII/nH.
-    xHeII : float
-        The ionization fraction nHeII/nH.
-
-    Returns
-    -------
-    tuple
-        Contains the compounded high-energy photon transfer
-        function (P^12) and the compounded photon propagation
-        transfer function (1+P+P^2...+P^11). 
-    """
-    
-    glob_ctf_data = load_data('dep_ctf')
-    
-    hep_p12_interp = glob_ctf_data['hep_p12']
-    hep_s11_interp = glob_ctf_data['hep_s11']
-
-    hep_p12_tf = hep_p12_interp.get_tf( xHII, xHeII, rs )
-    hep_s11_tf = hep_s11_interp.get_tf( xHII, xHeII, rs )
-    
-    return ( hep_p12_tf, hep_s11_tf )
-
-
-def get_tf_helper(rs, xHII, xHeII):
-    """
-    Returns the helper functions for the transfer functions. 
-
-    Parameters
-    ----------
-    rs : float
-        The current redshift (1+z) to obtain the functions. 
-    xHII : float
-        The ionization fraction nHII/nH.
-    xHeII : float
-        The ionization fraction nHeII/nH.
-
-    Returns
-    -------
-    tuple
-        Contains helper functions that adjusts the transfer
-        functions.
-    """
-    
-    glob_tf_helper_data = load_data('tf_helper')
-    
-    hep_p12_E_interp = glob_tf_helper_data['hep_p12_E']
-    hep_s11_E_interp = glob_tf_helper_data['hep_s11_E']
-    #hep_lb_interp    = glob_tf_helper_data['hep_lb']
-    
-    hep_p12_E_arr = hep_p12_E_interp.get_val( xHII, xHeII, rs )
-    hep_s11_E_arr = hep_s11_E_interp.get_val( xHII, xHeII, rs )
-    #hep_lb        = hep_lb_interp.get_val( xHII, xHeII, rs )
-    
-    return ( hep_p12_E_arr, hep_s11_E_arr )
