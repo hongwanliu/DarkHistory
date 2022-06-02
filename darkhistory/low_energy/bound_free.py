@@ -554,7 +554,7 @@ def beta_n(n, Thetas, T_r=None, f_gamma=None):
 
     return prefac*integral
 
-def alpha_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
+def alpha_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100, Thetas=None):
     """
     Case-B recombination coefficient. This is the sum of alpha_nl, n>=2.
 
@@ -599,18 +599,23 @@ def alpha_B(T_m, T_r=None, f_gamma=None, stimulated_emission=True, n=100):
         contrib_nn = 0
 
         # Sum from l=0 to nn-1.
-        for ll in np.arange(nn):
+        if Thetas is None:
+            for ll in np.arange(nn):
 
-            contrib_ll = alpha_nl(nn, ll, T_m, T_r=T_r, f_gamma=f_gamma, stimulated_emission=stimulated_emission)
-            contrib_nn += contrib_ll
+                contrib_ll = alpha_nl(
+                    nn, ll, T_m, T_r, f_gamma, stimulated_emission)
+                contrib_nn += contrib_ll
+
+        else:
+            contrib_nn += np.sum(alpha_n(
+                nn, T_m, Thetas, T_r, f_gamma, stimulated_emission))
 
         coeff += contrib_nn
 
-        # print(nn, contrib_nn)
-
     return coeff
 
-def beta_B(T_r, n=100):
+
+def beta_B(T_r, n=100, f_gamma=None, Thetas=None):
     """
     Case-B photoionization coefficient.
 
@@ -641,11 +646,18 @@ def beta_B(T_r, n=100):
         contrib_nn = 0
 
         # Sum from l=0 to nn-1.
-        for ll in np.arange(nn):
+        if Thetas is None:
+            for ll in np.arange(nn):
 
-            # 2*ll+1 comes from the sum over m substates
-            contrib_ll = beta_nl(nn, ll, T_r=T_r, f_gamma=None) * (2*ll + 1) * np.exp(-phys.rydberg * (1./4. - 1./nn**2) / T_r)
-            contrib_nn += contrib_ll
+                # 2*ll+1 comes from the sum over m substates
+                contrib_ll = (
+                    beta_nl(nn, ll, T_r, f_gamma) * (2*ll + 1) *
+                    np.exp(-phys.rydberg *(1./4. - 1./nn**2) / T_r)
+                )
+                contrib_nn += contrib_ll
+
+        else:
+                contrib_nn += np.sum(beta_n(nn, Thetas, T_r, f_gamma))
 
         coeff += contrib_nn
 
@@ -858,6 +870,7 @@ def net_spec_n(n, T_m, xe, x_full, nH, Thetas, T_r=None, f_gamma=None, stimulate
 
         fac_gamma = 1.
 
+    # Recombination Spectrum
     prefac = (
         2 * np.sqrt(np.pi) * phys.alpha**4 * phys.bohr_rad**2 * phys.c / 3.
         * 2 * np.sqrt(y) / n**2
@@ -871,6 +884,7 @@ def net_spec_n(n, T_m, xe, x_full, nH, Thetas, T_r=None, f_gamma=None, stimulate
     )
     res = (xe * nH)**2 * np.sum(res, axis=0)
 
+    # Ionization Spectrum
     prefac2 = 4 * np.pi * phys.alpha * phys.bohr_rad**2 / 3 * n**2 / (2*l + 1)
 
     d_beta_d_kappa2 = prefac2 * (kappa2 + 1./n**2)**2 * phys.rydberg**2 / np.pi**2 * f_gam_fac * (
