@@ -106,7 +106,7 @@ def evolve(
         Specifies a fixed ionization history after reion_rs.
     init_cond : tuple of floats
         Specifies the initial (xH, xHe, Tm). Defaults to :func:`.Tm_std`,
-        :func:`.xHII_std` and :func:`.xHeII_std` at the *start_rs*.
+        :func:`.x_std` at the *start_rs*.
     coarsen_factor : int
         Coarsening to apply to the transfer function matrix. Default is 1.
     backreaction : bool
@@ -208,7 +208,7 @@ def evolve(
 
         def xe_func(rs):
             rs = np.squeeze(np.array([rs]))
-            xHII = phys.xHII_std(rs)
+            xHII = phys.x_std(rs)
             xHII[rs < 7] = 1
             return xHII
 
@@ -331,8 +331,8 @@ def evolve(
     if init_cond is None:
 
         # Default to baseline
-        xH_init = phys.xHII_std(start_rs)
-        xHe_init = phys.xHeII_std(start_rs)
+        xH_init = phys.x_std(start_rs)
+        xHe_init = phys.x_std(start_rs, 'HeII')
 
         #xHeIII_init = phys.xHeII_std(start_rs)
         Tm_init = phys.Tm_std(start_rs)
@@ -486,7 +486,7 @@ def evolve(
         # rs, alpha, beta, beta_DM
         rs_in = rs*np.exp(dlnz)
         Tm_in = phys.Tm_std(rs_in)
-        peebC = phys.peebles_C(phys.xHII_std(rs_in), rs_in)
+        peebC = phys.peebles_C(phys.x_std(rs_in), rs_in)
         MLA_data = [
             [rs_in],
             [peebC * phys.alpha_recomb(Tm_in, 'HI')],
@@ -566,8 +566,8 @@ def evolve(
                 xHII_elec_cooling = x_arr[-1, 0]
                 xHeII_elec_cooling = x_arr[-1, 1]
             else:
-                xHII_elec_cooling = phys.xHII_std(rs)
-                xHeII_elec_cooling = phys.xHeII_std(rs)
+                xHII_elec_cooling = phys.x_std(rs)
+                xHeII_elec_cooling = phys.x_std(rs, 'HeII')
 
             # Create the electron transfer functions
             if not cross_check:
@@ -830,9 +830,9 @@ def evolve(
         else:
             # Use baseline values if no backreaction.
             x_vec_for_f = np.array([
-                    1. - phys.xHII_std(rs),
-                    phys.chi - phys.xHeII_std(rs),
-                    phys.xHeII_std(rs)
+                    1. - phys.x_std(rs),
+                    phys.chi - phys.x_std(rs, 'HeII'),
+                    phys.x_std(rs, 'HeII')
             ])
 
         if not elec_processes:
@@ -1017,8 +1017,8 @@ def evolve(
             and not (compute_fs_method == 'HeII' and rs <= reion_rs)
         ):
             # Interpolate using the baseline solution.
-            xHII_to_interp = phys.xHII_std(rs)
-            xHeII_to_interp = phys.xHeII_std(rs)
+            xHII_to_interp = phys.x_std(rs)
+            xHeII_to_interp = phys.x_std(rs, 'HeII')
         else:
             # Interpolate using the current xHII, xHeII values.
             xHII_to_interp = x_arr[-1, 0]
@@ -1073,7 +1073,7 @@ def evolve(
             else:
                 # Append the baseline solution value.
                 x_arr = np.append(
-                    x_arr, [[new_vals[-1, 1], phys.xHeII_std(next_rs)]], axis=0
+                    x_arr, [[new_vals[-1, 1], phys.x_std(next_rs, 'HeII')]], axis=0
                 )
 
         # Re-define existing variables.

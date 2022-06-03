@@ -768,14 +768,14 @@ def get_history(
         if helium_TLA:
             _init_cond = [
                 phys.Tm_std(rs_start),
-                phys.xHII_std(rs_start),
-                phys.xHeII_std(rs_start),
+                phys.x_std(rs_start),
+                phys.x_std(rs_start, 'HeII'),
                 1e-12
             ]
         else:
             _init_cond = [
                 phys.Tm_std(rs_start),
-                phys.xHII_std(rs_start),
+                phys.x_std(rs_start),
                 1e-12,
                 1e-12
             ]

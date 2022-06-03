@@ -305,7 +305,7 @@ def tau_np_1s(n, rs, xHI=None):
     nu = (1 - 1/n**2) * phys.rydberg/hplanck
     lam = phys.c/nu
     if xHI is None:
-        xHI = phys.xHI_std(rs)
+        xHI = phys.x_std(rs, 'HI')
 
     nHI = xHI * phys.nH*rs**3
     pre = lam**3 * nHI / (8*np.pi*phys.hubble(rs))
@@ -589,7 +589,7 @@ def process_MLA(
     """
 
     if cross_check:
-        xHI = phys.xHI_std(rs)
+        xHI = phys.x_std(rs, 'HI')
         # Tm = phys.TCMB(rs)
 
     # Number of Hydrogen states at or below n=nmax
