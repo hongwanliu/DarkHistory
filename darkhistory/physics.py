@@ -760,8 +760,9 @@ def C_He(xHII, xHeII, rs, species):
 
         return TypeError('invalid species.')
 
+
 def xe_Saha(rs, species):
-    """Saha equilibrium ionization value for H and He. 
+    """Saha equilibrium ionization value for H and He.
 
     Parameters
     ----------
@@ -786,44 +787,41 @@ def xe_Saha(rs, species):
     x = np.ones_like(rs) * 1.
     T = TCMB(rs)
 
-    de_broglie_wavelength = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
+    # de Broglie Wavelength
+    lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * T)
 
     if species in {'HI', 'HII'}:
 
-        rhs = (1/de_broglie_wavelength)**3 / (nH*rs**3) * np.exp(-rydberg/T)
-        a  = 1. 
-        b  = rhs
-        q  = -rhs
+        rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/T)
+        a = 1.
+        b = rhs
+        q = -rhs
 
-        mask = rhs < 1e6
-        
+        mask = (rhs < 1e6)
 
         if species == 'HII':
             x[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
-            x[~mask] = 1. - a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3 #+ 14*(a/rhs)**4
-        
+            x[~mask] = 1. - a/rhs[~mask] + 2*(a/rhs[~mask])**2 \
+                - 5*(a/rhs[~mask])**3  # + 14*(a/rhs)**4
+
         if species == 'HI':
             x[mask] = 1. - (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)
-            x[~mask] = a/rhs[~mask] + 2*(a/rhs[~mask])**2 - 5*(a/rhs[~mask])**3
-
+            x[~mask] = a/rhs[~mask] - 2*(a/rhs[~mask])**2 + 5*(a/rhs[~mask])**3
 
     elif species in {'HeII'}:
-        #!!! Re-derive
-        rhs = (
-            4 * (1/de_broglie_wavelength)**3 
-            / (nH*rs**3) * np.exp(-He_ion_eng/T)
-        )
+        # !!! Re-derive
+        rhs = 4 * lam_T**-3 / (nH*rs**3) * np.exp(-He_ion_eng/T)
 
         mask = rhs < 1e6
 
-        a   = 1. 
-        b   = rhs - 1. 
-        q   = -(1. + chi)*rhs
+        a = 1.
+        b = rhs - 1.
+        q = -(1. + chi)*rhs
 
-        #!!! The -1 are hacks!
+        # !!! The -1 are hacks!
         x[mask] = (-b[mask] + np.sqrt(b[mask]**2 - 4*a*q[mask]))/(2*a)-1
         x[~mask] = (1 + chi)*(1 - (1 + chi)/rhs[~mask])-1
-        
+
     else:
         raise TypeError('invalid species.')
 
@@ -831,6 +829,7 @@ def xe_Saha(rs, species):
         return x[0]
     else:
         return x
+
 
 def d_xe_Saha_dz(rs, species):
     """`z`-derivative of the Saha equilibrium ionization value.
@@ -844,14 +843,14 @@ def d_xe_Saha_dz(rs, species):
     Returns
     -------
     float
-        The derivative of the Saha equilibrium d xe/dz. 
+        The derivative of the Saha equilibrium d xe/dz.
 
     Notes
     -----
     See astro-ph/9909275 and 1011.3758 for details.
     """
-    
-    xe    = xe_Saha(rs, species)
+
+    xe = xe_Saha(rs, species)
 
     if species == 'HI':
 
@@ -870,50 +869,121 @@ def d_xe_Saha_dz(rs, species):
     return numer/denom
 
 
-# RHS of TLA
-def xdot(xe, rs, fudge = 1.125):
-    Tm = Tm_std(rs) #!!! Should include corrections to Tm = T_CMB in this function
+def xdot(xe, rs, fudge=1.125):
+    """
+    RHS of TLA
+    """
+    Tm = Tm_std(rs)
 
     return - dtdz(rs) * peebles_C(xe, rs, fudge) * (
         alpha_recomb(Tm, 'HI', fudge) * xe**2 * (nH * rs**3)
         - 4 * beta_ion(Tm, 'HI', fudge) * (1-xe) * np.exp(-lya_eng/TCMB(rs))
     )
 
-# Post-Saha correction: see App D of 1006.1355
-def post_Saha(rs, species = 'HII'):
+
+def post_Saha(rs, species='HII'):
+    """
+    Post-Saha correction: see App D of 1006.1355
+    """
     xHII_S = xe_Saha(rs, 'HII')
-    xHI_S  = xe_Saha(rs, 'HI')
+    xHI_S = xe_Saha(rs, 'HI')
 
     # Numerical derivative of RHS of TLA
     eps = .01 * xHII_S * xHI_S
     D1 = (xdot(xHII_S + eps, rs) - xdot(xHII_S - eps, rs))/(2*eps)
 
     if species == 'HII':
-        return  d_xe_Saha_dz(rs,'HI')/D1
+        return d_xe_Saha_dz(rs, 'HI')/D1
 
     elif species == 'HI':
-        return -d_xe_Saha_dz(rs,'HI')/D1
+        return -d_xe_Saha_dz(rs, 'HI')/D1
 
     else:
         raise TypeError('Invalid Species')
 
+###
 # Standard ionization and thermal histories
-
-# if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
-#     soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
-
-#     _xHII_std  = interp1d(soln_baseline[0,:], soln_baseline[2,:])
-#     _xHeII_std = interp1d(soln_baseline[0,:], soln_baseline[3,:])
-#     _Tm_std    = interp1d(soln_baseline[0,:], soln_baseline[1,:])
+###
 
 
 _xHII_std = None
 _xHeII_std = None
 _Tm_std = None
-rs_extrap = 1.555e3
+rs_extrap_global = 1.555e3
 
 
-def xHII_std(rs, rs_extrap=rs_extrap):
+def extrap_helper(rs, rs_extrap, func, func_extrap):
+    """
+    """
+
+    extrap = (rs >= rs_extrap)
+    if np.sum(extrap) == 0:
+        return func(rs)
+
+    elif np.sum(~extrap) == 0:
+        return func_extrap(rs)
+
+    else:
+        output = np.zeros_like(rs)
+        output[~extrap] = func(rs[~extrap])
+        output[extrap] = func_extrap(rs[extrap])
+        return output
+
+
+def x_std(rs, species='HI', rs_extrap=None):
+    """Baseline n_i/nH value, where i = ['HI', 'HII', 'HeII']
+
+    Parameters
+    ----------
+    rs : float
+        The redshift (1+z).
+
+    Returns
+    -------
+    float
+        n_i/nH.
+    """
+
+    rs = np.asarray(rs)
+    if rs.ndim == 0:
+        rs = np.array([rs.item()])
+
+    def func_extrap(rs):
+        return xe_Saha(rs, species)
+
+    if species in {'HI', 'HII'}:
+
+        if rs_extrap is None:
+            rs_extrap = rs_extrap_global
+
+        global _xHII_std
+        if _xHII_std is None:
+            _xHII_std = interp1d(load_data('hist')['rs'],
+                                 load_data('hist')['xHII'])
+
+        if species == 'HII':
+            func = _xHII_std
+
+        else:
+            def func(rs):
+                return 1-xHII_std(rs)
+
+    elif species == 'HeII':
+
+        if rs_extrap is None:
+            rs_extrap = 3e3
+
+        global _xHeII_std
+        if _xHeII_std is None:
+            _xHeII_std = interp1d(load_data('hist')['rs'],
+                                  load_data('hist')['xHII'])
+
+        func = _xHeII_std
+
+    return extrap_helper(rs, rs_extrap, func, func_extrap)
+
+
+def xHII_std(rs, rs_extrap=rs_extrap_global):
     """Baseline nHII/nH value.
 
     Parameters
@@ -930,37 +1000,22 @@ def xHII_std(rs, rs_extrap=rs_extrap):
     global _xHII_std
 
     if _xHII_std is None:
-        _xHII_std = interp1d(load_data('hist')['rs'], load_data('hist')['xHII'])
+        _xHII_std = interp1d(load_data('hist')['rs'],
+                             load_data('hist')['xHII'])
 
-    if isinstance(rs*1.,float):
-        if rs < rs_extrap:
-            return _xHII_std(rs)
-        else:
-            # return xe_Saha(rs, 'HI')
-            #Use Saha equilibrium
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs))
-            rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
-            xHI = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
-            return 1 - xHI
-    else:
-        extrap = rs>rs_extrap
-        if np.sum(extrap) == 0:
-            return _xHII_std(rs)
-        else:
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs[extrap]))
-            rhs = lam_T**-3 / (nH*rs[extrap]**3) * np.exp(-rydberg/TCMB(rs[extrap]))
-            xHI = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
-            if np.sum(~extrap) == 0:
-                # return np.array([xe_Saha(r, 'HI') for r in rs])
-                return 1 - xHI
-            else:
-                output = np.zeros_like(rs)
-                output[~extrap] = _xHII_std(rs[~extrap])
-                # output[extrap] = np.array([xe_Saha(r, 'HI') for r in rs[extrap]])
-                output[extrap] = 1 - xHI
-                return output
+    rs = np.asarray(rs)
+    if rs.ndim == 0:
+        rs = np.array([rs.item()])
 
-def xHI_std(rs, rs_extrap=rs_extrap):
+    func = _xHII_std
+
+    def func_extrap(rs):
+        return xe_Saha(rs, 'HII')
+
+    return extrap_helper(rs, rs_extrap, func, func_extrap)
+
+
+def xHI_std(rs, rs_extrap=rs_extrap_global):
     """Baseline nHI/nH value.
 
     Parameters
@@ -973,28 +1028,18 @@ def xHI_std(rs, rs_extrap=rs_extrap):
     float
         nHI/nH.
     """
-    if type(rs) in {int, float}:
-        if rs < rs_extrap:
-            return 1-xHII_std(rs)
-        else:
-            # Use Saha equilibrium
-            lam_T = c * 2*np.pi*hbar / np.sqrt(2 * np.pi * mu_ep * TCMB(rs))
-            rhs = lam_T**-3 / (nH*rs**3) * np.exp(-rydberg/TCMB(rs))
-            return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
-    else:
-        ext = rs > rs_extrap
-        if np.sum(ext) == 0:
-            return 1-xHII_std(rs)
-        else:
-            lam_T = c*2*np.pi*hbar / np.sqrt(2*np.pi * mu_ep * TCMB(rs[ext]))
-            rhs = lam_T**-3 / (nH*rs[ext]**3) * np.exp(-rydberg/TCMB(rs[ext]))
-            if np.sum(~ext) == 0:
-                return rhs**-1 - 2*rhs**-2 + 5*rhs**-3
-            else:
-                output = np.zeros_like(rs)
-                output[~ext] = 1-xHII_std(rs[~ext])
-                output[ext] = rhs**-1 - 2*rhs**-2 + 5*rhs**-3
-                return output
+
+    rs = np.asarray(rs)
+    if rs.ndim == 0:
+        rs = np.array([rs.item()])
+
+    def func(rs):
+        return 1-xHII_std(rs)
+
+    def func_extrap(rs):
+        return xe_Saha(rs, 'HI')
+
+    return extrap_helper(rs, rs_extrap, func, func_extrap)
 
 
 def xHeII_std(rs, rs_extrap=3e3):
@@ -1010,82 +1055,56 @@ def xHeII_std(rs, rs_extrap=3e3):
     float
         nHeII/nH.
     """
-
-    if type(rs) != np.ndarray:
-        rs = np.array([rs])
-
-    xHeII = np.ones((rs.size))
-
-    mask_extrap = (rs >= rs_extrap)
-    xHeII[mask_extrap] = xe_Saha(rs[mask_extrap], 'HeII')
-
     global _xHeII_std
 
     if _xHeII_std is None:
 
-        rs_vec    = load_data('hist')['rs']
+        rs_vec = load_data('hist')['rs']
         xHeII_vec = load_data('hist')['xHeII']
 
         _xHeII_std = interp1d(rs_vec, xHeII_vec)
 
-    xHeII[~mask_extrap] = _xHeII_std(rs[~mask_extrap])
+    rs = np.asarray(rs)
+    if rs.ndim == 0:
+        rs = np.array([rs.item()])
 
-    if rs.size == 1:
-        return xHeII[0]
-    else:
-        return xHeII
+    func = _xHeII_std
 
-def Tm_std(rs, rs_extrap=rs_extrap):
+    def func_extrap(rs):
+        return xe_Saha(rs, 'HeII')
+
+    return extrap_helper(rs, rs_extrap, func, func_extrap)
+
+
+def Tm_std(rs, rs_extrap=rs_extrap_global):
     """Baseline Tm value.
 
     Parameters
     ----------
     rs : float
-        The redshift (1+z). 
+        The redshift (1+z).
 
     Returns
     -------
     float
-        Tm in eV. 
+        Tm in eV.
     """
 
     global _Tm_std
 
-
     if _Tm_std is None:
 
-        rs_vec  = load_data('hist')['rs']
-        Tm_vec  = load_data('hist')['Tm']
+        rs_vec = load_data('hist')['rs']
+        Tm_vec = load_data('hist')['Tm']
 
         _Tm_std = interp1d(rs_vec, Tm_vec)
 
-    if isinstance(rs*1.,float):
-        if rs < rs_extrap:
-            return _Tm_std(rs)
-        else:
-            return TCMB(rs)
-    else:
-        extrap = rs > rs_extrap
-        if np.sum(extrap) == 0:
-            return _Tm_std(rs)
-        elif np.sum(~extrap) == 0:
-            return TCMB(rs)
-        else:
-            output = np.zeros_like(rs)
-            output[~extrap] = _Tm_std(rs[~extrap])
-            output[extrap] = TCMB(rs[extrap])
-            return output
+    rs = np.asarray(rs)
 
-    # For redshifts above 3000, assume full coupling to the CMB temperature
-    #if isinstance(rs,np.float):
-    #    if rs > 3e3:
-    #        return TCMB(rs)
-    #    else:
-    #        return _Tm_std(rs)
-    #else:
-    #    Tm_list = TCMB(rs)
-    #    Tm_list[rs < 3e3] = _Tm_std(rs)
-    #    return Tm_list
+    func = _Tm_std
+    func_extrap = TCMB
+
+    return extrap_helper(rs, rs_extrap, func, func_extrap)
 
 
 # Atomic Cross-Sections
