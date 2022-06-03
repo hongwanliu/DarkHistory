@@ -930,7 +930,7 @@ def extrap_helper(rs, rs_extrap, func, func_extrap):
         return output
 
 
-def x_std(rs, species='HI', rs_extrap=None):
+def x_std(rs, species='HII', rs_extrap=None):
     """Baseline n_i/nH value, where i = ['HI', 'HII', 'HeII']
 
     Parameters
@@ -966,7 +966,7 @@ def x_std(rs, species='HI', rs_extrap=None):
 
         else:
             def func(rs):
-                return 1-xHII_std(rs)
+                return 1-_xHII_std(rs)
 
     elif species == 'HeII':
 
@@ -983,7 +983,7 @@ def x_std(rs, species='HI', rs_extrap=None):
     return extrap_helper(rs, rs_extrap, func, func_extrap)
 
 
-def Tm_std(rs, rs_extrap=rs_extrap_global):
+def Tm_std(rs, rs_extrap=None):
     """Baseline Tm value.
 
     Parameters
@@ -1008,8 +1008,22 @@ def Tm_std(rs, rs_extrap=rs_extrap_global):
 
     rs = np.asarray(rs)
 
+    if rs_extrap is None:
+        rs_extrap = 900
+
     func = _Tm_std
-    func_extrap = TCMB
+
+    def func_extrap(rs):
+        # See App A of 0803.0808
+        xe = x_std(rs) + x_std(rs, 'HeII')
+        ne = nH * rs**3 * xe
+        rho_CMB = 4*stefboltz/c * TCMB(rs)**4
+        cv = 3/2 * nH*rs**3 * (1+chi+xe)
+        Gamma_t = thomson_xsec * ne * c
+        Gamma_c = 4 * Gamma_t * rho_CMB / (me * cv)
+        fudge = 1.35
+
+        return TCMB(rs) * (1 - fudge*hubble(rs)/Gamma_c)
 
     return extrap_helper(rs, rs_extrap, func, func_extrap)
 

@@ -340,10 +340,10 @@ def load_data(data_type):
             soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
             glob_hist_data = {
-                'rs'    : soln_baseline[0,:],
-                'xHII'  : soln_baseline[2,:],
-                'xHeII' : soln_baseline[3,:],
-                'Tm'    : soln_baseline[1,:]
+                'rs'    : soln_baseline[0],
+                'xHII'  : soln_baseline[2],
+                'xHeII' : soln_baseline[3],
+                'Tm'    : soln_baseline[1]
             }
 
         return glob_hist_data
