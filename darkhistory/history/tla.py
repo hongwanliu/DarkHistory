@@ -826,9 +826,9 @@ def get_history(
     if high_rs_vec.size > 0:
 
         soln_high_rs[:, 0] = phys.Tm_std(high_rs_vec)
-        soln_high_rs[:, 1] = 1. - phys.xHI_std(
-            high_rs_vec, high_rs) + phys.post_Saha(high_rs_vec)
-        soln_high_rs[:, 2] = phys.xHeII_std(high_rs_vec)
+        soln_high_rs[:, 1] = 1. - phys.x_std(
+            high_rs_vec, 'HI', high_rs)# + phys.post_Saha(high_rs_vec)
+        soln_high_rs[:, 2] = phys.x_std(high_rs_vec, 'HeII')
         soln_high_rs[:, 3] = np.ones_like(
             high_rs_vec) * 1e-12  # !!! Need to make phys.xHeIII_std
 

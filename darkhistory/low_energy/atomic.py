@@ -189,13 +189,17 @@ def populate_radial(nmax):
     dict
         R['up'][n][n'][l] = R([n,l],[n',l+1])
         R['dn'][n][n'][l] = R([n,l],[n',l-1])
+
+    Notes
+    -----
+    See Hey (2006), Eq. (B.4), (52), and (53)
     """
     R_up = np.zeros((nmax+1, nmax, nmax))
     R_dn = np.zeros((nmax+1, nmax, nmax))
 
     for n in np.arange(2, nmax+1, 1):
         for n_p in np.arange(1, n):
-            # Initial conditions: Hey (2006) Eq. (B.4)
+            # Initial conditions: Eq. (B.4)
             R_dn[n][n_p][n_p] = Hey_R_initial(n, n_p)
             R_up[n][n_p][n_p-1] = R_up[n][n_p][n_p] = 0
             for l in np.arange(n_p-1, 0, -1):

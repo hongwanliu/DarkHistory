@@ -976,7 +976,7 @@ def x_std(rs, species='HII', rs_extrap=None):
         global _xHeII_std
         if _xHeII_std is None:
             _xHeII_std = interp1d(load_data('hist')['rs'],
-                                  load_data('hist')['xHII'])
+                                  load_data('hist')['xHeII'])
 
         func = _xHeII_std
 
