@@ -714,7 +714,7 @@ def evolve(
                 MLA_step, atomic_dist_spec = atomic.process_MLA(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R, Thetas,
                     Delta_f, cross_check,
-                    include_2s1s=True, include_BF=False,
+                    include_2s1s=True, include_BF=True,
                     #fexc_switch, deposited_exc_arr,
                     #tot_spec_elec, distortion,
                     #H_states, rate_func_eng,

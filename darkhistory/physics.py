@@ -918,16 +918,25 @@ def extrap_helper(rs, rs_extrap, func, func_extrap):
 
     extrap = (rs >= rs_extrap)
     if np.sum(extrap) == 0:
-        return func(rs)
+        res = func(rs)
 
     elif np.sum(~extrap) == 0:
-        return func_extrap(rs)
+        res = func_extrap(rs)
 
     else:
         output = np.zeros_like(rs)
         output[~extrap] = func(rs[~extrap])
         output[extrap] = func_extrap(rs[extrap])
         return output
+
+    if res.ndim == 0:
+        return res.item()
+
+    elif res.ndim == 1 and len(res) == 1:
+        return res[0]
+
+    else:
+        return res
 
 
 def x_std(rs, species='HII', rs_extrap=None):
