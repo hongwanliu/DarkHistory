@@ -316,6 +316,9 @@ def evolve(
         raise ValueError('Please use set recfast_TLA to true or provide MLA_funcs, \
                          not both')
 
+    if (reion_method is not None) and (xe_reion_func is not None):
+        raise ValueError('Either specify reionization model or xe reionization curve, not both')
+
     if cross_check:
         print('cross_check has been set to True -- No longer using all MEDEA \
               files and no longer using partial-binning.')
@@ -1283,7 +1286,7 @@ def iterate(
     start_rs, end_rs, coarsen_factor,
     nmax, high_rs=1.555e3, recfast_TLA=False,
     reprocess_distortion=False, fexc_switch=True,
-    rtol=1e-4
+    rtol=1e-8
 ):
     """ !!!Missing Documentation
     """

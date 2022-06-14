@@ -127,15 +127,19 @@ def A_2s1s(f_gamma, direc='dn', use_quad=False, n_bins=100):
         return (A0 / 2) * quad(integrand, 0, phys.lya_eng)[0] / phys.lya_eng
 
 
-def N_2s1s(engs, f_gamma, x_2s, x_1s):
+def N_2s1s(E, f_gamma, x_2s, x_1s):
     """
     distortion per baryon per second from two-photon emission,
     including stimulated emission effects
     """
+    res = np.zeros_like(E)
 
     if f_gamma is None:
         def f_gamma(E):
             return 0
+
+    legal_2s1s_bins = (phys.lya_eng >= E)
+    engs = E[legal_2s1s_bins]
 
     # Interpolate integrand, since we need to know behavior between 0 and Lya
     phase_facs = (
@@ -146,7 +150,9 @@ def N_2s1s(engs, f_gamma, x_2s, x_1s):
     bin_bounds = spectools.get_bin_bound(engs)
     dy = (bin_bounds[1:]-bin_bounds[:-1]) / phys.lya_eng
     norm = phys.nH/phys.nB
-    return norm * A0 * phase_facs * phi(engs / phys.lya_eng)*dy
+    res[legal_2s1s_bins] = norm * A0 * phase_facs * phi(engs / phys.lya_eng)*dy
+
+    return res
 
 
 ###############################
@@ -662,7 +668,8 @@ def process_MLA(
         ###
         if nl == 0:  # special case: 1s -> 2s
             tot_rate += BB_2s1s['up']
-            K[0][1] = BB_2s1s['up'] / tot_rate
+            if tot_rate > 0:
+                K[0][1] = BB_2s1s['up'] / tot_rate
 
         if nl == 1:  # special case: 2s -> 1s
             tot_rate += BB_2s1s['dn']
@@ -672,7 +679,8 @@ def process_MLA(
             K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate
 
         if l != nmax-1:
-            K[nl, states_l == l+1] = BB['dn'][l+2:, n, l+1]/tot_rate
+            if tot_rate > 0:
+                K[nl, states_l == l+1] = BB['dn'][l+2:, n, l+1]/tot_rate
 
         ###
         # Construct the source terms
@@ -692,9 +700,10 @@ def process_MLA(
         spec_ind = str(n) + num_to_l(l)
         b_DM[nl] = delta_b.get(spec_ind, 0)  # if key not in delta_b, return 0
 
-        b_exc[nl] /= tot_rate
-        b_rec[nl] /= tot_rate
-        b_DM[nl] /= tot_rate
+        if tot_rate > 0:
+            b_exc[nl] /= tot_rate
+            b_rec[nl] /= tot_rate
+            b_DM[nl] /= tot_rate
 
     # sparse matrix
     mat = sp.csr_matrix(np.identity(num_states-1) - K[1:, 1:])
