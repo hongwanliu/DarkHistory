@@ -44,7 +44,7 @@ def evolve(
     start_rs=None, high_rs=np.inf, end_rs=4,
     helium_TLA=False, reion_switch=False,
     reion_rs=None, reion_method='Puchwein',
-    heat_switch=False, DeltaT=0, alpha_bk=0.5,
+    heat_switch=True, DeltaT=0, alpha_bk=0.5,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
@@ -540,6 +540,14 @@ def evolve(
         #####################################################################
         #####################################################################
 
+        if xe_reion_func is not None:
+            # If reionization is complete, set the residual fraction
+            # of neutral atoms to their measured value (arxiv:1503.08228)
+            if x_arr[-1, 0] == 1:
+                x_arr[-1, 0] = 1-10**(-4.4)
+            if x_arr[-1, 1] == phys.chi:
+                x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
+
         # Ionized Fractions
         x_at_rs = np.array([1. - x_arr[-1, 0],
                             phys.chi - x_arr[-1, 1],
@@ -768,15 +776,9 @@ def evolve(
         # Compute the fraction of ionizing photons
         # that free stream within this step
         if (reion_switch is True) & (rs < start_rs):
-            # If reionization is complete, set the
-            # residual fraction of neutral atoms to their measured value
-            if x_arr[-1, 0] == 1:
-                x_arr[-1, 0] = 1-10**(-4.4)
-            if x_arr[-1, 1] == phys.chi:
-                x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
-
             lowEprop_mask = phot_dep.propagating_lowE_photons_fracs(
                 lowengphot_spec_at_rs, x_at_rs, dt)
+
         else:
             lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
 
