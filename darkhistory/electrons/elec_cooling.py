@@ -2,12 +2,9 @@
 """
 
 import numpy as np
-from datetime import datetime
 import darkhistory.physics as phys
-import darkhistory.utilities as utils
 import darkhistory.spec.transferfunction as tf
 import darkhistory.spec.spectools as spectools
-import darkhistory.low_energy.atomic as atomic
 
 from config import load_data
 
@@ -24,13 +21,13 @@ def get_elec_cooling_tf(
     eleceng, photeng, rs, xHII, xHeII=0,
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
-    ics_engloss_data=None, #loweng=3000,
+    ics_engloss_data=None,
     method='new', H_states=None,
-    check_conservation_eng = False, simple_ICS=False, verbose=False
+    check_conservation_eng=False, simple_ICS=False, verbose=False
 ):
 
-    """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
-  
+    """Transfer functions for complete electron cooling through inverse Compton
+    scattering (ICS) and atomic processes.
 
     Parameters
     ----------
@@ -39,30 +36,38 @@ def get_elec_cooling_tf(
     photeng : ndarray
         The photon energy abscissa.
     rs : float
-        The redshift (1+z). 
+        The redshift (1+z).
     xHII : float
-        Ionized hydrogen fraction, nHII/nH. 
+        Ionized hydrogen fraction, nHII/nH.
     xHeII : float, optional
-        Singly-ionized helium fraction, nHe+/nH. Default is 0. 
+        Singly-ionized helium fraction, nHe+/nH. Default is 0.
     raw_thomson_tf : TransFuncAtRedshift, optional
-        Thomson ICS scattered photon spectrum transfer function. If None, uses the default transfer function. Default is None.
+        Thomson ICS scattered photon spectrum transfer function. If None, uses
+        the default transfer function. Default is None.
     raw_rel_tf : TransFuncAtRedshift, optional
-        Relativistic ICS scattered photon spectrum transfer function. If None, uses the default transfer function. Default is None.
+        Relativistic ICS scattered photon spectrum transfer function. If None,
+        uses the default transfer function. Default is None.
     raw_engloss_tf : TransFuncAtRedshift, optional
-        Thomson ICS scattered electron net energy loss transfer function. If None, uses the default transfer function. Default is None.
-    coll_ion_sec_elec_specs : tuple of 3 ndarrays, shapes (m, m), optional 
-        Normalized collisional ionization secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy. If None, the function calculates this. Default is None.
-    coll_exc_sec_elec_specs : tuple of 3 ndarray, shapes (m, m), optional 
-        Normalized collisional excitation secondary electron spectra, order HI, HeI, HeII, indexed by injected electron energy by outgoing electron energy. If None, the function calculates this. Default is None.
+        Thomson ICS scattered electron net energy loss transfer function.
+        If None, uses the default transfer function. Default is None.
+    coll_ion_sec_elec_specs : tuple of 3 ndarrays, shapes (m, m), optional
+        Normalized collisional ionization secondary electron spectra, order HI,
+        HeI, HeII, indexed by injected electron energy by outgoing electron
+        energy. If None, the function calculates this. Default is None.
+    coll_exc_sec_elec_specs : tuple of 3 ndarray, shapes (m, m), optional
+        Normalized collisional excitation secondary electron spectra, order HI,
+        HeI, HeII, indexed by injected electron energy by outgoing electron
+        energy. If None, the function calculates this. Default is None.
     ics_engloss_data : EnglossRebinData
-        An `EnglossRebinData` object which stores rebinning information (based on ``eleceng`` and ``photeng``) for speed. Default is None.
+        An `EnglossRebinData` object which stores rebinning information (based
+        on ``eleceng`` and ``photeng``) for speed. Default is None.
     loweng : float
         sets the boundary between
     check_conservation_eng : bool
         If True, lower=True, checks for energy conservation. Default is False.
     verbose : bool
         If True, prints energy conservation checks. Default is False.
-    
+
     Returns
     -------
 
@@ -77,60 +82,71 @@ def get_elec_cooling_tf(
 
     Notes
     -----
-    
+
     The entries of the output tuple are (see Sec IIIC of the paper):
 
-    0. The secondary propagating photon transfer function :math:`\\overline{\\mathsf{T}}_\\gamma`; 
-    1. The low-energy electron transfer function :math:`\\overline{\\mathsf{T}}_e`; 
-    2. Energy deposited into ionization :math:`\\overline{\\mathbf{R}}_\\text{ion}`; 
-    3. Energy deposited into excitation :math:`\\overline{\\mathbf{R}}_\\text{exc}`; 
+    0. The secondary propagating photon transfer function :math:`\\overline{\\mathsf{T}}_\\gamma`;
+    1. The low-energy electron transfer function :math:`\\overline{\\mathsf{T}}_e`;
+    2. Energy deposited into ionization :math:`\\overline{\\mathbf{R}}_\\text{ion}`;
+    3. Energy deposited into excitation :math:`\\overline{\\mathbf{R}}_\\text{exc}`;
     4. Energy deposited into heating :math:`\\overline{\\mathbf{R}}_\\text{heat}`;
     5. Upscattered CMB photon total energy :math:`\\overline{\\mathbf{R}}_\\text{CMB}`, and
     6. Numerical error away from energy conservation.
 
-    Items 2--5 are vectors that when dotted into an electron spectrum with abscissa ``eleceng``, return the energy deposited/CMB energy upscattered for that spectrum. 
+    Items 2--5 are vectors that when dotted into an electron spectrum with
+    abscissa ``eleceng``, return the energy deposited/CMB energy upscattered
+    for that spectrum.
 
-    Items 0--1 are :class:`.TransFuncAtRedshift` objects. For each of these objects ``tf`` and a given electron spectrum ``elec_spec``, ``tf.sum_specs(elec_spec)`` returns the propagating photon/low-energy electron spectrum after cooling.
+    Items 0--1 are :class:`.TransFuncAtRedshift` objects. For each of these
+    objects ``tf`` and a given electron spectrum ``elec_spec``,
+    ``tf.sum_specs(elec_spec)`` returns the propagating photon/low-energy
+    electron spectrum after cooling.
 
-    The default version of the three ICS transfer functions that are required by this function is provided in :mod:`.tf_data`.
+    The default version of the three ICS transfer functions that are required
+    by this function is provided in :mod:`.tf_data`.
 
     """
 
     id_mat = np.identity(eleceng.size)
 
     # Use default ICS transfer functions if not specified.
-    if (raw_thomson_tf == None) | (raw_rel_tf == None) | (raw_engloss_tf == None):
+    if (
+        (raw_thomson_tf is None) |
+        (raw_rel_tf is None) |
+        (raw_engloss_tf is None)
+    ):
         ics_tf = load_data('ics_tf')
 
-    if (raw_thomson_tf == None):
+    if (raw_thomson_tf is None):
         raw_thomson_tf = ics_tf['thomson']
 
-    if (raw_rel_tf == None):
-        raw_rel_tf     = ics_tf['rel']
+    if (raw_rel_tf is None):
+        raw_rel_tf = ics_tf['rel']
 
-    if (raw_engloss_tf == None):
+    if (raw_engloss_tf is None):
         raw_engloss_tf = ics_tf['engloss']
 
     # atoms that take part in electron cooling process through ionization
     atoms = ['HI', 'HeI', 'HeII']
-    exc_types  = H_states+['HeI', 'HeII'] 
+    exc_types = H_states+['HeI', 'HeII']
 
-    #ionization and excitation energies
-    ion_potentials = {'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg}
+    # ionization and excitation energies
+    ion_potentials = {
+        'HI': phys.rydberg, 'HeI': phys.He_ion_eng, 'HeII': 4*phys.rydberg
+    }
 
-    exc_potentials         = {state: phys.H_exc_eng(state) for state in H_states}
-    exc_potentials['HeI']  = phys.He_exc_eng['23s']
+    exc_potentials = {state: phys.H_exc_eng(state) for state in H_states}
+    exc_potentials['HeI'] = phys.He_exc_eng['23s']
     exc_potentials['HeII'] = 4*phys.lya_eng
 
     # Set the electron fraction and number densities
     xe = xHII + xHeII
     ns = {
-        'HI' : (1 - xHII)*phys.nH*rs**3,
+        'HI': (1 - xHII)*phys.nH*rs**3,
         'HeI': (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3,
         'HeII': xHeII*phys.nH*rs**3
     }
 
-    
     # v/c of electrons
     beta_ele = np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
 
@@ -146,26 +162,28 @@ def get_elec_cooling_tf(
 
     # collisional excitation rates
     exc_rates = {exc: ns[get_sp(exc)] * beta_ele * phys.c *
-            coll_xsec['exc'](eleceng, species=get_sp(exc), method=method, state=exc) for exc in exc_types}
-
+                 coll_xsec['exc'](eleceng, get_sp(exc), method, exc)
+                 for exc in exc_types}
 
     # Deposited energy in various channels
-    deposited_exc_eng_arr = {exc : np.zeros_like(eleceng) for exc in exc_types}
+    deposited_exc_eng_arr = {exc: np.zeros_like(eleceng) for exc in exc_types}
     deposited_heat_eng_arr = np.zeros_like(eleceng)
 
     if coll_ion_sec_elec_specs is None:
 
         # Compute the (normalized) collisional ionization spectra.
-        coll_ion_sec_elec_specs = {species : phys.coll_ion_sec_elec_spec(eleceng, eleceng, species=species) 
-                for species in atoms}
+        coll_ion_sec_elec_specs = {
+            species: phys.coll_ion_sec_elec_spec(eleceng, eleceng, species)
+            for species in atoms
+        }
 
     if coll_exc_sec_elec_specs is None:
 
         # Make empty dictionaries
         coll_exc_sec_elec_specs = {}
-        coll_exc_sec_elec_tf =  {}
-        eng_underflow = 0
-        N_underflow = {}
+        coll_exc_sec_elec_tf = {}
+        # eng_underflow = 0
+        # N_underflow = {}
 
         # Compute the (normalized) collisional excitation spectra.
 
@@ -175,29 +193,34 @@ def get_elec_cooling_tf(
             exc_pot = exc_potentials[exc]
             coll_exc_sec_elec_tf[exc] = tf.TransFuncAtRedshift(
                 np.squeeze(id_mat[:, np.where(eleceng > exc_pot)]),
-                in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-                eng = eleceng[eleceng > exc_pot] - exc_pot,
-                dlnz = -1, spec_type = 'N'
+                in_eng=eleceng, rs=-1*np.ones_like(eleceng),
+                eng=eleceng[eleceng > exc_pot] - exc_pot,
+                dlnz=-1, spec_type='N'
             )
-            
-            # electrons downscattered below eleceng[0] unfortunately are lost to the code 
-            #  here we keep track of their energy and number of downscatters.
-            #  First, we make sure that their residual energy goes into prompt heating -- keeping track of the rate of excitation in 1s
-            deposited_heat_eng_arr += coll_exc_sec_elec_tf[exc].eng_underflow * exc_rates[exc]
+
+            # electrons downscattered below eleceng[0] unfortunately are lost
+            #  to the code here we keep track of their energy and number of
+            #  downscatters. First, we make sure that their residual energy
+            #  goes into prompt heating -- keeping track of the rate of
+            #  excitation in 1s
+            deposited_heat_eng_arr += (
+                coll_exc_sec_elec_tf[exc].eng_underflow * exc_rates[exc]
+            )
 
             # Each non-zero underflow bin counts as one excitation
             deposited_exc_eng_arr[exc] += np.sum(
-                    (coll_exc_sec_elec_tf[exc].eng_underflow>0)*1.0) * exc_rates[exc] * exc_potentials[exc]
+                    (coll_exc_sec_elec_tf[exc].eng_underflow > 0)*1.0
+            ) * exc_rates[exc] * exc_potentials[exc]
 
-            # Rebin the data so that the spectra stored above now have an abscissa
+            # Rebin the data so that the spectra stored above have an abscissa
             # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
             coll_exc_sec_elec_tf[exc].rebin(eleceng)
 
             # Put them in a dictionary
             coll_exc_sec_elec_specs[exc] = coll_exc_sec_elec_tf[exc].grid_vals
 
-
-    sec_specs = {'exc': coll_exc_sec_elec_specs, 'ion': coll_ion_sec_elec_specs}
+    sec_specs = {'exc': coll_exc_sec_elec_specs,
+                 'ion': coll_ion_sec_elec_specs}
 
     #####################################
     # Inverse Compton
@@ -220,12 +243,13 @@ def get_elec_cooling_tf(
 
     # Energy loss transfer function for single primary electron
     # single scattering. This is dN/(dE dt), dt = 1 s.
-    # -   Similar to the above, but now we keep track of the final electron energy !!!
-    # -   In other words, E_in - E_fin = Delta is the amount of energy gained by the photons, regardless of their initial energy..
+    # - Similar to above, but now keep track of the final electron energy !!!
+    # - In other words, E_in - E_fin = Delta is the amount of energy gained by
+    #   the photons, regardless of their initial energy..
     engloss_ICS_tf = engloss_spec(
-        eleceng, delta=photeng, T=T, thomson_tf = raw_engloss_tf, rel_tf = raw_rel_tf
+        eleceng, delta=photeng, T=T,
+        thomson_tf=raw_engloss_tf, rel_tf=raw_rel_tf
     )
-
 
     # Downcasting speeds up np.dot
     phot_ICS_tf._grid_vals = phot_ICS_tf.grid_vals.astype('float64')
@@ -237,7 +261,6 @@ def get_elec_cooling_tf(
     if engloss_ICS_tf.spec_type == 'dNdE':
         engloss_ICS_tf.switch_spec_type()
 
-
     # Define some useful lengths.
     N_eleceng = eleceng.size
     N_photeng = photeng.size
@@ -246,9 +269,9 @@ def get_elec_cooling_tf(
 
     # (empty) ICS transfer function.
     elec_ICS_tf = tf.TransFuncAtRedshift(
-        np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = eleceng,
-        dlnz = -1, spec_type = 'N'
+        np.zeros((N_eleceng, N_eleceng)), in_eng=eleceng,
+        rs=rs*np.ones_like(eleceng), eng=eleceng,
+        dlnz=-1, spec_type='N'
     )
 
     if ics_engloss_data is not None:
@@ -256,49 +279,56 @@ def get_elec_cooling_tf(
             engloss_ICS_tf.grid_vals
         )
     else:
-        # A specialized function: takes the energy loss spectrum and knows how to rebin into eleceng
-        # Turns out that it is basically a delta function in the original in_eng bin (only 1s worth of scattering occurred)
-        # and the rest goes usually into the lower neighbor's bin !!!
+        # A specialized function: takes the energy loss spectrum and knows how
+        # to rebin into eleceng. Turns out that it is basically a delta
+        # function in the original in_eng bin (only 1s worth of scattering
+        # occurred) and the rest goes usually into the lower neighbor's bin !!!
         elec_ICS_tf._grid_vals = spectools.engloss_rebin_fast(
             eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
         )
 
-    #dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * phys.CMB_eng_density(phys.TCMB(rs))
+    # dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) *
+    # phys.CMB_eng_density(phys.TCMB(rs))
     dE_ICS_dt = engloss_ICS_tf.toteng()
     ICS_engloss_arr = dE_ICS_dt
     if simple_ICS:
-        elec_ICS_tf._grid_vals[0,0] = -dE_ICS_dt[0]/eleceng[0]
+        elec_ICS_tf._grid_vals[0, 0] = -dE_ICS_dt[0]/eleceng[0]
         elec_ICS_tf._grid_vals[1:, 1:] = np.diag(
             dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
         )
         elec_ICS_tf._grid_vals[1:, :-1] = -np.diag(
             dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:])
         )
-    
+
     # Total upscattered photon energy.
     cont_loss_ICS_vec = np.zeros_like(eleceng)
     # Enforces energy conservation.
     deposited_ICS_vec = np.zeros_like(eleceng)
-    
+
     #########################
     # Collisional Excitation and Ionization
     #########################
 
-    elec_tf = {'exc' : {}, 'ion' : {}}
+    elec_tf = {'exc': {}, 'ion': {}}
 
     for process in ['exc', 'ion']:
         for i, species in enumerate(atoms):
 
-            # If we're not looking at Hydrogen excitation, then don't worry about different excited states
+            # If we're not looking at Hydrogen excitation, then don't worry
+            # about different excited states
             if not ((process == 'exc') & (species == 'HI')):
                 # Collisional excitation or ionization rates.
-                rate_vec = ns[species] * coll_xsec[process](eleceng, species=species, method=method) * beta_ele * phys.c
+                rate_vec = (
+                    ns[species] *
+                    coll_xsec[process](eleceng, species, method) *
+                    beta_ele * phys.c
+                )
 
                 # Normalized electron spectrum after excitation or ionization.
                 elec_tf[process][species] = tf.TransFuncAtRedshift(
                     rate_vec[:, np.newaxis]*sec_specs[process][species],
-                    in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-                    eng = eleceng, dlnz = -1, spec_type  = 'N'
+                    in_eng=eleceng, rs=rs*np.ones_like(eleceng),
+                    eng=eleceng, dlnz=-1, spec_type='N'
                 )
 
             # If we're considering Hydrogen excitation, keep track of all l=p states to 10p, and also 2s
@@ -307,15 +337,15 @@ def get_elec_cooling_tf(
                     rate_vec = ns[species] * coll_xsec[process](
                             eleceng, species=species, method=method, state=exc
                     ) * beta_ele * phys.c
-                   #if exc == '2p': #!!!FIX
+                    # if exc == '2p': #!!!FIX
                     #    rate_vec = ns[species] * coll_xsec[process](
                     #            eleceng, species='HI', method='old'
                     #    ) * beta_ele * phys.c/4
 
                     elec_tf[process][exc] = tf.TransFuncAtRedshift(
                         rate_vec[:, np.newaxis]*sec_specs[process][exc],
-                        in_eng = eleceng, rs = rs*np.ones_like(eleceng),
-                        eng = eleceng, dlnz = -1, spec_type  = 'N'
+                        in_eng=eleceng, rs=rs*np.ones_like(eleceng),
+                        eng=eleceng, dlnz=-1, spec_type='N'
                     )
                     #if (exc[0] == '2'):
                         #print(exc, rate_vec[45]*10.2, coll_xsec[process](eleceng, species=species, method=method, state=exc)[45])
@@ -323,29 +353,28 @@ def get_elec_cooling_tf(
                     #if (exc[0] == '3'):
                         #print(exc, rate_vec[45]*13.6*8/9, coll_xsec[process](eleceng, species=species, method=method, state=exc)[45])
                         #print(elec_tf[process][exc].totN()[45]*13.6*8/9)
- 
 
-    deposited_exc_vec = {exc : np.zeros_like(eleceng) for exc in exc_types}
-    deposited_ion_vec = np.zeros_like(eleceng)
+    deposited_exc_vec = {exc: np.zeros_like(eleceng) for exc in exc_types}
 
     #############################################
     # Heating
     #############################################
 
-    dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs, method=method, Te=phys.TCMB(rs))
+    dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs, method=method,
+                                                Te=phys.TCMB(rs))
     deposited_heat_vec = np.zeros_like(eleceng)
 
-    MEDEA_heat=False
+    MEDEA_heat = False
     if MEDEA_heat:
         rate_vec = dE_heat_dt/eleceng*20
-        #rate_vec=np.ones_like(eleceng)
+        # rate_vec=np.ones_like(eleceng)
         # Electron with energy eleceng produces a spectrum with one particle
         # of energy eleceng*.95
         heat_sec_elec_tf = tf.TransFuncAtRedshift(
             id_mat,
-            in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-            eng = eleceng*.95,
-            dlnz = -1, spec_type = 'N'
+            in_eng=eleceng, rs=-1*np.ones_like(eleceng),
+            eng=eleceng*.95,
+            dlnz=-1, spec_type='N'
         )
 
         #low_sec_elec_tf += tf.TransFuncAtRedshift(
@@ -370,7 +399,7 @@ def get_elec_cooling_tf(
 
         # # After the check above, we can define the spectra by
         # # manually assigning slightly less than 1 particle along
-        # # diagonal, and a small amount in the bin below. 
+        # # diagonal, and a small amount in the bin below.
 
         # # N_n-1 E_n-1 + N_n E_n = E_n - dE_dt
         # # N_n-1 + N_n = 1
@@ -378,7 +407,7 @@ def get_elec_cooling_tf(
         # # i.e. N_n = 1 - dE_dt/(E_n - E_n-1)
 
         elec_heat_spec_grid = np.identity(eleceng.size)
-        elec_heat_spec_grid[0,0] -= dE_heat_dt[0]/eleceng[0]
+        elec_heat_spec_grid[0, 0] -= dE_heat_dt[0]/eleceng[0]
         elec_heat_spec_grid[1:, 1:] += np.diag(
             dE_heat_dt[1:]/(eleceng[:-1] - eleceng[1:])
         )
@@ -407,16 +436,16 @@ def get_elec_cooling_tf(
     # Final secondary photon spectrum.
     sec_phot_tf = tf.TransFuncAtRedshift(
         np.zeros((N_eleceng, N_photeng)), in_eng = eleceng,
-        rs = rs*np.ones_like(eleceng), eng = photeng,
-        dlnz = -1, spec_type = 'N'
+        rs = rs*np.ones_like(eleceng), eng=photeng,
+        dlnz=-1, spec_type='N'
     )
 
     #!!! Delete
     ## Final secondary low energy electron spectrum.
     #sec_lowengelec_tf = tf.TransFuncAtRedshift(
     #    np.zeros((N_eleceng, N_eleceng)), in_eng = eleceng,
-    #    rs = rs*np.ones_like(eleceng), eng = eleceng,
-    #    dlnz = -1, spec_type = 'N'
+    #    rs = rs*np.ones_like(eleceng), eng=eleceng,
+    #    dlnz=-1, spec_type='N'
     #)
 
     # Continuum energy loss rate per electron, dU_CMB/dt.
@@ -769,8 +798,8 @@ def loweng_ICS_distortion(eleceng, photeng, T):
         )
 
     spec = Spectra(
-            prefac*np.outer(beta**2, P_beta_2), in_eng = eleceng, eng = photeng,
-            spec_type = 'dNdE'
+            prefac*np.outer(beta**2, P_beta_2), in_eng=eleceng, eng=photeng,
+            spec_type='dNdE'
         )
 
     spec.switch_spec_type()
