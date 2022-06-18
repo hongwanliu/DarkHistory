@@ -443,7 +443,7 @@ def H_exc_eng(state):
 # Helium                                #
 #########################################
 
-He_ion_eng   = 24.5873891
+He_ion_eng = 24.5873891
 """Energy needed to singly ionize neutral He in eV."""
 
 He_exc_lambda = {
@@ -455,23 +455,23 @@ He_exc_lambda = {
 """HeI n=1 to n=2 excitation wavelength in cm."""
 
 He_exc_eng = {
-    #n^(2S+1)L
+    # n^(2S+1)L
     '23s': 2*np.pi*hbar*c*159855.9745,
     '21s': 2*np.pi*hbar*c*166277.4403,
     '23p': 2*np.pi*hbar*c*169087.,      # Approximate for J=0,1,2
-    '21p': 2*np.pi*hbar*c*171134.8970, '2p' : 2*np.pi*hbar*c*171134.8970,
-    #nl^(2S+1)L, n is the excited state of the excited electron, 
-    #l is its orbital angular momentum, 
-    #(2S+1) is the total spin multiplicity, 
-    #and L is the total angular momentum of the two electrons.
-    '2p1P' : 21.218,
-    '3p1P' : 23.087,
-    '4p1P' : 23.742,
-    '5p1P' : 24.046,
-    '6p1P' : 24.211,
-    '7p1P' : 24.311,
-    '8p1P' : 24.375,
-    '9p1P' : 24.420,
+    '21p': 2*np.pi*hbar*c*171134.8970, '2p': 2*np.pi*hbar*c*171134.8970,
+    # nl^(2S+1)L, n is the excited state of the excited electron,
+    # l is its orbital angular momentum,
+    # (2S+1) is the total spin multiplicity,
+    # and L is the total angular momentum of the two electrons.
+    '2p1P': 21.218,
+    '3p1P': 23.087,
+    '4p1P': 23.742,
+    '5p1P': 24.046,
+    '6p1P': 24.211,
+    '7p1P': 24.311,
+    '8p1P': 24.375,
+    '9p1P': 24.420,
     '10p1P': 24.452
 }
 """HeI n=1 to n=2 excitation energies in eV, and n=1 to 3p through 10p"""
@@ -1141,7 +1141,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
     else:
         return sum([ion_rate[atom] for atom in atoms])
 
-def coll_exc_xsec(eng, species=None, method = 'old', state=None):
+def coll_exc_xsec(eng, species=None, method='old', state=None):
     """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
 
     see under method for references
