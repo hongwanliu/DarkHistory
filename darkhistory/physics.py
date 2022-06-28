@@ -1142,7 +1142,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         return sum([ion_rate[atom] for atom in atoms])
 
 def coll_exc_xsec(eng, species=None, method='old', state=None):
-    """ e-e collisional excitation cross section in cm\ :sup:`2`\ . 
+    """ e-H or e-He collisional excitation cross section in cm\ :sup:`2`\ . 
 
     see under method for references
 
