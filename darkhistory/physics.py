@@ -1153,14 +1153,16 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
     method : {'old', 'MEDEA', 'new'}
-        if method == 'old', see 0906.1197; 
-        if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); 
-        if method == 'new', same as MEDEA, but with more excited states from CCC database
+        if method == 'old', see 0906.1197;
+        if method == 'MEDEA',
+            see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
+        if method == 'new', same as MEDEA,
+            but with more excited states from CCC database
 
     Returns
     -------
     float or ndarray
-        e-e collisional excitation cross section.
+        e-H or e-He collisional excitation cross section.
     """
     if method == 'old':
         if species == 'HI' or species == 'HeI':
@@ -1176,7 +1178,7 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
                 B_coeff = -0.0822
                 C_coeff = 0.0356
                 E_bind = He_ion_eng
-                E_exc  = He_exc_eng['23s']
+                E_exc = He_exc_eng['23s']
 
             prefac = 4*np.pi*bohr_rad**2*rydberg/(eng + E_bind + E_exc)
 
@@ -1284,7 +1286,8 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
                 else:
                     if state == '2s':
                         return np.zeros_like(KE)
-                    # Kim et al: "The f scaling compensates for the inadequacy of the wave functions when electron correlation effect is significant"
+                    # Kim et al: "The f scaling compensates for the inadequacy
+                    # of the wave functions when electron correlation effect is significant"
                     # Set f_ratio = 1 since there are no electron correlations in the hydrogen atom.
                     f_ratio = 1.
 
