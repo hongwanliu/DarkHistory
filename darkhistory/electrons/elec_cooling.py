@@ -454,14 +454,13 @@ def get_elec_cooling_tf(
     
     ##!!! take the prompt photons - thomson*c*normalized blackbody, compare to dE_ICS_dt
 
-    # Normalized CMB spectrum. 
+    # Normalized CMB spectrum.
     norm_CMB_spec = Spectrum(photeng, phys.CMB_spec(photeng, phys.TCMB(rs)), spec_type='dNdE')
     norm_CMB_spec /= norm_CMB_spec.totN()
 
-    # Get the CMB spectrum upscattered from cont_loss_ICS_vec. 
+    # Get the CMB spectrum upscattered from cont_loss_ICS_vec.
     upscattered_CMB_grid = np.outer(CMB_upscatter_rate*np.ones_like(eleceng), norm_CMB_spec.N)
-    
-    
+
     # Secondary scattered electron spectrum.
     sec_elec_spec_N_arr = (
         elec_ICS_tf.grid_vals
@@ -618,67 +617,74 @@ def get_elec_cooling_tf(
     #sec_elec_spec_N_arr[sec_elec_spec_N_arr<1e-8] = 0.
     inv_mat = id_mat - sec_elec_spec_N_arr
 
-    ICS_err_vec  = solve_triangular(
+    ICS_err_vec = solve_triangular(
         inv_mat,
         ICS_err_arr, lower=True, check_finite=False, unit_diagonal=True
     )
 
     for exc in exc_types:
-        deposited_exc_vec[exc]  = solve_triangular(
-            inv_mat, 
-            deposited_exc_eng_arr[exc], lower=True, check_finite=False, unit_diagonal=True
+        deposited_exc_vec[exc] = solve_triangular(
+            inv_mat,
+            deposited_exc_eng_arr[exc], lower=True,
+            check_finite=False, unit_diagonal=True
         )
 
-    deposited_H_ion_vec  = solve_triangular(
-        inv_mat, 
-        deposited_H_ion_eng_arr, lower=True, check_finite=False, unit_diagonal=True
+    deposited_H_ion_vec = solve_triangular(
+        inv_mat,
+        deposited_H_ion_eng_arr, lower=True,
+        check_finite=False, unit_diagonal=True
     )
 
-    deposited_He_ion_vec  = solve_triangular(
-        inv_mat, 
-        deposited_He_ion_eng_arr, lower=True, check_finite=False, unit_diagonal=True
+    deposited_He_ion_vec = solve_triangular(
+        inv_mat,
+        deposited_He_ion_eng_arr, lower=True,
+        check_finite=False, unit_diagonal=True
     )
 
     deposited_heat_vec = solve_triangular(
-        inv_mat, 
-        deposited_heat_eng_arr, lower=True, check_finite=False, unit_diagonal=True
+        inv_mat,
+        deposited_heat_eng_arr, lower=True,
+        check_finite=False, unit_diagonal=True
     )
 
     cont_loss_ICS_vec = solve_triangular(
-        inv_mat, 
-        continuum_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
+        inv_mat,
+        continuum_engloss_arr, lower=True,
+        check_finite=False, unit_diagonal=True
     )
 
     sec_phot_specs = solve_triangular(
-        inv_mat, 
-        sec_phot_spec_N_arr, lower=True, check_finite=False, unit_diagonal=True
+        inv_mat,
+        sec_phot_spec_N_arr, lower=True,
+        check_finite=False, unit_diagonal=True
     )
-    
 
     if simple_ICS:
         deposited_ICS_vec = solve_triangular(
-            inv_mat, ICS_engloss_arr, lower=True, check_finite=False, unit_diagonal=True
+            inv_mat,
+            ICS_engloss_arr, lower=True,
+            check_finite=False, unit_diagonal=True
         )
 
-    # Subtract continuum from sec_phot_specs. After this point, 
-    # sec_phot_specs will contain the *distortions* to the CMB. 
+    # Subtract continuum from sec_phot_specs. After this point,
+    # sec_phot_specs will contain the *distortions* to the CMB,
 
-    # Normalized CMB spectrum. 
+    # Normalized CMB spectrum.
     norm_CMB_spec = Spectrum(
         photeng, phys.CMB_spec(photeng, phys.TCMB(rs)), spec_type='dNdE'
     )
     norm_CMB_spec /= norm_CMB_spec.toteng()
 
-    # Get the CMB spectrum upscattered from cont_loss_ICS_vec. 
+    # Get the CMB spectrum upscattered from cont_loss_ICS_vec.
     upscattered_CMB_grid = np.outer(cont_loss_ICS_vec, norm_CMB_spec.N)
 
     # Subtract this spectrum from sec_phot_specs to get the final
     # transfer function.
 
-    sec_phot_tf._grid_vals = sec_phot_specs 
+    sec_phot_tf._grid_vals = sec_phot_specs
     if not simple_ICS:
         deposited_ICS_vec = np.dot(sec_phot_tf._grid_vals, photeng)
-    
+
     #!!! Delete
     #sec_lowengelec_tf._grid_vals = sec_lowengelec_specs
 
@@ -697,20 +703,16 @@ def get_elec_cooling_tf(
             - deposited_He_ion_vec
             - deposited_H_ion_vec
             - deposited_heat_vec
+            - deposited_ICS_vec
             #- ICS_err_vec
         )
 
-        if simple_ICS:
-            conservation_check -= ICS_engloss_vec
-        else:
-            conservation_check -= np.dot(sec_phot_tf.grid_vals, photeng)
-
-        if np.any(np.abs(conservation_check/eleceng) > 1e-3):
+        if np.any(np.abs(conservation_check/eleceng) > 1e-2):
             failed_conservation_check = True
 
         if verbose or failed_conservation_check:
 
-            for i,eng in enumerate(eleceng):
+            for i, eng in enumerate(eleceng):
 
                 print('***************************************************')
                 print('rs: ', rs)
@@ -722,16 +724,15 @@ def get_elec_cooling_tf(
                 #    np.dot(sec_lowengelec_tf.grid_vals[i], eleceng)/eng
                 #)
 
-                # print('Energy in photons: ', 
+                # print('Energy in photons: ',
                 #     np.dot(sec_phot_tf.grid_vals[i], photeng)
                 # )
-                
                 # print('Continuum_engloss: ', cont_loss_ICS_vec[i])
-                
+
                 if simple_ICS:
                     print(
                         'Fraction of Energy in photons - Continuum: ', (
-                            ICS_engloss_vec[i] #ICS modification
+                            deposited_ICS_vec[i] #ICS modification
                         )
                     )
                 else:
@@ -780,6 +781,7 @@ def get_elec_cooling_tf(
         deposited_ICS_vec, ICS_err_vec
     )
 
+
 def loweng_ICS_distortion(eleceng, photeng, T):
     y = photeng/T
 
@@ -787,12 +789,11 @@ def loweng_ICS_distortion(eleceng, photeng, T):
         phys.c*(3/8)*phys.thomson_xsec/4
         * (
             8*np.pi*T**2
-            /(phys.ele_compton*phys.me)**3
+            / (phys.ele_compton*phys.me)**3
         )
     )
 
     beta = phys.np.sqrt(1 - 1/(1 + eleceng/phys.me)**2)
-    P_beta_2 = np.zeros(y.size)
     P_beta_2 = 32/9*y**3/(1 - np.exp(-y))**3*(
             np.exp(-2*y)*(y + 4) + np.exp(-y)*(y - 4)
         )
@@ -804,4 +805,3 @@ def loweng_ICS_distortion(eleceng, photeng, T):
 
     spec.switch_spec_type()
     return spec._grid_vals
-
