@@ -105,7 +105,7 @@ def evolve(
     tf_mode : {'table', 'nn'}
         Specifies transfer function mode being used. Options: 'table': generate transfer functions from interpolating data tables; 'nn': use neural network to generate transfer functions with preset coarsen factor 12.
     verbose : {0, 1}
-        Set verbosity level.
+        Set verbosity. Tqdm not affected.
 
     Examples
     --------
