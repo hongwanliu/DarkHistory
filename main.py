@@ -277,7 +277,7 @@ def evolve(
 
     # tqdm set-up.
     if use_tqdm:
-        from tqdm import tqdm_notebook as tqdm
+        from tqdm.notebook import tqdm_notebook as tqdm
         pbar = tqdm(
             total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
         ) 
@@ -329,7 +329,8 @@ def evolve(
     #########################################################################
 
     # Initialize the arrays that will contain x and Tm results. 
-    x_arr  = np.array([[xH_init, xHe_init]])
+    # Changed to include xHeII. 
+    x_arr  = np.array([[xH_init, xHe_init, 0]])
     Tm_arr = np.array([Tm_init])
 
     # Initialize Spectra objects to contain all of the output spectra.
@@ -558,8 +559,9 @@ def evolve(
         # Initial conditions for the TLA, (Tm, xHII, xHeII, xHeIII). 
         # This is simply the last set of these variables. 
         init_cond_TLA = np.array(
-            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
+            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], x_arr[-1, 2]]
         )
+        print(rs, init_cond_TLA)
 
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
@@ -631,12 +633,12 @@ def evolve(
             if helium_TLA:
                 # Append the calculated xHe to x_arr. 
                 x_arr  = np.append(
-                        x_arr,  [[new_vals[-1,1], new_vals[-1,2]]], axis=0
+                        x_arr,  [[new_vals[-1,1], new_vals[-1,2], new_vals[-1,3]]], axis=0
                     )
             else:
                 # Append the baseline solution value. 
                 x_arr  = np.append(
-                    x_arr,  [[new_vals[-1,1], phys.xHeII_std(next_rs)]], axis=0
+                    x_arr,  [[new_vals[-1,1], phys.xHeII_std(next_rs), 0]], axis=0
                 )
 
         # Re-define existing variables. 
