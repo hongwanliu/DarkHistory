@@ -1321,13 +1321,27 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
         else:
             Einj = mDM/2 - me
 
+    if isinstance(Einj, (int, float)): 
+
+        if (Einj < 5.001e3) or (Einj > 10**12.6015): 
+
+            raise ValueError('No standard f(z) for this mass.')
+
+    else: 
+
+        if (Einj[Einj < 5.001e3].size > 0) or (Einj[Einj > 10**12.6015].size > 0):
+
+            raise ValueError('No standard f(z) for part of the mass range.')
+        
+
 
     ind_dict = {'H ion' : 0, 'He ion' : 1, 'exc' : 2, 'heat' : 3, 'cont' : 4}
     ind = ind_dict[channel]
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
 
-    Einj[Einj<5.001e3] = 5.001e3
-    Einj[Einj>10**12.6015] = 10**12.6015
+
+    # Einj[Einj<5.001e3] = 5.001e3
+    # Einj[Einj>10**12.6015] = 10**12.6015
 
     if inj_particle != 'phot' or inj_type != 'swave':
         rs[rs<4.017] = 4.017
