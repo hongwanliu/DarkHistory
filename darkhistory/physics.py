@@ -4,9 +4,6 @@ Throughout DarkHistory, we choose cm, s and eV as our system of units. Masses an
 
 """
 
-import pickle
-import sys
-
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
@@ -131,8 +128,8 @@ def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_l
     float
     """
 
-
     return H0*np.sqrt(omega_rad*rs**4 + omega_m*rs**3 + omega_lambda)
+
 
 def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
     """ dt/dz in s.
@@ -161,6 +158,7 @@ def dtdz(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lam
 # CMB                                   #
 #########################################
 
+
 def TCMB(rs):
     """ CMB temperature in eV.
 
@@ -176,6 +174,7 @@ def TCMB(rs):
 
     fac = 2.7255
     return fac * kB * rs
+
 
 def CMB_spec(eng, temp):
     """CMB spectrum in number of photons cm\ :sup:`-3` eV\ :sup:`-1`\ .
@@ -226,6 +225,7 @@ def CMB_spec(eng, temp):
 
     return expr
 
+
 def CMB_N_density(T):
     """ CMB number density in cm\ :sup:`-3`\ .
 
@@ -243,6 +243,7 @@ def CMB_N_density(T):
     zeta_4 = np.pi**4/90
 
     return 4*stefboltz/c*T**3*(zeta(3)/(3*zeta_4))
+
 
 def CMB_eng_density(T):
     """CMB energy density in eV cm\ :sup:`-3`\ .
@@ -263,6 +264,7 @@ def CMB_eng_density(T):
 #########################################
 # Dark Matter                           #
 #########################################
+
 
 def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     """ Dark matter annihilation/decay energy injection rate.
@@ -308,23 +310,16 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     elif inj_type == 'pwave':
         sigmav_ref = sigmav
 
-        #A reference 1D dispersion used to fix the prefactor in <sigma v>, 
+        # A reference 1D dispersion used to fix the prefactor in <sigma v>,
         # conventionally set to dispersion of WIMPS in Milky Way sized halo
         sigma_1D_ref_over_c = 1e7/c
 
-        #1D dispersion of unclustered DM today
+        # 1D dispersion of unclustered DM today
         sigma_1D_B_over_c = 1e-11*(1/100)**0.5
 
-        return rho_DM**2*rs**8*sigmav_ref/mDM*(sigma_1D_B_over_c/sigma_1D_ref_over_c)**2
+        return rho_DM**2*rs**8*sigmav_ref/mDM*(
+            sigma_1D_B_over_c/sigma_1D_ref_over_c)**2
 
-# Create interpolation with structure formation data. 
-# if 'pytest' not in sys.modules and 'readthedocs' not in sys.modules:
-#     struct_data = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
-
-#     log_struct_interp = interp1d(
-#         np.log(struct_data[:,0]), np.log(struct_data[:,1]),
-#         bounds_error=False, fill_value=(np.nan, 0.)
-#     )
 
 def struct_boost_func(model='einasto_subs', model_params=None):
     """Structure formation boost factor 1+B(z).
@@ -332,14 +327,14 @@ def struct_boost_func(model='einasto_subs', model_params=None):
     Parameters
     ----------
     model : {'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc', 'pwave_NFW_no_subs'}
-        Model to use. See 1604.02457. 
+        Model to use. See 1604.02457.
     model_params : tuple of floats
-        Model parameters (b_h, delta, z_h) for 'erfc' option. 
+        Model parameters (b_h, delta, z_h) for 'erfc' option.
 
     Returns
     -------
     float or ndarray
-        Boost factor. 
+        Boost factor.
 
     Notes
     -----
@@ -353,7 +348,7 @@ def struct_boost_func(model='einasto_subs', model_params=None):
         from scipy.special import erfc
 
         if model_params is None:
-            # Smallest boost in 1408.1109. 
+            # Smallest boost in 1408.1109.
             b_h   = 1.6e5
             delta = 1.54
             z_h   = 19.5
@@ -364,13 +359,13 @@ def struct_boost_func(model='einasto_subs', model_params=None):
 
         def func(rs):
 
-            return 1. + b_h / rs**delta * erfc( rs/(1+z_h) )
+            return 1. + b_h / rs**delta * erfc(rs/(1+z_h))
 
     else:
 
         struct_data = load_data('struct')[model]
         log_struct_interp = interp1d(
-            np.log(struct_data[:,0]), np.log(struct_data[:,1]),
+            np.log(struct_data[:, 0]), np.log(struct_data[:, 1]),
             bounds_error=False, fill_value=(np.nan, 0.)
         )
 
@@ -380,11 +375,10 @@ def struct_boost_func(model='einasto_subs', model_params=None):
 
     return func
 
-
-
 #########################################
 # Other Cosmology Functions             #
 #########################################
+
 
 def get_optical_depth(rs_vec, xe_vec):
     """Computes the optical depth given an ionization history.
@@ -431,17 +425,20 @@ width_2s1s_H = 8.22458
 """Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
 bohr_rad     = (hbar*c) / (mu_ep*alpha)
 """Bohr radius in cm."""
+
+
 def H_exc_eng(state):
-    if (state=='2s') | (state=='2p'):
+    """HI n=1 to n=2s and 2p through 10p excitation energies in eV"""
+    if (state == '2s') | (state == '2p'):
         return lya_eng
     else:
         n = float(state[:-1])
         return rydberg * (1-1/n**2)
-"""HI n=1 to n=2s and 2p through 10p excitation energies in eV"""
 
 #########################################
 # Helium                                #
 #########################################
+
 
 He_ion_eng = 24.5873891
 """Energy needed to singly ionize neutral He in eV."""
@@ -476,11 +473,11 @@ He_exc_eng = {
 }
 """HeI n=1 to n=2 excitation energies in eV, and n=1 to 3p through 10p"""
 
-A_He_21p = 1.798287e9    
+A_He_21p = 1.798287e9
 """Einstein coefficient for 2\ :sup:`1`\ p :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
-A_He_23P1 = 177.58        
+A_He_23P1 = 177.58
 """Einstein coefficient for 2\ :sup:`3`\ P\ :sub:`1` :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
-width_21s_1s_He = 51.3 
+width_21s_1s_He = 51.3
 """Width of He 2\ :sup:`1`\ s :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 
 
@@ -574,7 +571,7 @@ def beta_ion(T_rad, species, fudge=1.125):
         c * 2*np.pi*hbar
         / np.sqrt(2 * np.pi * mu_ep * T_rad)
     )
-    
+
     if species == 'HI':
         return (
             (1/de_broglie_wavelength)**3
@@ -587,19 +584,22 @@ def beta_ion(T_rad, species, fudge=1.125):
         # print(de_broglie_wavelength)
         return 4*(
             (1/de_broglie_wavelength)**3
-            * np.exp(-E_21s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_21s', fudge=fudge)
+            * np.exp(-E_21s_inf/T_rad)
+            * alpha_recomb(T_rad, 'HeI_21s', fudge=fudge)
         )
 
     elif species == 'HeI_23s':
         E_23s_inf = He_ion_eng - He_exc_eng['23s']
         return (4/3)*(
             (1/de_broglie_wavelength)**3
-            * np.exp(-E_23s_inf/T_rad) * alpha_recomb(T_rad, 'HeI_23s', fudge=fudge)
+            * np.exp(-E_23s_inf/T_rad)
+            * alpha_recomb(T_rad, 'HeI_23s', fudge=fudge)
         )
 
     else:
 
         return TypeError('invalid species.')
+
 
 def peebles_C(xHII, rs, fudge=1.125, gauss_fudge=True):
     """Hydrogen Peebles C coefficient.
@@ -670,7 +670,7 @@ def C_He(xHII, xHeII, rs, species):
 
     if species == 'singlet':
 
-        # Energy difference between 21p and 21s states 
+        # Energy difference between 21p and 21s states
         E_ps = He_exc_eng['21p'] - He_exc_eng['21s']
 
         # Sobolev optical depth
@@ -705,23 +705,23 @@ def C_He(xHII, xHeII, rs, species):
         # rate for excitation to 21p
         K = (1/3)/(A_He_21p * (p_He + p_H) * (nH*rs**3) * (chi - xHeII))
 
-        numer = (
-            1 + K * width_21s_1s_He 
+        numerator = (
+            1 + K * width_21s_1s_He
             * (nH*rs**3) * (chi - xHeII) * np.exp(E_ps/T)
         )
-        denom = (
-            1 + K * (width_21s_1s_He + beta_ion(T, 'HeI_21s')) 
+        denominator = (
+            1 + K * (width_21s_1s_He + beta_ion(T, 'HeI_21s'))
             * (nH*rs**3) * (chi - xHeII) * np.exp(E_ps/T)
         )
 
-        return numer/denom
+        return numerator/denominator
 
     elif species == 'triplet':
 
         E_ps = He_exc_eng['23p'] - He_exc_eng['23s']
 
         tau = 3 * A_He_23P1 * nH*rs**3 * (chi - xHeII) * (
-            He_exc_lambda['23p']**3/(8* np.pi *hubble(rs))
+            He_exc_lambda['23p']**3/(8*np.pi*hubble(rs))
         )
 
         # Escape probability
@@ -740,7 +740,7 @@ def C_He(xHII, xHeII, rs, species):
         gamma_denom = 8*np.pi**(3/2)*sigma_H_photo_ion*Delta_nu*(1 - xHII)
 
         if xHII >= 1:
-            # Avoid dividing by zero. 
+            # Avoid dividing by zero.
             gamma = np.inf
         else:
             gamma = gamma_numer/gamma_denom
@@ -1042,7 +1042,8 @@ def Tm_std(rs, rs_extrap=None):
 def photo_ion_xsec(eng, species):
     """Photoionization cross section in cm\ :sup:`2`\ .
 
-    Cross sections for hydrogen, neutral helium and singly-ionized helium are available.
+    Cross sections for hydrogen, neutral helium
+    and singly-ionized helium are available.
 
     Parameters
     ----------
@@ -1057,7 +1058,7 @@ def photo_ion_xsec(eng, species):
         Photoionization cross section.
     """
 
-    eng_thres = {'HI':rydberg, 'HeI':He_ion_eng, 'HeII':4*rydberg}
+    eng_thres = {'HI': rydberg, 'HeI': He_ion_eng, 'HeII': 4*rydberg}
 
     if not isinstance(eng, np.ndarray):
         if isinstance(eng, list):
@@ -1069,10 +1070,10 @@ def photo_ion_xsec(eng, species):
                 return 0
 
     ind_above = np.where(eng > eng_thres[species])
-    
+
     xsec = np.zeros(eng.size)
 
-    if species == 'HI' or species =='HeII':
+    if species == 'HI' or species == 'HeII':
         eta = np.zeros(eng.size)
         eta[ind_above] = 1./np.sqrt(eng[ind_above]/eng_thres[species] - 1.)
         xsec[ind_above] = (2.**9*np.pi**2*ele_rad**2/(3.*alpha**3)
@@ -1094,12 +1095,14 @@ def photo_ion_xsec(eng, species):
 
         x[ind_above]    = (eng[ind_above]/E0) - y0
         y[ind_above]    = np.sqrt(x[ind_above]**2 + y1**2)
-        xsec[ind_above] = (sigma0*((x[ind_above] - 1)**2 + yw**2)
-            *y[ind_above]**(0.5*P - 5.5)
-            *(1 + np.sqrt(y[ind_above]/ya))**(-P)
-            )
+        xsec[ind_above] = (
+            sigma0*((x[ind_above] - 1)**2 + yw**2)
+            * y[ind_above]**(0.5*P - 5.5)
+            * (1 + np.sqrt(y[ind_above]/ya))**(-P)
+        )
 
     return xsec
+
 
 def photo_ion_rate(rs, eng, xH, xe, atom=None):
     """Photoionization rate in cm\ :sup:`-3` s\ :sup:`-1`\ .
@@ -1115,24 +1118,26 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
     xe : float
         Ionization fraction ne/nH = nH+/nH + nHe+/nH.
     atom : {None,'HI','HeI','HeII'}, optional
-        Determines which photoionization rate is returned. The default value is ``None``, which returns the total rate.
+        Determines which photoionization rate is returned.
+        The default value is ``None``, which returns the total rate.
 
     Returns
     -------
     float
-        The photoionization rate of the particular species or the total ionization rate.
+        The photoionization rate of the particular species or the
+        total ionization rate.
 
     """
     atoms = ['HI', 'HeI', 'HeII']
 
     xHe = xe - xH
     atom_densities = {
-        'HI':nH*(1-xH)*rs**3, 'HeI':(nHe - xHe*nH)*rs**3,
-        'HeII':xHe*nH*rs**3
+        'HI': nH*(1-xH)*rs**3, 'HeI': (nHe - xHe*nH)*rs**3,
+        'HeII': xHe*nH*rs**3
     }
 
     ion_rate = {
-        atom: photo_ion_xsec(eng,atom) * atom_densities[atom] * c
+        atom: photo_ion_xsec(eng, atom) * atom_densities[atom] * c
         for atom in atoms
     }
 
@@ -1140,6 +1145,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
         return ion_rate[atom]
     else:
         return sum([ion_rate[atom] for atom in atoms])
+
 
 def coll_exc_xsec(eng, species=None, method='old', state=None):
     """ e-H or e-He collisional excitation cross section in cm\ :sup:`2`\ . 
@@ -1230,34 +1236,40 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
             exc_eng = He_exc_eng[state]
             ion_eng = He_ion_eng
         else:
-            #!!! Maybe it's wiser to throw a warning
+            # !!! Maybe it's wiser to throw a warning
             return 0
-
 
         # If eng is a number, make it an np.ndarray
         if isinstance(eng*1., float):
             eng = np.array([eng])
 
-        # parameters for 1s-np, see Stone, Kim, Desclaux (2002). No resonance  at threshold is included.
+        # parameters for 1s-np, see Stone, Kim, Desclaux (2002).
+        # No resonance  at threshold is included.
 
-        #!!! The Bethe approximation requires relativistic corrections at E > ~10keV
-        #Parameters for high energy limit, ordered from 2p to 10p
+        # !!! The Bethe approximation requires relativistic corrections at E > ~10keV
+        # Parameters for high energy limit, ordered from 2p to 10p
         a_params = {
-            'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,  .004919,  .003237,  .002246,  .001623],
-            'HeI': [ .165601,  .041611,  .016111,  .008298,  .004740,  .002963,  .001975,  .001383,  .001006]
-        } 
+            'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,
+                     .004919,  .003237,  .002246,  .001623],
+            'HeI': [ .165601,  .041611,  .016111,  .008298,  .004740,
+                     .002963,  .001975,  .001383,  .001006]
+        }
         b_params = {
-            'HI':  [ .271785,  .060202,  .022984,  .011243,  .006348,  .003939,  .002550,  .001824,  .001323],
-            'HeI': [-.076942, -.018087, -.007040, -.003475, -.001972, -.001227, -.000816, -.000570, -.000414]
+            'HI':  [ .271785,  .060202,  .022984,  .011243,  .006348,
+                    .003939,  .002550,  .001824,  .001323],
+            'HeI': [-.076942, -.018087, -.007040, -.003475, -.001972,
+                    -.001227, -.000816, -.000570, -.000414]
         }
         c_params = {
-            'HI':  [ .000112, -.019775, -.009279, -.004880, -.002853, -.001806, -.001213, -.000854, -.000623],
-            'HeI': [ .033306,  .002104, -.000045, -.000228, -.000194, -.000146, -.000108, -.000080, -.000061]
+            'HI':  [ .000112, -.019775, -.009279, -.004880, -.002853,
+                    -.001806, -.001213, -.000854, -.000623],
+            'HeI': [ .033306,  .002104, -.000045, -.000228, -.000194,
+                    -.000146, -.000108, -.000080, -.000061]
         }
 
-        #Fit the last 3 data points to Eq (5) in Stone, Kim, Desclaux (2002).
+        # Fit the last 3 data points to Eq (5) in Stone, Kim, Desclaux (2002).
         CCC_params = {
-            '2s': [-0.0007159 ,  0.11452997, -0.13129725],
+            '2s': [-0.0007159,  0.11452997, -0.13129725],
             #'2p': array([0.56380322, 0.24049544, 0.14332047]),
             '3s': [-0.00015347,  0.02289828, -0.03031804],
             #'3p': array([0.09032339, 0.05555073, 0.0011389 ]),
@@ -1274,8 +1286,10 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
             #'10p': array([ 0.00162042,  0.00135187, -0.00093072])
         }
 
-        fsc_HeI  = [ .2583,    .07061,   .02899,   .01466,   .00844,   .00529,   .00354,   .00248,   .00181]
-        facc_HeI = [ .2762,    .07343,   .02986,   .01504,   .00863,   .00541,   .00361,   .00253,   .00184]
+        fsc_HeI = [ .2583,    .07061,   .02899,   .01466,   .00844,
+                   .00529,   .00354,   .00248,   .00181]
+        facc_HeI = [ .2762,    .07343,   .02986,   .01504,   .00863,
+                    .00541,   .00361,   .00253,   .00184]
 
         # Eqn (5) of Kim, Stone, Desclaux (2002)
         def xsec_asympt(species, state, KE):
@@ -1291,20 +1305,24 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
                     # Set f_ratio = 1 since there are no electron correlations in the hydrogen atom.
                     f_ratio = 1.
 
-                factor = (a_params[species][ind] * np.log(KE/rydberg) 
-                        + b_params[species][ind]
-                        + c_params[species][ind] * rydberg/KE)*f_ratio
+                factor = (a_params[species][ind] * np.log(KE/rydberg)
+                          + b_params[species][ind]
+                          + c_params[species][ind] * rydberg/KE)*f_ratio
 
-                return 4*np.pi*bohr_rad**2*rydberg/(KE + ion_eng + exc_eng) * factor
+                return 4*np.pi*bohr_rad**2*rydberg/(
+                    KE + ion_eng + exc_eng) * factor
+
             else:
                 factor = (CCC_params[state][0] * np.log(KE/rydberg)
-                        + CCC_params[state][1]
-                        + CCC_params[state][2] * rydberg/KE)
+                          + CCC_params[state][1]
+                          + CCC_params[state][2] * rydberg/KE)
 
-                return 4*np.pi*bohr_rad**2*rydberg/(KE + ion_eng + exc_eng) * factor
+                return 4*np.pi*bohr_rad**2*rydberg/(
+                    KE + ion_eng + exc_eng) * factor
 
         if method == 'AcharyaKhatri':
-            exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng) # in units of cm^2
+            # in units of cm^2
+            exc_xsec = load_data('exc_AcharyaKhatri')[species][state](eng)
             exc_xsec[eng < exc_eng] = 0
             # CCC cross-sections end around 1 keV
             if species == 'HI':
@@ -1315,14 +1333,17 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
             # !!! bad extrapolation
             exc_xsec[eng < 14] = load_data('exc_AcharyaKhatri')[species][state](14)
         else:
-            exc_xsec = load_data('exc')[species][state](eng) # in units of cm^-2
+            # in units of cm^-2
+            exc_xsec = load_data('exc')[species][state](eng)
             exc_xsec[eng < exc_eng] = 0
             exc_xsec[eng > 3e3] = xsec_asympt(species, state, eng[eng > 3e3])
 
         return exc_xsec
-    
+
     else:
-        raise TypeError("Must pick method in {'old', 'MEDEA', 'AcharyaKhatri', or 'new'}")
+        raise TypeError("Must pick method in {'old', 'MEDEA',\
+                        'AcharyaKhatri', or 'new'}")
+
 
 def coll_ion_xsec(eng, species=None, method='old'):
     """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
@@ -1426,10 +1447,13 @@ def coll_ion_xsec(eng, species=None, method='old'):
         elif species == 'HeII':
             B = 4*rydberg
             Z = 2
+
             def F1(tt):
                 return -1.4332/(tt+1)**2
-            def F2(tt): 
+
+            def F2(tt):
                 return 1.4332/(tt+1)
+
             def F3(tt):
                 return 0.5668 * np.log(tt)/(tt+1)
             tt = eng/Z**2/rydberg
@@ -1456,7 +1480,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
         )
         ionHI = interp1d(ionHI[:,0], ionHI[:,1], bounds_error=False, fill_value=(1.69960e-18,1.08292e-17))
         xsec = ionHI(eng)
-        
+
         # Low Values
         xsec[eng < rydberg] = 0
 
@@ -1473,6 +1497,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
         raise TypeError('method = new not developed yet')
 
     return xsec
+
 
 def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     """ Secondary electron spectrum after collisional ionization. 
