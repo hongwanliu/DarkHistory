@@ -666,6 +666,10 @@ def process_MLA(
         ###
         # Construct the matrix
         ###
+
+        # Set 2s <-> 1s rates to their default values w/o photon backgrounds
+        # BB_2s1s['dn'] = phys.width_2s1s_H
+        # BB_2s1s['up'] = phys.width_2s1s_H * np.exp(-phys.lya_eng / Tr)
         if nl == 0:  # special case: 1s -> 2s
             tot_rate += BB_2s1s['up']
             if tot_rate > 0:
