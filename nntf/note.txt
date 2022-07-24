@@ -1,9 +1,0 @@
-NOTE:
-change name of default binning to update
-test hep_s11 diagonal +1 whether to stop at nonvanishing
-
-CHANGE ASSUMED:
-lee now behaves like hep
-
-SCRATCH
-
