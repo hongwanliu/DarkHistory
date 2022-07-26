@@ -914,7 +914,8 @@ def evolve(
         # which is absent when there are no electrons
         f_err = f_elec['err']
 
-        if elec_processes and not cross_check and False:
+        # !!! This is MEDEA's old method, should be updated
+        if elec_processes and not cross_check:
             deposited_exc = {state: np.dot(
                 deposited_exc_arr[state], tot_spec_elec.N
             ) for state in H_states}
@@ -929,7 +930,7 @@ def evolve(
                     1-Ps[state]  # 2s->1s
                     + Ps[state] * (1-phys.lya_eng/phys.H_exc_eng(state))
                 )
-                for state in H_states]) / dt * norm
+                for state in Ps.keys()]) / dt * norm
 
         if compute_fs_method == 'old':
             # The old method neglects helium.
