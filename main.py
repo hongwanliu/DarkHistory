@@ -86,6 +86,10 @@ def evolve(
         :math:`(1+z)` = 3000. Specify only for use with *DM_process*.
         Otherwise, initialize *in_spec_elec.rs* and/or
         *in_spec_phot.rs* directly.
+    high_rs : float, optional
+        Threshold redshift used to deal with stiff ODE.
+        For rs > high_rs, solve for x_HII using xHII_std and Tm using Tm_std.
+        For rs < high_rs, solve the differential equations numerically.
     end_rs : float, optional
         Final redshift :math:`(1+z)` to evolve to. Default is 1+z = 4.
     reion_switch : bool
@@ -132,6 +136,35 @@ def evolve(
     cross_check : bool, optional
         If *True*, compare against 1604.02457 by using original MEDEA files,
         turning off partial binning, etc. Default is *False*.
+    distort : bool, optional
+        If *True* calculate the distortion. This sets elec_processes to True.
+        If *False* speed up the code by skipping slow electron cooling code.
+    fudge : float, optional
+        Value of Recfast fudge factor, the one that multiplies the overall TLA.
+    nmax : int, optional
+        If distort==True, sets the maximum H substate that the MLA tracks.
+    fexc_switch : bool, optional
+        If *True*, include the source term b_DM to the MLA steady-state
+        equation, Mx = b
+    MLA_funcs : list, optional
+        A list of three interpolating functions for the MLA rates:
+        (i) The recombination rate as a function of redshift, alpha_MLA
+        (ii) The ionization rate, beta_MLA
+        (iii) The MLA ionization rate correction due to energy inj., beta_DM
+        For example, if `out` is the output of a main.evolve() run with
+        distort set to True,
+            [interp1d(out['MLA'][0], out['MLA'][i]), for i in range(1,4)]
+        could be passed into MLA_funcs
+    recfast_TLA : bool, optional
+        If *True*, use Recfast's modified TLA equations with f_ion and f_exc
+        terms included.
+        If *False*, use the MLA equations as layed out in arXiv:xxxx.xxxx
+    reprocess_distortion : bool, optional
+        if *True*, set Delta_f != 0, accounting for distortion photons from
+        earlier redshifts to be absorbed or stimulate emission, i.e. be
+        reprocessed.
+
+
 
     Examples
     --------
