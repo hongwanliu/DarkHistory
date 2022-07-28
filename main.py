@@ -50,7 +50,7 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
     use_tqdm=True, cross_check=False, recfast_TLA=None,
-    reprocess_distortion=False, Delta_f_2D=None
+    reprocess_distortion=True, Delta_f_2D=None
 ):
     """
     Main function computing histories and spectra.
