@@ -571,7 +571,17 @@ def peebles_C(xHII, rs):
         The Peebles C factor.
     """
     # Rate 2s to 1s transition.
-    rate_2s1s = width_2s1s_H
+    # rate_2s1s = width_2s1s_H
+
+    if rs > 200: 
+
+        # Correction from stimulated decay. 
+        rate_2s1s = -1.59647e-11 * rs**3 + 1.56316e-7 * rs**2 + 0.0000144202 * rs + 8.22068
+
+    else: 
+
+        rate_2s1s = width_2s1s_H
+
 
     # Rate of 2p to 1s transition, times (1 - xHII). 
     rate_2p1s_times_x1s = (
