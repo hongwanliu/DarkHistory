@@ -1,0 +1,13 @@
+figure.figsize : 8,6
+text.usetex : True
+
+font.size : 18
+font.family : serif
+font.serif  : cm
+
+axes.titlesize : 18
+axes.labelsize : 18
+xtick.labelsize : 18
+ytick.labelsize : 18
+
+savefig.bbox : tight

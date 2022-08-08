@@ -93,11 +93,11 @@ def get_elec_cooling_tf(
 
     # Use default ICS transfer functions if not specified.
 
-    ics_tf = load_data('ics_tf')
+    #ics_tf = load_data('ics_tf')
 
-    raw_thomson_tf = ics_tf['thomson']
-    raw_rel_tf     = ics_tf['rel']
-    raw_engloss_tf = ics_tf['engloss']
+    #raw_thomson_tf = ics_tf['thomson']
+    #raw_rel_tf     = ics_tf['rel']
+    #raw_engloss_tf = ics_tf['engloss']
 
     if coll_ion_sec_elec_specs is None:
 
