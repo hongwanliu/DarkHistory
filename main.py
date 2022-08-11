@@ -838,20 +838,6 @@ def evolve(
         append_lowengphot_spec(lowengphot_spec_at_rs)
         append_lowengelec_spec(lowengelec_spec_at_rs)
 
-        if distort:
-            # Contribution to the distortion from this step
-            # temp_spec = lowengphot_spec_at_rs.copy()
-            # temp_spec.rebin(dist_eng)
-            streaming_lowengphot.N += atomic_dist_spec.N
-            # temp_spec.N *= dist_mask
-
-            append_distort_spec(streaming_lowengphot)
-
-            # Total distortion at this step
-            tmp_distortion = out_distort_specs.copy()
-            tmp_distortion.redshift(rs)
-            distortion = tmp_distortion.sum_specs()
-
         #####################################################################
         #####################################################################
         # Compute f_c(z)                                                    #
@@ -1003,6 +989,38 @@ def evolve(
             f_c,
             [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err]]
         ))
+
+        # Now that we have f's, calculate the distortion contribution
+        if distort:
+            # Add atomic contribution to the distortion from this step
+            streaming_lowengphot.N += atomic_dist_spec.N
+            print(atomic_dist_spec.dNdE) # DEBUGGING
+
+            # Add heating contribution to the distortion from this step
+            xe = x_arr[-1, 0] + x_arr[-1, 1] # not including HeIII
+            J = 8 * phys.thomson_xsec * (4 * phys.stefboltz / phys.c) * phys.TCMB(rs)**4 * xe * phys.c / 3 / (1 + phys.chi + xe) / phys.me / phys.hubble(rs)
+            J_cond = 100
+            if J < J_cond:
+                TmTr = Tm_arr[-1] - phys.TCMB(rs)
+            else:
+                dTdz_dm = - phys.dtdz(rs)*(
+                    f_heat * phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+                ) / (3/2 * phys.nH * rs**3 * (1 + phys.chi + xe))
+                TmTr = - (phys.TCMB(rs) / J) + (- dTdz_dm / phys.dtdz(rs) / phys.hubble(rs)) / J
+            dydz = TmTr * phys.thomson_xsec * xe * phys.nH * rs**3 * phys.c / phys.me / rs / phys.hubble(rs) 
+            y = dydz * rs * (1 - np.exp(-dlnz * coarsen_factor))
+            y_heat_spec = phys.ymu_distortion(dist_eng, y, phys.TCMB(rs), 'y')
+            streaming_lowengphot.N += y_heat_spec.N
+            print(y_heat_spec.dNdE) # DEBUGGING
+
+            append_distort_spec(streaming_lowengphot)
+
+            # Total distortion at this step
+            tmp_distortion = out_distort_specs.copy()
+            tmp_distortion.redshift(rs)
+            distortion = tmp_distortion.sum_specs()
+
+
 
         #####################################################################
         #####################################################################
