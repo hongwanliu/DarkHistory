@@ -994,7 +994,6 @@ def evolve(
         if distort:
             # Add atomic contribution to the distortion from this step
             streaming_lowengphot.N += atomic_dist_spec.N
-            print(atomic_dist_spec.dNdE) # DEBUGGING
 
             # Add heating contribution to the distortion from this step
             xe = x_arr[-1, 0] + x_arr[-1, 1] # not including HeIII
@@ -1008,10 +1007,9 @@ def evolve(
                 ) / (3/2 * phys.nH * rs**3 * (1 + phys.chi + xe))
                 TmTr = - (phys.TCMB(rs) / J) + (- dTdz_dm / phys.dtdz(rs) / phys.hubble(rs)) / J
             dydz = TmTr * phys.thomson_xsec * xe * phys.nH * rs**3 * phys.c / phys.me / rs / phys.hubble(rs) 
-            y = dydz * rs * (1 - np.exp(-dlnz * coarsen_factor))
+            y = dydz * (-rs * (1 - np.exp(-dlnz * coarsen_factor)))
             y_heat_spec = phys.ymu_distortion(dist_eng, y, phys.TCMB(rs), 'y')
             streaming_lowengphot.N += y_heat_spec.N
-            print(y_heat_spec.dNdE) # DEBUGGING
 
             append_distort_spec(streaming_lowengphot)
 
