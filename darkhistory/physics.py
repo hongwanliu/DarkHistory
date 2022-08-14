@@ -1999,17 +1999,17 @@ def dNdE_2s1s(eng, Spitz_Green=False):
 #     return 0
 
 
-def ymu_distortion(nu, amp, T, dist_type):
+def ymu_distortion(eng, amp, rs, dist_type):
     """y or mu type distortion
 
     Parameters
     ----------
-    nu  : float
-        Frequency in units of s^-1
+    eng : float
+        Energy bins in units of eV
     amp : float
         Amplitude of distortion
-    T   : float
-        Temperature in units of Kelvins
+    rs  : float
+        Redshift of distortion
     dist_type : string
         'y' or 'mu'
 
@@ -2017,19 +2017,21 @@ def ymu_distortion(nu, amp, T, dist_type):
     -------
     Intensity in units of (eV/s) / cm^2 / ster / Hz
     """
-    x = 2 * np.pi * hbar * nu / kB / T
+    from darkhistory.spec.spectrum import Spectrum
+    nu = eng / (2*np.pi*hbar)
+    x = eng / TCMB(rs)
     
     # can we add i-type distortions as well?
     # From section 3.1 of 1304.6120
     
     if dist_type == 'y':
-        return (amp * 4. * np.pi * hbar * nu**3 / c**2
+        delI = (amp * 4. * np.pi * hbar * nu**3 / c**2
                 * x * np.exp(-x) / (1. - np.exp(-x))**2
                 *(x * (1. + np.exp(-x)) / (1. - np.exp(-x)) - 4.)
                )
-    
     elif dist_type == 'mu':
-        return (amp * 4. * np.pi * hbar * nu**3 / c**2
+        delI = (amp * 4. * np.pi * hbar * nu**3 / c**2
                 * np.exp(x) / (np.exp(x) - 1.)**2
                 *(x / 2.19 - 1.)
                )
+    return Spectrum(eng, 4 * np.pi * delI / (2*np.pi*hbar) / c / eng / nB, rs, spec_type='dNdE')
