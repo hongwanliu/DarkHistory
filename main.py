@@ -2,6 +2,7 @@
 
 """
 import numpy as np
+import pickle
 from numpy.linalg import matrix_power
 from scipy.interpolate import interp1d, interp2d
 
@@ -1383,3 +1384,82 @@ def iterate(
         fexc_switch=fexc_switch, reprocess_distortion=reprocess_distortion,
         nmax=nmax, Delta_f_2D=Delta_f_2D, rtol=rtol
     )
+
+
+def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str, iter=5): 
+    """
+    Embarrassingly parallel scan over DM parameters and saves the output. 
+
+    Parameters
+    ----------
+    DM_params : list of dict
+        Dark matter parameters, listed as {'pri':'elec' or 'phot', 'DM_process':'swave' or 'decay', 'mDM':mDM, 'inj_param':sigmav or tau}
+    ind : int
+        Index of `DM_params` to run for this job. 
+    evolve_options_dict : dict
+        Options to be passed to :func:`main.evolve`. Options that are not specified are set to `None`.  
+    save_dir : string
+        Directory to save the output in. 
+    file_name_str : string
+        Additional descriptive string for file. 
+    iter : int
+        Number of iterations for convergence of recombination rates.
+
+    Returns
+    -------
+    None
+
+    """
+
+    params = DM_params[ind]
+    data = []
+
+    for iteration in range(iter): 
+
+        print('~~~Iteration ', iteration, '~~~')
+
+        # If this is first iteration, use Recfast TLA rates
+        if iteration == 0:
+            TLA_switch = True
+            MLA_funcs = None
+        # For subsequent iterations, use rates calculated from previous run
+        else:
+            TLA_switch = False
+            rates = data[iteration-1]['MLA']
+            MLA_funcs = [
+                interp1d(rates[0], rates[i], fill_value='extrapolate')
+                for i in range(1,4)
+            ]
+
+        res = evolve(
+            DM_process=params['DM_process'], mDM=params['mDM'], 
+            lifetime=params['inj_param'], sigmav=params['inj_param'],
+            primary=params['pri']+'_delta', recfast_TLA=TLA_switch, MLA_funcs=MLA_funcs, **evolve_options_dict 
+        )
+
+        data.append(res)
+
+    fn = (
+        save_dir
+        +params['pri']+'_'+params['DM_process']+'_'+'log10param_'
+        +'{0:2.4f}'.format(np.log10(params['inj_param']))
+        +f'_log10mDM_'
+        +'{0:2.4f}'.format(np.log10(params['mDM']))
+        +'_'+file_name_str+'.p'
+    )
+
+    pickle.dump({'DM_params':params, 'ind':ind, 'data':data}, open(fn, 'wb'))
+
+    print('Successfully produced file: ', fn)
+
+    return None
+
+
+
+
+
+
+
+
+
+

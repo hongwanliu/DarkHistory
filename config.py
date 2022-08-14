@@ -19,8 +19,9 @@ from scipy.interpolate import interp1d
 # LOOK FOR THESE DATA FILES HERE. 
 
 #data_path = '/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data'
-data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
+# data_path = '/Users/gregoryridgway/Downloads/dataverse_files_06_08_2019'
 # data_path = '/Users/hongwan/Dropbox (MIT)/Photon Deposition/DarkHistory_data'
+data_path = '/scratch/gpfs/hongwanl/DarkHistory/data'
 
 # Global variables for data.
 glob_binning_data   = None
