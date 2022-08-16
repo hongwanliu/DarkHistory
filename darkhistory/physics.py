@@ -2021,7 +2021,6 @@ def ymu_distortion(eng, amp, rs, dist_type):
     nu = eng / (2*np.pi*hbar)
     x = eng / TCMB(rs)
     
-    # can we add i-type distortions as well?
     # From section 3.1 of 1304.6120
     
     if dist_type == 'y':
@@ -2034,4 +2033,4 @@ def ymu_distortion(eng, amp, rs, dist_type):
                 * np.exp(x) / (np.exp(x) - 1.)**2
                 *(x / 2.19 - 1.)
                )
-    return Spectrum(eng, 4 * np.pi * delI / (2*np.pi*hbar) / c / eng / nB, rs, spec_type='dNdE')
+    return Spectrum(eng, 4 * np.pi * delI / (2*np.pi*hbar) / c / eng / (nB * rs**3), rs, spec_type='dNdE')

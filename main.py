@@ -1004,12 +1004,12 @@ def evolve(
                 TmTr = Tm_arr[-1] - phys.TCMB(rs)
             else:
                 dTdz_dm = - phys.dtdz(rs)*(
-                    f_heat * phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime)
+                    f_heat * rate_func_eng(rs)
                 ) / (3/2 * phys.nH * rs**3 * (1 + phys.chi + xe))
                 TmTr = - (phys.TCMB(rs) / J) + (- dTdz_dm / phys.dtdz(rs) / phys.hubble(rs)) / J
             dydz = TmTr * phys.thomson_xsec * xe * phys.nH * rs**3 * phys.c / phys.me / rs / phys.hubble(rs) 
-            y = dydz * (-rs * (1 - np.exp(-dlnz * coarsen_factor)))
-            y_heat_spec = phys.ymu_distortion(dist_eng, y, phys.TCMB(rs), 'y')
+            y = dydz * (rs * (1 - np.exp(-dlnz * coarsen_factor)))
+            y_heat_spec = phys.ymu_distortion(dist_eng, y, rs, 'y')
             streaming_lowengphot.N += y_heat_spec.N
 
             append_distort_spec(streaming_lowengphot)
