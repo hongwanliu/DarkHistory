@@ -658,9 +658,7 @@ def process_MLA(
     b_DM = np.zeros(num_states)   # from DM-product + 1s -> nl
 
     # Rate of transitions from excited states -> 1s
-    R_to_1s = np.zeros(num_states)
     tot_rate = np.zeros(num_states)
-    beta_ary = np.zeros(num_states)
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
@@ -697,16 +695,13 @@ def process_MLA(
 
         # excitations from direct recombinations
         b_rec[nl] += alpha[n][l]
-        beta_ary[nl] += beta[n][l]
 
         if l == 1:  # excitations from 1s->np transitions
             b_exc[nl] += BB['up'][1, n, 0]
-            R_to_1s[nl] += BB['dn'][n, 1, 1]
 
 
         elif nl == 1:  # excitations from 1s->2s
             b_exc[nl] += BB_2s1s['up']
-            R_to_1s[nl] += BB_2s1s['dn']
 
         # Add DM contribution to source term
         # i.e. f_exc -> distortion and ionization
@@ -723,18 +718,12 @@ def process_MLA(
     mat = sp.csr_matrix(np.identity(num_states-1) - K[1:, 1:])
     # b_tot = b_exc * xHI + b_rec * xe**2 * nH + b_DM
     # x_vec = np.linalg.solve(mat, b_tot[1:])
-    mat_T = sp.csr_matrix(np.transpose(
-        np.identity(num_states-1) - K[1:, 1:]
-    ))
+
 
     # components of x_vec
     dx_exc = sp.linalg.spsolve(mat, b_exc[1:])  # np.linalg.solve if dense mat
     dx_rec = sp.linalg.spsolve(mat, b_rec[1:])
     dx_DM = sp.linalg.spsolve(mat, b_DM[1:])
-
-    # components of Q
-    Q = sp.linalg.spsolve(mat_T, R_to_1s[1:])
-    one_minus_Q = sp.linalg.spsolve(mat_T, beta_ary[1:])
 
     # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
     x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
@@ -764,12 +753,9 @@ def process_MLA(
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
             # beta_MLA += x_full[nl] * beta[n][l]
-            # beta_MLA += beta[n][l] * dx_exc[nl-1]
-            beta_MLA += one_minus_Q[nl-1] * b_exc[nl]
-            # alpha_MLA += alpha[n][l] - beta[n][l] * dx_rec[nl-1]
-            alpha_MLA += Q[nl-1] * b_rec[nl]
-            # beta_DM += beta[n][l] * dx_DM[nl-1]
-            beta_DM += one_minus_Q[nl-1] * b_DM[nl] 
+            beta_MLA += beta[n][l] * dx_exc[nl-1]
+            alpha_MLA += alpha[n][l] - beta[n][l] * dx_rec[nl-1]
+            beta_DM += beta[n][l] * dx_DM[nl-1]
 
         # Add new transition energies to H_engs
         if E_current != E(n):
