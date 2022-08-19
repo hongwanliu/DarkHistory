@@ -15,6 +15,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 
 
+
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
 # LOOK FOR THESE DATA FILES HERE. 
 
@@ -562,5 +563,172 @@ def load_data(data_type):
     else:
 
         raise ValueError('invalid data_type.')
+
+
+def test(date_str=None): 
+    """
+    Runs a quick unit test of the code using some reference files. 
+
+    Parameters
+    ----------
+    date_str : string
+        A string for the date of the reference file. 
+
+    Returns
+    -------
+    None
+
+    """
+
+    import main 
+
+    if date_str is None: 
+        std_file_str = data_path+'/reference_20220818_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6.p'
+
+        DM_file_str = data_path+'/reference_20220818_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6.p'
+
+    else: 
+        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6.p'
+        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6.p'
+
+    std_file_data = pickle.load(open(std_file_str, 'rb'))
+    DM_file_data = pickle.load(open(DM_file_str, 'rb'))
+
+    DM_options_dict = {
+        'primary':'elec_delta', 'DM_process':'decay', 'mDM':1e8, 'lifetime':3e25,
+        'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':4,
+        'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
+        'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
+        'recfast_TLA':True, 'MLA_funcs':None,
+        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True
+    }
+
+    std_options_dict = {
+        'primary':'elec_delta', 'DM_process':'decay', 'mDM':1e8, 'lifetime':3e40,
+        'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':4,
+        'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
+        'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
+        'recfast_TLA':True, 'MLA_funcs':None,
+        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True
+    }
+
+    print('Running main.evolve(...): ')
+
+    try: 
+
+        print('******************************************')
+        print('Testing solution with no DM: ')
+
+        std_res = main.evolve(**std_options_dict) 
+
+        def max_rel_change(new_res, ref_res): 
+            return np.max(
+                np.abs(
+                    np.divide(
+                        new_res, ref_res, out=np.ones_like(new_res)*np.nan, 
+                        where=ref_res != 0
+                    ) - 1
+                )
+            )
+
+        print(
+            'The maximum relative change in xHI and xHeI is: ', 
+            max_rel_change(std_res['x'], std_file_data['x'])
+        )
+        print(
+            'The maximum relative change in Tm is: ', 
+            max_rel_change(std_res['Tm'], std_file_data['Tm'])
+        )
+        print(
+            'The maximum relative change in f_(H ion) is: ', 
+            max_rel_change(std_res['f']['H ion'], std_file_data['f']['H ion'])
+        )
+        print(
+            'The maximum relative change in f_(H ion) is: ', 
+            max_rel_change(std_res['f']['H ion'], std_file_data['f']['H ion'])
+        )
+        print(
+            'The maximum relative change in f_(He ion) is: ', 
+            max_rel_change(std_res['f']['He ion'], std_file_data['f']['He ion'])
+        )
+        print(
+            'The maximum relative change in f_(Lya) is: ', 
+            max_rel_change(std_res['f']['Lya'], std_file_data['f']['Lya'])
+        )
+        print(
+            'The maximum relative change in f_(heat) is: ', 
+            max_rel_change(std_res['f']['heat'], std_file_data['f']['heat'])
+        )
+        print(
+            'The maximum relative change in f_(cont) is: ', 
+            max_rel_change(std_res['f']['cont'], std_file_data['f']['cont'])
+        )
+        print(
+            'The maximum relative change in the MLA parameters is: ', max_rel_change(std_res['MLA'][1:], std_file_data['MLA'][1:])
+        )
+
+        pickle.dump(std_res, open(data_path+'/std_test_data.p', 'wb'))
+
+        print('Pickled solution with no DM!')
+
+
+        DM_res = main.evolve(**DM_options_dict) 
+
+        
+
+        print('******************************************')
+        print('Testing solution with DM: ')
+
+        print(
+            'The maximum relative change in xHI and xHeI is: ', 
+            max_rel_change(DM_res['x'], DM_file_data['x'])
+        )
+        print(
+            'The maximum relative change in Tm is: ', 
+            max_rel_change(DM_res['Tm'], DM_file_data['Tm'])
+        )
+        print(
+            'The maximum relative change in f_(H ion) is: ', 
+            max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
+        )
+        print(
+            'The maximum relative change in f_(H ion) is: ', 
+            max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
+        )
+        print(
+            'The maximum relative change in f_(He ion) is: ', 
+            max_rel_change(DM_res['f']['He ion'], DM_file_data['f']['He ion'])
+        )
+        print(
+            'The maximum relative change in f_(Lya) is: ', 
+            max_rel_change(DM_res['f']['Lya'], DM_file_data['f']['Lya'])
+        )
+        print(
+            'The maximum relative change in f_(heat) is: ', 
+            max_rel_change(DM_res['f']['heat'], DM_file_data['f']['heat'])
+        )
+        print(
+            'The maximum relative change in f_(cont) is: ', 
+            max_rel_change(DM_res['f']['cont'], DM_file_data['f']['cont'])
+        )
+        print(
+            'The maximum relative change in the MLA parameters is: ', max_rel_change(DM_res['MLA'][1:], DM_file_data['MLA'][1:])
+        )
+
+        pickle.dump(std_res, open(data_path+'/DM_test_data.p', 'wb'))
+
+        print('Pickled solution with DM!')
+
+        print('Test complete!')
+    
+    except: 
+
+        raise RuntimeError('main.evolve(...) failed to execute.')
+
+    return None 
+
+
+    
+
 
 

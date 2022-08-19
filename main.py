@@ -1457,10 +1457,10 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
 
     fn = (
         save_dir
-        +params['pri']+'_'+params['DM_process']+'_'+'log10param_'
-        +'{0:2.4f}'.format(np.log10(params['inj_param']))
         +f'_log10mDM_'
         +'{0:2.4f}'.format(np.log10(params['mDM']))
+        +params['pri']+'_'+params['DM_process']+'_'+'log10param_'
+        +'{0:2.4f}'.format(np.log10(params['inj_param']))
         +'_'+file_name_str+'.p'
     )
 
@@ -1469,7 +1469,6 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
     print('Successfully produced file: ', fn)
 
     return None
-
 
 
 
