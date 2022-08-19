@@ -565,7 +565,7 @@ def load_data(data_type):
         raise ValueError('invalid data_type.')
 
 
-def test(date_str=None): 
+def test(date_str=None, end_rs=4, std_only=False): 
     """
     Runs a quick unit test of the code using some reference files. 
 
@@ -596,7 +596,7 @@ def test(date_str=None):
 
     DM_options_dict = {
         'primary':'elec_delta', 'DM_process':'decay', 'mDM':1e8, 'lifetime':3e25,
-        'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':4,
+        'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':end_rs,
         'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
         'recfast_TLA':True, 'MLA_funcs':None,
@@ -605,7 +605,7 @@ def test(date_str=None):
 
     std_options_dict = {
         'primary':'elec_delta', 'DM_process':'decay', 'mDM':1e8, 'lifetime':3e40,
-        'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':4,
+        'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':end_rs,
         'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
         'recfast_TLA':True, 'MLA_funcs':None,
@@ -622,11 +622,13 @@ def test(date_str=None):
         std_res = main.evolve(**std_options_dict) 
 
         def max_rel_change(new_res, ref_res): 
-            return np.max(
+            if end_rs != 4: 
+                ref_res = ref_res[:len(new_res)]
+            return np.nanmax(
                 np.abs(
                     np.divide(
                         new_res, ref_res, out=np.ones_like(new_res)*np.nan, 
-                        where=ref_res != 0
+                        where=(ref_res != 0)
                     ) - 1
                 )
             )
@@ -664,60 +666,61 @@ def test(date_str=None):
             max_rel_change(std_res['f']['cont'], std_file_data['f']['cont'])
         )
         print(
-            'The maximum relative change in the MLA parameters is: ', max_rel_change(std_res['MLA'][1:], std_file_data['MLA'][1:])
+            'The maximum relative change in the MLA parameters is: ', max_rel_change(np.transpose(std_res['MLA'][1:]), np.transpose(std_file_data['MLA'][1:]))
         )
 
         pickle.dump(std_res, open(data_path+'/std_test_data.p', 'wb'))
 
         print('Pickled solution with no DM!')
 
+        if not std_only: 
 
-        DM_res = main.evolve(**DM_options_dict) 
+            DM_res = main.evolve(**DM_options_dict) 
 
-        
+            
 
-        print('******************************************')
-        print('Testing solution with DM: ')
+            print('******************************************')
+            print('Testing solution with DM: ')
 
-        print(
-            'The maximum relative change in xHI and xHeI is: ', 
-            max_rel_change(DM_res['x'], DM_file_data['x'])
-        )
-        print(
-            'The maximum relative change in Tm is: ', 
-            max_rel_change(DM_res['Tm'], DM_file_data['Tm'])
-        )
-        print(
-            'The maximum relative change in f_(H ion) is: ', 
-            max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
-        )
-        print(
-            'The maximum relative change in f_(H ion) is: ', 
-            max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
-        )
-        print(
-            'The maximum relative change in f_(He ion) is: ', 
-            max_rel_change(DM_res['f']['He ion'], DM_file_data['f']['He ion'])
-        )
-        print(
-            'The maximum relative change in f_(Lya) is: ', 
-            max_rel_change(DM_res['f']['Lya'], DM_file_data['f']['Lya'])
-        )
-        print(
-            'The maximum relative change in f_(heat) is: ', 
-            max_rel_change(DM_res['f']['heat'], DM_file_data['f']['heat'])
-        )
-        print(
-            'The maximum relative change in f_(cont) is: ', 
-            max_rel_change(DM_res['f']['cont'], DM_file_data['f']['cont'])
-        )
-        print(
-            'The maximum relative change in the MLA parameters is: ', max_rel_change(DM_res['MLA'][1:], DM_file_data['MLA'][1:])
-        )
+            print(
+                'The maximum relative change in xHI and xHeI is: ', 
+                max_rel_change(DM_res['x'], DM_file_data['x'])
+            )
+            print(
+                'The maximum relative change in Tm is: ', 
+                max_rel_change(DM_res['Tm'], DM_file_data['Tm'])
+            )
+            print(
+                'The maximum relative change in f_(H ion) is: ', 
+                max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
+            )
+            print(
+                'The maximum relative change in f_(H ion) is: ', 
+                max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
+            )
+            print(
+                'The maximum relative change in f_(He ion) is: ', 
+                max_rel_change(DM_res['f']['He ion'], DM_file_data['f']['He ion'])
+            )
+            print(
+                'The maximum relative change in f_(Lya) is: ', 
+                max_rel_change(DM_res['f']['Lya'], DM_file_data['f']['Lya'])
+            )
+            print(
+                'The maximum relative change in f_(heat) is: ', 
+                max_rel_change(DM_res['f']['heat'], DM_file_data['f']['heat'])
+            )
+            print(
+                'The maximum relative change in f_(cont) is: ', 
+                max_rel_change(DM_res['f']['cont'], DM_file_data['f']['cont'])
+            )
+            print(
+                'The maximum relative change in the MLA parameters is: ', max_rel_change(DM_res['MLA'][1:], DM_file_data['MLA'][1:])
+            )
 
-        pickle.dump(std_res, open(data_path+'/DM_test_data.p', 'wb'))
+            pickle.dump(std_res, open(data_path+'/DM_test_data.p', 'wb'))
 
-        print('Pickled solution with DM!')
+            print('Pickled solution with DM!')
 
         print('Test complete!')
     

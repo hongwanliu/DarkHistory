@@ -659,10 +659,12 @@ def process_MLA(
 
     # Rate of transitions from excited states -> 1s
     R_to_1s = np.zeros(num_states)
+    tot_rate = np.zeros(num_states)
+    beta_ary = np.zeros(num_states)
 
     for nl in np.arange(num_states):
         n, l = states_n[nl], states_l[nl]
-        tot_rate = (
+        tot_rate[nl] = (
             np.sum(BB['dn'][n, :, l]) + np.sum(BB['up'][n, :, l]) + beta[n][l]
         )
 
@@ -674,20 +676,20 @@ def process_MLA(
         # BB_2s1s['dn'] = phys.width_2s1s_H
         # BB_2s1s['up'] = phys.width_2s1s_H * np.exp(-phys.lya_eng / Tr)
         if nl == 0:  # special case: 1s -> 2s
-            tot_rate += BB_2s1s['up']
-            if tot_rate > 0:
-                K[0][1] = BB_2s1s['up'] / tot_rate
+            tot_rate[nl] += BB_2s1s['up']
+            if tot_rate[nl] > 0:
+                K[0][1] = BB_2s1s['up'] / tot_rate[nl]
 
         if nl == 1:  # special case: 2s -> 1s
-            tot_rate += BB_2s1s['dn']
-            K[1][0] = BB_2s1s['dn'] / tot_rate
+            tot_rate[nl] += BB_2s1s['dn']
+            K[1][0] = BB_2s1s['dn'] / tot_rate[nl]
 
         if l != 0:
-            K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate
+            K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate[nl]
 
         if l != nmax-1:
-            if tot_rate > 0:
-                K[nl, states_l == l+1] = BB['dn'][l+2:, n, l+1]/tot_rate
+            if tot_rate[nl] > 0:
+                K[nl, states_l == l+1] = BB['dn'][l+2:, n, l+1]/tot_rate[nl]
 
         ###
         # Construct the source terms
@@ -695,6 +697,7 @@ def process_MLA(
 
         # excitations from direct recombinations
         b_rec[nl] += alpha[n][l]
+        beta_ary[nl] += beta[n][l]
 
         if l == 1:  # excitations from 1s->np transitions
             b_exc[nl] += BB['up'][1, n, 0]
@@ -710,10 +713,10 @@ def process_MLA(
         spec_ind = str(n) + num_to_l(l)
         b_DM[nl] = delta_b.get(spec_ind, 0)  # if key not in delta_b, return 0
 
-        if tot_rate > 0:
-            b_exc[nl] /= tot_rate
-            b_rec[nl] /= tot_rate
-            b_DM[nl] /= tot_rate
+        if tot_rate[nl] > 0:
+            b_exc[nl] /= tot_rate[nl]
+            b_rec[nl] /= tot_rate[nl]
+            b_DM[nl] /= tot_rate[nl]
 
 
     # sparse matrix
@@ -731,6 +734,7 @@ def process_MLA(
 
     # components of Q
     Q = sp.linalg.spsolve(mat_T, R_to_1s[1:])
+    one_minus_Q = sp.linalg.spsolve(mat_T, beta_ary[1:])
 
     # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
     x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
@@ -760,12 +764,12 @@ def process_MLA(
         n, l = states_n[nl], states_l[nl]
         if nl > 0:
             # beta_MLA += x_full[nl] * beta[n][l]
-            beta_MLA += beta[n][l] * dx_exc[nl-1]
-            alpha_MLA += alpha[n][l] - beta[n][l] * dx_rec[nl-1]
-            # alpha_MLA += Q[nl-1] * b_rec[nl]
-            # if rs > 800 and rs < 900: 
-            #     print(rs, n, l, Q[nl - 1] * b_rec[nl], Q[nl-1], alpha[n][l] - beta[n][l] * dx_rec[nl-1])
-            beta_DM += beta[n][l] * dx_DM[nl-1]
+            # beta_MLA += beta[n][l] * dx_exc[nl-1]
+            beta_MLA += one_minus_Q[nl-1] * b_exc[nl]
+            # alpha_MLA += alpha[n][l] - beta[n][l] * dx_rec[nl-1]
+            alpha_MLA += Q[nl-1] * b_rec[nl]
+            # beta_DM += beta[n][l] * dx_DM[nl-1]
+            beta_DM += one_minus_Q[nl-1] * b_DM[nl] 
 
         # Add new transition energies to H_engs
         if E_current != E(n):
