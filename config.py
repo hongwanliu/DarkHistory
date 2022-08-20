@@ -571,8 +571,12 @@ def test(date_str=None, end_rs=4, std_only=False):
 
     Parameters
     ----------
-    date_str : string
+    date_str : string, optional
         A string for the date of the reference file. 
+    end_rs : float, optional
+        Redshift :math:`1+z` to end the test at. 
+    std_only : bool, optional
+        If *True*, runs only the case with no exotic injection.
 
     Returns
     -------

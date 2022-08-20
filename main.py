@@ -92,7 +92,7 @@ def evolve(
         For rs > high_rs, solve for x_HII using xHII_std and Tm using Tm_std.
         For rs < high_rs, solve the differential equations numerically.
     end_rs : float, optional
-        Final redshift :math:`(1+z)` to evolve to. Default is 1+z = 4.
+        Final redshift :math:`(1+z)` to evolve to. Default is :math:`1+z = 4`.
     reion_switch : bool
         Reionization model included if *True*, default is *False*.
     helium_TLA : bool
