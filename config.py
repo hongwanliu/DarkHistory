@@ -589,13 +589,13 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
     import main 
 
     if date_str is None: 
-        std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+iter+'.p'
+        std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
 
-        DM_file_str = data_path+'/reference_20220822_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+iter+'.p'
+        DM_file_str = data_path+'/reference_20220822_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+str(iter)+'.p'
 
     else: 
-        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+iter+'.p'
-        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+iter+'.p'
+        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
+        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+str(iter)+'.p'
 
     std_file_data = pickle.load(open(std_file_str, 'rb'))
     DM_file_data = pickle.load(open(DM_file_str, 'rb'))
