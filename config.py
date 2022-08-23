@@ -565,7 +565,7 @@ def load_data(data_type):
         raise ValueError('invalid data_type.')
 
 
-def test(date_str=None, end_rs=4, std_only=False): 
+def test(date_str=None, end_rs=4, iter=2, std_only=False): 
     """
     Runs a quick unit test of the code using some reference files. 
 
@@ -575,6 +575,8 @@ def test(date_str=None, end_rs=4, std_only=False):
         A string for the date of the reference file. 
     end_rs : float, optional
         Redshift :math:`1+z` to end the test at. 
+    iter : int, optional
+        Number of iterations. 
     std_only : bool, optional
         If *True*, runs only the case with no exotic injection.
 
@@ -587,13 +589,13 @@ def test(date_str=None, end_rs=4, std_only=False):
     import main 
 
     if date_str is None: 
-        std_file_str = data_path+'/reference_20220818_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6.p'
+        std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
 
-        DM_file_str = data_path+'/reference_20220818_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6.p'
+        DM_file_str = data_path+'/reference_20220822_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+str(iter)+'.p'
 
     else: 
-        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6.p'
-        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6.p'
+        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
+        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+str(iter)+'.p'
 
     std_file_data = pickle.load(open(std_file_str, 'rb'))
     DM_file_data = pickle.load(open(DM_file_str, 'rb'))
@@ -604,7 +606,7 @@ def test(date_str=None, end_rs=4, std_only=False):
         'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
         'recfast_TLA':True, 'MLA_funcs':None,
-        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True
+        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
     std_options_dict = {
@@ -613,7 +615,7 @@ def test(date_str=None, end_rs=4, std_only=False):
         'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
         'recfast_TLA':True, 'MLA_funcs':None,
-        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True
+        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
     print('Running main.evolve(...): ')
@@ -639,38 +641,38 @@ def test(date_str=None, end_rs=4, std_only=False):
 
         print(
             'The maximum relative change in xHI and xHeI is: ', 
-            max_rel_change(std_res['x'], std_file_data['x'])
+            max_rel_change(std_res[-1]['x'], std_file_data[-1]['x'])
         )
         print(
             'The maximum relative change in Tm is: ', 
-            max_rel_change(std_res['Tm'], std_file_data['Tm'])
+            max_rel_change(std_res[-1]['Tm'], std_file_data[-1]['Tm'])
         )
         print(
             'The maximum relative change in f_(H ion) is: ', 
-            max_rel_change(std_res['f']['H ion'], std_file_data['f']['H ion'])
+            max_rel_change(std_res[-1]['f']['H ion'], std_file_data[-1]['f']['H ion'])
         )
         print(
             'The maximum relative change in f_(H ion) is: ', 
-            max_rel_change(std_res['f']['H ion'], std_file_data['f']['H ion'])
+            max_rel_change(std_res[-1]['f']['H ion'], std_file_data[-1]['f']['H ion'])
         )
         print(
             'The maximum relative change in f_(He ion) is: ', 
-            max_rel_change(std_res['f']['He ion'], std_file_data['f']['He ion'])
+            max_rel_change(std_res[-1]['f']['He ion'], std_file_data[-1]['f']['He ion'])
         )
         print(
             'The maximum relative change in f_(Lya) is: ', 
-            max_rel_change(std_res['f']['Lya'], std_file_data['f']['Lya'])
+            max_rel_change(std_res[-1]['f']['Lya'], std_file_data[-1]['f']['Lya'])
         )
         print(
             'The maximum relative change in f_(heat) is: ', 
-            max_rel_change(std_res['f']['heat'], std_file_data['f']['heat'])
+            max_rel_change(std_res[-1]['f']['heat'], std_file_data[-1]['f']['heat'])
         )
         print(
             'The maximum relative change in f_(cont) is: ', 
-            max_rel_change(std_res['f']['cont'], std_file_data['f']['cont'])
+            max_rel_change(std_res[-1]['f']['cont'], std_file_data[-1]['f']['cont'])
         )
         print(
-            'The maximum relative change in the MLA parameters is: ', max_rel_change(np.transpose(std_res['MLA'][1:]), np.transpose(std_file_data['MLA'][1:]))
+            'The maximum relative change in the MLA parameters is: ', max_rel_change(np.transpose(std_res[-1]['MLA'][1:]), np.transpose(std_file_data[-1]['MLA'][1:]))
         )
 
         pickle.dump(std_res, open(data_path+'/std_test_data.p', 'wb'))
@@ -688,38 +690,38 @@ def test(date_str=None, end_rs=4, std_only=False):
 
             print(
                 'The maximum relative change in xHI and xHeI is: ', 
-                max_rel_change(DM_res['x'], DM_file_data['x'])
+                max_rel_change(DM_res[-1]['x'], DM_file_data[-1]['x'])
             )
             print(
                 'The maximum relative change in Tm is: ', 
-                max_rel_change(DM_res['Tm'], DM_file_data['Tm'])
+                max_rel_change(DM_res[-1]['Tm'], DM_file_data[-1]['Tm'])
             )
             print(
                 'The maximum relative change in f_(H ion) is: ', 
-                max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
+                max_rel_change(DM_res[-1]['f']['H ion'], DM_file_data[-1]['f']['H ion'])
             )
             print(
                 'The maximum relative change in f_(H ion) is: ', 
-                max_rel_change(DM_res['f']['H ion'], DM_file_data['f']['H ion'])
+                max_rel_change(DM_res[-1]['f']['H ion'], DM_file_data[-1]['f']['H ion'])
             )
             print(
                 'The maximum relative change in f_(He ion) is: ', 
-                max_rel_change(DM_res['f']['He ion'], DM_file_data['f']['He ion'])
+                max_rel_change(DM_res[-1]['f']['He ion'], DM_file_data[-1]['f']['He ion'])
             )
             print(
                 'The maximum relative change in f_(Lya) is: ', 
-                max_rel_change(DM_res['f']['Lya'], DM_file_data['f']['Lya'])
+                max_rel_change(DM_res[-1]['f']['Lya'], DM_file_data[-1]['f']['Lya'])
             )
             print(
                 'The maximum relative change in f_(heat) is: ', 
-                max_rel_change(DM_res['f']['heat'], DM_file_data['f']['heat'])
+                max_rel_change(DM_res[-1]['f']['heat'], DM_file_data[-1]['f']['heat'])
             )
             print(
                 'The maximum relative change in f_(cont) is: ', 
-                max_rel_change(DM_res['f']['cont'], DM_file_data['f']['cont'])
+                max_rel_change(DM_res[-1]['f']['cont'], DM_file_data[-1]['f']['cont'])
             )
             print(
-                'The maximum relative change in the MLA parameters is: ', max_rel_change(DM_res['MLA'][1:], DM_file_data['MLA'][1:])
+                'The maximum relative change in the MLA parameters is: ', max_rel_change(np.transpose(DM_res[-1]['MLA'][1:]), np.transpose(DM_file_data[-1]['MLA'][1:]))
             )
 
             pickle.dump(std_res, open(data_path+'/DM_test_data.p', 'wb'))
@@ -730,7 +732,7 @@ def test(date_str=None, end_rs=4, std_only=False):
     
     except: 
 
-        raise RuntimeError('main.evolve(...) failed to execute.')
+        raise RuntimeError('main.evolve(...) failed to complete.')
 
     return None 
 

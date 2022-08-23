@@ -50,8 +50,8 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
-    use_tqdm=True, cross_check=False, recfast_TLA=None,
-    reprocess_distortion=True, Delta_f_2D=None
+    use_tqdm=True, tqdm_jupyter=True, cross_check=False, recfast_TLA=None,
+    reprocess_distortion=True, Delta_f_2D=None, iterations=1, first_iter=True, prev_output=None
 ):
     """
     Main function computing histories and spectra.
@@ -133,7 +133,9 @@ def evolve(
         The relative error of the solution. See *scipy.integrate.odeint()* for
         more information. Default is *1e-4*.
     use_tqdm : bool, optional
-        Uses tqdm if *True*. Default is *True*.
+        If *True*, uses `tqdm` to track progress. Default is *True*. 
+    tqdm_jupyter : bool, optional
+        Uses `tqdm` in Jupyter notebooks if *True*. Otherwise, uses tqdm for terminals. Default is *True*.
     cross_check : bool, optional
         If *True*, compare against 1604.02457 by using original MEDEA files,
         turning off partial binning, etc. Default is *False*.
@@ -164,7 +166,17 @@ def evolve(
         if *True*, set Delta_f != 0, accounting for distortion photons from
         earlier redshifts to be absorbed or stimulate emission, i.e. be
         reprocessed.
+    iterations : int, optional
+        Number of iterations to run for the MLA iterative method.
+    first_iter : bool, optional 
+        If *True*, treat this as the first iteration. Default is *True. 
+    prev_output : list of dict, optional
+        Output from a previous iteration of this function. 
 
+    Returns
+    -------
+    dict
+        Result of the calculation, including ... 
 
 
     Examples
@@ -212,6 +224,33 @@ def evolve(
     # Input                                                                 #
     #########################################################################
     #########################################################################
+
+
+    # Save the initial options for subsequent iterations. 
+    options = dict(
+        in_spec_elec=in_spec_elec, in_spec_phot=in_spec_phot, 
+        rate_func_N=rate_func_N, rate_func_eng=rate_func_eng, 
+        DM_process=DM_process, mDM=mDM, sigmav=sigmav, 
+        lifetime=lifetime, primary=primary, 
+        struct_boost=struct_boost, 
+        start_rs=start_rs, high_rs=high_rs, end_rs=end_rs, 
+        helium_TLA=helium_TLA, reion_switch=reion_switch, 
+        reion_rs=reion_rs, reion_method=reion_method, 
+        heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk, 
+        photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func, xe_reion_func=xe_reion_func, 
+        init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction, 
+        compute_fs_method=compute_fs_method, mxstep=mxstep, rtol=rtol, 
+        distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
+        use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, recfast_TLA=recfast_TLA,
+        reprocess_distortion=reprocess_distortion, Delta_f_2D=Delta_f_2D, 
+        iterations=iterations, first_iter=first_iter, prev_output=prev_output
+    )
+
+    
+    if iterations > 1 and first_iter is True: 
+        # First iteration always begins with TLA. 
+        recfast_TLA = True  
+    
 
     #####################################
     # Initialization for DM_process     #
@@ -347,7 +386,7 @@ def evolve(
                          in a custom Delta_f, not both')
 
     if recfast_TLA and (MLA_funcs is not None):
-        raise ValueError('Please use set recfast_TLA to true or provide MLA_funcs, \
+        raise ValueError('Please set recfast_TLA to True or provide MLA_funcs, \
                          not both')
 
     if (reion_method is not None) and (xe_reion_func is not None):
@@ -396,7 +435,12 @@ def evolve(
 
     # tqdm set-up.
     if use_tqdm:
-        from tqdm import tqdm_notebook as tqdm
+        if tqdm_jupyter:
+            from tqdm import tqdm_notebook as tqdm
+
+        else:
+            from tqdm import tqdm
+            
         pbar = tqdm(
             total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
         )
@@ -1174,7 +1218,44 @@ def evolve(
     if elec_processes:
         data['MLA'] = np.array(MLA_data)
 
-    return data
+    # End of the iteration. 
+    iterations -= 1
+
+    # If iteration > 0, then call this function recursively to perform next iteration. 
+    if iterations > 0: 
+
+        MLA_funcs_next_iter = [
+            interp1d(MLA_data[0], MLA_data[i], fill_value = 'extrapolate') for i in range(1, 4)
+        ]
+
+        if prev_output is not None: 
+
+            prev_output.append(data) 
+
+        else:
+
+            prev_output = [data] 
+
+        # change the options for the next run. 
+        options['recfast_TLA'] = False
+        options['MLA_funcs'] = MLA_funcs_next_iter 
+        options['iterations'] = iterations
+        options['first_iter'] = False 
+        options['prev_output'] = prev_output 
+        
+
+        return evolve(**options)
+
+    else:
+
+        if prev_output is None: 
+
+            return data
+
+        else: 
+
+            prev_output.append(data)
+            return prev_output
 
 
 def get_elec_cooling_data(eleceng, photeng, H_states):
@@ -1333,75 +1414,6 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     # )
 
 
-def iterate(
-    run,
-    pri, DM_process, mDM, param,
-    start_rs, end_rs, coarsen_factor,
-    nmax, high_rs=1.555e3, recfast_TLA=False,
-    reprocess_distortion=False, fexc_switch=True,
-    rtol=1e-8
-):
-    """ !!!Missing Documentation
-    """
-    from tqdm import tqdm_notebook as tqdm
-    # x and y dimensions
-    mask = (start_rs >= run['rs']) & (run['rs'] >= end_rs)
-    rs_vec = run['rs']
-    eng = run['distortion'].eng
-
-    if not reprocess_distortion or False:
-        # First, convert the distortion to a phase space density,
-        # as a function of redshift and energy
-
-        # empty container
-        f_data = np.zeros((sum(mask), len(eng)))
-
-        # helps convert from dNdE to f^gamma, phase space density
-        prefac = phys.nB * (phys.hbar*phys.c)**3 * np.pi**2 / eng**2
-
-        # fill in f_data(rs, eng), one rs at a time
-        for i, rs in enumerate(tqdm(rs_vec[mask])):
-
-            dist_copy = run['distortions'].copy()
-            # !!!optimize redshift()
-            dist_copy.redshift(rs)
-            distortion = dist_copy.sum_specs(rs_vec >= rs)
-
-            f_data[i] = prefac * rs**3 * distortion.dNdE
-
-        Delta_f_2D = interp2d(
-            rs_vec[mask], eng, np.transpose(f_data),
-            bounds_error=False, fill_value=0
-        )
-
-    else:
-
-        Delta_f_2D=None
-
-    if not recfast_TLA:
-        MLA_data = run['MLA']
-        MLA_funcs = [
-            interp1d(MLA_data[0], MLA_data[i],
-                     fill_value='extrapolate')
-            for i in np.arange(1, 4)
-        ]  # first alpha, then beta, then beta_DM
-
-    else:
-        MLA_funcs = None
-
-    return evolve(
-        DM_process=DM_process, mDM=mDM,
-        lifetime=param,
-        sigmav=param,
-        primary=pri+'_delta',
-        start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
-        coarsen_factor=coarsen_factor,
-        distort=True, recfast_TLA=recfast_TLA, MLA_funcs=MLA_funcs,
-        fexc_switch=fexc_switch, reprocess_distortion=reprocess_distortion,
-        nmax=nmax, Delta_f_2D=Delta_f_2D, rtol=rtol
-    )
-
-
 def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str, iter=5): 
     """
     Embarrassingly parallel scan over DM parameters and saves the output. 
@@ -1418,7 +1430,7 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
         Directory to save the output in. 
     file_name_str : string
         Additional descriptive string for file. 
-    iter : int
+    iter : int, optional
         Number of iterations for convergence of recombination rates.
 
     Returns
@@ -1428,40 +1440,21 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
     """
 
     params = DM_params[ind]
-    data = []
 
-    for iteration in range(iter): 
-
-        print('~~~Iteration ', iteration, '~~~')
-
-        # If this is first iteration, use Recfast TLA rates
-        if iteration == 0:
-            TLA_switch = True
-            MLA_funcs = None
-        # For subsequent iterations, use rates calculated from previous run
-        else:
-            TLA_switch = False
-            rates = data[iteration-1]['MLA']
-            MLA_funcs = [
-                interp1d(rates[0], rates[i], fill_value='extrapolate')
-                for i in range(1,4)
-            ]
-
-        res = evolve(
+    data = evolve(
             DM_process=params['DM_process'], mDM=params['mDM'], 
             lifetime=params['inj_param'], sigmav=params['inj_param'],
-            primary=params['pri']+'_delta', recfast_TLA=TLA_switch, MLA_funcs=MLA_funcs, **evolve_options_dict 
-        )
+            primary=params['pri']+'_delta', recfast_TLA=True, iterations=iter, **evolve_options_dict 
+    )
 
-        data.append(res)
 
     fn = (
         save_dir
-        +f'_log10mDM_'
-        +'{0:2.4f}'.format(np.log10(params['mDM']))
+        +f'log10mDM_'
+        +'{0:2.4f}_'.format(np.log10(params['mDM']))
         +params['pri']+'_'+params['DM_process']+'_'+'log10param_'
         +'{0:2.4f}'.format(np.log10(params['inj_param']))
-        +'_'+file_name_str+'.p'
+        +'_'+file_name_str+'_'+str(manual)+'.p'
     )
 
     pickle.dump({'DM_params':params, 'ind':ind, 'data':data}, open(fn, 'wb'))
