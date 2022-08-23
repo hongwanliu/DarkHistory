@@ -565,7 +565,7 @@ def load_data(data_type):
         raise ValueError('invalid data_type.')
 
 
-def test(date_str=None, end_rs=4, std_only=False): 
+def test(date_str=None, end_rs=4, iter=2, std_only=False): 
     """
     Runs a quick unit test of the code using some reference files. 
 
@@ -575,6 +575,8 @@ def test(date_str=None, end_rs=4, std_only=False):
         A string for the date of the reference file. 
     end_rs : float, optional
         Redshift :math:`1+z` to end the test at. 
+    iter : int, optional
+        Number of iterations. 
     std_only : bool, optional
         If *True*, runs only the case with no exotic injection.
 
@@ -587,13 +589,13 @@ def test(date_str=None, end_rs=4, std_only=False):
     import main 
 
     if date_str is None: 
-        std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_2.p'
+        std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+iter+'.p'
 
-        DM_file_str = data_path+'/reference_20220822_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_2.p'
+        DM_file_str = data_path+'/reference_20220822_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+iter+'.p'
 
     else: 
-        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_2.p'
-        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_2.p'
+        std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+iter+'.p'
+        DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+iter+'.p'
 
     std_file_data = pickle.load(open(std_file_str, 'rb'))
     DM_file_data = pickle.load(open(DM_file_str, 'rb'))
@@ -604,7 +606,7 @@ def test(date_str=None, end_rs=4, std_only=False):
         'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
         'recfast_TLA':True, 'MLA_funcs':None,
-        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':2
+        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
     std_options_dict = {
@@ -613,7 +615,7 @@ def test(date_str=None, end_rs=4, std_only=False):
         'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
         'recfast_TLA':True, 'MLA_funcs':None,
-        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':2
+        'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
     print('Running main.evolve(...): ')
