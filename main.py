@@ -51,7 +51,7 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
     use_tqdm=True, tqdm_jupyter=True, cross_check=False, recfast_TLA=None,
-    reprocess_distortion=True, Delta_f_2D=None, iteration=1, first_iter=True, prev_output=None
+    reprocess_distortion=True, Delta_f_2D=None, iterations=1, first_iter=True, prev_output=None
 ):
     """
     Main function computing histories and spectra.
@@ -166,7 +166,7 @@ def evolve(
         if *True*, set Delta_f != 0, accounting for distortion photons from
         earlier redshifts to be absorbed or stimulate emission, i.e. be
         reprocessed.
-    iteration : int, optional
+    iterations : int, optional
         Number of iterations to run for the MLA iterative method.
     first_iter : bool, optional 
         If *True*, treat this as the first iteration. Default is *True. 
@@ -243,11 +243,11 @@ def evolve(
         distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
         use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, recfast_TLA=recfast_TLA,
         reprocess_distortion=reprocess_distortion, Delta_f_2D=Delta_f_2D, 
-        iteration=iteration, first_iter=first_iter, prev_output=prev_output
+        iterations=iterations, first_iter=first_iter, prev_output=prev_output
     )
 
     
-    if iteration > 1 and first_iter is True: 
+    if iterations > 1 and first_iter is True: 
         # First iteration always begins with TLA. 
         recfast_TLA = True  
     
@@ -1219,10 +1219,10 @@ def evolve(
         data['MLA'] = np.array(MLA_data)
 
     # End of the iteration. 
-    iteration -= 1
+    iterations -= 1
 
     # If iteration > 0, then call this function recursively to perform next iteration. 
-    if iteration > 0: 
+    if iterations > 0: 
 
         MLA_funcs_next_iter = [
             interp1d(MLA_data[0], MLA_data[i], fill_value = 'extrapolate') for i in range(1, 4)
@@ -1239,7 +1239,7 @@ def evolve(
         # change the options for the next run. 
         options['recfast_TLA'] = False
         options['MLA_funcs'] = MLA_funcs_next_iter 
-        options['iteration'] = iteration
+        options['iterations'] = iterations
         options['first_iter'] = False 
         options['prev_output'] = prev_output 
         
@@ -1547,7 +1547,7 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
         data = evolve(
                 DM_process=params['DM_process'], mDM=params['mDM'], 
                 lifetime=params['inj_param'], sigmav=params['inj_param'],
-                primary=params['pri']+'_delta', recfast_TLA=True, iteration=5, **evolve_options_dict 
+                primary=params['pri']+'_delta', recfast_TLA=True, iterations=iter, **evolve_options_dict 
         )
 
     print('output is: ', len(data))
