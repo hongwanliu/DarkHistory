@@ -1483,7 +1483,7 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
 #     )
 
 
-def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str, iter=5, manual=True): 
+def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str, iter=5): 
     """
     Embarrassingly parallel scan over DM parameters and saves the output. 
 
@@ -1499,10 +1499,8 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
         Directory to save the output in. 
     file_name_str : string
         Additional descriptive string for file. 
-    iter : int
+    iter : int, optional
         Number of iterations for convergence of recombination rates.
-    manual : bool, optional
-        If *True*, runs iterations manually, rather than through main.evolve(). 
 
     Returns
     -------
@@ -1512,45 +1510,12 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
 
     params = DM_params[ind]
 
+    data = evolve(
+            DM_process=params['DM_process'], mDM=params['mDM'], 
+            lifetime=params['inj_param'], sigmav=params['inj_param'],
+            primary=params['pri']+'_delta', recfast_TLA=True, iterations=iter, **evolve_options_dict 
+    )
 
-    if manual: 
-
-        data = []
-
-        for iteration in range(iter): 
-
-            print('~~~Iteration ', iteration, '~~~')
-
-            # If this is first iteration, use Recfast TLA rates
-            if iteration == 0:
-                TLA_switch = True
-                MLA_funcs = None
-            # For subsequent iterations, use rates calculated from previous run
-            else:
-                TLA_switch = False
-                rates = data[iteration-1]['MLA']
-                MLA_funcs = [
-                    interp1d(rates[0], rates[i], fill_value='extrapolate')
-                    for i in range(1,4)
-                ]
-
-            res = evolve(
-                DM_process=params['DM_process'], mDM=params['mDM'], 
-                lifetime=params['inj_param'], sigmav=params['inj_param'],
-                primary=params['pri']+'_delta', recfast_TLA=TLA_switch, MLA_funcs=MLA_funcs, **evolve_options_dict 
-            )
-
-            data.append(res)
-
-    else: 
-
-        data = evolve(
-                DM_process=params['DM_process'], mDM=params['mDM'], 
-                lifetime=params['inj_param'], sigmav=params['inj_param'],
-                primary=params['pri']+'_delta', recfast_TLA=True, iterations=iter, **evolve_options_dict 
-        )
-
-    print('output is: ', len(data))
 
     fn = (
         save_dir
