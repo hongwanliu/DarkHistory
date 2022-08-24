@@ -1414,7 +1414,7 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     # )
 
 
-def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str, iter=5): 
+def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str): 
     """
     Embarrassingly parallel scan over DM parameters and saves the output. 
 
@@ -1430,8 +1430,6 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
         Directory to save the output in. 
     file_name_str : string
         Additional descriptive string for file. 
-    iter : int, optional
-        Number of iterations for convergence of recombination rates.
 
     Returns
     -------
@@ -1444,17 +1442,17 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
     data = evolve(
             DM_process=params['DM_process'], mDM=params['mDM'], 
             lifetime=params['inj_param'], sigmav=params['inj_param'],
-            primary=params['pri']+'_delta', recfast_TLA=True, iterations=iter, **evolve_options_dict 
+            primary=params['pri']+'_delta', **evolve_options_dict 
     )
 
 
     fn = (
         save_dir
-        +f'log10mDM_'
+        +'log10mDM_'
         +'{0:2.4f}_'.format(np.log10(params['mDM']))
         +params['pri']+'_'+params['DM_process']+'_'+'log10param_'
         +'{0:2.4f}'.format(np.log10(params['inj_param']))
-        +'_'+file_name_str+'_'+str(manual)+'.p'
+        +'_'+file_name_str+'_ind_'+str(ind)+'.p'
     )
 
     pickle.dump({'DM_params':params, 'ind':ind, 'data':data}, open(fn, 'wb'))
