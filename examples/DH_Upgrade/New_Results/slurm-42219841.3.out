@@ -1,0 +1,16 @@
+My SLURM_ARRAY_JOB_ID is 42219841.
+My SLURM_ARRAY_TASK_ID is 3
+Executing on the machine: della-r4c3n15
+PLEASE CHECK output_dir!
+****** Loading transfer functions... ******
+    for propagating photons...   Done!
+    for low-energy photons...  Done!
+    for low-energy electrons...  Done!
+    for high-energy deposition...  Done!
+    for total upscattered CMB energy rate...  Done!
+****** Loading complete! ******
+****** Loading transfer functions... ******
+    for inverse Compton (Thomson)...  Done!
+    for inverse Compton (relativistic)...  Done!
+    for inverse Compton (energy loss)...  Done!
+****** Loading complete! ******

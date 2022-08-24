@@ -1,0 +1,2 @@
+  0%|          | 0/414.0 [00:00<?, ?it/s]  0%|          | 1/414.0 [01:56<13:21:24, 116.43s/it]/var/spool/slurmd/job42219841/slurm_script: line 22: 2641412 Killed                  python single_run.py
+slurmstepd: error: Detected 1 oom-kill event(s) in StepId=42219841.batch. Some of your processes may have been killed by the cgroup out-of-memory handler.
