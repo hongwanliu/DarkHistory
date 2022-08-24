@@ -45,13 +45,13 @@ def evolve(
     start_rs=None, high_rs=np.inf, end_rs=4,
     helium_TLA=False, reion_switch=False,
     reion_rs=None, reion_method='Puchwein',
-    heat_switch=True, DeltaT=0, alpha_bk=0.5,
-    photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
+    heat_switch=True, photoion_rate_func=None, photoheat_rate_func=None, 
+    xe_reion_func=None, DeltaT=None, alpha_bk=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
-    compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
+    compute_fs_method='no_He',
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
-    use_tqdm=True, tqdm_jupyter=True, cross_check=False, recfast_TLA=None,
-    reprocess_distortion=True, Delta_f_2D=None, iterations=1, first_iter=True, prev_output=None
+    cross_check=False, recfast_TLA=None,
+    reprocess_distortion=True, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
 ):
     """
     Main function computing histories and spectra.
@@ -99,6 +99,10 @@ def evolve(
         If *True*, the TLA is solved with helium. Default is *False*.
     reion_rs : float, optional
         Redshift :math:`(1+z)` at which reionization effects turn on.
+    reion_method : string, optional
+        Reionization model, options are {'Puchwein', 'early', 'middle', 'late'}. 
+    heat_switch : bool, optional
+        If *True*, includes photoheating during reionization. 
     photoion_rate_func : tuple of functions, optional
         Functions take redshift :math:`1+z` as input, return the
         photoionization rate in s\ :sup:`-1` of HI, HeI and HeII respectively.
@@ -109,6 +113,10 @@ def evolve(
         If not specified, defaults to :func:`.photoheat_rate`.
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.
+    DeltaT : float, optional
+        For fixed reionization models, constant of proportionality for photoheating. See arXiv:2008.01084. 
+    alpha_bk : float, optional
+        Post-reionization heating power law. See arXiv:2008.01084. 
     init_cond : tuple of floats
         Specifies the initial (xH, xHe, Tm). Defaults to :func:`.Tm_std`,
         :func:`.x_std` at the *start_rs*.
@@ -126,26 +134,16 @@ def evolve(
         * *'HeII'* -- all ionization assigned to HeII.
 
         Default is 'no_He'.
-    mxstep : int, optional
-        The maximum number of steps allowed for each integration point.
-        See *scipy.integrate.odeint()* for more information. Default is *1000*.
-    rtol : float, optional
-        The relative error of the solution. See *scipy.integrate.odeint()* for
-        more information. Default is *1e-4*.
-    use_tqdm : bool, optional
-        If *True*, uses `tqdm` to track progress. Default is *True*. 
-    tqdm_jupyter : bool, optional
-        Uses `tqdm` in Jupyter notebooks if *True*. Otherwise, uses tqdm for terminals. Default is *True*.
-    cross_check : bool, optional
-        If *True*, compare against 1604.02457 by using original MEDEA files,
-        turning off partial binning, etc. Default is *False*.
     distort : bool, optional
         If *True* calculate the distortion. This sets elec_processes to True.
         If *False* speed up the code by skipping slow electron cooling code.
+    cross_check : bool, optional
+        If *True*, compare against 1604.02457 by using original MEDEA files,
+        turning off partial binning, etc. Default is *False*.
     fudge : float, optional
-        Value of Recfast fudge factor, the one that multiplies the overall TLA.
+        Value of Recfast fudge factor.
     nmax : int, optional
-        If distort==True, sets the maximum H substate that the MLA tracks.
+        If distort==True, sets the maximum H principal quantum number that the MLA tracks.
     fexc_switch : bool, optional
         If *True*, include the source term b_DM to the MLA steady-state
         equation, Mx = b
@@ -169,9 +167,19 @@ def evolve(
     iterations : int, optional
         Number of iterations to run for the MLA iterative method.
     first_iter : bool, optional 
-        If *True*, treat this as the first iteration. Default is *True. 
+        If *True*, treat this as the first iteration. Default is *True*. 
     prev_output : list of dict, optional
         Output from a previous iteration of this function. 
+    use_tqdm : bool, optional
+        If *True*, uses `tqdm` to track progress. Default is *True*. 
+    tqdm_jupyter : bool, optional
+        Uses `tqdm` in Jupyter notebooks if *True*. Otherwise, uses tqdm for terminals. Default is *True*.
+    mxstep : int, optional
+        The maximum number of steps allowed for each integration point.
+        See *scipy.integrate.odeint()* for more information. Default is *1000*.
+    rtol : float, optional
+        The relative error of the solution. See *scipy.integrate.odeint()* for
+        more information. Default is *1e-4*.
 
     Returns
     -------
@@ -242,7 +250,7 @@ def evolve(
         compute_fs_method=compute_fs_method, mxstep=mxstep, rtol=rtol, 
         distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
         use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, recfast_TLA=recfast_TLA,
-        reprocess_distortion=reprocess_distortion, Delta_f_2D=Delta_f_2D, 
+        reprocess_distortion=reprocess_distortion, 
         iterations=iterations, first_iter=first_iter, prev_output=prev_output
     )
 
@@ -395,6 +403,15 @@ def evolve(
     if cross_check:
         print('cross_check has been set to True -- No longer using all MEDEA \
               files and no longer using partial-binning.')
+    
+    if DeltaT is not None and xe_reion_func is None: 
+        raise ValueError('DeltaT is only for fixed reionization histories using xe_reion_func.')
+    
+    if alpha_bk is not None and xe_reion_func is None: 
+        raise ValueError('alpha_bk is only for fixed reionization histories using xe_reion_func.')
+
+    if xe_reion_func is not None and (DeltaT is None or alpha_bk is None): 
+        raise ValueError('Photoheating model needed for fixed reionization histories using xe_reion_func.')
 
     #####################################
     # Initialization                    #
@@ -768,12 +785,6 @@ def evolve(
                     Delta_f = interp1d(
                         dist_eng, prefac*distortion.dNdE/dist_eng**2*dist_mask,
                         bounds_error=False, fill_value=(0, 0), kind='nearest'
-                    )
-
-                elif (Delta_f_2D is not None):
-                    Delta_f = interp1d(
-                        dist_eng, Delta_f_2D(rs, dist_eng).squeeze()*dist_mask,
-                        bounds_error=False, fill_value=(0, 0)
                     )
 
                 else:
