@@ -50,8 +50,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He',
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
-    cross_check=False, recfast_TLA=None,
-    reprocess_distortion=True, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
+    cross_check=False, reprocess_distortion=True, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
 ):
     """
     Main function computing histories and spectra.
@@ -156,10 +155,6 @@ def evolve(
         distort set to True,
             [interp1d(out['MLA'][0], out['MLA'][i]), for i in range(1,4)]
         could be passed into MLA_funcs
-    recfast_TLA : bool, optional
-        If *True*, use Recfast's modified TLA equations with f_ion and f_exc
-        terms included.
-        If *False*, use the MLA equations as layed out in arXiv:xxxx.xxxx
     reprocess_distortion : bool, optional
         if *True*, set Delta_f != 0, accounting for distortion photons from
         earlier redshifts to be absorbed or stimulate emission, i.e. be
@@ -249,16 +244,11 @@ def evolve(
         init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction, 
         compute_fs_method=compute_fs_method, mxstep=mxstep, rtol=rtol, 
         distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
-        use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, recfast_TLA=recfast_TLA,
+        use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, 
         reprocess_distortion=reprocess_distortion, 
         iterations=iterations, first_iter=first_iter, prev_output=prev_output
     )
 
-    
-    if iterations > 1 and first_iter is True: 
-        # First iteration always begins with TLA. 
-        recfast_TLA = True  
-    
 
     #####################################
     # Initialization for DM_process     #
@@ -389,13 +379,6 @@ def evolve(
     if in_spec_elec.rs != in_spec_phot.rs:
         raise ValueError('Input spectra must have the same rs.')
 
-    if reprocess_distortion and (Delta_f_2D is not None):
-        raise ValueError('Please choose to reprocess the distortion or put \
-                         in a custom Delta_f, not both')
-
-    if recfast_TLA and (MLA_funcs is not None):
-        raise ValueError('Please set recfast_TLA to True or provide MLA_funcs, \
-                         not both')
 
     if (reion_method is not None) and (xe_reion_func is not None):
         raise ValueError('Either specify reionization model or xe reionization curve, not both')
@@ -572,14 +555,7 @@ def evolve(
 
         dist_mask *= dist_eng < phys.rydberg  # keep E<13.6eV photons
 
-        if recfast_TLA is None:
-            recfast_TLA = False
         elec_processes = True
-
-        if MLA_funcs is None:
-            make_MLA = True
-        else:
-            make_MLA = False
 
         # rs, alpha, beta, beta_DM
         rs_in = rs*np.exp(dlnz)
@@ -603,8 +579,6 @@ def evolve(
         MEDEA_interp = lowE_electrons.make_interpolator(
             interp_type='2D', cross_check=False
         )
-        if recfast_TLA is None:
-            recfast_TLA = True
 
     #########################################################################
     #########################################################################
@@ -827,15 +801,6 @@ def evolve(
 
                 # # Subtract off absorbed photons
                 # atomic_dist_spec.N -= in_distortion.N - distortion.N
-
-                if make_MLA:
-
-                    MLA_funcs = []
-                    for i in np.arange(1, 4):  # alpha, beta, beta_DM
-                        MLA_funcs.append(
-                            interp1d(MLA_data[0], MLA_data[i],
-                                     fill_value='extrapolate')
-                        )
 
             #######################################
             # Photons from Injected Electrons     #
@@ -1101,20 +1066,41 @@ def evolve(
             print(rs, init_cond_TLA)
             raise ValueError('Encountered nan in Tm or x')
 
-        new_vals = tla.get_history(
-            np.array([rs, next_rs]), init_cond=init_cond_TLA,
-            f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
-            injection_rate=rate_func_eng, high_rs=high_rs,
-            reion_switch=reion_switch, reion_rs=reion_rs,
-            reion_method=reion_method, heat_switch=heat_switch,
-            DeltaT=DeltaT, alpha_bk=alpha_bk,
-            photoion_rate_func=photoion_rate_func,
-            photoheat_rate_func=photoheat_rate_func,
-            xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
-            recfast_TLA=recfast_TLA, fudge=fudge,
-            MLA_funcs=MLA_funcs
-        )
+        if first_iter: 
+            # Solve using the TLA rate coefficients. 
+
+            new_vals = tla.get_history(
+                np.array([rs, next_rs]), init_cond=init_cond_TLA,
+                f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
+                injection_rate=rate_func_eng, high_rs=high_rs,
+                reion_switch=reion_switch, reion_rs=reion_rs,
+                reion_method=reion_method, heat_switch=heat_switch,
+                DeltaT=DeltaT, alpha_bk=alpha_bk,
+                photoion_rate_func=photoion_rate_func,
+                photoheat_rate_func=photoheat_rate_func,
+                xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+                f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
+                recfast_TLA=True, fudge=fudge,
+                MLA_funcs=None
+            )
+
+        else: 
+            # Solve using supplied MLA_funcs. 
+
+            new_vals = tla.get_history(
+                np.array([rs, next_rs]), init_cond=init_cond_TLA,
+                f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
+                injection_rate=rate_func_eng, high_rs=high_rs,
+                reion_switch=reion_switch, reion_rs=reion_rs,
+                reion_method=reion_method, heat_switch=heat_switch,
+                DeltaT=DeltaT, alpha_bk=alpha_bk,
+                photoion_rate_func=photoion_rate_func,
+                photoheat_rate_func=photoheat_rate_func,
+                xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+                f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
+                recfast_TLA=False, fudge=fudge,
+                MLA_funcs=MLA_funcs
+            )
 
         #####################################################################
         #####################################################################
@@ -1248,7 +1234,6 @@ def evolve(
             prev_output = [data] 
 
         # change the options for the next run. 
-        options['recfast_TLA'] = False
         options['MLA_funcs'] = MLA_funcs_next_iter 
         options['iterations'] = iterations
         options['first_iter'] = False 

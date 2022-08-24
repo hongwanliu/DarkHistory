@@ -605,7 +605,7 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
         'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':end_rs,
         'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
-        'recfast_TLA':True, 'MLA_funcs':None,
+        'MLA_funcs':None,
         'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
@@ -614,7 +614,7 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
         'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':end_rs,
         'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
         'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
-        'recfast_TLA':True, 'MLA_funcs':None,
+        'MLA_funcs':None,
         'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
