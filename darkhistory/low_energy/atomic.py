@@ -265,13 +265,20 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     def f_gamma(E):
         return f_BB(E, Tr) + Delta_f(E)
 
+    # Generate a matrix of energy level differences. 
+
+    eng_levels = np.divide(1., np.arange(nmax+1.)**2, out=np.ones(nmax+1)*np.nan, where=np.arange(nmax+1) != 0)
+    Ennp_mat = (eng_levels[None,:] - eng_levels[:,None]) * phys.rydberg 
+    f_gamma_mat = f_gamma(Ennp_mat) 
+    
     # !!! parallelize these loops
     for n in np.arange(2, nmax+1):
         n2 = n**2
         for n_p in np.arange(1, n):
             n_p2 = n_p**2
-            Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            fEnnp = f_gamma(Ennp)
+            # Ennp = (1/n_p2 - 1/n2) * phys.rydberg
+            # fEnnp = f_gamma(Ennp)
+            fEnnp = f_gamma_mat[n, n_p]
 
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
