@@ -21,12 +21,12 @@ import darkhistory.low_energy.atomic as atomic
 import darkhistory.spec.spectools as spectools
 
 print('PLEASE CHECK output_dir!')
-output_dir = '/scratch/gpfs/hongwanl/DarkHistory/data/'
+output_dir = '/scratch/gpfs/hongwanl/DarkHistory/nmax_convergence/'
 
 # Choose to load data (True) or start a new scan (False)
 load_data = False
 
-nmax_ary = [10, 20, 50, 100, 200, 300]
+nmax_ary = [10, 20, 50, 100, 200]
 #######################################
 #       Actual Iteration              #
 #######################################
@@ -43,16 +43,18 @@ params_list = [{'pri':'phot', 'DM_process':'decay', 'mDM':1e8, 'inj_param':1e40}
 options_dict = {
     'start_rs': start_rs, 'high_rs': high_rs, 'end_rs':end_rs,
     'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
-    'coarsen_factor':cf, 'distort':True, 'fexc_switch': True, 
-    'recfast_TLA':True, 'MLA_funcs':None,
-    'reprocess_distortion':True, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False, 'iterations':iter_max
+    'coarsen_factor':cf, 'distort':True, 'fexc_switch': True,
+    'MLA_funcs':None,
+    'reprocess_distortion':False, 'simple_2s1s':True,
+    'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 
+    'tqdm_jupyter':False, 'iterations':iter_max
 }
 
 # main.embarrassingly_parallel_evolve(
 #     params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
 # )
 main.embarrassingly_parallel_evolve(
-    params_list, 0, options_dict, output_dir, 'std_distort_nmax_'+str(nmax)+'_no_reion'
+    params_list, 0, options_dict, output_dir, 'std_distort_nmax_'+str(nmax)+'_simple_2s1s_no_reion'
 )
 
 

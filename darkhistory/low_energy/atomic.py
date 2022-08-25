@@ -223,7 +223,7 @@ def populate_radial(nmax):
     return {'up': R_up, 'dn': R_dn}
 
 
-def populate_bound_bound(nmax, Tr, R, Delta_f=None):
+def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     """
     Populates two matrices with the bound-bound rates for emission and
     absorption in a generic radiation field.
@@ -239,6 +239,8 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
     Delta_f : function
         Deviation from blackbody phase space density as a function of energy,
         e.g. f_BB(E) = 1/(e^E/T - 1), so f(E) = f_BB(E) + Delta_f(E)
+    simple_2s1s : bool, optional
+        if *True*, fixes the decay rate to :math:`8.22` s:math:`^{-1}`. Default is *False*.
 
     Returns
     -------
@@ -297,8 +299,15 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
                 (2*l+1)/(2*l+3) *
                 BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
 
-    for key in ['up', 'dn']:
-        BB_2s1s[key] = A_2s1s(f_gamma, key)
+    if not simple_2s1s: 
+
+        for key in ['up', 'dn']:    
+            BB_2s1s[key] = A_2s1s(f_gamma, key)
+
+    else: 
+        BB_2s1s['dn'] = phys.width_2s1s_H 
+        BB_2s1s['up'] = phys.width_2s1s_H * np.exp(-phys.lya_eng / Tr) 
+
 
     return BB, BB_2s1s
 
@@ -558,7 +567,7 @@ def get_transition_energies(nmax):
 def process_MLA(
         rs, dt, xHI, Tm, nmax, eng, R, Thetas,
         Delta_f=None, cross_check=False,
-        include_2s1s=True, include_BF=True,
+        include_BF=True, simple_2s1s=False,
         # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         # distortion=None, H_states=None, rate_func_eng=None,
         delta_b={}, stimulated_emission=True
@@ -582,11 +591,11 @@ def process_MLA(
     Delta_f : function
         photon phase space density as a function of energy, minus f_BB
     cross_check : bool
-        if True, set xHI to its standard value
-    include_2s1s : bool
-        includes the 2s -> 1s photons to the output distortion
+        if True, set xHI to its standard value.
     include_BF : bool
         includes the bound-free transition photons to the output distortion
+    simple_2s1s : bool, optional
+        If *True*, sets the 2s -> 1s rate to be a constant :math:`8.22` s:math:`^{-1}`, and does not include distortions from 2s -> 1s.  
     fexc_switch : bool
     deposited_exc_arr elec_spec distortion H_states rate_func_eng
 
@@ -639,7 +648,7 @@ def process_MLA(
     # Get the transition rates
     # !!! Think about parallelizing
     #R = populate_radial(nmax)  # Need not be recomputed every time
-    BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
+    BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f, simple_2s1s=simple_2s1s)
     alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas,
                            stimulated_emission=stimulated_emission)
     beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
@@ -836,7 +845,7 @@ def process_MLA(
         transition_spec.N += BF_spec.N
 
     # Add the 2s-1s component
-    if include_2s1s:
+    if not simple_2s1s:
         #spec_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
         #amp_2s1s = nH * phys.width_2s1s_H * (
         #    x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)

@@ -50,7 +50,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He',
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
 ):
     """
     Main function computing histories and spectra.
@@ -159,6 +159,8 @@ def evolve(
         if *True*, set Delta_f != 0, accounting for distortion photons from
         earlier redshifts to be absorbed or stimulate emission, i.e. be
         reprocessed.
+    simple_2s1s : bool, optional
+        if *True*, fixes the decay rate to :math:`8.22` s:math:`^{-1}`. Default is *False*. 
     iterations : int, optional
         Number of iterations to run for the MLA iterative method.
     first_iter : bool, optional 
@@ -245,7 +247,7 @@ def evolve(
         compute_fs_method=compute_fs_method, mxstep=mxstep, rtol=rtol, 
         distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
         use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, 
-        reprocess_distortion=reprocess_distortion, 
+        reprocess_distortion=reprocess_distortion, simple_2s1s=simple_2s1s, 
         iterations=iterations, first_iter=first_iter, prev_output=prev_output
     )
 
@@ -788,7 +790,7 @@ def evolve(
                 MLA_step, atomic_dist_spec = atomic.process_MLA(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R, Thetas,
                     Delta_f, cross_check,
-                    include_2s1s=True, include_BF=True,
+                    include_BF=True, simple_2s1s=simple_2s1s,
                     #fexc_switch, deposited_exc_arr,
                     #tot_spec_elec, distortion,
                     #H_states, rate_func_eng,
