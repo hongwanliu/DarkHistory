@@ -200,8 +200,8 @@ def populate_radial(nmax):
     -----
     See Hey (2006), Eq. (B.4), (52), and (53)
     """
-    R_up = np.zeros((nmax+1, nmax, nmax))
-    R_dn = np.zeros((nmax+1, nmax, nmax))
+    R_up = np.zeros((nmax+1, nmax+1, nmax+1))
+    R_dn = np.zeros((nmax+1, nmax+1, nmax+1))
 
     for n in np.arange(2, nmax+1, 1):
         for n_p in np.arange(1, n):
@@ -254,6 +254,7 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     -----
     The sobolev optical depth suppression factor has not been included yet
     """
+    # 'up' and 'dn' here refers to the change in l. 
     keys = ['up', 'dn']
 
     BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in keys}
@@ -265,20 +266,82 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     def f_gamma(E):
         return f_BB(E, Tr) + Delta_f(E)
 
-    # Generate a matrix of energy level differences. 
-
-    eng_levels = np.divide(1., np.arange(nmax+1.)**2, out=np.ones(nmax+1)*np.nan, where=np.arange(nmax+1) != 0)
-    Ennp_mat = (eng_levels[None,:] - eng_levels[:,None]) * phys.rydberg 
-    f_gamma_mat = f_gamma(Ennp_mat) 
+    # Vector of normalized energy levels. eng_levels[0] = np.nan, eng_levels[n] = 1 / n**2
+    eng_norm_levels = np.divide(
+        1., np.arange(nmax+1.)**2, out=np.ones(nmax+1)*np.nan, 
+        where=np.arange(nmax+1) != 0
+    )
+    # n x np matrix of energy level differences, Ennp_mat[n, np] = (1 / np**2 - 1 / n**2) * phys.rydberg
+    Ennp_mat = (eng_norm_levels[None,:] - eng_norm_levels[:,None]) * phys.rydberg
     
+    # Masks for emission and absorption, and non-positive entries of Ennp_mat.
+    # Nonzero for n_p > n, emission. 
+    emission_mask = np.ones_like(Ennp_mat)
+    emission_mask[Ennp_mat < 0] *= 0.
+    # Nonzero for n > n_p, absorption. 
+    absorption_mask = np.ones_like(Ennp_mat)
+    absorption_mask[Ennp_mat > 0] *= 0.
+    # Nonzero for n_p > n and n, n_p > 0. 
+    non_pos_mask = np.zeros_like(Ennp_mat) 
+    non_pos_mask[(Ennp_mat <= 0) | (np.isnan(Ennp_mat))] = 1. 
+
+    # n x np matrix, occupation number of photons corresponding to positive energy level differences. 
+    # Make a mask which sets the energy to a finite value if the energy <= 0 or is nan, 
+    # so that f_gamma won't complain. We'll mask these values after anyway. 
+    
+    Ennp_mat[non_pos_mask > 0] = 1.
+    # f_gamma_mat is nonzero for n_p > n, and n, n_p > 0
+    f_gamma_mat = f_gamma(Ennp_mat) 
+    f_gamma_mat[non_pos_mask > 0] = 0. 
+
+    # n x np matrix. 
+    prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+        phys.alpha * (eng_norm_levels[None,:] - eng_norm_levels[:,None])
+    )**3
+
+    prefac[non_pos_mask > 0] = 0. 
+
+    n_ary = np.arange(nmax+1)
+
+    # Emission
+    BB_emission_up = np.einsum(
+        'ij,k,ijk,ij->ijk', prefac, (n_ary + 1.) / (2.*n_ary + 1.), R['up']**2, 1. + f_gamma_mat
+    )
+    BB_emission_dn = np.einsum(
+        'ij,k,ijk,ij->ijk', prefac, n_ary / (2.*n_ary + 1.), R['dn']**2, 1. + f_gamma_mat
+    )
+
+
+    # Absorption
+    BB_absorption_up = np.zeros_like(BB_emission_up)
+    BB_absorption_dn = np.zeros_like(BB_emission_dn) 
+
+    BB_absorption_up[:,:,:-1] += np.transpose(BB_emission_dn, axes=(1, 0, 2))[:,:,1:]
+    BB_absorption_up = np.einsum(
+        'ijk,k,ji->ijk', BB_absorption_up, 
+        (2. * n_ary + 3.) / (2. * n_ary + 1.), f_gamma_mat / (1. + f_gamma_mat)
+    )
+
+    BB_absorption_dn[:,:,1:] += np.transpose(BB_emission_up, axes=(1, 0, 2))[:,:,:-1]
+    BB_absorption_dn = np.einsum(
+        'ijk,k,ji->ijk', BB_absorption_dn, 
+        (2. * (n_ary - 1.) + 1.) / (2. * (n_ary - 1.) + 3), f_gamma_mat / (1. + f_gamma_mat)
+    )
+    BB_absorption_dn[:,:,0] = 0. 
+
+    BB['up'] = BB_emission_up + BB_absorption_up 
+    BB['dn'] = BB_emission_dn + BB_absorption_dn 
+
+    # print(BB_emission_up)
+
+
     # !!! parallelize these loops
     for n in np.arange(2, nmax+1):
         n2 = n**2
         for n_p in np.arange(1, n):
             n_p2 = n_p**2
-            # Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            # fEnnp = f_gamma(Ennp)
-            fEnnp = f_gamma_mat[n, n_p]
+            Ennp = (1/n_p2 - 1/n2) * phys.rydberg
+            fEnnp = f_gamma(Ennp)
 
             prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
                 phys.alpha * (1/n_p2 - 1/n2))**3
@@ -292,6 +355,11 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
 
             BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
             BB['dn'][n][n_p][0] = 0.0                               # No l' < 0
+            # if n == nmax: 
+            #     print(BB['up'][n_p][n][l])
+            #     print(BB_emission_up[n_p][n][l])
+            #     if n_p == n-1: 
+            #         raise ValueError('exit!')
 
             ### Absorption ###
             # When adding distortion, detailed balance takes thought.
@@ -305,6 +373,9 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
             BB['dn'][n_p][n][l+1] = (
                 (2*l+1)/(2*l+3) *
                 BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+
+    print(np.nanmax(np.abs((BB_emission_up + BB_absorption_up - BB['up']) / BB['up'])))
+    print(np.nanmax(np.abs((BB_emission_dn + BB_absorption_dn - BB['dn']) / BB['dn'])))
 
     if not simple_2s1s: 
 
