@@ -290,7 +290,7 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     # so that f_gamma won't complain. We'll mask these values after anyway. 
     
     Ennp_mat[non_pos_mask > 0] = 1.
-    # f_gamma_mat is nonzero for n_p > n, and n, n_p > 0
+    # f_gamma_mat is nonzero for n_p > n, and n, n_p > 0. 
     f_gamma_mat = f_gamma(Ennp_mat) 
     f_gamma_mat[non_pos_mask > 0] = 0. 
 
@@ -299,14 +299,21 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
         phys.alpha * (eng_norm_levels[None,:] - eng_norm_levels[:,None])
     )**3
 
+    # zero out negative values. 
     prefac[non_pos_mask > 0] = 0. 
 
     n_ary = np.arange(nmax+1)
 
     # Emission
+
+    # A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
+    # BB['up'][n][n_p][l] = A_up * (1+fEnnp)
     BB_emission_up = np.einsum(
         'ij,k,ijk,ij->ijk', prefac, (n_ary + 1.) / (2.*n_ary + 1.), R['up']**2, 1. + f_gamma_mat
     )
+
+    # A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
+    # BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
     BB_emission_dn = np.einsum(
         'ij,k,ijk,ij->ijk', prefac, n_ary / (2.*n_ary + 1.), R['dn']**2, 1. + f_gamma_mat
     )
@@ -316,23 +323,25 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     BB_absorption_up = np.zeros_like(BB_emission_up)
     BB_absorption_dn = np.zeros_like(BB_emission_dn) 
 
+    # BB['up'][n_p][n][l] =   ((2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
     BB_absorption_up[:,:,:-1] += np.transpose(BB_emission_dn, axes=(1, 0, 2))[:,:,1:]
     BB_absorption_up = np.einsum(
         'ijk,k,ji->ijk', BB_absorption_up, 
         (2. * n_ary + 3.) / (2. * n_ary + 1.), f_gamma_mat / (1. + f_gamma_mat)
     )
 
+    # BB['dn'][n_p][n][l+1] = ((2*l+1)/(2*l+3) * BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
     BB_absorption_dn[:,:,1:] += np.transpose(BB_emission_up, axes=(1, 0, 2))[:,:,:-1]
     BB_absorption_dn = np.einsum(
         'ijk,k,ji->ijk', BB_absorption_dn, 
         (2. * (n_ary - 1.) + 1.) / (2. * (n_ary - 1.) + 3), f_gamma_mat / (1. + f_gamma_mat)
     )
+    # l = 0 is bogus, so zero it out. 
     BB_absorption_dn[:,:,0] = 0. 
 
     BB['up'] = BB_emission_up + BB_absorption_up 
     BB['dn'] = BB_emission_dn + BB_absorption_dn 
 
-    # print(BB_emission_up)
 
 
     # !!! parallelize these loops
