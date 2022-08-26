@@ -336,46 +336,44 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
 
 
     # !!! parallelize these loops
-    for n in np.arange(2, nmax+1):
-        n2 = n**2
-        for n_p in np.arange(1, n):
-            n_p2 = n_p**2
-            Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            fEnnp = f_gamma(Ennp)
+    # for n in np.arange(2, nmax+1):
+    #     n2 = n**2
+    #     for n_p in np.arange(1, n):
+    #         n_p2 = n_p**2
+    #         Ennp = (1/n_p2 - 1/n2) * phys.rydberg
+    #         fEnnp = f_gamma(Ennp)
 
-            prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
-                phys.alpha * (1/n_p2 - 1/n2))**3
+    #         prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+    #             phys.alpha * (1/n_p2 - 1/n2))**3
 
-            ### Spont + stim emission ###
-            l = np.arange(n_p+1)
-            A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
-            A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
-            BB['up'][n][n_p][l] = A_up * (1+fEnnp)
-            BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
+    #         ### Spont + stim emission ###
+    #         l = np.arange(n_p+1)
+    #         A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
+    #         A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
+    #         BB['up'][n][n_p][l] = A_up * (1+fEnnp)
+    #         BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
 
-            BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
-            BB['dn'][n][n_p][0] = 0.0                               # No l' < 0
-            # if n == nmax: 
-            #     print(BB['up'][n_p][n][l])
-            #     print(BB_emission_up[n_p][n][l])
-            #     if n_p == n-1: 
-            #         raise ValueError('exit!')
+    #         BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
+    #         BB['dn'][n][n_p][0] = 0.0                               # No l' < 0
+    #         # if n == nmax: 
+    #         #     print(BB['up'][n_p][n][l])
+    #         #     print(BB_emission_up[n_p][n][l])
+    #         #     if n_p == n-1: 
+    #         #         raise ValueError('exit!')
 
-            ### Absorption ###
-            # When adding distortion, detailed balance takes thought.
-            # To do it, take away the 1+fEnnp from a couple of lines
-            # above, then replace it with fEnnp (that's all detailed
-            # balance was doing).
-            l = np.arange(n_p)  # absorption: use detailed balance
-            BB['up'][n_p][n][l] = (
-                (2*l+3)/(2*l+1) *
-                BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
-            BB['dn'][n_p][n][l+1] = (
-                (2*l+1)/(2*l+3) *
-                BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+    #         ### Absorption ###
+    #         # When adding distortion, detailed balance takes thought.
+    #         # To do it, take away the 1+fEnnp from a couple of lines
+    #         # above, then replace it with fEnnp (that's all detailed
+    #         # balance was doing).
+    #         l = np.arange(n_p)  # absorption: use detailed balance
+    #         BB['up'][n_p][n][l] = (
+    #             (2*l+3)/(2*l+1) *
+    #             BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
+    #         BB['dn'][n_p][n][l+1] = (
+    #             (2*l+1)/(2*l+3) *
+    #             BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
 
-    print(np.nanmax(np.abs((BB_emission_up + BB_absorption_up - BB['up']) / BB['up'])))
-    print(np.nanmax(np.abs((BB_emission_dn + BB_absorption_dn - BB['dn']) / BB['dn'])))
 
     if not simple_2s1s: 
 
