@@ -649,13 +649,125 @@ def get_transition_energies(nmax):
     return H_engs[1:]
 
 
+
+# def process_MLA_vectorized(
+#     rs, dt, xHI, Tm, nmax, eng, R, Thetas,
+#     Delta_f=None, cross_check=False,
+#     include_BF=True, simple_2s1s=False,
+#     # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
+#     # distortion=None, H_states=None, rate_func_eng=None,
+#     delta_b={}, stimulated_emission=True
+# ):
+
+#     if cross_check:
+#         xHI = phys.x_std(rs, 'HI')
+#         # Tm = phys.TCMB(rs)
+
+#     # Number of Hydrogen states at or below n=nmax
+#     num_states = int(nmax*(nmax+1)/2)
+
+#     # Mapping from spectroscopic letters to numbers
+#     # spectroscopic_map = {'s': 0, 'p': 1, 'd': 2, 'f': 3}
+#     spectroscopic_map = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
+
+#     def num_to_l(ll):
+#         if ll < 4:
+#             return spectroscopic_map[l]
+
+#         else:
+#             return '-'
+
+#     # Indices for the bound states
+#     # e.g. (1s, 2s, 2p, 3s...) are states (0, 1, 2, 3...),
+#     # so states_n[3], states_l[3] = 3,0 for '3s'
+#     states_n = np.concatenate([
+#         list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)])
+#     states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
+#     # Index arrays for moving between n x n' x l x l' representation to i = (n,l), j = (n', l') representation. 
+#     # Simply call A[states_n_2d, states_l_2d, states_n_p_2d, states_l_p_2d]. 
+#     states_n_p_2d = np.tile(states_n, (num_states,1)) 
+#     states_l_p_2d = np.tile(states_l, (num_states,1)) 
+#     states_n_2d = np.transpose(states_n_p_2d)
+#     states_l_2d = np.transpose(states_l_p_2d)
+
+
+#     # Bound state energies
+#     def E(n): return phys.rydberg/n**2
+
+#     xe = 1-xHI
+#     nH = phys.nH * rs**3
+#     nB = phys.nB * rs**3
+
+#     if Delta_f is None:
+#         def Delta_f(E): return 0
+
+#     # Radiation Temperature
+#     Tr = phys.TCMB(rs)
+
+#     # Get the transition rates
+#     # !!! Think about parallelizing
+#     #R = populate_radial(nmax)  # Need not be recomputed every time
+#     BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f, simple_2s1s=simple_2s1s)
+#     alpha = populate_alpha(
+#         Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas, 
+#         stimulated_emission=stimulated_emission
+#     )
+#     beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
+
+#     # Include Sobolev optical depth. 
+#     BB['up'][1,:,0] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI)
+#     BB['dn'][:,1,1] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI) 
+
+#     # 4D versions of BB['up'] and BB['dn'], dimensions n x n' x l x l',  
+#     # with entries in the (..., l, l+1) and (..., l, l-1) positions respectively.
+#     BB_up_4d = np.zeros((nmax+1, nmax+1, nmax+1, nmax+1))
+#     BB_dn_4d = np.zeros((nmax+1, nmax+1, nmax+1, nmax+1))
+    
+#     # BB['up'] has dimensions n x n' x l, with transitions to l' = l+1. Add BB['up'] with an extra axis, 
+#     # then zero out all irrelevant entries, except l + 1. 
+#     BB_up_4d += BB['up'][:,:,:,None]
+#     BB_up_4d = np.tril(np.triu(BB_up_4d, k=1), k=1)
+#     # Similar for BB['dn'], except l' = l-1. 
+#     BB_dn_4d += BB['dn'][:,:,:,None]
+#     BB_dn_4d = np.tril(np.triu(BB_dn_4d, k=-1), k=-1)
+    
+    
+#     # Total rate out of the state, dimensions n x l. 
+#     # First add all bound-bound and photoionization. 
+#     tot_rate += np.sum(BB['up'] + BB['dn'], axis=1) + beta
+#     # Add 1s -> 2s 
+#     tot_rate[1, 0] += BB_2s1s['up']
+#     # Add 2s -> 1s
+#     tot_rate[2, 0] += BB_2s1s['dn']
+
+#     # Initialize K_ij = R_ji / R_i,tot, dimensions n x n' x l x l', where i = (n,l), j = (n',l')
+#     K = np.zeros((nmax+1, nmax+1, nmax+1, nmax+1))
+    
+#     # R_ji is the rate from n', l' --> n, l, which is the
+#     # transpose of how BB is saved. 
+#     K = (
+#         np.transpose(BB_up_4d, axes=(1, 3, 0, 2)) + np.transpose(BB_dn_4d, axes=(1, 3, 0, 2)) 
+#     ) / tot_rate[:,:,None,None]
+#     K[]
+
+
+
+
+
+
+
+
+
+
+
+
 def process_MLA(
         rs, dt, xHI, Tm, nmax, eng, R, Thetas,
         Delta_f=None, cross_check=False,
         include_BF=True, simple_2s1s=False,
         # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         # distortion=None, H_states=None, rate_func_eng=None,
-        delta_b={}, stimulated_emission=True
+        delta_b={}, stimulated_emission=True, vectorized=False
         ):
     """
     Solve the steady state equation Mx=b, then compute the ionization rate
@@ -682,7 +794,9 @@ def process_MLA(
     simple_2s1s : bool, optional
         If *True*, sets the 2s -> 1s rate to be a constant :math:`8.22` s:math:`^{-1}`, and does not include distortions from 2s -> 1s.  
     fexc_switch : bool
-    deposited_exc_arr elec_spec distortion H_states rate_func_eng
+        deposited_exc_arr elec_spec distortion H_states rate_func_eng
+    vectorized : bool
+        If *True*, uses the vectorized calculation. 
 
     Returns
     -------
@@ -691,6 +805,15 @@ def process_MLA(
     transition_specs : dictionary of photon spectra, labeled by
         initial excited state (in N, not dNdE)
     """
+
+    # if vectorized: 
+
+    #     return process_MLA_vectorized(
+    #         rs, dt, xHI, Tm, nmax, eng, R, Thetas,
+    #         Delta_f=Delta_f, cross_check=cross_check,
+    #         include_BF=include_BF, simple_2s1s=simple_2s1s,
+    #         delta_b=delta_b, stimulated_emission=stimulated_emission
+    #     )
 
     if cross_check:
         xHI = phys.x_std(rs, 'HI')
@@ -742,6 +865,8 @@ def process_MLA(
     for n in np.arange(2, nmax+1, 1):
         BB['dn'][n][1][1] *= p_np_1s(n, rs, xHI=xHI)
         BB['up'][1][n][0] *= p_np_1s(n, rs, xHI=xHI)
+
+
 
     ### Build matrix K_ij = R_ji/R_i,tot and source term ###
     K = np.zeros((num_states, num_states))
