@@ -668,11 +668,11 @@ def get_transition_energies(nmax):
 
 #     # Mapping from spectroscopic letters to numbers
 #     # spectroscopic_map = {'s': 0, 'p': 1, 'd': 2, 'f': 3}
-#     spectroscopic_map = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
+#     l_to_spec_map = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
 
 #     def num_to_l(ll):
 #         if ll < 4:
-#             return spectroscopic_map[l]
+#             return l_to_spec_map[ll]
 
 #         else:
 #             return '-'
@@ -748,7 +748,32 @@ def get_transition_energies(nmax):
 #     K = (
 #         np.transpose(BB_up_4d, axes=(1, 3, 0, 2)) + np.transpose(BB_dn_4d, axes=(1, 3, 0, 2)) 
 #     ) / tot_rate[:,:,None,None]
-#     K[]
+#     # Add the special case 1s <-> 2s results. 
+#     K[1, 0, 2, 0] += BB_2s1s['dn'] / tot_rate[1, 0]
+#     K[2, 0, 1, 0] += BB_2s1s['up'] / tot_rate[2, 0]
+
+#     #############################
+#     #        Source Terms       #
+#     #############################
+
+#     # Excitation source term into n,l state, dimensions n x l. 
+#     b_exc_2D = np.zeros_like(tot_rate)  
+#     # 1s -> 2p excitations. 
+#     b_exc_2D[:,1] += BB['up'][1, :, 0]
+#     # 1s -> 2s excitations. 
+#     b_exc_2D[2,0] += BB_2s1s['up'] 
+
+#     # Recombination source term into n,l state, dimensions n x l. 
+#     b_rec_2D = alpha
+
+#     # DM source term into n,l state, dimensions n x l. 
+#     # This is a short loop. 
+#     for state in delta_b.keys()
+#     spec_ind = str(n) + num_to_l(l) 
+#     b_DM
+    
+
+
 
 
 
@@ -828,7 +853,7 @@ def process_MLA(
 
     def num_to_l(ll):
         if ll < 4:
-            return spectroscopic_map[l]
+            return spectroscopic_map[ll]
 
         else:
             return '-'
