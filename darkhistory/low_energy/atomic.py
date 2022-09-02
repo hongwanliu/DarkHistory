@@ -231,43 +231,68 @@ def populate_radial_2D(nmax):
     )
     states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
 
+    # states_nl(n, l) is given by n * (n+1) // 2 + l
+
     R_up = np.zeros((num_states, num_states))
     R_dn = np.zeros((num_states, num_states))
 
-    for i in np.arange(num_states-1, -1, -1): 
-        
-        for j in np.arange(num_states-1, -1, -1): 
+    for n in np.arange(2, nmax+1):
+        for n_p in np.arange(1, n):
+            # Initial conditions: Eq. (B.4)
+            tri_n = (n-1) * n // 2
+            tri_n_p = (n_p-1) * n_p // 2
+            R_dn[tri_n + n_p, tri_n_p + n_p-1] = Hey_R_initial(n, n_p)
+            R_up[tri_n + n_p-1, tri_n_p + n_p] = 0
+            R_up[tri_n + n_p, tri_n_p + n_p+1] = 0
+            for l in np.arange(n_p-1, 0, -1):
 
-            n = states_n[i] 
-            l = states_l[i] 
-            n_p = states_n[j] 
-            l_p = states_l[j]
-
-            if l > n_p or n_p >= n: 
-                continue 
-            elif l == n_p and l_p == l-1: 
-                R_dn[i,j] = Hey_R_initial(n, n_p) 
-                continue
-            elif l == n_p and l_p == l+1: 
-                R_up[i,j] = 0. 
-                continue
-            elif l == n_p - 1 and l_p == l+1: 
-                R_up[i-1,j] = 0 
-                continue
-            
-            if l_p == l-1 and l > 0: 
-                R_dn[i,j] = (
-                    (2*l+1) * Hey_A(n, l+1) * R_dn[i+1,j+1] 
-                    + Hey_A(n_p, l+1) * R_up[i,j+2]
+                R_dn[tri_n + l, tri_n_p + l-1] = (
+                    (2*l+1) * Hey_A(n, l+1) * R_dn[tri_n + l+1, tri_n_p + l]
+                    + Hey_A(n_p, l+1) * R_up[tri_n + l, tri_n_p + l+1]
                 ) / (2. * l * Hey_A(n_p, l))
-            elif l_p == l+1: 
-                R_up[i,j] = (
-                    (2*(l+1)+1) * Hey_A(n_p, (l+1)+1) * R_up[i+1, j+1]
-                    + Hey_A(n, (l+1)+1) * R_dn[i+2, j]
-                ) / (2. * (l+1) * Hey_A(n, l+1))
+
+                R_up[tri_n + l-1, tri_n_p + l] = (
+                    (2*l+1) * Hey_A(n_p, l+1) * R_up[tri_n + l, tri_n_p + l+1] 
+                    + Hey_A(n, l+1) * R_dn[tri_n + l+1, tri_n_p + l]
+                ) / (2. * l * Hey_A(n, l))
+
+    return {'up': R_up, 'dn': R_dn}
 
 
-    return {'up': R_up, 'dn': R_dn} 
+    # for i in np.arange(num_states-1, -1, -1): 
+        
+    #     for j in np.arange(num_states-1, -1, -1): 
+
+    #         n = states_n[i] 
+    #         l = states_l[i] 
+    #         n_p = states_n[j] 
+    #         l_p = states_l[j]
+
+    #         if l > n_p or n_p >= n: 
+    #             continue 
+    #         elif l == n_p and l_p == l-1: 
+    #             R_dn[i,j] = Hey_R_initial(n, n_p) 
+    #             continue
+    #         elif l == n_p and l_p == l+1: 
+    #             R_up[i,j] = 0. 
+    #             continue
+    #         elif l == n_p - 1 and l_p == l+1: 
+    #             R_up[i-1,j] = 0 
+    #             continue
+            
+    #         if l_p == l-1 and l > 0: 
+    #             R_dn[i,j] = (
+    #                 (2*l+1) * Hey_A(n, l+1) * R_dn[i+1,j+1] 
+    #                 + Hey_A(n_p, l+1) * R_up[i,j+2]
+    #             ) / (2. * l * Hey_A(n_p, l))
+    #         elif l_p == l+1: 
+    #             R_up[i,j] = (
+    #                 (2*(l+1)+1) * Hey_A(n_p, (l+1)+1) * R_up[i+1, j+1]
+    #                 + Hey_A(n, (l+1)+1) * R_dn[i+2, j]
+    #             ) / (2. * (l+1) * Hey_A(n, l+1))
+
+
+    # return {'up': R_up, 'dn': R_dn} 
 
 
 
@@ -443,6 +468,74 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
 
 
     return BB, BB_2s1s
+
+def populate_bound_bound_2D(nmax, Tr, R, Delta_f=None, simple_2s1s=False): 
+
+    num_states = nmax * (nmax + 1) // 2
+
+    states_n = np.concatenate([
+        list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)]
+    )
+    states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
+
+    keys = ['up', 'dn'] 
+
+    BB = {key: np.zeros((num_states, num_states)) for key in keys} 
+    BB_2s1s = {key : 0 for key in keys}
+    if Delta_f is None:
+        def Delta_f(E):
+            return 0
+
+    def f_gamma(E):
+        return f_BB(E, Tr) + Delta_f(E)
+
+    # Vector of normalized energy levels. 
+    eng_norm_levels = 1. / states_n**2 
+    # num_states x num_states matrix of energy level differences, Ennp_mat[i, j] = (1 / n_p**2 - 1 / n**2) * phys.rydberg, 
+    # where n_p = n[j] and n = n[i] 
+    Ennp_mat = (eng_norm_levels[None,:] - eng_norm_levels[:,None]) * phys.rydberg
+    
+    # Nonzero for n_p > n and n, n_p > 0. 
+    non_pos_mask = np.zeros_like(Ennp_mat) 
+    non_pos_mask[(Ennp_mat <= 0) | (np.isnan(Ennp_mat))] = 1.
+
+    # n x np matrix, occupation number of photons corresponding to positive energy level differences. 
+    # Make a mask which sets the energy to a finite value if the energy <= 0 or is nan, 
+    # so that f_gamma won't complain. We'll mask these values after anyway. 
+
+    Ennp_mat[non_pos_mask > 0] = 1.
+    # f_gamma_mat is nonzero for n_p > n, and n, n_p > 0. 
+    f_gamma_mat = f_gamma(Ennp_mat) 
+    f_gamma_mat[non_pos_mask > 0] = 0. 
+
+    # n x np matrix. 
+    prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+        phys.alpha * (eng_norm_levels[None,:] - eng_norm_levels[:,None])
+    )**3
+    prefac[non_pos_mask > 0] = 0. 
+
+    BB_emission_up = prefac * (states_l[:,None] + 1.) / (2. * states_l[:,None] + 1.) * R['up']**2 * (1. + f_gamma_mat) 
+    BB_emission_dn = prefac * states_l[:,None] / (2. * states_l[:,None] + 1.) * R['dn']**2 * (1. + f_gamma_mat) 
+
+    BB_absorption_up = (states_l[:,None] + 1) / (2. * states_l[:,None] + 1.) * np.transpose(prefac * R['dn']**2 * f_gamma_mat)
+    BB_absorption_dn = states_l[:,None] / (2. * states_l[:,None] + 1.) * np.transpose(prefac * R['up']**2 * f_gamma_mat)
+
+    BB['up'] = BB_emission_up + BB_absorption_up 
+    BB['dn'] = BB_emission_dn + BB_absorption_dn 
+
+    if not simple_2s1s: 
+
+        for key in ['up', 'dn']:    
+            BB_2s1s[key] = A_2s1s(f_gamma, key)
+
+    else: 
+        BB_2s1s['dn'] = phys.width_2s1s_H 
+        BB_2s1s['up'] = phys.width_2s1s_H * np.exp(-phys.lya_eng / Tr) 
+
+
+    return BB, BB_2s1s
+
+
 
 
 def tau_np_1s(n, rs, xHI=None):
@@ -723,20 +816,7 @@ def process_MLA_vectorized(
     states_n = np.concatenate([
         list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)]
     )
-    states_n = np.insert(states_n, 0, 0)
     states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
-    states_l = np.insert(states_l, 0, 0) 
-    # Index arrays for moving between n x n' x l x l' representation to i = (n,l), j = (n', l') representation, 
-    # excluding n = 0 and n' = 0.  
-    # Simply call A[states_n_2d, states_l_2d, states_n_p_2d, states_l_p_2d]. 
-
-    #### REDEFINE ALL 2D, 1D OBJ SO THAT FIRST ENTRY IS n = 0 
-    #### AND IS UNPHYSICAL, FOR CONSISTENCY. 
-
-    states_n_p_2d = np.tile(states_n, (num_states+1,1)) 
-    states_l_p_2d = np.tile(states_l, (num_states+1,1)) 
-    states_n_2d = np.transpose(states_n_p_2d)
-    states_l_2d = np.transpose(states_l_p_2d)
 
 
     # Bound state energies
@@ -755,71 +835,62 @@ def process_MLA_vectorized(
     # Get the transition rates
     # !!! Think about parallelizing
     #R = populate_radial(nmax)  # Need not be recomputed every time
-    BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f, simple_2s1s=simple_2s1s)
+    BB, BB_2s1s = populate_bound_bound_2D(nmax, Tr, R, Delta_f=Delta_f, simple_2s1s=simple_2s1s)
     alpha = populate_alpha(
         Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas, 
         stimulated_emission=stimulated_emission
     )
     beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
 
+    beta_1d  = beta[states_n, states_l]
+    alpha_1d = alpha[states_n, states_l]
+
+    def l_indices(l): 
+
+        return np.arange(l, nmax) * np.arange(l+1, nmax+1) // 2 + l
+
+
+    def n_indices(n): 
+
+        return np.arange((n-1) * n // 2, (n-1) * n // 2 + n)
+
     # Include Sobolev optical depth. 
-    BB['up'][1,2:,0] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI)
-    BB['dn'][2:,1,1] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI) 
-
-    # 4D versions of BB['up'] and BB['dn'], dimensions n x n' x l x l',  
-    # with entries in the (..., l, l+1) and (..., l, l-1) positions respectively.
-    # BB_up_4d = np.zeros((nmax+1, nmax+1, nmax, nmax))
-    # BB_dn_4d = np.zeros((nmax+1, nmax+1, nmax, nmax))
-
-    
-    # BB['up'] has dimensions n x n' x l, with transitions to l' = l+1. Add BB['up'] with an extra axis, 
-    # then zero out all irrelevant entries, except l + 1. 
-    # This is very slow. Think about speed up. 
-    ones_above = np.diag(np.ones(nmax-1), 1)
-    ones_below = np.diag(np.ones(nmax-1), -1) 
-
-    BB_up_4d = BB['up'][:,:,:,None] * ones_above
-    # Similar for BB['dn'], except l' = l-1. 
-    BB_dn_4d = BB['dn'][:,:,:,None] * ones_below
+    p_indices = l_indices(1)
+    BB['up'][0, p_indices] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI)
+    BB['dn'][p_indices, 0] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI) 
     
     
-    # Total rate out of the state, dimensions n x l. 
+    # Total rate out of the state, dimensions num_states. 
     # First add all bound-bound and photoionization. 
-    tot_rate = np.sum(BB['up'] + BB['dn'], axis=1) + beta
+    tot_rate = np.sum(BB['up'] + BB['dn'], axis=1) + beta_1d
     # Add 1s -> 2s 
-    tot_rate[1, 0] += BB_2s1s['up']
+    tot_rate[0] += BB_2s1s['up']
     # Add 2s -> 1s
-    tot_rate[2, 0] += BB_2s1s['dn']
+    tot_rate[1] += BB_2s1s['dn']
     
 
-    # Initialize K_ij = R_ji / R_i,tot, dimensions n x n' x l x l', where i = (n,l), j = (n',l')
-    # K = np.zeros((nmax+1, nmax+1, nmax, nmax))
+    # Initialize K_ij = R_ji / R_i,tot, dimensions num_states x num_states.
     
-    # R_ji is the rate from n', l' --> n, l, which is the
+    # R_ji is the rate from j -> i, which is the
     # transpose of how BB is saved. 
-    K = (
-        np.transpose(BB_up_4d, axes=(1, 0, 3, 2)) + np.transpose(BB_dn_4d, axes=(1, 0, 3, 2)) 
-    ) / tot_rate[:,None,:,None]
+    K = np.transpose(BB['up'] + BB['dn']) / tot_rate[:,None]
     # Add the special case 1s <-> 2s results. 
-    K[1, 2, 0, 0] += BB_2s1s['dn'] / tot_rate[1, 0]
-    K[2, 1, 0, 0] += BB_2s1s['up'] / tot_rate[2, 0]
-
-    # Define the 2D version of K, indexed by i = (n,l), j = (n',l'), dimensions (numstates+1) x (numstates+1)
-    K_2d = K[states_n_2d, states_n_p_2d, states_l_2d,  states_l_p_2d]
+    K[0, 1] += BB_2s1s['dn'] / tot_rate[0]
+    K[1, 0] += BB_2s1s['up'] / tot_rate[1]
 
     #############################
     #        Source Terms       #
     #############################
 
-    # Excitation source term into n,l state, dimensions n x l. 
+    # Excitation source term, dimensions num_state. 
     b_exc = np.zeros_like(tot_rate)  
     # 1s -> np excitations. 
-    b_exc[:,1] += BB['up'][1, :, 0]
+    b_exc[p_indices] += BB['up'][0, p_indices]
     # 1s -> 2s excitations. 
-    b_exc[2,0] += BB_2s1s['up'] 
+    b_exc[1] += BB_2s1s['up'] 
 
     # Recombination source term into n,l state, dimensions n x l. 
-    b_rec = np.array(alpha)
+    b_rec = np.array(alpha_1d)
 
 
     # DM source term into n,l state, dimensions n x l. 
@@ -828,24 +899,20 @@ def process_MLA_vectorized(
     for state in list(delta_b.keys()):
         n = int(state[:-1])
         l = spec_to_l_dict[state[-1]]
-        b_DM[n, l] = delta_b[state]
+        idx = l_indices(l)[n-l-1]
+        b_DM[idx] = delta_b[state]
 
     # Normalize by tot_rate (do we need to check nonzero?)
     b_exc /= tot_rate 
     b_rec /= tot_rate
     b_DM  /= tot_rate 
 
-    # Define 1D versions. 
-    b_exc_1d = b_exc[states_n, states_l] 
-    b_rec_1d = b_rec[states_n, states_l]
-    b_DM_1d  =  b_DM[states_n, states_l]
-
     # Sparse matrix (I - K), only excited states. 
-    mat = sp.csr_matrix(np.identity(num_states-1) - K_2d[2:, 2:])
+    mat = sp.csr_matrix(np.identity(num_states-1) - K[1:, 1:])
 
-    dx_exc = sp.linalg.spsolve(mat, b_exc_1d[2:])
-    dx_rec = sp.linalg.spsolve(mat, b_rec_1d[2:])
-    dx_DM  = sp.linalg.spsolve(mat, b_DM_1d[2:])
+    dx_exc = sp.linalg.spsolve(mat, b_exc[1:])
+    dx_rec = sp.linalg.spsolve(mat, b_rec[1:])
+    dx_DM  = sp.linalg.spsolve(mat, b_DM[1:])
 
     # print('Vectorized: ', dx_DM)
 
@@ -855,7 +922,7 @@ def process_MLA_vectorized(
     # naively you'd want x_full[0] = 1 - sum(x_full) - xe, but
     # we already assumed xe = 1 - xHI above, so we'd run into
     # detailed balance issues if we didn't set x_full[0] = xHI
-    x_full = np.append([0, xHI], x_vec)
+    x_full = np.append(xHI, x_vec)
 
     ###
     # Now calculate the total ionization and distortion
@@ -872,26 +939,20 @@ def process_MLA_vectorized(
         return f_BB(E, Tr) + Delta_f(E)
 
     # Effective beta for MLA.
-    beta_1d = beta[states_n, states_l] 
-    beta_MLA = np.dot(beta_1d[2:], dx_exc) 
+    beta_MLA = np.dot(beta_1d[1:], dx_exc) 
 
-    # Effective alpha for MLA. 
-    alpha_1d = alpha[states_n, states_l] 
-    alpha_MLA = np.sum(alpha_1d[2:]) - np.dot(beta_1d[2:], dx_rec)
+    # Effective alpha for MLA.
+    alpha_MLA = np.sum(alpha_1d[1:]) - np.dot(beta_1d[1:], dx_rec)
 
     # EFfective beta for DM. 
-    beta_DM = np.dot(beta_1d[2:], dx_DM)
+    beta_DM = np.dot(beta_1d[1:], dx_DM)
 
     # print('Vectorized: ', alpha)
 
     # !!! Parallelize this loop
-    for nl in np.arange(num_states+1):
+    for nl in np.arange(num_states):
 
         n, l = states_n[nl], states_l[nl]
-
-        if n < 1: 
-
-            continue
 
         # Add new transition energies to H_engs
         if E_current != E(n):
@@ -908,10 +969,10 @@ def process_MLA_vectorized(
             Nphot_cascade[ind_current:ind_current + nmax-n] += nH*(
                 # Downscattering adds photons
                 x_full[(states_l == l+1) * (
-                    states_n > n)] * BB['dn'][n+1:, n, l+1]
+                    states_n > n)] * BB['dn'][(states_l == l+1) * (states_n > n), nl]
 
-                # Upscattering adds them
-                - x_full[nl] * BB['up'][n, n+1:, l]
+                # Upscattering depletes them
+                - x_full[nl] * BB['up'][nl, (states_l == l+1) * (states_n > n)]
             )/nB * dt
         # note: 'dn' and 'up' have nothing to do with down- or up-scattering,
         # just if the l quantum number go up or down
@@ -920,8 +981,8 @@ def process_MLA_vectorized(
         if l > 0:
             Nphot_cascade[ind_current:ind_current + nmax-n] += nH * (
                 x_full[(states_l == l-1) * (
-                    states_n > n)] * BB['up'][n+1:, n, l-1]
-                - x_full[nl] * BB['dn'][n, n+1:, l]
+                    states_n > n)] * BB['up'][(states_l == l-1) * (states_n > n), nl]
+                - x_full[nl] * BB['dn'][nl, (states_l == l-1) * (states_n > n)]
             )/nB * dt
 
         if not stimulated_emission:
@@ -931,7 +992,7 @@ def process_MLA_vectorized(
 
         if l == 0:  # once for each n
             BF_contribution = bf.net_spec_n(
-                n, Tm, xe, x_full[1:], nH, Thetas, Tr, f_gamma=f_gam,
+                n, Tm, xe, x_full, nH, Thetas, Tr, f_gamma=f_gam,
                 stimulated_emission=stimulated_emission
             )/nB * dt
             BF_contribution.rebin(eng)
@@ -979,7 +1040,7 @@ def process_MLA_vectorized(
         #    x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
         #) / nB * dt
         #transition_spec.N += amp_2s1s * spec_2s1s.N
-        transition_spec.N += N_2s1s(eng, f_gam, x_full[2], x_full[1]) * dt
+        transition_spec.N += N_2s1s(eng, f_gam, x_full[1], x_full[0]) * dt
 
     # print('Vectorized: ', alpha_MLA, beta_MLA, beta_DM)
 
@@ -1013,7 +1074,7 @@ def process_MLA(
         include_BF=True, simple_2s1s=False,
         # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         # distortion=None, H_states=None, rate_func_eng=None,
-        delta_b={}, stimulated_emission=True, vectorized=True
+        delta_b={}, stimulated_emission=True, vectorized=False
         ):
     """
     Solve the steady state equation Mx=b, then compute the ionization rate
@@ -1117,6 +1178,7 @@ def process_MLA(
     ### Build matrix K_ij = R_ji/R_i,tot and source term ###
     K = np.zeros((num_states, num_states))
 
+
     # source term
     b_exc = np.zeros(num_states)  # from CMB-photon + 1s -> nl
     b_rec = np.zeros(num_states)  # from e+p -> nl
@@ -1149,6 +1211,7 @@ def process_MLA(
 
         if l != 0:
             K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate[nl]
+            
 
         if l != nmax-1:
             if tot_rate[nl] > 0:
