@@ -200,8 +200,8 @@ def populate_radial(nmax):
     -----
     See Hey (2006), Eq. (B.4), (52), and (53)
     """
-    R_up = np.zeros((nmax+1, nmax, nmax))
-    R_dn = np.zeros((nmax+1, nmax, nmax))
+    R_up = np.zeros((nmax+1, nmax+1, nmax))
+    R_dn = np.zeros((nmax+1, nmax+1, nmax))
 
     for n in np.arange(2, nmax+1, 1):
         for n_p in np.arange(1, n):
@@ -222,8 +222,81 @@ def populate_radial(nmax):
 
     return {'up': R_up, 'dn': R_dn}
 
+def populate_radial_2D(nmax): 
 
-def populate_bound_bound(nmax, Tr, R, Delta_f=None):
+    num_states = nmax * (nmax + 1) // 2
+
+    states_n = np.concatenate([
+        list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)]
+    )
+    states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
+
+    # states_nl(n, l) is given by n * (n+1) // 2 + l
+
+    R_up = np.zeros((num_states, num_states))
+    R_dn = np.zeros((num_states, num_states))
+
+    for n in np.arange(2, nmax+1):
+        for n_p in np.arange(1, n):
+            # Initial conditions: Eq. (B.4)
+            tri_n = (n-1) * n // 2
+            tri_n_p = (n_p-1) * n_p // 2
+            R_dn[tri_n + n_p, tri_n_p + n_p-1] = Hey_R_initial(n, n_p)
+            R_up[tri_n + n_p-1, tri_n_p + n_p] = 0
+            R_up[tri_n + n_p, tri_n_p + n_p+1] = 0
+            for l in np.arange(n_p-1, 0, -1):
+
+                R_dn[tri_n + l, tri_n_p + l-1] = (
+                    (2*l+1) * Hey_A(n, l+1) * R_dn[tri_n + l+1, tri_n_p + l]
+                    + Hey_A(n_p, l+1) * R_up[tri_n + l, tri_n_p + l+1]
+                ) / (2. * l * Hey_A(n_p, l))
+
+                R_up[tri_n + l-1, tri_n_p + l] = (
+                    (2*l+1) * Hey_A(n_p, l+1) * R_up[tri_n + l, tri_n_p + l+1] 
+                    + Hey_A(n, l+1) * R_dn[tri_n + l+1, tri_n_p + l]
+                ) / (2. * l * Hey_A(n, l))
+
+    return {'up': R_up, 'dn': R_dn}
+
+
+    # for i in np.arange(num_states-1, -1, -1): 
+        
+    #     for j in np.arange(num_states-1, -1, -1): 
+
+    #         n = states_n[i] 
+    #         l = states_l[i] 
+    #         n_p = states_n[j] 
+    #         l_p = states_l[j]
+
+    #         if l > n_p or n_p >= n: 
+    #             continue 
+    #         elif l == n_p and l_p == l-1: 
+    #             R_dn[i,j] = Hey_R_initial(n, n_p) 
+    #             continue
+    #         elif l == n_p and l_p == l+1: 
+    #             R_up[i,j] = 0. 
+    #             continue
+    #         elif l == n_p - 1 and l_p == l+1: 
+    #             R_up[i-1,j] = 0 
+    #             continue
+            
+    #         if l_p == l-1 and l > 0: 
+    #             R_dn[i,j] = (
+    #                 (2*l+1) * Hey_A(n, l+1) * R_dn[i+1,j+1] 
+    #                 + Hey_A(n_p, l+1) * R_up[i,j+2]
+    #             ) / (2. * l * Hey_A(n_p, l))
+    #         elif l_p == l+1: 
+    #             R_up[i,j] = (
+    #                 (2*(l+1)+1) * Hey_A(n_p, (l+1)+1) * R_up[i+1, j+1]
+    #                 + Hey_A(n, (l+1)+1) * R_dn[i+2, j]
+    #             ) / (2. * (l+1) * Hey_A(n, l+1))
+
+
+    # return {'up': R_up, 'dn': R_dn} 
+
+
+
+def populate_bound_bound(nmax, Tr, R, Delta_f=None, simple_2s1s=False):
     """
     Populates two matrices with the bound-bound rates for emission and
     absorption in a generic radiation field.
@@ -239,6 +312,8 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
     Delta_f : function
         Deviation from blackbody phase space density as a function of energy,
         e.g. f_BB(E) = 1/(e^E/T - 1), so f(E) = f_BB(E) + Delta_f(E)
+    simple_2s1s : bool, optional
+        if *True*, fixes the decay rate to :math:`8.22` s:math:`^{-1}`. Default is *False*.
 
     Returns
     -------
@@ -252,6 +327,7 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
     -----
     The sobolev optical depth suppression factor has not been included yet
     """
+    # 'up' and 'dn' here refers to the change in l. 
     keys = ['up', 'dn']
 
     BB = {key: np.zeros((nmax+1, nmax+1, nmax)) for key in keys}
@@ -263,44 +339,203 @@ def populate_bound_bound(nmax, Tr, R, Delta_f=None):
     def f_gamma(E):
         return f_BB(E, Tr) + Delta_f(E)
 
+    # Vector of normalized energy levels. eng_levels[0] = np.nan, eng_levels[n] = 1 / n**2
+    eng_norm_levels = np.divide(
+        1., np.arange(nmax+1.)**2, out=np.ones(nmax+1)*np.nan, 
+        where=np.arange(nmax+1) != 0
+    )
+    # n x np matrix of energy level differences, Ennp_mat[n, np] = (1 / np**2 - 1 / n**2) * phys.rydberg
+    Ennp_mat = (eng_norm_levels[None,:] - eng_norm_levels[:,None]) * phys.rydberg
+    
+    # Masks for emission and absorption, and non-positive entries of Ennp_mat.
+    # Nonzero for n_p > n, emission. 
+    emission_mask = np.ones_like(Ennp_mat)
+    emission_mask[Ennp_mat < 0] *= 0.
+    # Nonzero for n > n_p, absorption. 
+    absorption_mask = np.ones_like(Ennp_mat)
+    absorption_mask[Ennp_mat > 0] *= 0.
+    # Nonzero for n_p > n and n, n_p > 0. 
+    non_pos_mask = np.zeros_like(Ennp_mat) 
+    non_pos_mask[(Ennp_mat <= 0) | (np.isnan(Ennp_mat))] = 1. 
+
+    # n x np matrix, occupation number of photons corresponding to positive energy level differences. 
+    # Make a mask which sets the energy to a finite value if the energy <= 0 or is nan, 
+    # so that f_gamma won't complain. We'll mask these values after anyway. 
+    
+    Ennp_mat[non_pos_mask > 0] = 1.
+    # f_gamma_mat is nonzero for n_p > n, and n, n_p > 0. 
+    f_gamma_mat = f_gamma(Ennp_mat) 
+    f_gamma_mat[non_pos_mask > 0] = 0. 
+
+    # n x np matrix. 
+    prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+        phys.alpha * (eng_norm_levels[None,:] - eng_norm_levels[:,None])
+    )**3
+
+    # zero out negative values. 
+    prefac[non_pos_mask > 0] = 0. 
+
+    n_ary = np.arange(nmax)
+
+    # Emission
+
+    # A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
+    # BB['up'][n][n_p][l] = A_up * (1+fEnnp)
+    BB_emission_up = np.einsum(
+        'ij,k,ijk,ij->ijk', prefac, (n_ary + 1.) / (2.*n_ary + 1.), R['up']**2, 1. + f_gamma_mat
+    )
+
+    # A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
+    # BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
+    BB_emission_dn = np.einsum(
+        'ij,k,ijk,ij->ijk', prefac, n_ary / (2.*n_ary + 1.), R['dn']**2, 1. + f_gamma_mat
+    )
+
+
+    # Absorption
+    BB_absorption_up = np.zeros_like(BB_emission_up)
+    BB_absorption_dn = np.zeros_like(BB_emission_dn) 
+
+    # BB['up'][n_p][n][l] =   ((2*l+3)/(2*l+1) * BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
+    BB_absorption_up[:,:,:-1] += np.transpose(BB_emission_dn, axes=(1, 0, 2))[:,:,1:]
+    BB_absorption_up = np.einsum(
+        'ijk,k,ji->ijk', BB_absorption_up, 
+        (2. * n_ary + 3.) / (2. * n_ary + 1.), f_gamma_mat / (1. + f_gamma_mat)
+    )
+
+    # BB['dn'][n_p][n][l+1] = ((2*l+1)/(2*l+3) * BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+    BB_absorption_dn[:,:,1:] += np.transpose(BB_emission_up, axes=(1, 0, 2))[:,:,:-1]
+    BB_absorption_dn = np.einsum(
+        'ijk,k,ji->ijk', BB_absorption_dn, 
+        (2. * (n_ary - 1.) + 1.) / (2. * (n_ary - 1.) + 3), f_gamma_mat / (1. + f_gamma_mat)
+    )
+    # l = 0 is bogus, so zero it out. 
+    BB_absorption_dn[:,:,0] = 0. 
+
+    BB['up'] = BB_emission_up + BB_absorption_up 
+    BB['dn'] = BB_emission_dn + BB_absorption_dn 
+
+
+
     # !!! parallelize these loops
-    for n in np.arange(2, nmax+1):
-        n2 = n**2
-        for n_p in np.arange(1, n):
-            n_p2 = n_p**2
-            Ennp = (1/n_p2 - 1/n2) * phys.rydberg
-            fEnnp = f_gamma(Ennp)
+    # for n in np.arange(2, nmax+1):
+    #     n2 = n**2
+    #     for n_p in np.arange(1, n):
+    #         n_p2 = n_p**2
+    #         Ennp = (1/n_p2 - 1/n2) * phys.rydberg
+    #         fEnnp = f_gamma(Ennp)
 
-            prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
-                phys.alpha * (1/n_p2 - 1/n2))**3
+    #         prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+    #             phys.alpha * (1/n_p2 - 1/n2))**3
 
-            ### Spont + stim emission ###
-            l = np.arange(n_p+1)
-            A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
-            A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
-            BB['up'][n][n_p][l] = A_up * (1+fEnnp)
-            BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
+    #         ### Spont + stim emission ###
+    #         l = np.arange(n_p+1)
+    #         A_up = prefac * (l+1) / (2*l+1) * R['up'][n][n_p][l]**2
+    #         A_dn = prefac * l / (2*l+1) * R['dn'][n][n_p][l]**2
+    #         BB['up'][n][n_p][l] = A_up * (1+fEnnp)
+    #         BB['dn'][n][n_p][l] = A_dn * (1+fEnnp)
 
-            BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
-            BB['dn'][n][n_p][0] = 0.0                               # No l' < 0
+    #         BB['up'][n][n_p][n_p] = BB['up'][n][n_p][n_p-1] = 0.0   # No l'>=n'
+    #         BB['dn'][n][n_p][0] = 0.0                               # No l' < 0
+    #         # if n == nmax: 
+    #         #     print(BB['up'][n_p][n][l])
+    #         #     print(BB_emission_up[n_p][n][l])
+    #         #     if n_p == n-1: 
+    #         #         raise ValueError('exit!')
 
-            ### Absorption ###
-            # When adding distortion, detailed balance takes thought.
-            # To do it, take away the 1+fEnnp from a couple of lines
-            # above, then replace it with fEnnp (that's all detailed
-            # balance was doing).
-            l = np.arange(n_p)  # absorption: use detailed balance
-            BB['up'][n_p][n][l] = (
-                (2*l+3)/(2*l+1) *
-                BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
-            BB['dn'][n_p][n][l+1] = (
-                (2*l+1)/(2*l+3) *
-                BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
+    #         ### Absorption ###
+    #         # When adding distortion, detailed balance takes thought.
+    #         # To do it, take away the 1+fEnnp from a couple of lines
+    #         # above, then replace it with fEnnp (that's all detailed
+    #         # balance was doing).
+    #         l = np.arange(n_p)  # absorption: use detailed balance
+    #         BB['up'][n_p][n][l] = (
+    #             (2*l+3)/(2*l+1) *
+    #             BB['dn'][n][n_p][l+1]/(1+fEnnp) * fEnnp)
+    #         BB['dn'][n_p][n][l+1] = (
+    #             (2*l+1)/(2*l+3) *
+    #             BB['up'][n][n_p][l] / (1+fEnnp) * fEnnp)
 
-    for key in ['up', 'dn']:
-        BB_2s1s[key] = A_2s1s(f_gamma, key)
+
+    if not simple_2s1s: 
+
+        for key in ['up', 'dn']:    
+            BB_2s1s[key] = A_2s1s(f_gamma, key)
+
+    else: 
+        BB_2s1s['dn'] = phys.width_2s1s_H 
+        BB_2s1s['up'] = phys.width_2s1s_H * np.exp(-phys.lya_eng / Tr) 
+
 
     return BB, BB_2s1s
+
+def populate_bound_bound_2D(nmax, Tr, R, Delta_f=None, simple_2s1s=False): 
+
+    num_states = nmax * (nmax + 1) // 2
+
+    states_n = np.concatenate([
+        list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)]
+    )
+    states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
+
+    keys = ['up', 'dn'] 
+
+    BB = {key: np.zeros((num_states, num_states)) for key in keys} 
+    BB_2s1s = {key : 0 for key in keys}
+    if Delta_f is None:
+        def Delta_f(E):
+            return 0
+
+    def f_gamma(E):
+        return f_BB(E, Tr) + Delta_f(E)
+
+    # Vector of normalized energy levels. 
+    eng_norm_levels = 1. / states_n**2 
+    # num_states x num_states matrix of energy level differences, Ennp_mat[i, j] = (1 / n_p**2 - 1 / n**2) * phys.rydberg, 
+    # where n_p = n[j] and n = n[i] 
+    Ennp_mat = (eng_norm_levels[None,:] - eng_norm_levels[:,None]) * phys.rydberg
+    
+    # Nonzero for n_p > n and n, n_p > 0. 
+    non_pos_mask = np.zeros_like(Ennp_mat) 
+    non_pos_mask[(Ennp_mat <= 0) | (np.isnan(Ennp_mat))] = 1.
+
+    # n x np matrix, occupation number of photons corresponding to positive energy level differences. 
+    # Make a mask which sets the energy to a finite value if the energy <= 0 or is nan, 
+    # so that f_gamma won't complain. We'll mask these values after anyway. 
+
+    Ennp_mat[non_pos_mask > 0] = 1.
+    # f_gamma_mat is nonzero for n_p > n, and n, n_p > 0. 
+    f_gamma_mat = f_gamma(Ennp_mat) 
+    f_gamma_mat[non_pos_mask > 0] = 0. 
+
+    # n x np matrix. 
+    prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+        phys.alpha * (eng_norm_levels[None,:] - eng_norm_levels[:,None])
+    )**3
+    prefac[non_pos_mask > 0] = 0. 
+
+    BB_emission_up = prefac * (states_l[:,None] + 1.) / (2. * states_l[:,None] + 1.) * R['up']**2 * (1. + f_gamma_mat) 
+    BB_emission_dn = prefac * states_l[:,None] / (2. * states_l[:,None] + 1.) * R['dn']**2 * (1. + f_gamma_mat) 
+
+    BB_absorption_up = (states_l[:,None] + 1) / (2. * states_l[:,None] + 1.) * np.transpose(prefac * R['dn']**2 * f_gamma_mat)
+    BB_absorption_dn = states_l[:,None] / (2. * states_l[:,None] + 1.) * np.transpose(prefac * R['up']**2 * f_gamma_mat)
+
+    BB['up'] = BB_emission_up + BB_absorption_up 
+    BB['dn'] = BB_emission_dn + BB_absorption_dn 
+
+    if not simple_2s1s: 
+
+        for key in ['up', 'dn']:    
+            BB_2s1s[key] = A_2s1s(f_gamma, key)
+
+    else: 
+        BB_2s1s['dn'] = phys.width_2s1s_H 
+        BB_2s1s['up'] = phys.width_2s1s_H * np.exp(-phys.lya_eng / Tr) 
+
+
+    return BB, BB_2s1s
+
+
 
 
 def tau_np_1s(n, rs, xHI=None):
@@ -555,13 +790,291 @@ def get_transition_energies(nmax):
     return H_engs[1:]
 
 
+
+def process_MLA_vectorized(
+    rs, dt, xHI, Tm, nmax, eng, R, Thetas,
+    Delta_f=None, cross_check=False,
+    include_BF=True, simple_2s1s=False,
+    # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
+    # distortion=None, H_states=None, rate_func_eng=None,
+    delta_b={}, stimulated_emission=True
+):
+
+    if cross_check:
+        xHI = phys.x_std(rs, 'HI')
+        # Tm = phys.TCMB(rs)
+
+    # Number of Hydrogen states at or below n=nmax
+    num_states = int(nmax*(nmax+1)/2)
+
+    # Mapping from spectroscopic letters to numbers
+    spec_to_l_dict = {'s': 0, 'p': 1, 'd': 2, 'f': 3}
+
+    # Indices for the bound states
+    # e.g. (1s, 2s, 2p, 3s...) are states (0, 1, 2, 3...),
+    # so states_n[3], states_l[3] = 3,0 for '3s'
+    states_n = np.concatenate([
+        list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)]
+    )
+    states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
+
+
+    # Bound state energies
+    def E(n): return phys.rydberg/n**2
+
+    xe = 1-xHI
+    nH = phys.nH * rs**3
+    nB = phys.nB * rs**3
+
+    if Delta_f is None:
+        def Delta_f(E): return 0
+
+    # Radiation Temperature
+    Tr = phys.TCMB(rs)
+
+    # Get the transition rates
+    # !!! Think about parallelizing
+    #R = populate_radial(nmax)  # Need not be recomputed every time
+    BB, BB_2s1s = populate_bound_bound_2D(nmax, Tr, R, Delta_f=Delta_f, simple_2s1s=simple_2s1s)
+    alpha = populate_alpha(
+        Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas, 
+        stimulated_emission=stimulated_emission
+    )
+    beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
+
+    beta_1d  = beta[states_n, states_l]
+    alpha_1d = alpha[states_n, states_l]
+
+    def l_indices(l): 
+
+        return np.arange(l, nmax) * np.arange(l+1, nmax+1) // 2 + l
+
+
+    def n_indices(n): 
+
+        return np.arange((n-1) * n // 2, (n-1) * n // 2 + n)
+
+    # Include Sobolev optical depth. 
+    p_indices = l_indices(1)
+    BB['up'][0, p_indices] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI)
+    BB['dn'][p_indices, 0] *= p_np_1s(np.arange(2, nmax+1), rs, xHI=xHI) 
+    
+    
+    # Total rate out of the state, dimensions num_states. 
+    # First add all bound-bound and photoionization. 
+    tot_rate = np.sum(BB['up'] + BB['dn'], axis=1) + beta_1d
+    # Add 1s -> 2s 
+    tot_rate[0] += BB_2s1s['up']
+    # Add 2s -> 1s
+    tot_rate[1] += BB_2s1s['dn']
+    
+
+    # Initialize K_ij = R_ji / R_i,tot, dimensions num_states x num_states.
+    
+    # R_ji is the rate from j -> i, which is the
+    # transpose of how BB is saved. 
+    K = np.transpose(BB['up'] + BB['dn']) / tot_rate[:,None]
+    # Add the special case 1s <-> 2s results. 
+    K[0, 1] += BB_2s1s['dn'] / tot_rate[0]
+    K[1, 0] += BB_2s1s['up'] / tot_rate[1]
+
+    #############################
+    #        Source Terms       #
+    #############################
+
+    # Excitation source term, dimensions num_state. 
+    b_exc = np.zeros_like(tot_rate)  
+    # 1s -> np excitations. 
+    b_exc[p_indices] += BB['up'][0, p_indices]
+    # 1s -> 2s excitations. 
+    b_exc[1] += BB_2s1s['up'] 
+
+    # Recombination source term into n,l state, dimensions n x l. 
+    b_rec = np.array(alpha_1d)
+
+
+    # DM source term into n,l state, dimensions n x l. 
+    b_DM = np.zeros_like(tot_rate)
+    # This is a short loop. 
+    for state in list(delta_b.keys()):
+        n = int(state[:-1])
+        l = spec_to_l_dict[state[-1]]
+        idx = l_indices(l)[n-l-1]
+        b_DM[idx] = delta_b[state]
+
+    # Normalize by tot_rate (do we need to check nonzero?)
+    b_exc /= tot_rate 
+    b_rec /= tot_rate
+    b_DM  /= tot_rate 
+
+    # Sparse matrix (I - K), only excited states. 
+    mat = sp.csr_matrix(np.identity(num_states-1) - K[1:, 1:])
+
+    dx_exc = sp.linalg.spsolve(mat, b_exc[1:])
+    dx_rec = sp.linalg.spsolve(mat, b_rec[1:])
+    dx_DM  = sp.linalg.spsolve(mat, b_DM[1:])
+
+    # print('Vectorized: ', dx_DM)
+
+    # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
+    x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
+
+    # naively you'd want x_full[0] = 1 - sum(x_full) - xe, but
+    # we already assumed xe = 1 - xHI above, so we'd run into
+    # detailed balance issues if we didn't set x_full[0] = xHI
+    x_full = np.append(xHI, x_vec)
+
+    ###
+    # Now calculate the total ionization and distortion
+    ###
+
+    E_current = 0
+    ind_current = 0
+    H_engs = np.zeros(num_states)
+
+    Nphot_cascade = np.zeros(num_states)
+    BF_spec = Spectrum(eng, np.zeros_like(eng), spec_type='dNdE')
+    
+    def f_gamma(E):
+        return f_BB(E, Tr) + Delta_f(E)
+
+    # Effective beta for MLA.
+    beta_MLA = np.dot(beta_1d[1:], dx_exc) 
+
+    # Effective alpha for MLA.
+    alpha_MLA = np.sum(alpha_1d[1:]) - np.dot(beta_1d[1:], dx_rec)
+
+    # EFfective beta for DM. 
+    beta_DM = np.dot(beta_1d[1:], dx_DM)
+
+    # print('Vectorized: ', alpha)
+
+    # !!! Parallelize this loop
+    for nl in np.arange(num_states):
+
+        n, l = states_n[nl], states_l[nl]
+
+        # Add new transition energies to H_engs
+        if E_current != E(n):
+            if n > 1:
+                ind_current += nmax-n+1
+
+            E_current = E(n)
+            H_engs[ind_current:ind_current + nmax-n] = (
+                E(n)-E(np.arange(n+1, nmax+1)))
+
+        # photons from l <-> l+1 transitions (per baryon per second)
+        if l < nmax-1:
+            
+            Nphot_cascade[ind_current:ind_current + nmax-n] += nH*(
+                # Downscattering adds photons
+                x_full[(states_l == l+1) * (
+                    states_n > n)] * BB['dn'][(states_l == l+1) * (states_n > n), nl]
+
+                # Upscattering depletes them
+                - x_full[nl] * BB['up'][nl, (states_l == l+1) * (states_n > n)]
+            )/nB * dt
+        # note: 'dn' and 'up' have nothing to do with down- or up-scattering,
+        # just if the l quantum number go up or down
+
+        # photons from l <-> l-1 transitions
+        if l > 0:
+            Nphot_cascade[ind_current:ind_current + nmax-n] += nH * (
+                x_full[(states_l == l-1) * (
+                    states_n > n)] * BB['up'][(states_l == l-1) * (states_n > n), nl]
+                - x_full[nl] * BB['dn'][nl, (states_l == l-1) * (states_n > n)]
+            )/nB * dt
+
+        if not stimulated_emission:
+            f_gam = None
+        else:
+            f_gam = f_gamma
+
+        if l == 0:  # once for each n
+            BF_contribution = bf.net_spec_n(
+                n, Tm, xe, x_full, nH, Thetas, Tr, f_gamma=f_gam,
+                stimulated_emission=stimulated_emission
+            )/nB * dt
+            BF_contribution.rebin(eng)
+            BF_spec.dNdE += BF_contribution.dNdE
+
+        ## This is where f_ion -> distortion
+        #BF_tmp = nH**2 * xe**2 * bf.gamma_nl(
+        #    n, l, Tm, T_r=Tr, f_gamma=f_gam,
+        #    stimulated_emission=stimulated_emission
+        #)/nB * dt
+        #BF_tmp -= nH * x_full[nl] * bf.xi_nl(
+        #    n, l, T_r=Tr, f_gamma=f_gam)/nB * dt
+        #BF_tmp.rebin(eng)
+        #BF_spec.dNdE += BF_tmp.dNdE
+
+    # Make a spectrum
+    data = sorted(np.flipud(np.transpose([H_engs, Nphot_cascade])),
+                  key=lambda pair: pair[0])
+
+    # Consolidate duplicates (e.g. 6 <-> 9 transition
+    # is same energy as 8 <-> 72)
+    i = 0
+    sz = num_states
+    while i < sz-1:
+        while (i < sz-1) and (data[i][0] == data[i+1][0]):
+            data[i][1] += data[i+1][1]
+            data.pop(i+1)
+            sz -= 1
+
+        i += 1
+
+    data = np.array(data)
+
+    transition_spec = Spectrum(data[:, 0], data[:, 1], spec_type='N', rs=rs)
+    transition_spec.rebin(eng)
+
+    # Add the bound-free photons
+    if include_BF:
+        transition_spec.N += BF_spec.N
+
+    # Add the 2s-1s component
+    if not simple_2s1s:
+        #spec_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
+        #amp_2s1s = nH * phys.width_2s1s_H * (
+        #    x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
+        #) / nB * dt
+        #transition_spec.N += amp_2s1s * spec_2s1s.N
+        transition_spec.N += N_2s1s(eng, f_gam, x_full[1], x_full[0]) * dt
+
+    # print('Vectorized: ', alpha_MLA, beta_MLA, beta_DM)
+
+    return [alpha_MLA, beta_MLA, beta_DM], transition_spec
+
+    
+
+
+
+
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def process_MLA(
         rs, dt, xHI, Tm, nmax, eng, R, Thetas,
         Delta_f=None, cross_check=False,
-        include_2s1s=True, include_BF=True,
+        include_BF=True, simple_2s1s=False,
         # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
         # distortion=None, H_states=None, rate_func_eng=None,
-        delta_b={}, stimulated_emission=True
+        delta_b={}, stimulated_emission=True, vectorized=False
         ):
     """
     Solve the steady state equation Mx=b, then compute the ionization rate
@@ -582,13 +1095,15 @@ def process_MLA(
     Delta_f : function
         photon phase space density as a function of energy, minus f_BB
     cross_check : bool
-        if True, set xHI to its standard value
-    include_2s1s : bool
-        includes the 2s -> 1s photons to the output distortion
+        if True, set xHI to its standard value.
     include_BF : bool
         includes the bound-free transition photons to the output distortion
+    simple_2s1s : bool, optional
+        If *True*, sets the 2s -> 1s rate to be a constant :math:`8.22` s:math:`^{-1}`, and does not include distortions from 2s -> 1s.  
     fexc_switch : bool
-    deposited_exc_arr elec_spec distortion H_states rate_func_eng
+        deposited_exc_arr elec_spec distortion H_states rate_func_eng
+    vectorized : bool
+        If *True*, uses the vectorized calculation. 
 
     Returns
     -------
@@ -597,6 +1112,15 @@ def process_MLA(
     transition_specs : dictionary of photon spectra, labeled by
         initial excited state (in N, not dNdE)
     """
+
+    if vectorized: 
+
+        return process_MLA_vectorized(
+            rs, dt, xHI, Tm, nmax, eng, R, Thetas,
+            Delta_f=Delta_f, cross_check=cross_check,
+            include_BF=include_BF, simple_2s1s=simple_2s1s,
+            delta_b=delta_b, stimulated_emission=stimulated_emission
+        )
 
     if cross_check:
         xHI = phys.x_std(rs, 'HI')
@@ -611,7 +1135,7 @@ def process_MLA(
 
     def num_to_l(ll):
         if ll < 4:
-            return spectroscopic_map[l]
+            return spectroscopic_map[ll]
 
         else:
             return '-'
@@ -639,7 +1163,7 @@ def process_MLA(
     # Get the transition rates
     # !!! Think about parallelizing
     #R = populate_radial(nmax)  # Need not be recomputed every time
-    BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f)
+    BB, BB_2s1s = populate_bound_bound(nmax, Tr, R, Delta_f=Delta_f, simple_2s1s=simple_2s1s)
     alpha = populate_alpha(Tm, Tr, nmax, Delta_f=Delta_f, Thetas=Thetas,
                            stimulated_emission=stimulated_emission)
     beta = populate_beta(Tr, nmax, Delta_f=Delta_f, Thetas=Thetas)
@@ -649,8 +1173,11 @@ def process_MLA(
         BB['dn'][n][1][1] *= p_np_1s(n, rs, xHI=xHI)
         BB['up'][1][n][0] *= p_np_1s(n, rs, xHI=xHI)
 
+
+
     ### Build matrix K_ij = R_ji/R_i,tot and source term ###
     K = np.zeros((num_states, num_states))
+
 
     # source term
     b_exc = np.zeros(num_states)  # from CMB-photon + 1s -> nl
@@ -684,6 +1211,7 @@ def process_MLA(
 
         if l != 0:
             K[nl, states_l == l-1] = BB['up'][l:, n, l-1]/tot_rate[nl]
+            
 
         if l != nmax-1:
             if tot_rate[nl] > 0:
@@ -836,13 +1364,15 @@ def process_MLA(
         transition_spec.N += BF_spec.N
 
     # Add the 2s-1s component
-    if include_2s1s:
+    if not simple_2s1s:
         #spec_2s1s = discretize(dist_eng, phys.dNdE_2s1s)
         #amp_2s1s = nH * phys.width_2s1s_H * (
         #    x_full[1] - x_full[0]*np.exp(-phys.lya_eng/Tr)
         #) / nB * dt
         #transition_spec.N += amp_2s1s * spec_2s1s.N
         transition_spec.N += N_2s1s(eng, f_gam, x_full[1], x_full[0]) * dt
+
+    # print('Unvectorized: ', alpha_MLA, beta_MLA, beta_DM)
 
     return [alpha_MLA, beta_MLA, beta_DM], transition_spec
 
