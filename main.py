@@ -1214,7 +1214,7 @@ def evolve(
         'f': f
     }
 
-    if elec_processes:
+    if elec_processes and distort:
         data['MLA'] = np.array(MLA_data)
 
     # End of the iteration. 
