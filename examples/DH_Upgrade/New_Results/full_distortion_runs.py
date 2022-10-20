@@ -83,7 +83,7 @@ start_rs, high_rs, end_rs = 3e3, 1.555e3, 4
 cf = 16
 rtol = 1e-6
 nmax = 10 # maximum number of hydrogen levels to track
-iter_max = 5 # number of times to iterate over recombination/ionization rates
+iter_max = 2 # number of times to iterate over recombination/ionization rates
 
 log10eng0 = 3.6989700794219966
 log10eng_ary = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
@@ -112,25 +112,23 @@ for pri in ['elec', 'phot']:
                 'mDM':mDM, 'inj_param':param_bound(mDM, DM_process, pri)
             })
 
+print(len(params_list))
+
 options_dict = {
     'start_rs': start_rs, 'high_rs': high_rs, 'end_rs':end_rs,
     'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
     'coarsen_factor':cf, 'distort':True, 'fexc_switch': True, 
-    'reprocess_distortion':True, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False
+    'reprocess_distortion':True, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False, 'iterations':iter_max
 }
+
 
 # main.embarrassingly_parallel_evolve(
 #     params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
 # )
-main.embarrassingly_parallel_evolve(
-    params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
-)
 
 main.embarrassingly_parallel_evolve(
-    params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
+    params_list, idx, options_dict, output_dir, 'scratch'
 )
-
-
 
 
 # We use the iterative method.
