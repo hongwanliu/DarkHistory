@@ -800,13 +800,11 @@ def evolve(
                 )
 
                 MLA_data[0].append(rs)
-                if x_full_data == []: 
-                    # Set the first entry to zero, so that it has the same size as other arrays. 
-                    x_full_data.append(np.zeros_like(x_full))
-                x_full_data.append(x_full)
 
                 for i in np.arange(3):
                     MLA_data[i+1].append(MLA_step[i])
+
+                x_full_data.append(x_full)
 
                 # # Subtract off absorbed photons
                 # atomic_dist_spec.N -= in_distortion.N - distortion.N
