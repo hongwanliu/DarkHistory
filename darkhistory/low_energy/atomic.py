@@ -1044,7 +1044,7 @@ def process_MLA_vectorized(
 
     # print('Vectorized: ', alpha_MLA, beta_MLA, beta_DM)
 
-    return [alpha_MLA, beta_MLA, beta_DM], transition_spec
+    return [alpha_MLA, beta_MLA, beta_DM], transition_spec, x_full
 
     
 
@@ -1374,7 +1374,7 @@ def process_MLA(
 
     # print('Unvectorized: ', alpha_MLA, beta_MLA, beta_DM)
 
-    return [alpha_MLA, beta_MLA, beta_DM], transition_spec
+    return [alpha_MLA, beta_MLA, beta_DM], transition_spec, x_full
 
 
 def absorb_photons(distortion, H_states, dt, x1s, nmax):

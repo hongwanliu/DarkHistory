@@ -1,9 +1,9 @@
 import os
-# idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
 
-print('PLEASE CHECK idx!')
+# print('PLEASE CHECK idx!')
 
-idx = 4
+# idx = 4
 
 import sys
 sys.path.append('../../..')
@@ -20,7 +20,8 @@ import darkhistory.low_energy.atomic as atomic
 import darkhistory.spec.spectools as spectools
 
 print('PLEASE CHECK output_dir!')
-output_dir = '/scratch/gpfs/hongwanl/DarkHistory/full_distortion/scratch/'
+# output_dir = '/scratch/gpfs/hongwanl/DarkHistory/scratch/'
+output_dir = '/scratch/gpfs/hongwanl/DarkHistory/full_distortion/max_CMB_nmax_200_Puchwein/'
 
 # Choose to load data (True) or start a new scan (False)
 load_data = False
@@ -82,7 +83,7 @@ def param_bound(mDM, DM_process, pri):
 start_rs, high_rs, end_rs = 3e3, 1.555e3, 4
 cf = 16
 rtol = 1e-6
-nmax = 10 # maximum number of hydrogen levels to track
+nmax = 200 # maximum number of hydrogen levels to track
 iter_max = 5 # number of times to iterate over recombination/ionization rates
 
 log10eng0 = 3.6989700794219966
@@ -112,25 +113,22 @@ for pri in ['elec', 'phot']:
                 'mDM':mDM, 'inj_param':param_bound(mDM, DM_process, pri)
             })
 
+
 options_dict = {
     'start_rs': start_rs, 'high_rs': high_rs, 'end_rs':end_rs,
     'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
     'coarsen_factor':cf, 'distort':True, 'fexc_switch': True, 
-    'reprocess_distortion':True, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False
+    'reprocess_distortion':True, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False, 'iterations':iter_max
 }
 
+
+main.embarrassingly_parallel_evolve(
+    params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
+)
+
 # main.embarrassingly_parallel_evolve(
-#     params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
+#     params_list, idx, options_dict, output_dir, 'scratch'
 # )
-main.embarrassingly_parallel_evolve(
-    params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
-)
-
-main.embarrassingly_parallel_evolve(
-    params_list, idx, options_dict, output_dir, 'max_CMB_nmax_200_Puchwein'
-)
-
-
 
 
 # We use the iterative method.

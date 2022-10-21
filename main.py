@@ -570,6 +570,8 @@ def evolve(
                 Tm_in, 'HI', fudge)],
             [0.]
         ]
+        # Stores population of atomic states
+        x_full_data = []
 
         # Radial Matrix elements
         R = atomic.populate_radial(nmax)
@@ -787,7 +789,7 @@ def evolve(
                 else:
                     delta_b = {}
 
-                MLA_step, atomic_dist_spec = atomic.process_MLA(
+                MLA_step, atomic_dist_spec, x_full = atomic.process_MLA(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R, Thetas,
                     Delta_f, cross_check,
                     include_BF=True, simple_2s1s=simple_2s1s,
@@ -798,8 +800,11 @@ def evolve(
                 )
 
                 MLA_data[0].append(rs)
+
                 for i in np.arange(3):
                     MLA_data[i+1].append(MLA_step[i])
+
+                x_full_data.append(x_full)
 
                 # # Subtract off absorbed photons
                 # atomic_dist_spec.N -= in_distortion.N - distortion.N
@@ -1216,6 +1221,8 @@ def evolve(
 
     if elec_processes and distort:
         data['MLA'] = np.array(MLA_data)
+        # Only save states up to 4f. 
+        data['x_full'] = np.array(x_full_data)[:,:10]
 
     # End of the iteration. 
     iterations -= 1
