@@ -1453,10 +1453,9 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
 
     fn = (
         save_dir
-        +'log10mDM_'
-        +'{0:2.4f}_'.format(np.log10(params['mDM']))
-        +params['pri']+'_'+params['DM_process']+'_'+'log10param_'
-        +'{0:2.4f}'.format(np.log10(params['inj_param']))
+        +params['pri']+'_'+params['DM_process']
+        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
+        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(params['inj_param']))
         +'_'+file_name_str+'_ind_'+str(ind)+'.p'
     )
 
