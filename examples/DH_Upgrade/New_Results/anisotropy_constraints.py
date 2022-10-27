@@ -71,7 +71,7 @@ options_dict = {
     #'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
     'coarsen_factor':cf, 'distort':True, 'fexc_switch': False, 
     'reprocess_distortion':False, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False,
-    'backreaction':False, 'recfast_TLA':True, 'iterations':1
+    'backreaction':False, 'iterations':1
 }
 
 main.embarrassingly_parallel_evolve(

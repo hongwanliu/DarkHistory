@@ -21,7 +21,7 @@ def getf_continuum(photspec, norm_fac, cross_check=False):
     if not cross_check:
         return photspec.toteng(
             bound_type='eng',
-            bound_arr=np.array([photspec.eng[0],phys.lya_eng])
+            bound_arr=np.array([1e-100,phys.lya_eng])
         )[0] * norm_fac
     else:
         return np.dot(
