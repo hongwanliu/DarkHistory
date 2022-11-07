@@ -30,7 +30,7 @@ def getf_continuum(photspec, norm_fac, cross_check=False):
 #excitation
 def getf_exc(photspec, norm_fac, method, cross_check=False):
     if((method == 'old') or (method=='He') or (method == 'ion') or True):
-        # All photons between 11.2eV and 13.6eV are deposited into excitation
+        # All photons between 10.2eV and 13.6eV are deposited into excitation
         # partial binning
         if not cross_check:
             tot_exc_eng = (

@@ -47,7 +47,7 @@ def evolve(
     heat_switch=True, photoion_rate_func=None, photoheat_rate_func=None, 
     xe_reion_func=None, DeltaT=None, alpha_bk=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
-    compute_fs_method='no_He',
+    compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
 ):
@@ -132,6 +132,13 @@ def evolve(
         * *'HeII'* -- all ionization assigned to HeII.
 
         Default is 'no_He'.
+    elec_method : {'new', 'old'}
+        Method for evaluating electron energy deposition. 
+
+        * *'new'* -- No separation into low-energy electrons. 
+        * *'old'* -- Low-energy electrons separated out, resolved with MEDEA. 
+
+        Default is 'new'. 
     distort : bool, optional
         If *True* calculate the distortion. This sets elec_processes to True.
         If *False* speed up the code by skipping slow electron cooling code.
@@ -243,7 +250,7 @@ def evolve(
         heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk, 
         photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func, xe_reion_func=xe_reion_func, 
         init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction, 
-        compute_fs_method=compute_fs_method, mxstep=mxstep, rtol=rtol, 
+        compute_fs_method=compute_fs_method, elec_method=elec_method, mxstep=mxstep, rtol=rtol, 
         distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
         use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, 
         reprocess_distortion=reprocess_distortion, simple_2s1s=simple_2s1s, 
@@ -637,7 +644,7 @@ def evolve(
 
         # All normalized per baryon
         ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs,
-                                                 eleceng, x_at_rs, method=compute_fs_method)
+                                                 eleceng, x_at_rs, method='He')
         tot_spec_elec = (
             in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
         )

@@ -21,7 +21,7 @@ import darkhistory.spec.spectools as spectools
 
 print('PLEASE CHECK output_dir!')
 # output_dir = '/scratch/gpfs/hongwanl/DarkHistory/scratch/'
-output_dir = '/scratch/gpfs/hongwanl/DarkHistory/full_distortion/old_DH_with_BR_comparison/'
+output_dir = '/scratch/gpfs/hongwanl/DarkHistory/full_distortion/no_reprocessing_new_elec_treatment_with_BR_comparison/'
 
 # Choose to load data (True) or start a new scan (False)
 load_data = False
@@ -117,13 +117,13 @@ for pri in ['elec', 'phot']:
 options_dict = {
     'start_rs': start_rs, 'high_rs': high_rs, 'end_rs':end_rs,
     'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
-    'coarsen_factor':cf, 'distort':False, 'fexc_switch': False, 
+    'coarsen_factor':cf, 'distort':True, 'fexc_switch': False, 
     'reprocess_distortion':False, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False, 'iterations':iter_max
 }
 
 
 main.embarrassingly_parallel_evolve(
-    params_list, idx, options_dict, output_dir, 'old_DH_with_BR_comparison'
+    params_list, idx, options_dict, output_dir, 'no_reprocessing_new_elec_treatment_with_BR_comparison'
 )
 
 # main.embarrassingly_parallel_evolve(
