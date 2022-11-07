@@ -24,8 +24,7 @@ from darkhistory.spec.spectools import discretize, get_bin_bound
 
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
-#from darkhistory.electrons.elec_coolingTMP import get_elec_cooling_tf as \
-#        get_elec_cooling_tfTMP
+from darkhistory.electrons.elec_cooling import get_elec_cooling_tfTMP
 from darkhistory.low_energy.lowE_deposition import compute_fs as compute_fs_OLD
 import darkhistory.low_energy.atomic as atomic
 import darkhistory.low_energy.bound_free as bf
@@ -499,11 +498,10 @@ def evolve(
                 ics_engloss_data
             ) = get_elec_cooling_data(eleceng, photeng, H_states)
         else:
-            import mainTMP
             (
                 coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
                 ics_engloss_data
-            ) = mainTMP.get_elec_cooling_data(eleceng, photeng)
+            ) = get_elec_cooling_dataTMP(eleceng, photeng)
 
 
     #########################################################################
@@ -584,6 +582,12 @@ def evolve(
             interp_type='2D', cross_check=False
         )
 
+    if cross_check: 
+        MEDEA_interp = lowE_electrons.make_interpolator(
+            interp_type='2D', cross_check=False
+        )
+
+
     #########################################################################
     #########################################################################
     # LOOP! LOOP! LOOP! LOOP!                                               #
@@ -633,7 +637,7 @@ def evolve(
 
         # All normalized per baryon
         ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs,
-                                                 eleceng, x_at_rs, method='He')
+                                                 eleceng, x_at_rs, method=compute_fs_method)
         tot_spec_elec = (
             in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
         )
@@ -1330,6 +1334,88 @@ def get_elec_cooling_data(eleceng, photeng, H_states):
     # Store the ICS rebinning data for speed. Contains information
     # that makes converting an energy loss spectrum to a scattered
     # electron spectrum fast.
+    ics_engloss_data = EnglossRebinData(eleceng, photeng, eleceng)
+
+    return (
+        coll_ion_sec_elec_specs, coll_exc_sec_elec_specs, ics_engloss_data
+    )
+
+def get_elec_cooling_dataTMP(eleceng, photeng):
+    """
+    Returns electron cooling data for use in :func:`main.evolve`.
+
+    Parameters
+    ----------
+    eleceng : ndarray
+        The electron energy abscissa. 
+    photeng : ndarray
+        The photon energy abscissa. 
+
+    Returns
+    -------
+    tuple of ndarray
+        A tuple with containing 3 tuples. The first tuple contains the 
+        normalized collisional ionization scattered electron spectrum for 
+        HI, HeI and HeII. The second contains the normalized collisional 
+        excitation scattered electron spectrum for HI, HeI and HeII. The 
+        last tuple is an 
+        :class:`.EnglossRebinData` object for use in rebinning ICS energy loss data to obtain the ICS scattered 
+        electron spectrum. 
+    """
+
+    # Compute the (normalized) collisional ionization spectra.
+    coll_ion_sec_elec_specs = (
+        phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HI'),
+        phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeI'),
+        phys.coll_ion_sec_elec_spec(eleceng, eleceng, species='HeII')
+    )
+    # Compute the (normalized) collisional excitation spectra.
+    id_mat = np.identity(eleceng.size)
+
+    # Electron with energy eleceng produces a spectrum with one particle
+    # of energy eleceng - phys.lya.eng. Similar for helium. 
+    coll_exc_sec_elec_tf_HI = tf.TransFuncAtRedshift(
+        np.squeeze(id_mat[:, np.where(eleceng > phys.lya_eng)]),
+        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+        eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
+        dlnz = -1, spec_type = 'N'
+    )
+
+    coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
+        np.squeeze(
+            id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]
+        ),
+        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+        eng = (
+            eleceng[eleceng > phys.He_exc_eng['23s']] 
+            - phys.He_exc_eng['23s']
+        ), 
+        dlnz = -1, spec_type = 'N'
+    )
+
+    coll_exc_sec_elec_tf_HeII = tf.TransFuncAtRedshift(
+        np.squeeze(id_mat[:, np.where(eleceng > 4*phys.lya_eng)]),
+        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+        eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
+        dlnz = -1, spec_type = 'N'
+    )
+
+    # Rebin the data so that the spectra stored above now have an abscissa
+    # of eleceng again (instead of eleceng - phys.lya_eng for HI etc.)
+    coll_exc_sec_elec_tf_HI.rebin(eleceng)
+    coll_exc_sec_elec_tf_HeI.rebin(eleceng)
+    coll_exc_sec_elec_tf_HeII.rebin(eleceng)
+
+    # Put them in a tuple.
+    coll_exc_sec_elec_specs = (
+        coll_exc_sec_elec_tf_HI.grid_vals,
+        coll_exc_sec_elec_tf_HeI.grid_vals,
+        coll_exc_sec_elec_tf_HeII.grid_vals
+    )
+
+    # Store the ICS rebinning data for speed. Contains information
+    # that makes converting an energy loss spectrum to a scattered
+    # electron spectrum fast. 
     ics_engloss_data = EnglossRebinData(eleceng, photeng, eleceng)
 
     return (
