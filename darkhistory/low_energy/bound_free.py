@@ -22,7 +22,6 @@ def g(l, lp, n, kappa=None):
     kappa : ndarray, optional
         The values of kappa to evaluate the matrix element at.
 
-
     Returns
     -------
     float or ndarray
@@ -34,33 +33,21 @@ def g(l, lp, n, kappa=None):
     """
 
     if np.abs(l - lp) != 1:
-
         raise ValueError('|l - lp| must be 1.')
-
     if l > n-1:
-
         raise ValueError('l must be less than n')
-
     if kappa is None:
         # If no abscissa specified, using the default kappa^2 given above. Return the table values.
-
         return load_data('bnd_free')['g_table_dict'][n][l][lp]
-
     else:
-
         if l+1==lp and lp==n:
-
             # kappa can be vectorized.
             try:
-
                 _ = iter(kappa)
-
                 g_vec = np.zeros_like(kappa)
 
                 # Transforming product to sum of logs to avoid overflow.
-
                 log_one_plus_s2_k2_prod = np.sum(np.array([np.log(1 + s**2 * kappa**2) for s in np.arange(lp+1)]), axis=0)
-
                 log_prefac_0 = (l - n) * np.log(2*n) + 0.5 * (loggamma(n+l+1) - loggamma(n-l) + log_one_plus_s2_k2_prod)
                 log_prefac_1 = np.log(np.sqrt(np.pi/2) * 8 * n) - loggamma(2*n) + n*np.log(4*n) - 2*n
                 log_prefac_2 = -np.log(np.sqrt(1 - np.exp(-2*np.pi/kappa[kappa != 0]))) + (
@@ -71,73 +58,48 @@ def g(l, lp, n, kappa=None):
                 g_vec[kappa == 0] = np.exp(log_prefac_0[kappa == 0] + log_prefac_1)
                 g_vec[kappa != 0] = np.exp(log_prefac_0[kappa != 0] + log_prefac_1 + log_prefac_2)
 
-
                 return g_vec
 
             except:
-
                 log_one_plus_s2_k2_prod = np.sum(np.array([np.log(1 + s**2 * kappa**2) for s in np.arange(lp+1)]), axis=0)
                 log_prefac_0 = (l - n) * np.log(2*n) + 0.5 * (loggamma(n+l+1) - loggamma(n-l) + log_one_plus_s2_k2_prod)
                 log_prefac_1 = np.log(np.sqrt(np.pi/2) * 8 * n) - loggamma(2*n) + n*np.log(4*n) - 2*n
 
                 if kappa == 0:
-
                     return np.exp(log_prefac_0 + log_prefac_1)
-
                 else:
-
                     log_prefac_2 = -np.log(np.sqrt(1 - np.exp(-2*np.pi/kappa))) + (
                         2*n - 2 / kappa * np.arctan(n*kappa)
                         - (n+2) * np.log(1. + n**2 * kappa**2)
                     )
-
                     return np.exp(log_prefac_0 + log_prefac_1 + log_prefac_2)
 
-
-
         elif l == n-2 and lp == n-1:
-
             fac = 1. / (2*n) * np.sqrt(1. / (n+l+1) / (n-l-1) / (1 + (lp+1)**2 * kappa**2))
-
             return (2*n - 1) * (1 + n**2 * kappa**2) * n * g(n-1,n,n,kappa) * fac
-
         elif l == n-1 and lp == n-2:
-
             fac = 1. / np.sqrt((1 + (lp+1)**2 * kappa**2) * (1 + (lp+2)**2 * kappa**2))
-
             return (1 + n**2 * kappa**2) / (2*n) * g(n-1,n,n,kappa) * fac
-
         elif l == n-2 and lp == n-3:
-
             fac = 1. / (2*n) * np.sqrt(1. / (n+l+1) / (n-l-1) / (1 + (lp+1)**2 * kappa**2))
-
             return (2*n - 1) * (4 + (n-1) * (1 + n**2 * kappa**2)) * g(n-1,n-2,n,kappa) * fac
-
         else:
-
             if l < lp:
-
                 fac_1 = 1. / (2*n) * np.sqrt(1. / (n+l+1) / (n-l-1) / (1 + (lp+1)**2 * kappa**2))
                 fac_2 = 1. / (2*n)**2 * np.sqrt(
                     1. / (n+l+1) / (n+l+2) / (n-l-1) / (n-l-2) / (1 + (lp+1)**2 * kappa**2) / (1 + (lp+2)**2 * kappa**2)
                 )
-
-
                 return (
                     (4*(n**2 - (l+2)**2) + (l+2)*(2*(l+2) - 1)*(1 + n**2*kappa**2))
                     * g(l+1,lp+1,n,kappa=kappa) * fac_1
                     - (4*n**2 * (n**2 - (l+2)**2) * (1 + ((l+2)+1)**2 * kappa**2))
                     * g(l+2,lp+2,n,kappa=kappa) * fac_2
                 )
-
             else:
-
                 fac_1 = 1. / (2*n) * np.sqrt(1. / (n+l+1) / (n-l-1) / (1 + (lp+1)**2 * kappa**2))
                 fac_2 = 1. / (2*n)**2 * np.sqrt(
                     1. / (n+l+1) / (n+l+2) / (n-l-1) / (n-l-2) / (1 + (lp+1)**2 * kappa**2) / (1 + (lp+2)**2 * kappa**2)
                 )
-
-
                 return (
                     (4*(n**2 - (l+1)**2) + (l+1)*(2*(l+1) + 1) * (1 + n**2*kappa**2))
                     * g(l+1,lp+1,n,kappa=kappa) * fac_1
@@ -159,7 +121,6 @@ def Theta(l, lp, n, kappa=None):
         The initial energy level of the hydrogen atom.
     kappa : ndarray, optional
         The values of kappa to evaluate the matrix element at.
-
 
     Returns
     -------
@@ -185,7 +146,24 @@ def Theta(l, lp, n, kappa=None):
         return (1 + n**2 * kappa**2) * g(l, lp, n, kappa=kappa)**2
 
 def populate_thetas(nmax):
-    """ needs documentation !!!
+    """
+    Related matrix element for bound-free transition.
+
+    Parameters
+    ----------
+    nmax : int
+        Maximum energy level to track.
+
+    Returns
+    -------
+    dict
+        Two matrices, one for transitions 'up to a higher l,
+        one for transitions 'dn' to a lower l.
+
+    Notes
+    -----
+    See using notation in Burgess MNRAS 69, 1 (1965) Eq. (2) for definition.
+    Compare these results in with Table 1 in the same paper.
     """
     kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary']
     g_table = load_data('bnd_free')['g_table_dict']

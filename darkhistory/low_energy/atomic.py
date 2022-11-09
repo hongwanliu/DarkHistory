@@ -36,8 +36,18 @@ NC11_weights = 5. / 299376. * np.array([
 
 
 def f_BB(E, Tr):
-    """
-    Blackbody phase space density
+    """ Blackbody phase space density
+
+    Parameters
+    ----------
+    E : float
+        Energy.
+    Tr : float
+        Blackbody temperature.
+
+    Returns
+    -------
+    float
     """
     return np.exp(-E/Tr) / (1 - np.exp(-E/Tr))
 
@@ -47,6 +57,15 @@ def phi(y):
     Proportional to the probability density of emitting one photon at
     dimensionless frequency y. Normalizes to 2 since two photons are emitted.
     When integrated and multiplied by A0/2, evaluates to the 2s->1s decay rate.
+
+    Parameters
+    __________
+    y : float
+        Frequency normalized by Lyman-alpha frequency
+
+    Returns
+    _______
+    float
 
     Notes
     -----
@@ -82,6 +101,10 @@ def A_2s1s(f_gamma, direc='dn', use_quad=False, n_bins=100):
     n_bins : int
         subdivide the integration interval this many times,
         perform NC11 integration on each subdivision
+
+    Returns
+    _______
+    float
 
     Notes
     -----
@@ -128,9 +151,24 @@ def A_2s1s(f_gamma, direc='dn', use_quad=False, n_bins=100):
 
 
 def N_2s1s(E, f_gamma, x_2s, x_1s):
-    """
-    distortion per baryon per second from two-photon emission,
-    including stimulated emission effects
+    """ Distortion per baryon per second from two-photon emission,
+    including stimulated emission effects.
+
+    Parameters
+    ----------
+    E : float
+        Energy.
+    f_gamma : function
+        f_gamma(E) = photon phase space density evaluated at energy E
+    x_2s : float
+        n_2s / n_H
+    x_1s : float
+        n_1s / n_H
+
+    Returns
+    -------
+    float
+        Number of photons per energy bin per baryon.
     """
     res = np.zeros_like(E)
 
@@ -161,16 +199,32 @@ def N_2s1s(E, f_gamma, x_2s, x_1s):
 
 
 def Hey_A(n, l):
-    """
-    A_{nl} coefficient defined in Hey (2006), Eq. (9)
+    """A_{nl} coefficient defined in Hey (2006), Eq. (9).
+
+    Parameters
+    ----------
+    n, l : ints
+        Principal and angular momentum quantum numbers.
+
+    Returns
+    -------
+    float
     """
     return np.sqrt(n**2-l**2)/(n*l)
 
 
 def Hey_R_initial(n, n_p):
-    """
-    Absolute value of R_{n', n'- 1}^{n n'} as in Hey (2006), Eq. (B.4).
+    """Absolute value of R_{n', n'- 1}^{n n'} as in Hey (2006), Eq. (B.4).
     Assumes n > n_p.
+
+    Parameters
+    ----------
+    n, n_p : ints
+        Principal quantum numbers of higher and lower energy states.
+
+    Returns
+    -------
+    float
     """
 
     # Evaluates to
@@ -189,6 +243,11 @@ def Hey_R_initial(n, n_p):
 def populate_radial(nmax):
     """
     Populates a matrix with the radial matrix elements.
+
+    Parameters
+    ----------
+    nmax : int
+        Highest energy level to track.
 
     Returns
     -------
@@ -542,6 +601,19 @@ def tau_np_1s(n, rs, xHI=None):
     """
     Sobolev optical depth of np-1s line photons
 
+    Parameters
+    ----------
+    n : int
+        Principal quantum number.
+    rs : float
+        Redshift.
+    xHI : float
+        Neutral fraction.
+
+    Returns
+    _______
+    float
+
     Notes
     -----
     see astro-ph/9912182 Eq. 40
@@ -568,6 +640,19 @@ def p_np_1s(n, rs, xHI=None):
     """
     Escape probability of np-1s line photon
 
+    Parameters
+    ----------
+    n : int
+        Principal quantum number.
+    rs : float
+        Redshift.
+    xHI : float
+        Neutral fraction.
+
+    Returns
+    _______
+    float
+
     Notes
     -----
     See astro-ph/9912182 Eq. 41
@@ -593,7 +678,12 @@ def populate_gnlk(nmax, n, kappa):
 
     Parameters
     ----------
-    !!! incomplete
+    nmax : int
+        Highest energy level to track.
+    n : int
+        Principal quantum number.
+    kappa : float
+        Normalized electron energy. See reference in notes.
 
     Returns
     -------
@@ -651,6 +741,21 @@ def populate_gnlk(nmax, n, kappa):
 def populate_k2_and_g(nmax, Tm):
     """
     k2[n][ik] because boundaries depend on n
+
+    Parameters
+    ----------
+    nmax : int
+        Highest energy level to track.
+    Tm : float
+        Matter temperature.
+
+    Returns
+    -------
+    ndarrays
+
+    Notes
+    -----
+    Reference: Burgess A.,1965, MmRAS..69....1B, Eqs. (28)-(34).
     """
     k2_tab = np.zeros((nmax+1, 10 * (NBINS-1) + 11))
     g = {key: np.zeros((nmax+1, Nkappa, nmax)) for key in ['up', 'dn']}
@@ -672,9 +777,13 @@ def populate_k2_and_g(nmax, Tm):
 def Newton_Cotes_11pt(x, f):
     """
     11 point Newton-Cotes integration.
+
     Parameters
     ----------
-    an 11-point array x, an 11-point array f(x).
+    x : ndarray
+        Points to integrate over.
+    f : ndarray
+        Function values.
 
     Returns
     -------
@@ -689,15 +798,24 @@ def Newton_Cotes_11pt(x, f):
 
 def populate_beta(Tr, nmax, Delta_f=None, Thetas=None):
     """ Populating the photoionization rates beta(n, l, Tr)
-        From prefac we see that the units are s^-1
+    From prefac we see that the units are s^-1
 
-        Parameters
-        ----------
+    Parameters
+    ----------
 
-        Tr : float
-            radiation temperature in eV
-        nmax : int
-            maximum principle quantum number (energy level)
+    Tr : float
+        radiation temperature.
+    nmax : int
+        maximum principle quantum number (energy level)
+    Delta_f : function
+        deviation of photon phase space density from blackbody
+    Thetas : floats
+        Matrix elements for bound-free transitions.    
+
+    Returns
+    _______
+    float
+        Photoionization rate.
     """
     beta = np.zeros((nmax+1, nmax))
 
@@ -712,26 +830,31 @@ def populate_beta(Tr, nmax, Delta_f=None, Thetas=None):
         beta[n][l] = bf.beta_n(n, Thetas, f_gamma=f_gamma)
     #    for l in range(n):
     #        beta[n][l] = bf.beta_nl(n, l, f_gamma=f_gamma)
-
     return beta
 
 
 def populate_alpha(Tm, Tr, nmax, Delta_f=None, stimulated_emission=True, Thetas=None):
     """ Populate the recombination coefficients alpha(n, l, Tm, Tr)
 
-        Parameters
-        ----------
+    Parameters
+    ----------
+    Tm : float
+        matter temperature [eV]
+    Tr : float
+        radiation temperature of background blackbody [eV]
+    nmax : int
+        maximum principle quantum number (energy level)
+    Delta_f : function
+        deviation of photon phase space density from blackbody
+    stimulated_emission : bool
+        if True, include stimulated emission factors, 1+f
+    Thetas : floats
+        Matrix elements for bound-free transitions.    
 
-        Tm : float
-            matter temperature [eV]
-        Tr : float
-            radiation temperature of background blackbody [eV]
-        nmax : int
-            maximum principle quantum number (energy level)
-        Delta_f : function
-            deviation of photon phase space density from blackbody
-        stimulated_emission : bool
-            if True, include stimulated emission factors, 1+f
+    Returns
+    _______
+    float
+        Recombination coefficients.
     """
     alpha = np.zeros((int(nmax+1), nmax))
 
@@ -914,9 +1037,6 @@ def process_MLA_vectorized(
     dx_rec = sp.linalg.spsolve(mat, b_rec[1:])
     dx_DM  = sp.linalg.spsolve(mat, b_DM[1:])
 
-    # print('Vectorized: ', dx_DM)
-
-    # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
     x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
 
     # naively you'd want x_full[0] = 1 - sum(x_full) - xe, but
@@ -946,8 +1066,6 @@ def process_MLA_vectorized(
 
     # EFfective beta for DM. 
     beta_DM = np.dot(beta_1d[1:], dx_DM)
-
-    # print('Vectorized: ', alpha)
 
     # !!! Parallelize this loop
     for nl in np.arange(num_states):
@@ -1042,38 +1160,13 @@ def process_MLA_vectorized(
         #transition_spec.N += amp_2s1s * spec_2s1s.N
         transition_spec.N += N_2s1s(eng, f_gam, x_full[1], x_full[0]) * dt
 
-    # print('Vectorized: ', alpha_MLA, beta_MLA, beta_DM)
-
     return [alpha_MLA, beta_MLA, beta_DM], transition_spec, x_full
-
-    
-
-
-
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def process_MLA(
         rs, dt, xHI, Tm, nmax, eng, R, Thetas,
         Delta_f=None, cross_check=False,
         include_BF=True, simple_2s1s=False,
-        # fexc_switch=False, deposited_exc_arr=None, elec_spec=None,
-        # distortion=None, H_states=None, rate_func_eng=None,
         delta_b={}, stimulated_emission=True, vectorized=False
         ):
     """
@@ -1092,6 +1185,10 @@ def process_MLA(
         Highest excited state to be included (principle quantum number)
     eng : array
         abscissa of output distortion spectrum
+    R : dict of 3-index arrays
+        precomputed radial matrix elements (see populate_radial)
+    Thetas : floats
+        Matrix elements for bound-free transitions.    
     Delta_f : function
         photon phase space density as a function of energy, minus f_BB
     cross_check : bool
@@ -1100,8 +1197,10 @@ def process_MLA(
         includes the bound-free transition photons to the output distortion
     simple_2s1s : bool, optional
         If *True*, sets the 2s -> 1s rate to be a constant :math:`8.22` s:math:`^{-1}`, and does not include distortions from 2s -> 1s.  
-    fexc_switch : bool
-        deposited_exc_arr elec_spec distortion H_states rate_func_eng
+    delta_b :
+        Source term from excitations due to energy injection.
+    stimulated_emission : bool
+        if True, include stimulated emission factors, 1+f
     vectorized : bool
         If *True*, uses the vectorized calculation. 
 
@@ -1253,7 +1352,6 @@ def process_MLA(
     dx_rec = sp.linalg.spsolve(mat, b_rec[1:])
     dx_DM = sp.linalg.spsolve(mat, b_DM[1:])
 
-    # print(x_vec/(dx_exc*xHI+dx_rec*xe**2*nH+dx_DM)-1)
     x_vec = dx_exc*xHI + dx_rec*xe**2*nH + dx_DM
 
     # naively you'd want x_full[0] = 1 - sum(x_full) - xe, but
@@ -1372,17 +1470,33 @@ def process_MLA(
         #transition_spec.N += amp_2s1s * spec_2s1s.N
         transition_spec.N += N_2s1s(eng, f_gam, x_full[1], x_full[0]) * dt
 
-    # print('Unvectorized: ', alpha_MLA, beta_MLA, beta_DM)
-
     return [alpha_MLA, beta_MLA, beta_DM], transition_spec, x_full
 
 
 def absorb_photons(distortion, H_states, dt, x1s, nmax):
     """ Allow ground state atoms to absorb distortion photons
 
-        Identify the bins that contain resonant photons, calculate what
-        fraction of them get absorbed, subtract them from distortion.N, and
-        return f_{exc,i} to account for the energy that got absorbed.
+    Identify the bins that contain resonant photons, calculate what
+    fraction of them get absorbed, subtract them from distortion.N, and
+    return f_{exc,i} to account for the energy that got absorbed.
+    
+    Parameters
+    __________
+    distortion : Spectrum 
+        CMB distortion spectrum.
+    H_states : list of str
+        Excited states to track.
+    dt : 
+        Time step.
+    x1s : 
+        n_1s / nH
+    nmax : int
+        Maximum energy level to track.
+
+    Returns:
+    _______
+    float
+        Energy absorbed in excitations.
     """
     rs = distortion.rs
     if rs == -1:
@@ -1462,6 +1576,32 @@ def absorb_photons(distortion, H_states, dt, x1s, nmax):
 
 def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
                          H_states, dt, rate_func_eng, nmax, x1s):
+    """ Convert energy absorbed in excitations into a source term for the MLA.
+
+    Parameters
+    __________
+    deposited_exc_arr : ndarray
+        Excitation transfer function.
+    elec_spec : Spectrum
+        Spectrum of electrons.
+    distortion : Spectrum 
+        CMB distortion spectrum.
+    H_states : list of str
+        Excited states to track.
+    dt : float
+        Time step.
+    rate_func_eng : function
+        Energy injection rate.
+    nmax : int
+        Maximum energy level to track.
+    x1s : float
+        n_1s / nH
+
+    Returns:
+    _______
+    float
+        Excitation source term.
+    """
 
     rs = elec_spec.rs
     nB = phys.nB * rs**3
@@ -1498,6 +1638,30 @@ def f_exc_to_b_numerator(deposited_exc_arr, elec_spec, distortion,
 
 
 def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S, fudge=1.125):
+    """ Steady state solution for the 2s state.
+
+    Parameters
+    __________
+    rs : float
+        Redshift.
+    Tr : float
+        Radiation temperature.
+    Tm : float
+        Matter temperature.
+    xe : float
+        Ionization fraction.
+    x1s : float
+        n_1s / nH
+    tau_S : float
+        Sobolev optical depth.
+    fudge : float
+        RECFAST fudge factor.
+
+    Returns:
+    _______
+    float
+        n_2s / nH
+    """
 
     # Boltzmann Factor at lya energy
     B_Lya = np.exp(-phys.lya_eng/Tr)
@@ -1519,7 +1683,6 @@ def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S, fudge=1.125):
     nH = phys.nH * rs**3
     term1 = xe**2 * nH * phys.alpha_recomb(Tm, 'HI', fudge)
     term2 = 4 * x1s * np.exp(-phys.lya_eng/Tr) * sum_rates
-    # print(term1, term2)
 
     # Factor of 4 converts from x2 to x2s
     ans = (term1 + term2)/denom / 4.
