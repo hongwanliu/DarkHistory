@@ -109,6 +109,8 @@ def get_history(
     heat_switch : True or False, optional
         If True, include photoheating from reionization sources; if False,
         only include photoionization.
+    DeltaT, alpha_bk : floats
+        Parameters for photoheating.
     photoion_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoionization rate
         in s\ :sup:`-1`\ of HI, HeI and HeII respectively. If not specified,
@@ -125,6 +127,21 @@ def get_history(
     f_He_ion : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for helium ionization. Treated as constant
         if float. If None, treated as zero.
+    recfast_TLA : bool
+        If True, use TLA evolution equations. Default is True.
+    fudge : float
+        RECFAST fudge factor.    
+    gauss_fudge : bool
+        Flag for RECFAST gaussian correction.
+    MLA_funcs : list, optional
+        A list of three interpolating functions for the MLA rates:
+        (i) The recombination rate as a function of redshift, alpha_MLA
+        (ii) The ionization rate, beta_MLA
+        (iii) The MLA ionization rate correction due to energy inj., beta_DM
+        For example, if `out` is the output of a main.evolve() run with
+        distort set to True,
+            [interp1d(out['MLA'][0], out['MLA'][i]), for i in range(1,4)]
+        could be passed into MLA_funcs
     mxstep : int, optional
         The maximum number of steps allowed for each integration point. See
         *scipy.integrate.odeint* for more information.
