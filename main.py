@@ -47,7 +47,7 @@ def evolve(
     heat_switch=True, photoion_rate_func=None, photoheat_rate_func=None, 
     xe_reion_func=None, DeltaT=None, alpha_bk=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
-    compute_fs_method='no_He', elec_method='new',
+    compute_fs_method='no_He', elec_method='new', 
     distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
 ):
@@ -460,23 +460,25 @@ def evolve(
             dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
         )
 
-    # If there are no electrons, we get a speed-up by ignoring them.
-    if (in_spec_elec.totN() > 0) or distort:
+    # If there are no injected electrons, we get a speed-up by ignoring them. 
+    # If we are calculating distortions, then we need to use one of the new methods, 
+    # which treats low-energy electrons in the same way as high-energy electrons.
+    if (in_spec_elec.totN() > 0) or distort or elec_method != 'old':
         elec_processes = True
 
         # The excitation states we keep track of in hydrogen
         # We keep track of specific states for hydrogen, but not for
         # HeI and HeII !!!
-        method = 'new'  # or 'MEDEA' or 'AcharyaKhatri' or 'new'
+        # method = 'new'  # or 'MEDEA' or 'AcharyaKhatri' or 'new'
 
-        if method == 'AcharyaKhatri':
+        if elec_method == 'AcharyaKhatri':
             H_states = ['2s', '2p', '3p']
             nmax = 3
-        elif method == 'MEDEA':
+        elif elec_method == 'MEDEA':
             H_states = ['2s', '2p', '3p', '4p', '5p',
                         '6p', '7p', '8p', '9p', '10p']
             nmax = 10
-        else:
+        elif elec_method == 'new':
             H_states = ['2s', '2p',
                         '3s', '3p', '3d',
                         '4s', '4p', '4d', '4f',
@@ -499,7 +501,7 @@ def evolve(
 
         # Contains information that makes converting an energy loss spectrum
         # to a scattered electron spectrum fast.
-        if not cross_check:
+        if elec_method != 'old':
             (
                 coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
                 ics_engloss_data
@@ -585,14 +587,12 @@ def evolve(
     else:
         distortion = None
         # Object to help us interpolate over MEDEA results.
+        
+    if elec_method == 'old':
         MEDEA_interp = lowE_electrons.make_interpolator(
-            interp_type='2D', cross_check=False
+            interp_type='2D', cross_check=cross_check
         )
 
-    if cross_check: 
-        MEDEA_interp = lowE_electrons.make_interpolator(
-            interp_type='2D', cross_check=False
-        )
 
 
     #########################################################################
@@ -644,7 +644,7 @@ def evolve(
 
         # All normalized per baryon
         ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs,
-                                                 eleceng, x_at_rs, method='He')
+                                                 eleceng, x_at_rs, method=compute_fs_method)
         tot_spec_elec = (
             in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
         )
@@ -665,7 +665,7 @@ def evolve(
                 xHeII_elec_cooling = phys.x_std(rs, 'HeII')
 
             # Create the electron transfer functions
-            if not cross_check:
+            if elec_method != 'old':
                 (
                     ics_sec_phot_tf,
                     deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
@@ -679,7 +679,7 @@ def evolve(
                         coll_ion_sec_elec_specs=coll_ion_sec_elec_specs,
                         coll_exc_sec_elec_specs=coll_exc_sec_elec_specs,
                         ics_engloss_data=ics_engloss_data,
-                        method=method, H_states=H_states
+                        method=elec_method, H_states=H_states
                         # loweng=eleceng[0]
                     )
 
@@ -800,9 +800,12 @@ def evolve(
                 else:
                     delta_b = {}
 
+                # If true, fixes xHI to be the standard value. 
+                MLA_cross_check = False
+
                 MLA_step, atomic_dist_spec, x_full = atomic.process_MLA(
                     rs, dt, x_1s, Tm_arr[-1], nmax, dist_eng, R, Thetas,
-                    Delta_f, cross_check,
+                    Delta_f, MLA_cross_check,
                     include_BF=True, simple_2s1s=simple_2s1s,
                     #fexc_switch, deposited_exc_arr,
                     #tot_spec_elec, distortion,
@@ -898,130 +901,143 @@ def evolve(
                     phys.x_std(rs, 'HeII')
             ])
 
-        if not elec_processes:
-            f_elec = {chan: 0 for chan in [
-                'H ion', 'He ion', 'Lya', 'heat', 'cont', 'err']}
+
+        # if not elec_processes:
+        #     f_elec = {chan: 0 for chan in [
+        #         'H ion', 'He ion', 'Lya', 'heat', 'cont', 'err']}
+
+        # else:
+        # High-energy deposition from input electrons.
+
+        if not elec_processes: 
+
+            deposited_H_ion = 0. 
+            deposited_Lya   = 0. 
+            deposited_heat  = 0. 
+            deposited_cont  = 0. 
+            deposited_err   = 0. 
+
+        highengdep_at_rs += np.array([
+            deposited_H_ion/dt,
+            # deposited_He_ion/dt,
+            deposited_Lya/dt,
+            deposited_heat/dt,
+            deposited_cont/dt
+        ])
+
+        if elec_method != 'old':
+
+            # High-energy deposition from input electrons
+            norm = phys.nB*rs**3 / rate_func_eng(rs)
+            f_elec = {
+                'H ion': highengdep_at_rs[0] * norm,
+                'He ion': deposited_He_ion/dt * norm,
+                'Lya': highengdep_at_rs[1] * norm,
+                'heat': highengdep_at_rs[2] * norm,
+                'cont': highengdep_at_rs[3] * norm,
+                'err': deposited_err/dt * norm
+            }
 
         else:
-            # High-energy deposition from input electrons.
-            highengdep_at_rs += np.array([
-                deposited_H_ion/dt,
-                # deposited_He_ion/dt,
-                deposited_Lya/dt,
-                deposited_heat/dt,
-                deposited_cont/dt
-            ])
+            input_spec = lowengelec_spec_at_rs+ionized_elec
+            input_spec.rs = rs
+            f_elec = lowE_electrons.compute_fs(
+                MEDEA_interp, input_spec, 1-x_vec_for_f[0],
+                rate_func_eng(rs), dt
+            )
 
-            if not cross_check:
+            norm = phys.nB*rs**3 / rate_func_eng(rs)
+            f_elec = {
+                'H ion': f_elec[2] + highengdep_at_rs[0] * norm,
+                'He ion': f_elec[3],
+                'Lya': f_elec[1] + highengdep_at_rs[1] * norm,
+                'heat': f_elec[4] + highengdep_at_rs[2] * norm,
+                'cont': f_elec[0] + highengdep_at_rs[3] * norm,
+                'err': deposited_err/dt * norm
+            }
 
-                # High-energy deposition from input electrons
-                norm = phys.nB*rs**3 / rate_func_eng(rs)
-                f_elec = {
-                    'H ion': highengdep_at_rs[0] * norm,
-                    'He ion': deposited_He_ion/dt * norm,
-                    'Lya': highengdep_at_rs[1] * norm,
-                    'heat': highengdep_at_rs[2] * norm,
-                    'cont': highengdep_at_rs[3] * norm,
-                    'err': deposited_err/dt * norm
-                }
+        # if compute_fs_method == 'HeII' and rs > reion_rs:
 
-            else:
-                input_spec = lowengelec_spec_at_rs+ionized_elec
-                input_spec.rs = rs
-                f_elec = lowE_electrons.compute_fs(
-                    MEDEA_interp, input_spec, 1-x_vec_for_f[0],
-                    rate_func_eng(rs), dt
-                )
+        #     # For 'HeII', stick with 'no_He' until after
+        #     # reionization kicks in.
 
-                norm = phys.nB*rs**3 / rate_func_eng(rs)
-                f_elec = {
-                        'H ion': f_elec[2] + highengdep_at_rs[0] * norm,
-                        'He ion': f_elec[3],
-                        'Lya': f_elec[1] + highengdep_at_rs[1] * norm,
-                        'heat': f_elec[4] + highengdep_at_rs[2] * norm,
-                        'cont': f_elec[0] + highengdep_at_rs[3] * norm,
-                        'err': deposited_err/dt * norm
-                }
+        #     compute_f_phot_method = 'old'
 
-        if compute_fs_method == 'HeII' and rs > reion_rs:
 
-            # For 'HeII', stick with 'no_He' until after
-            # reionization kicks in.
-
-            fs_method = 'old'
-
-        else:
-
-            fs_method = compute_fs_method
 
         f_phot = phot_dep.compute_fs(
             lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng(rs), dt,
-            method=fs_method, cross_check=False
+            method='old', cross_check=cross_check
         )
 
         # Compute f for TLA: sum of electron and photon contributions
         f_H_ion = f_phot['H ion'] + f_elec['H ion']
+        f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         f_Lya = f_phot['H exc'] + f_elec['Lya']
         f_heat = f_elec['heat']
         # Including f_elec['cont'] here would be double-counting.
         # It's just deposited_cont, which is accounted for in
         # the distortion already.
-        f_cont = f_phot['cont']
+        # Just revert to the old way of calculating f: we either use the old way or use the full MLA, which doesn't care about f_cont anyway. 
+        f_cont = f_phot['cont'] + f_elec['cont']
         # This keeps track of numerical error from ICS,
         # which is absent when there are no electrons
         f_err = f_elec['err']
 
         # !!! This is MEDEA's old method, should be updated
-        if elec_processes and not cross_check:
-            deposited_exc = {state: np.dot(
-                deposited_exc_arr[state], tot_spec_elec.N
-            ) for state in H_states}
+        # if elec_processes and elec_method == 'MEDEA':
+        #     deposited_exc = {state: np.dot(
+        #         deposited_exc_arr[state], tot_spec_elec.N
+        #     ) for state in H_states}
 
-            # Probabilities that nl state cascades to 2p state
-            Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
-                  '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
-                  '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
+        #     # Probabilities that nl state cascades to 2p state
+        #     Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
+        #           '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
+        #           '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
 
-            f_cont += sum([
-                deposited_exc[state] * (
-                    1-Ps[state]  # 2s->1s
-                    + Ps[state] * (1-phys.lya_eng/phys.H_exc_eng(state))
-                )
-                for state in Ps.keys()]) / dt * norm
+        #     f_cont += sum([
+        #         deposited_exc[state] * (
+        #             1-Ps[state]  # 2s->1s
+        #             + Ps[state] * (1-phys.lya_eng/phys.H_exc_eng(state))
+        #         )
+        #         for state in Ps.keys()]) / dt * norm
 
-        if compute_fs_method == 'old':
-            # The old method neglects helium.
-            f_He_ion = 0.
-        else:
-            f_He_ion = (
-                f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
-            )
 
-        if cross_check:
+        # if compute_fs_method == 'no_He':
+        #     # The old method neglects helium.
+        #     f_He_ion = 0.
+        # else:
+        #     f_He_ion = (
+        #         f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
+        #     )
 
-            f_raw = compute_fs_OLD(
-                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng(rs), dt,
-                highengdep_at_rs, method=compute_fs_method, cross_check=False
-            )
+        # elif elec_method == 'old':
 
-            # Compute f for TLA: sum of low and high.
-            f_H_ion = f_raw[0][0] + f_raw[1][0]
-            f_Lya = f_raw[0][2] + f_raw[1][2]
-            f_heat = f_raw[0][3] + f_raw[1][3]
+        #     #### This should be the old method, but somehow we're bringing in new method stuff, like the comment about f _cont. 
 
-            # No need to add f_raw[1][4]. It's already accounted for in
-            # lowengphot_spec_at_rs.
-            f_cont = f_raw[0][4]
-            # This keeps track of numerical error from ICS,
-            # which is absent when there are no electrons.
-            f_err = 0
+        #     f_raw = compute_fs_OLD(
+        #         MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+        #         x_vec_for_f, rate_func_eng(rs), dt,
+        #         highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
+        #     )
 
-            if compute_fs_method == 'old':
-                f_He_ion = 0.
-            else:
-                f_He_ion = f_raw[0][1] + f_raw[1][1]
+        #     # Compute f for TLA: sum of low and high.
+        #     f_H_ion = f_raw[0][0] + f_raw[1][0]
+        #     f_Lya = f_raw[0][2] + f_raw[1][2]
+        #     f_heat = f_raw[0][3] + f_raw[1][3]
+
+        #     # No need to add f_raw[1][4]. It's already accounted for in
+        #     # lowengphot_spec_at_rs.
+        #     f_cont = f_raw[0][4]
+        #     # This keeps track of numerical error from ICS,
+        #     # which is absent when there are no electrons.
+        #     f_err = 0
+
+        #     if compute_fs_method == 'old':
+        #         f_He_ion = 0.
+        #     else:
+        #         f_He_ion = f_raw[0][1] + f_raw[1][1]
 
         # Save the f_c(z) values.
         f_c = np.concatenate((
@@ -1230,7 +1246,7 @@ def evolve(
         'f': f
     }
 
-    if elec_processes and distort:
+    if distort:
         data['MLA'] = np.array(MLA_data)
         # Only save states up to 4f. 
         data['x_full'] = np.array(x_full_data)[:,:10]

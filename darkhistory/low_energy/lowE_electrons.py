@@ -124,7 +124,7 @@ def compute_fs(MEDEA_interp, spec_elec, xe, dE_dVdt_inj, dt):
     -------
     list of floats
         Ratio of deposited energy to a given channel over energy deposited by DM.
-        The order of the channels is heat, lyman, ionH, ionHe, cont
+        The order of the channels is cont, lyman, ionH, ionHe, heat
     """
     rs = spec_elec.rs
     #Fractions of energy being split off into each channel
@@ -136,8 +136,10 @@ def compute_fs(MEDEA_interp, spec_elec, xe, dE_dVdt_inj, dt):
     #compute ratio of deposited divided by injected
     norm_factor = phys.nB * rs**3 / (dt * dE_dVdt_inj)
     totengList = spec_elec.eng * spec_elec.N * norm_factor
+    # this is heat, Lya, H ion, He ion, cont
     f_elec =  np.array([
         np.sum(totengList * fracs) for fracs in np.transpose(fracs_grid)
     ])
 
+    # cont, Lya, H ion, He ion, heat
     return np.array([f_elec[4], f_elec[1], f_elec[2], f_elec[3], f_elec[0]])
