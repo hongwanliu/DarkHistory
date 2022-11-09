@@ -278,7 +278,8 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     mDM : float, optional
         DM mass in eV.
     sigmav : float, optional
-        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . in the case of inj_type='pwave', sigmav = (sigma v)_ref, as in 1604.02457.
+        Annihilation cross section in cm\ :sup:`-3`\ s\ :sup:`-1`\ . 
+        In the case of inj_type='pwave', sigmav = (sigma v)_ref, as in 1604.02457.
     lifetime : float, optional
         Decay lifetime in s.
 
@@ -290,17 +291,14 @@ def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
     """
 
     if inj_type == 'swave' or inj_type == 'pwave':
-
         if sigmav is None:
             raise ValueError('sigmav must be specified for inj_type \'swave\' or \'pwave\'')
 
     if inj_type == 'decay':
-
         if lifetime is None:
             raise ValueError('lifetime must be specified for inj_type \'decay\'')
 
     if mDM is None:
-
         raise ValueError('Must specify dark matter mass.')
 
     if inj_type == 'swave':
@@ -428,7 +426,18 @@ bohr_rad     = (hbar*c) / (mu_ep*alpha)
 
 
 def H_exc_eng(state):
-    """HI n=1 to n=2s and 2p through 10p excitation energies in eV"""
+    """HI n=1 to n=2s and 2p through 10p excitation energies in eV
+
+    Parameters
+    ----------
+    state : {'2s', '2p', '3p', '4p',...,'10p''}
+        Excited state
+
+    Returns
+    -------
+    float
+        Energy to excite from n=1 to state.
+    """
     if (state == '2s') | (state == '2p'):
         return lya_eng
     else:
@@ -555,6 +564,8 @@ def beta_ion(T_rad, species, fudge=1.125):
         The radiation temperature.
     species : {'HI', 'HeI_21s', 'HeI_23s'}
         The relevant species.
+    fudge : float
+        RECFAST fudge factor.
 
     Returns
     -------
@@ -613,6 +624,10 @@ def peebles_C(xHII, rs, fudge=1.125, gauss_fudge=True):
         The ionization fraction nHII/nH.
     rs : float
         The redshift in 1+z.
+    fudge : float
+        RECFAST fudge factor.
+    gauss_fudge : bool
+        Flag for RECFAST gaussian correction.
 
     Returns
     -------
@@ -870,8 +885,21 @@ def d_xe_Saha_dz(rs, species):
 
 
 def xdot(xe, rs, fudge=1.125):
-    """
-    RHS of TLA
+    """RHS of TLA, or time derivative of the Saha ionization fraction.
+
+    Parameters
+    ----------
+    xe : float
+        The ionization fraction nHII/nH.
+    rs : float
+        The redshift in 1+z.
+    fudge : float
+        RECFAST fudge factor.
+
+    Returns
+    -------
+    float
+        Time derivative of Saha ionization fraction.
     """
     Tm = Tm_std(rs)
 
@@ -882,8 +910,20 @@ def xdot(xe, rs, fudge=1.125):
 
 
 def post_Saha(rs, species='HII'):
-    """
-    Post-Saha correction: see App D of 1006.1355
+    """Post-Saha correction to the ionization fraction. 
+    See App D of 1006.1355.
+
+    Parameters
+    ----------
+    rs : float
+        The redshift in 1+z.
+    species : {'HI', 'HII'}
+        The relevant species.
+
+    Returns
+    -------
+    float
+        Correction to ionization.
     """
     xHII_S = xe_Saha(rs, 'HII')
     xHI_S = xe_Saha(rs, 'HI')
@@ -946,6 +986,8 @@ def x_std(rs, species='HII', rs_extrap=None):
     ----------
     rs : float
         The redshift (1+z).
+    species : {'HI', 'HII', 'HeII'}
+        Relevant species.
 
     Returns
     -------
@@ -1164,6 +1206,8 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
             see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
         if method == 'new', same as MEDEA,
             but with more excited states from CCC database
+    state : str
+        The excited state (option for methods other than 'old')
 
     Returns
     -------
@@ -1360,7 +1404,9 @@ def coll_ion_xsec(eng, species=None, method='old'):
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
     method : {'old', 'MEDEA', 'new'}
-        if method == 'old', see 0906.1197; if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); if method == 'new', nothing yet
+        if method == 'old', see 0906.1197; 
+        if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); 
+        if method == 'new', nothing yet
 
     Returns
     -------
@@ -1812,6 +1858,10 @@ def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
         The free electron fraction.
     rs : float
         The redshift.
+    method : {'old', 'MEDEA', 'new'}
+        if method == 'old', see Shull, Astrophysical Journal, 234:761-764, 1979 December 1; 
+        if method == 'MEDEA', we follow the method used in the MEDEA code, which is the 'old' method; 
+        if method == 'new', nothing yet
 
     Returns
     -------

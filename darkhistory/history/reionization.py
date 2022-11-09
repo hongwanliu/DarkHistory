@@ -12,9 +12,9 @@ def photoion_rate(species, method = 'Puchwein'):
     Parameters
     ----------
     species : {'HI', 'HeI', 'HeII'}
-
-    method : {'early', 'middle', 'late'}
-
+        Relevant species.
+    method : {None, 'Puchwein', 'early', 'middle', 'late'}
+        Model to use for photoionization.
     Returns
     -------
     function
@@ -87,9 +87,9 @@ def photoheat_rate(species, method='Puchwein'):
     Parameters
     ----------
     species : {'HI', 'HeI', 'HeII'}
-
-    method : {'Puchwein', 'early', 'middle', 'late'}
-
+        Relevant species.
+    method : {None, 'Puchwein', 'early', 'middle', 'late'}
+        Method to use for photoheating.
     Returns
     -------
     function

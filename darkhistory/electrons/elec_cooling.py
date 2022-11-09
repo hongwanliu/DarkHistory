@@ -61,10 +61,19 @@ def get_elec_cooling_tf(
     ics_engloss_data : EnglossRebinData
         An `EnglossRebinData` object which stores rebinning information (based
         on ``eleceng`` and ``photeng``) for speed. Default is None.
-    loweng : float
-        sets the boundary between
+    method : {'old', 'MEDEA', 'new'}
+        if method == 'old', see 0906.1197;
+        if method == 'MEDEA',
+            see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
+        if method == 'new', same as MEDEA,
+            but with more excited states from CCC database
+    H_states : list of str
+        Excited states to track.
     check_conservation_eng : bool
         If True, lower=True, checks for energy conservation. Default is False.
+    simple_ICS : bool
+        If True, calculates energy deposited into ICS from transfer function, 
+        instead of the spectrum of secondary photons. Default is False.
     verbose : bool
         If True, prints energy conservation checks. Default is False.
 
@@ -790,7 +799,7 @@ def get_elec_cooling_tfTMP(
 ):
 
     """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
-  
+    Copied from the original version of DarkHistory. 
 
     Parameters
     ----------
@@ -1365,6 +1374,22 @@ def get_elec_cooling_tfTMP(
 
 
 def loweng_ICS_distortion(eleceng, photeng, T):
+    """ Spectrum of secondary photons from ICS by low energy electrons.
+
+    Parameters
+    ----------
+    eleceng : float
+        Electron energy.
+    photeng : float
+        Photon energy.
+    T : float
+        Photon temperature.
+
+    Returns
+    -------
+    ndarray
+        Grid values of photon spectrum.
+    """
     y = photeng/T
 
     prefac = (
