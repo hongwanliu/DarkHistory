@@ -813,6 +813,17 @@ def evolve(
                     delta_b=delta_b, stimulated_emission=True
                 )
 
+                # Find the effective contribution dxe/dz from 1) distortions
+                # affecting the recombination/photoionization and 2) DM excitations. 
+
+                # xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1])
+                # xHII_at_rs = 1. - xHI_at_rs
+
+                # if reion_switch and rs > reion_rs: 
+                # peebC = phys.peebles_C(xHII_at_rs, rs)
+
+                # x_dot_std = - x_arr[-1, 0]**2 * phys.nH*rs**3 * phys.peebles_C(...)
+
                 MLA_data[0].append(rs)
 
                 for i in np.arange(3):

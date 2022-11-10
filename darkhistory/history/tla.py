@@ -373,7 +373,7 @@ def get_history(
 
             if recfast_TLA:
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)
-                beta_ion = phys.beta_ion(T_m, 'HI', fudge)
+                beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
                 alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
@@ -399,7 +399,7 @@ def get_history(
                 )
             else:
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)
-                beta_ion = phys.beta_ion(T_m, 'HI', fudge)
+                beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
                 x1s = 1-xe
 
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
