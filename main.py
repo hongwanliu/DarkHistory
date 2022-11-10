@@ -816,13 +816,31 @@ def evolve(
                 # Find the effective contribution dxe/dz from 1) distortions
                 # affecting the recombination/photoionization and 2) DM excitations. 
 
-                # xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1])
-                # xHII_at_rs = 1. - xHI_at_rs
+                xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1])
+                xHII_at_rs = 1. - xHI_at_rs
+                T_m = Tm_arr[-1]
 
-                # if reion_switch and rs > reion_rs: 
-                # peebC = phys.peebles_C(xHII_at_rs, rs)
+                if reion_switch and rs > reion_rs: 
+                    peebC = phys.peebles_C(xHII_at_rs, rs, fudge)
+                    beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
+                    alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
-                # x_dot_std = - x_arr[-1, 0]**2 * phys.nH*rs**3 * phys.peebles_C(...)
+                    dxe_dt_std = -peebC * (
+                        alpha * xHII_at_rs **2 * phys.nH * rs**3
+                        - 4 * beta_ion * xHI_at_rs * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                    )
+
+                    alpha_MLA_at_rs = MLA_step[0]
+                    beta_MLA_at_rs  = MLA_step[1]
+                    beta_DM_at_rs   = MLA_step[2]
+
+                    dxe_dt_MLA = (
+                        - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3 
+                        + beta_MLA_at_rs * xHI_at_rs 
+                        + beta_DM_at_rs
+                    )
+
+                    dxe_dt_exc = dxe_dt_MLA - dxe_dt_std 
 
                 MLA_data[0].append(rs)
 
