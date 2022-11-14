@@ -703,9 +703,15 @@ def evolve(
                 )
                 # Lyman-alpha excitation, from any excited state cascading through 2p
                 # Probabilities that nl state cascades to 2p state
-                Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
-                      '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
-                      '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
+                # Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
+                #       '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
+                #       '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
+                Ps = {
+                    '2s': 0.0000, '2p': 1.0000, '3s': 1.0000, '3p': 0.0000,
+                    '3d': 1.0000, '4s': 0.5841, '4p': 0.2609, '4d': 0.7456, 
+                    '4f': 1.0000, '5p': 0.3078, '6p': 0.3259, '7p': 0.3353, 
+                    '8p': 0.3410, '9p': 0.3448, '10p': 0.3476
+                }
                 deposited_Lya_arr = np.sum([
                     deposited_exc_arr[species] * Ps[species] * phys.lya_eng/phys.H_exc_eng(species) for species in Ps
                 ], axis=0)
