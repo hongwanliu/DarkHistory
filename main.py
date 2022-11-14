@@ -707,13 +707,11 @@ def evolve(
                       '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
                       '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
                 deposited_Lya_arr = np.sum([
-                    deposited_exc_arr[species]*Ps[species] * phys.lya_eng/phys.H_exc_eng(species)
-                    for species in Ps], axis=0)
+                    deposited_exc_arr[species]*Ps[species] * phys.lya_eng/phys.H_exc_eng(species) for species in Ps
+                ], axis=0)
+
                 deposited_Lya = np.dot(
                     deposited_Lya_arr, tot_spec_elec.N
-                )
-                deposited_2s = np.dot(
-                    deposited_exc_arr['2s'], tot_spec_elec.N
                 )
                 # heating
                 deposited_heat = np.dot(
@@ -722,8 +720,8 @@ def evolve(
                 # continuum photons, from deexcitation other than 2p->1s
                 # Don't include ICS contribution; that gets counted through secondary photons/lowengphot
                 deposited_cont_arr = np.sum([
-                    deposited_exc_arr[species]*((1-Ps[species]) + Ps[species] * (1-phys.lya_eng/phys.H_exc_eng(species)))
-                    for species in Ps], axis=0)
+                    deposited_exc_arr[species]*((1-Ps[species]) + Ps[species] * (1-phys.lya_eng/phys.H_exc_eng(species)))for species in Ps
+                ], axis=0)
                 deposited_cont = np.dot(
                     deposited_cont_arr, tot_spec_elec.N
                 )
@@ -963,7 +961,6 @@ def evolve(
         if not elec_processes: 
 
             deposited_H_ion = 0. 
-            deposited_2s    = 0. 
             deposited_Lya   = 0. 
             deposited_heat  = 0. 
             deposited_cont  = 0. 
@@ -974,8 +971,7 @@ def evolve(
             # deposited_He_ion/dt,
             deposited_Lya/dt,
             deposited_heat/dt,
-            deposited_2s/dt
-            # deposited_cont/dt * 0 # ICS deposited put into lowengphot
+            deposited_cont/dt
         ])
 
         if elec_method == 'new':
@@ -1044,14 +1040,14 @@ def evolve(
             x_vec_for_f, rate_func_eng(rs), dt,
             method='old', cross_check=cross_check
         )
-        print(rs, 'f_cont_elec', f_elec['cont'],  'f_cont_phot: ', f_phot['cont'])
+        # print(rs, 'f_cont_elec', f_elec['cont'],  'f_cont_phot: ', f_phot['cont'])
 
         # Compute f for TLA: sum of electron and photon contributions
         f_H_ion = f_phot['H ion'] + f_elec['H ion']
         f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         if elec_method == 'eff': 
             f_Lya = f_elec['exc']
-            print(rs, x_arr[-1, 0], f_elec['exc'], f_elec['Lya'], 1. - peebC)
+            # print(rs, x_arr[-1, 0], f_elec['exc'], f_elec['Lya'], 1. - peebC)
         else:
             f_Lya = f_phot['H exc'] + f_elec['Lya']
         f_heat = f_elec['heat']
