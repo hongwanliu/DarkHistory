@@ -67,6 +67,7 @@ def get_elec_cooling_tf(
             see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
         if method == 'new', same as MEDEA,
             but with more excited states from CCC database
+        if method == 'eff', same as 'new'. 
     H_states : list of str
         Excited states to track.
     check_conservation_eng : bool
@@ -115,6 +116,11 @@ def get_elec_cooling_tf(
     by this function is provided in :mod:`.tf_data`.
 
     """
+
+    if method == 'eff': 
+        # 'eff' is used for using distortions to calculate f_exc, but still relies
+        # on the same electron cooling method as 'new'. 
+        method = 'new'
 
     id_mat = np.identity(eleceng.size)
 
@@ -481,7 +487,7 @@ def get_elec_cooling_tf(
     #print(dE_ICS_dt[1:]/(eleceng[:-1] - eleceng[1:]))
 
     # Secondary photon spectrum (from ICS).
-    sec_phot_spec_N_arr = phot_ICS_tf.grid_vals - upscattered_CMB_grid
+    sec_phot_spec_N_arr = phot_ICS_tf.grid_vals  - upscattered_CMB_grid
     sec_phot_spec_N_arr[beta_ele < .1] = loweng_ICS_distortion(
         eleceng[beta_ele < .1], photeng, phys.TCMB(rs))
     #crap = sec_phot_spec_N_arr.copy()

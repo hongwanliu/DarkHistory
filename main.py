@@ -132,11 +132,12 @@ def evolve(
         * *'HeII'* -- all ionization assigned to HeII.
 
         Default is 'no_He'.
-    elec_method : {'new', 'old'}
+    elec_method : {'new', 'old', 'eff'}
         Method for evaluating electron energy deposition. 
 
         * *'new'* -- No separation into low-energy electrons. 
         * *'old'* -- Low-energy electrons separated out, resolved with MEDEA. 
+        * *'eff'* -- f_exc computed using distortions. 
 
         Default is 'new'. 
     distort : bool, optional
@@ -404,6 +405,12 @@ def evolve(
     if xe_reion_func is not None and (DeltaT is None or alpha_bk is None): 
         raise ValueError('Photoheating model needed for fixed reionization histories using xe_reion_func.')
 
+    if elec_method == 'eff' and not distort: 
+        raise ValueError('Can only use effective f_exc if distortions are calculated.')
+
+    if elec_method == 'eff' and not fexc_switch: 
+        raise ValueError('Can only use effective f_exc if excitations are passed to the distortion code.')
+
     #####################################
     # Initialization                    #
     #####################################
@@ -478,11 +485,12 @@ def evolve(
             H_states = ['2s', '2p', '3p', '4p', '5p',
                         '6p', '7p', '8p', '9p', '10p']
             nmax = 10
-        elif elec_method == 'new':
+        elif elec_method == 'new' or elec_method == 'eff':
             H_states = ['2s', '2p',
                         '3s', '3p', '3d',
                         '4s', '4p', '4d', '4f',
                         '5p', '6p', '7p', '8p', '9p', '10p']
+
 
     else:
         elec_processes = False
@@ -697,6 +705,9 @@ def evolve(
                 deposited_Lya = np.dot(
                     deposited_exc_arr['2p'], tot_spec_elec.N
                 )
+                deposited_2s = np.dot(
+                    deposited_exc_arr['2s'], tot_spec_elec.N
+                )
                 # heating
                 deposited_heat = np.dot(
                     deposited_heat_arr, tot_spec_elec.N
@@ -820,27 +831,27 @@ def evolve(
                 xHII_at_rs = 1. - xHI_at_rs
                 T_m = Tm_arr[-1]
 
-                if reion_switch and rs > reion_rs: 
-                    peebC = phys.peebles_C(xHII_at_rs, rs, fudge)
-                    beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
-                    alpha = phys.alpha_recomb(T_m, 'HI', fudge)
+                peebC = phys.peebles_C(xHII_at_rs, rs, fudge)
+                beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
+                alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
-                    dxe_dt_std = -peebC * (
-                        alpha * xHII_at_rs **2 * phys.nH * rs**3
-                        - 4 * beta_ion * xHI_at_rs * np.exp(-phys.lya_eng/phys.TCMB(rs))
-                    )
+                dxe_dt_std = -peebC * (
+                    alpha * xHII_at_rs **2 * phys.nH * rs**3
+                    - 4 * beta_ion * xHI_at_rs * np.exp(-phys.lya_eng/phys.TCMB(rs))
+                )
 
-                    alpha_MLA_at_rs = MLA_step[0]
-                    beta_MLA_at_rs  = MLA_step[1]
-                    beta_DM_at_rs   = MLA_step[2]
+                alpha_MLA_at_rs = MLA_step[0]
+                beta_MLA_at_rs  = MLA_step[1]
+                beta_DM_at_rs   = MLA_step[2]
 
-                    dxe_dt_MLA = (
-                        - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3 
-                        + beta_MLA_at_rs * xHI_at_rs 
-                        + beta_DM_at_rs
-                    )
+                dxe_dt_MLA = (
+                    - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3 
+                    + beta_MLA_at_rs * xHI_at_rs 
+                    + beta_DM_at_rs
+                )
 
-                    dxe_dt_exc = dxe_dt_MLA - dxe_dt_std 
+                dxe_dt_exc = dxe_dt_MLA - dxe_dt_std 
+
 
                 MLA_data[0].append(rs)
 
@@ -941,6 +952,7 @@ def evolve(
         if not elec_processes: 
 
             deposited_H_ion = 0. 
+            deposited_2s    = 0. 
             deposited_Lya   = 0. 
             deposited_heat  = 0. 
             deposited_cont  = 0. 
@@ -951,10 +963,11 @@ def evolve(
             # deposited_He_ion/dt,
             deposited_Lya/dt,
             deposited_heat/dt,
-            deposited_cont/dt
+            deposited_2s/dt
+            # deposited_cont/dt * 0 # ICS deposited put into lowengphot
         ])
 
-        if elec_method != 'old':
+        if elec_method == 'new':
 
             # High-energy deposition from input electrons
             norm = phys.nB*rs**3 / rate_func_eng(rs)
@@ -967,13 +980,32 @@ def evolve(
                 'err': deposited_err/dt * norm
             }
 
+        elif elec_method == 'eff': 
+
+            # High-energy deposition from input electrons, 
+            # but Lya is calculated
+            # from the impact of distortions on xe_dot. 
+            norm = phys.nB*rs**3 / rate_func_eng(rs)
+            f_elec = {
+                'H ion': highengdep_at_rs[0] * norm,
+                'He ion': deposited_He_ion/dt * norm,
+                'Lya': highengdep_at_rs[1] * norm,
+                'exc': dxe_dt_exc * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs),
+                'heat': highengdep_at_rs[2] * norm,
+                'cont': highengdep_at_rs[3] * norm,
+                'err': deposited_err/dt * norm
+            }
+
+
         else:
             input_spec = lowengelec_spec_at_rs+ionized_elec
             input_spec.rs = rs
             f_elec = lowE_electrons.compute_fs(
-                MEDEA_interp, input_spec, 1-x_vec_for_f[0],
+                MEDEA_interp, input_spec, 1.-x_vec_for_f[0],
                 rate_func_eng(rs), dt
             )
+
+            # print(rs, 'f_cont_low_elec: ', f_elec[0])
 
             norm = phys.nB*rs**3 / rate_func_eng(rs)
             f_elec = {
@@ -984,6 +1016,8 @@ def evolve(
                 'cont': f_elec[0] + highengdep_at_rs[3] * norm,
                 'err': deposited_err/dt * norm
             }
+
+            # print(rs, 'f_cont_high_elec: ', highengdep_at_rs[3]*norm, 'f_cont_elec: ', f_elec['cont'])
 
         # if compute_fs_method == 'HeII' and rs > reion_rs:
 
@@ -999,11 +1033,16 @@ def evolve(
             x_vec_for_f, rate_func_eng(rs), dt,
             method='old', cross_check=cross_check
         )
+        print(rs, 'f_cont_elec', f_elec['cont'],  'f_cont_phot: ', f_phot['cont'])
 
         # Compute f for TLA: sum of electron and photon contributions
         f_H_ion = f_phot['H ion'] + f_elec['H ion']
         f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
-        f_Lya = f_phot['H exc'] + f_elec['Lya']
+        if elec_method == 'eff': 
+            f_Lya = f_elec['exc']
+            print(rs, x_arr[-1, 0], f_elec['exc'], f_elec['Lya'], 1. - peebC)
+        else:
+            f_Lya = f_phot['H exc'] + f_elec['Lya']
         f_heat = f_elec['heat']
         # Including f_elec['cont'] here would be double-counting.
         # It's just deposited_cont, which is accounted for in
