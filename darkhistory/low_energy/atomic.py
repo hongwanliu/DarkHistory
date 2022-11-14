@@ -1693,3 +1693,96 @@ def x2s_steady_state(rs, Tr, Tm, xe, x1s, tau_S, fudge=1.125):
             return ans
     else:
         return ans
+
+
+def Ps_to_2p(nmax): 
+
+    '''
+    Probability of a state cascading through the 2p state. 
+
+    Parameters
+    ----------
+    nmax : int
+        Highest energy level to track. 
+
+    Returns
+    -------
+    ndarray
+        Probability of states 2s, 2p, 3s, ... 
+    '''
+
+    num_states = nmax * (nmax + 1) // 2
+
+    Ps_ary = np.zeros(num_states)
+    # initialize 2p probability to be 1. 
+    Ps_ary[2] = 1. 
+
+    R_dict = populate_radial(nmax)
+
+    states_n = np.concatenate([
+        list(map(int, k*np.ones(k))) for k in range(1, nmax+1, 1)]
+    )
+    states_l = np.concatenate([np.arange(k) for k in range(1, nmax+1)])
+
+
+    # Vector of normalized energy levels. 
+    eng_norm_levels = 1. / states_n**2 
+
+    # n x n' matrix, for A_{n -> n'}, size nmax x nmax. 
+    prefac = 2*np.pi/3 * phys.rydberg / hplanck * (
+        phys.alpha * (eng_norm_levels[None,:] - eng_norm_levels[:,None])
+    )**3
+
+
+    non_pos_mask = np.zeros_like(prefac)
+    non_pos_mask[(prefac <= 0) | (np.isnan(prefac))] = 1. 
+    # prefac[non_pos_mask > 0] = 0. 
+
+    einstein_A = np.zeros((num_states, num_states))
+
+    for i,_ in enumerate(Ps_ary):
+
+        if i < 3: continue
+
+        for j,_ in enumerate(Ps_ary): 
+
+            if j == i: break 
+
+            n  = states_n[i] 
+            l  = states_l[i]
+            n_p = states_n[j]
+            l_p = states_l[j]
+
+            if l_p != l + 1 and l_p != l - 1: continue
+
+            if l_p == l + 1: 
+
+                einstein_A[i, j] = prefac[i, j] * l_p / (2*l + 1) * R_dict['up'][n][n_p][l]**2
+
+            else: 
+
+                einstein_A[i, j] = prefac[i, j] * l / (2*l + 1) * R_dict['dn'][n][n_p][l]**2
+
+    for i,_ in enumerate(Ps_ary): 
+
+        if i < 3: continue
+
+        n = states_n[i]
+        l = states_l[i]
+
+        ns_state_ind = (n-1) * n // 2
+
+        denom = np.sum(einstein_A[i,1:ns_state_ind])
+        numer = np.sum(einstein_A[i,1:ns_state_ind] * Ps_ary[1:ns_state_ind])
+
+        Ps_ary[i] = numer/denom
+
+    return Ps_ary
+            
+
+
+
+
+        
+    
+        
