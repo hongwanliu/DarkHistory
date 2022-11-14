@@ -693,17 +693,28 @@ def evolve(
                 deposited_He_ion = np.dot(
                     deposited_ion_arr['He'], tot_spec_elec.N
                 )
-                # Lyman-alpha excitation
+                # Lyman-alpha excitation, from any excited state cascading through 2p
+                # Probabilities that nl state cascades to 2p state
+                Ps = {'2p': 1.0000, '2s': 0.0, '3p': 0.0,
+                      '4p': 0.2609, '5p': 0.3078, '6p': 0.3259,
+                      '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
+                deposited_Lya_arr = np.sum([
+                    deposited_exc_arr[species]*Ps[species] * phys.lya_eng/phys.H_exc_eng(species)
+                    for species in Ps], axis=0)
                 deposited_Lya = np.dot(
-                    deposited_exc_arr['2p'], tot_spec_elec.N
+                    deposited_Lya_arr, tot_spec_elec.N
                 )
                 # heating
                 deposited_heat = np.dot(
                     deposited_heat_arr, tot_spec_elec.N
                 )
-                # ICS
+                # continuum photons, from deexcitation other than 2p->1s
+                # Don't include ICS contribution; that gets counted through secondary photons/lowengphot
+                deposited_cont_arr = np.sum([
+                    deposited_exc_arr[species]*((1-Ps[species]) + Ps[species] * (1-phys.lya_eng/phys.H_exc_eng(species)))
+                    for species in Ps], axis=0)
                 deposited_cont = np.dot(
-                    ICS_engloss_vec, tot_spec_elec.N
+                    deposited_cont_arr, tot_spec_elec.N
                 )
                 # numerical error
                 deposited_err = np.dot(
