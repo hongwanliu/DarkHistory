@@ -47,7 +47,7 @@ def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
 def get_history(
     rs_vec, init_cond=None, high_rs=np.inf,
     baseline_f=False, baseline_struct=False, inj_particle=None,
-    f_H_ion=None, f_H_exc=None, f_heating=None,
+    f_H_ion=None, f_H_exc=None, f_heating=None, one_minus_C_for_f_exc=True,
     DM_process=None, mDM=None, sigmav=None, lifetime=None,
     struct_boost=None, injection_rate=None,
     reion_switch=False, reion_rs=None, reion_method='Puchwein',
@@ -87,6 +87,8 @@ def get_history(
         Treated as constant if float.
     f_heating : function or float, optional
         f(rs, x_HI, x_HeI, x_HeII) for heating. Treated as constant if float.
+    one_minus_C_for_f_exc : bool
+        If True, (1-C) factor included in x_e evolution for f_H_exc. Default is True. 
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. Default is None.
     sigmav : float, optional
@@ -376,6 +378,21 @@ def get_history(
                 beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
                 alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
+                if one_minus_C_for_f_exc: 
+
+                    f_exc_contribution = (1. - peebC) * (
+                        _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                        / (phys.lya_eng * nH)
+                    )
+                
+                else: 
+                    
+                    f_exc_contribution = (
+                        _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                        / (phys.lya_eng * nH)
+                    )
+
+
                 return 2 * np.cosh(yHII)**2 * phys.dtdz(rs) * (
                     # Recombination processes.
                     # Boltzmann factor is T_r, agrees with HyREC paper.
@@ -392,10 +409,7 @@ def get_history(
                     / (phys.rydberg * nH)
 
                     # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
-                    + (1. - peebC) * (
-                        _f_H_exc(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
-                        / (phys.lya_eng * nH)
-                    )
+                    + f_exc_contribution
                 )
             else:
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)
@@ -579,11 +593,21 @@ def get_history(
 
             if recfast_TLA:
                 # Note that C=1 at late times
-                DM_exc_to_ion_rate = (
-                    (1 - phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge))
-                    * _f_H_exc(rs, xHI, xHeI, xHeII(yHeII))
-                    * inj_rate / (phys.lya_eng * nH)
-                )
+
+                if one_minus_C_for_f_exc:
+
+                    DM_exc_to_ion_rate = (
+                        (1 - phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge))
+                        * _f_H_exc(rs, xHI, xHeI, xHeII(yHeII))
+                        * inj_rate / (phys.lya_eng * nH)
+                    )
+
+                else: 
+
+                    DM_exc_to_ion_rate = (
+                        _f_H_exc(rs, xHI, xHeI, xHeII(yHeII))
+                        * inj_rate / (phys.lya_eng * nH)
+                    )
 
             else:
                 DM_exc_to_ion_rate = MLA_funcs[2](rs)
@@ -705,15 +729,26 @@ def get_history(
             #)
 
             #change in x due to reionization processes
+            if one_minus_C_for_f_exc: 
+                
+                f_exc_contribution = (1 - phys.peebles_C(xHII, rs, fudge, gauss_fudge)) * (
+                    _f_H_exc(rs, xHI, xHeI, xHeII)
+                    * inj_rate / (phys.lya_eng * nH)
+                )
+
+            else:
+
+                f_exc_contribution = (
+                    _f_H_exc(rs, xHI, xHeI, xHeII)
+                    * inj_rate / (phys.lya_eng * nH)
+                )
+
             abs_dxdz_not_re = -phys.dtdz(rs) * (
                 # DM injection. Note that C = 1 at late times.
                 _f_H_ion(rs, xHI, xHeI, xHeII) * (
                     inj_rate / (phys.rydberg * nH)
                 )
-                + (1 - phys.peebles_C(xHII, rs, fudge, gauss_fudge)) * (
-                    _f_H_exc(rs, xHI, xHeI, xHeII)
-                    * inj_rate / (phys.lya_eng * nH)
-                )
+                + f_exc_contribution
                 # Reionization rates.
                 + (
                     # Photoionization.

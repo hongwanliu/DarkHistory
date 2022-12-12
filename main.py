@@ -410,6 +410,9 @@ def evolve(
 
     if elec_method == 'eff' and not fexc_switch: 
         raise ValueError('Can only use effective f_exc if excitations are passed to the distortion code.')
+    if iterations > 1 and first_iter and not distort: 
+
+        raise ValueError('No reason to iterate more than once if not using distortions.')
 
     #####################################
     # Initialization                    #
@@ -545,7 +548,7 @@ def evolve(
     append_distort_spec = out_distort_specs.append
 
     # Initialize arrays to store f values.
-    f_c = np.empty((0, 6))
+    f_c = np.empty((0, 7))
 
     if distort:
 
@@ -1051,11 +1054,12 @@ def evolve(
         # Compute f for TLA: sum of electron and photon contributions
         f_H_ion = f_phot['H ion'] + f_elec['H ion']
         f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
+        f_Lya = f_phot['H exc'] + f_elec['Lya']
         if elec_method == 'eff': 
-            f_Lya = f_elec['exc']
-            # print(rs, x_arr[-1, 0], f_elec['exc'], f_elec['Lya'], 1. - peebC)
+            f_exc = f_elec['exc']
         else:
-            f_Lya = f_phot['H exc'] + f_elec['Lya']
+            f_exc = 0. 
+            
         f_heat = f_elec['heat']
         # Including f_elec['cont'] here would be double-counting.
         # It's just deposited_cont, which is accounted for in
@@ -1123,7 +1127,7 @@ def evolve(
         # Save the f_c(z) values.
         f_c = np.concatenate((
             f_c,
-            [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err]]
+            [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err, f_exc]]
         ))
 
         # Now that we have f's, calculate the distortion contribution
@@ -1183,28 +1187,49 @@ def evolve(
 
         if first_iter: 
             # Solve using the TLA rate coefficients. 
+            # Don't use any DM if using distort, 
+            # because f_Lya calculated as is may be far from what we want. 
 
-            new_vals = tla.get_history(
-                np.array([rs, next_rs]), init_cond=init_cond_TLA,
-                f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
-                injection_rate=rate_func_eng, high_rs=high_rs,
-                reion_switch=reion_switch, reion_rs=reion_rs,
-                reion_method=reion_method, heat_switch=heat_switch,
-                DeltaT=DeltaT, alpha_bk=alpha_bk,
-                photoion_rate_func=photoion_rate_func,
-                photoheat_rate_func=photoheat_rate_func,
-                xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-                f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
-                recfast_TLA=True, fudge=fudge,
-                MLA_funcs=None
-            )
+            if distort: 
+
+                new_vals = tla.get_history(
+                    np.array([rs, next_rs]), init_cond=init_cond_TLA,
+                    f_H_ion=0., f_H_exc=0., f_heating=0.,
+                    injection_rate=rate_func_eng, high_rs=high_rs,
+                    reion_switch=reion_switch, reion_rs=reion_rs,
+                    reion_method=reion_method, heat_switch=heat_switch,
+                    DeltaT=DeltaT, alpha_bk=alpha_bk,
+                    photoion_rate_func=photoion_rate_func,
+                    photoheat_rate_func=photoheat_rate_func,
+                    xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+                    f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
+                    recfast_TLA=True, fudge=fudge,
+                    MLA_funcs=None
+                )
+
+            else:
+
+                new_vals = tla.get_history(
+                    np.array([rs, next_rs]), init_cond=init_cond_TLA,
+                    f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
+                    injection_rate=rate_func_eng, high_rs=high_rs,
+                    reion_switch=reion_switch, reion_rs=reion_rs,
+                    reion_method=reion_method, heat_switch=heat_switch,
+                    DeltaT=DeltaT, alpha_bk=alpha_bk,
+                    photoion_rate_func=photoion_rate_func,
+                    photoheat_rate_func=photoheat_rate_func,
+                    xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
+                    f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
+                    recfast_TLA=True, fudge=fudge,
+                    MLA_funcs=None
+                )
 
         else: 
             # Solve using supplied MLA_funcs. 
 
             new_vals = tla.get_history(
                 np.array([rs, next_rs]), init_cond=init_cond_TLA,
-                f_H_ion=f_H_ion, f_H_exc=f_Lya, f_heating=f_heat,
+                f_H_ion=f_H_ion, f_H_exc=None, f_heating=f_heat,
                 injection_rate=rate_func_eng, high_rs=high_rs,
                 reion_switch=reion_switch, reion_rs=reion_rs,
                 reion_method=reion_method, heat_switch=heat_switch,
@@ -1309,7 +1334,8 @@ def evolve(
         'Lya':    f_c[:, 2],
         'heat':   f_c[:, 3],
         'cont':   f_c[:, 4],
-        'err':    f_c[:, 5]
+        'err':    f_c[:, 5], 
+        'eff_exc':    f_c[:, 6]
     }
 
     # Redshift the distortion to today
