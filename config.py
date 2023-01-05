@@ -724,7 +724,7 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
                 'The maximum relative change in the MLA parameters is: ', max_rel_change(np.transpose(DM_res[-1]['MLA'][1:]), np.transpose(DM_file_data[-1]['MLA'][1:]))
             )
 
-            pickle.dump(std_res, open(data_path+'/DM_test_data.p', 'wb'))
+            pickle.dump(DM_res, open(data_path+'/DM_test_data.p', 'wb'))
 
             print('Pickled solution with DM!')
 
