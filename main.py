@@ -1187,14 +1187,14 @@ def evolve(
 
         if first_iter: 
             # Solve using the TLA rate coefficients. 
-            # Don't use any DM if using distort, 
-            # because f_Lya calculated as is may be far from what we want. 
+            # Don't use any DM excitation if reprocess_distortion == True, 
+            # since excitation is calculated in MLA_funcs.
 
-            if distort: 
+            if reprocess_distortion: 
 
                 new_vals = tla.get_history(
                     np.array([rs, next_rs]), init_cond=init_cond_TLA,
-                    f_H_ion=0., f_H_exc=0., f_heating=0.,
+                    f_H_ion=f_H_ion, f_H_exc=0., f_heating=f_heat,
                     injection_rate=rate_func_eng, high_rs=high_rs,
                     reion_switch=reion_switch, reion_rs=reion_rs,
                     reion_method=reion_method, heat_switch=heat_switch,
