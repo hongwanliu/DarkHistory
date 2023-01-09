@@ -5,7 +5,7 @@ idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
 # idx = 4
 
 import sys
-sys.path.append('../../..')
+sys.path.append('../..')
 import numpy as np
 from scipy.interpolate import interp1d
 import pickle
