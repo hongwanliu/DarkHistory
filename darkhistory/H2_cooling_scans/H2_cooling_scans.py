@@ -1,8 +1,10 @@
 import os
-idx = int(os.environ["SLURM_ARRAY_TASK_ID"])
+idx = int(os.environ["SLURM_ARRAY_TASK_ID"]) + 1200
+
+print('REMEMBER TO REMOVE 1200')
 
 # print('PLEASE CHECK idx!')
-# idx = 4
+# idx = 3599
 
 import sys
 sys.path.append('../..')
