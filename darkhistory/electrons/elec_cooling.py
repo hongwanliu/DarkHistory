@@ -302,7 +302,7 @@ def get_elec_cooling_tf(
             eleceng, photeng, engloss_ICS_tf.grid_vals, eleceng
         )
 
-    # dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) *
+    # dE_ICS_dt = 4/3*phys.thomson_xsec*phys.c * beta_ele**2/(1-beta_ele**2) * 
     # phys.CMB_eng_density(phys.TCMB(rs))
     dE_ICS_dt = engloss_ICS_tf.toteng()
     ICS_engloss_arr = dE_ICS_dt
@@ -375,8 +375,12 @@ def get_elec_cooling_tf(
     # Heating
     #############################################
 
+    # Needed by Acharya and Khatri for their heating loss. This is just the LCDM Tm value. 
+    # This is from Hirata and Tseliakovich
+    Tm_LCDM_approx = phys.TCMB(rs) / (1. + 119. / rs / (1. + (rs / 115.)**1.5))
+
     dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs, method=method,
-                                                Te=phys.TCMB(rs))
+                                                Te=Tm_LCDM_approx)
     deposited_heat_vec = np.zeros_like(eleceng)
 
     MEDEA_heat = False
