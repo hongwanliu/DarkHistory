@@ -375,8 +375,13 @@ def get_elec_cooling_tf(
     # Heating
     #############################################
 
-    dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs, method=method,
-                                                Te=phys.TCMB(rs))
+    # Needed by Acharya and Khatri for their heating loss. This is just the LCDM Tm value. 
+    # This is from Hirata and Tseliakovich
+    Tm_LCDM_approx = phys.TCMB(rs) / (1. + 119. / rs / (1. + (rs / 115.)**1.5))
+
+    dE_heat_dt = phys.elec_heating_engloss_rate(
+        eleceng, xe, rs, method=method, Te=Tm_LCDM_approx
+    )
     deposited_heat_vec = np.zeros_like(eleceng)
 
     MEDEA_heat = False
