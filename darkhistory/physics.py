@@ -1758,7 +1758,14 @@ def coll_ion_xsec(eng, species=None, method='old'):
         else:
             raise TypeError('invalid species.')
 
-
+        if species == 'HI': 
+            B = rydberg
+        elif species == 'HeI': 
+            B = He_ion_eng
+        elif species == 'HeII': 
+            B = 4*rydberg 
+        else: 
+            raise TypeError('Invalid species in coll_ion_xsec.')
         try:
             xsec[eng <= B] *= 0
         except:
