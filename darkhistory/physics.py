@@ -1402,7 +1402,7 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
         return xsec
 
 
-    elif method == 'new':
+    elif method == 'new' or method == 'eff':
         if species == 'HI':
             exc_eng = H_exc_eng(state)
             ion_eng = rydberg
@@ -1550,15 +1550,8 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
 
         return xsec
 
-
-
-
-            
-
-
     else:
-        raise TypeError("Must pick method in {'old', 'MEDEA',\
-                        'AcharyaKhatri', or 'new'}")
+        raise TypeError('Invalid method in coll_exc_xsec.')
 
 
 
@@ -1659,7 +1652,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
 
         return xsec 
 
-    elif (method == 'MEDEA') | (method == 'new'):
+    elif method == 'MEDEA' or method == 'new' or method == 'eff':
 
         # BED Model in Kim and Rudd, Binary-encounter-dipole model for elecron-impact ionization
         # if (species == 'HI') or (species == 'HeI'):
@@ -1775,7 +1768,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
         return xsec
 
     else:
-        raise TypeError('Invalid method.')
+        raise TypeError('Invalid method in coll_ion_xsec.')
 
 
 def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
@@ -1813,279 +1806,275 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
     from darkhistory.spec.spectrum import Spectrum
     from darkhistory.spec import spectools
 
-    if (method == 'old') or (method == 'MEDEA') or (method == 'AcharyaKhatri'):
-        if method == 'old' or method == 'MEDEA': 
-            ind = 2.1
-        else: 
-            ind = 2.
-        if species == 'HI':
-            eps_i = 8.
-            ion_pot = rydberg
-        elif species == 'HeI':
-            # eps_i = 12.8    ## Shull 1979
-            eps_i = 15.8      ## Furlanetto and Stoever
-            ion_pot = He_ion_eng
-        elif species == 'HeII':
-            # eps_i = 27      ## Shull 1979
-            eps_i = 32.6      ## Furlanetto and Stoever
-            ion_pot = 4*rydberg
-        else:
-            raise TypeError('invalid species.')
+    if method == 'old' or method == 'MEDEA': 
+        ind = 2.1
+    else: 
+        ind = 2.
+    if species == 'HI':
+        eps_i = 8.
+        ion_pot = rydberg
+    elif species == 'HeI':
+        # eps_i = 12.8    ## Shull 1979
+        eps_i = 15.8      ## Furlanetto and Stoever
+        ion_pot = He_ion_eng
+    elif species == 'HeII':
+        # eps_i = 27      ## Shull 1979
+        eps_i = 32.6      ## Furlanetto and Stoever
+        ion_pot = 4*rydberg
+    else:
+        raise TypeError('invalid species.')
 
-        if np.isscalar(in_eng):
-            # If the input energy is below threshold return zeros.
-            if in_eng < ion_pot:
-                return np.zeros_like(eng)
+    if np.isscalar(in_eng):
+        # If the input energy is below threshold return zeros.
+        if in_eng < ion_pot:
+            return np.zeros_like(eng)
 
-            # See Shull (1979) eqn A1, Acharya and Khatri 1910.06272 Eq. A7
-            A = coll_ion_xsec(in_eng, species=species, method=method) / eps_i / np.arctan((in_eng - ion_pot) / (2. * eps_i))
-            low_eng_elec_dNdE = A / (1. + (eng/eps_i)**ind) #2.1
-            # This spectrum describes the lower energy electron only.
-            low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
+        # See Shull (1979) eqn A1, Acharya and Khatri 1910.06272 Eq. A7
+        A = coll_ion_xsec(in_eng, species=species, method=method) / eps_i / np.arctan((in_eng - ion_pot) / (2. * eps_i))
+        low_eng_elec_dNdE = A / (1. + (eng/eps_i)**ind) #2.1
+        # This spectrum describes the lower energy electron only.
+        low_eng_elec_dNdE[eng >= (in_eng - ion_pot)/2] = 0
 
-            if np.sum(low_eng_elec_dNdE) == 0:
-                # The lowest bin lies above the halfway point, (in_eng - ion_pot)/2.
-                # All electrons are now counted in the lowest bin.
-                #!!!
-                tot_elec_N = np.zeros_like(eng)
-                tot_elec_N[0] = (in_eng-ion_pot)/eng[0]
-                return np.outer(np.ones_like(in_eng), tot_elec_N)
-
-            low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
-
-            # Normalize the spectrum to one electron.
-            low_eng_elec_spec /= low_eng_elec_spec.totN()
-
-            in_eng = np.array([in_eng])
-
-            low_eng_elec_N = np.outer(
-                np.ones_like(in_eng), low_eng_elec_spec.N)
-
-            high_eng_elec_N = spectools.engloss_rebin_fast(
-                in_eng, eng + ion_pot, low_eng_elec_N, eng
-            )
-
-            return np.squeeze(low_eng_elec_N + high_eng_elec_N)
-
-        else:
-
-            from darkhistory.spec.spectra import Spectra
-
-            in_eng_mask = np.outer(in_eng, np.ones_like(eng))
-            eng_mask    = np.outer(np.ones_like(in_eng), eng)
-
-            # See Shull (1979) eqn A1 Acharya and Khatri 1910.06272 Eq. A7
-            A = coll_ion_xsec(in_eng, species=species, method=method) / eps_i / np.arctan((in_eng - ion_pot) / (2. * eps_i))
-            low_eng_elec_dNdE = np.outer(
-                A, 1./(1. + (eng/eps_i)**ind) #2.1
-            )
-
-            low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
-
-            # These input energies lie above the halfway point, (in_eng - ion_pot)/2.
-            # We will treat the lowest bin as an underflow bin (see end of this if statement block)
+        if np.sum(low_eng_elec_dNdE) == 0:
+            # The lowest bin lies above the halfway point, (in_eng - ion_pot)/2.
+            # All electrons are now counted in the lowest bin.
             #!!!
-            zero_mask = (np.sum(low_eng_elec_dNdE, axis=1) == 0) & (in_eng>ion_pot)
+            tot_elec_N = np.zeros_like(eng)
+            tot_elec_N[0] = (in_eng-ion_pot)/eng[0]
+            return np.outer(np.ones_like(in_eng), tot_elec_N)
 
-            # Normalize the spectrum to one electron.
-            low_eng_elec_spec = Spectra(
-                low_eng_elec_dNdE, eng=eng, in_eng=in_eng
-            )
+        low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
 
-            totN_arr = low_eng_elec_spec.totN()
-            # Avoids divide by zero errors.
-            totN_arr[totN_arr == 0] = np.inf
+        # Normalize the spectrum to one electron.
+        low_eng_elec_spec /= low_eng_elec_spec.totN()
 
-            low_eng_elec_spec /= totN_arr
+        in_eng = np.array([in_eng])
 
-            if low_eng_elec_spec.spec_type == 'dNdE':
-                low_eng_elec_spec.switch_spec_type()
+        low_eng_elec_N = np.outer(
+            np.ones_like(in_eng), low_eng_elec_spec.N)
 
-            low_eng_elec_N = low_eng_elec_spec.grid_vals
+        high_eng_elec_N = spectools.engloss_rebin_fast(
+            in_eng, eng + ion_pot, low_eng_elec_N, eng
+        )
 
-            high_eng_elec_N = spectools.engloss_rebin_fast(
-                in_eng, eng + ion_pot, low_eng_elec_N, eng
-            )
+        return np.squeeze(low_eng_elec_N + high_eng_elec_N)
 
-            #underflow bin
-            low_eng_elec_N[zero_mask,0]= (in_eng[zero_mask]-ion_pot)/eng[0]
-            #high_eng_elec_N[zero_mask,0]=1.
+    else:
 
-    elif method == 'Kim_and_Rudd':
-        # See Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954
-        if species == 'HI':
-            # Binding Energy
-            B = rydberg
+        from darkhistory.spec.spectra import Spectra
 
-            # Average kinetic energy of electron in the atom's potential
-            U = rydberg
-            u = U/B
+        in_eng_mask = np.outer(in_eng, np.ones_like(eng))
+        eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
-            # Number of electrons in valence shell
-            N = 1
-            S = 4 * np.pi * bohr_rad**2
+        # See Shull (1979) eqn A1 Acharya and Khatri 1910.06272 Eq. A7
+        A = coll_ion_xsec(in_eng, species=species, method=method) / eps_i / np.arctan((in_eng - ion_pot) / (2. * eps_i))
+        low_eng_elec_dNdE = np.outer(
+            A, 1./(1. + (eng/eps_i)**ind) #2.1
+        )
 
-            # Taylor coefficients of differential dipole oscillator strength for 
-            def dfdw(w):
-                return -.022473*(w+1)**-2 + 1.1775*(w+1)**-3 - 0.46264*(w+1)**-4 + 0.089064*(w+1)**-5
-            #a =  0
-            #b = -0.022473
-            #c =  1.1775
-            #d = -0.46264
-            #e =  0.089064
-            #f =  0
-            #g =  0
-            Ni=  0.4343
+        low_eng_elec_dNdE[eng_mask >= (in_eng_mask - ion_pot)/2] = 0
 
-        elif species == 'HeI':
-            B = He_ion_eng
-            U = 39.51
-            u = U/B
-            N = 2
-            S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
-            #a =  0
-            #b =  0
-            #c =  12.178
-            #d = -29.585
-            #e =  31.251
-            #f = -12.175
-            #g =  0
-            def dfdw(w):
-                return 12.178*(w+1)**-3 - 29.585*(w+1)**-4 + 31.251*(w+1)**-5 - 12.175*(w+1)**-6
-            Ni=  1.605
+        # These input energies lie above the halfway point, (in_eng - ion_pot)/2.
+        # We will treat the lowest bin as an underflow bin (see end of this if statement block)
+        #!!!
+        zero_mask = (np.sum(low_eng_elec_dNdE, axis=1) == 0) & (in_eng>ion_pot)
 
-        elif species == 'HeII':
-            Z = 2
-            B = Z**2 * rydberg
-            S = 4 * np.pi * bohr_rad**2 * (rydberg/B)**2
-            def F(tt):
-                return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 * np.log(tt)/(tt+1)])
-            def f(n,w):
-                return (w+1)**-n
-            def ft(n,tt,w):
-                return (tt-w)**-n
+        # Normalize the spectrum to one electron.
+        low_eng_elec_spec = Spectra(
+            low_eng_elec_dNdE, eng=eng, in_eng=in_eng
+        )
 
-        else:
-            raise TypeError('invalid species.')
+        totN_arr = low_eng_elec_spec.totN()
+        # Avoids divide by zero errors.
+        totN_arr[totN_arr == 0] = np.inf
+
+        low_eng_elec_spec /= totN_arr
+
+        if low_eng_elec_spec.spec_type == 'dNdE':
+            low_eng_elec_spec.switch_spec_type()
+
+        low_eng_elec_N = low_eng_elec_spec.grid_vals
+
+        high_eng_elec_N = spectools.engloss_rebin_fast(
+            in_eng, eng + ion_pot, low_eng_elec_N, eng
+        )
+
+        #underflow bin
+        low_eng_elec_N[zero_mask,0]= (in_eng[zero_mask]-ion_pot)/eng[0]
+        #high_eng_elec_N[zero_mask,0]=1.
+
+        return low_eng_elec_N + high_eng_elec_N
+
+    # elif method == 'Kim_and_Rudd':
+    #     # See Kim Y., Rudd M. E., 1994, Phys. Rev. A, 50, 3954
+    #     if species == 'HI':
+    #         # Binding Energy
+    #         B = rydberg
+
+    #         # Average kinetic energy of electron in the atom's potential
+    #         U = rydberg
+    #         u = U/B
+
+    #         # Number of electrons in valence shell
+    #         N = 1
+    #         S = 4 * np.pi * bohr_rad**2
+
+    #         # Taylor coefficients of differential dipole oscillator strength for 
+    #         def dfdw(w):
+    #             return -.022473*(w+1)**-2 + 1.1775*(w+1)**-3 - 0.46264*(w+1)**-4 + 0.089064*(w+1)**-5
+    #         #a =  0
+    #         #b = -0.022473
+    #         #c =  1.1775
+    #         #d = -0.46264
+    #         #e =  0.089064
+    #         #f =  0
+    #         #g =  0
+    #         Ni=  0.4343
+
+    #     elif species == 'HeI':
+    #         B = He_ion_eng
+    #         U = 39.51
+    #         u = U/B
+    #         N = 2
+    #         S = 4 * np.pi * bohr_rad**2 * N * (rydberg/B)**2
+    #         #a =  0
+    #         #b =  0
+    #         #c =  12.178
+    #         #d = -29.585
+    #         #e =  31.251
+    #         #f = -12.175
+    #         #g =  0
+    #         def dfdw(w):
+    #             return 12.178*(w+1)**-3 - 29.585*(w+1)**-4 + 31.251*(w+1)**-5 - 12.175*(w+1)**-6
+    #         Ni=  1.605
+
+    #     elif species == 'HeII':
+    #         Z = 2
+    #         B = Z**2 * rydberg
+    #         S = 4 * np.pi * bohr_rad**2 * (rydberg/B)**2
+    #         def F(tt):
+    #             return np.array([-1.4332/(tt+1)**2, 1.4332/(tt+1), 0.5668 * np.log(tt)/(tt+1)])
+    #         def f(n,w):
+    #             return (w+1)**-n
+    #         def ft(n,tt,w):
+    #             return (tt-w)**-n
+
+    #     else:
+    #         raise TypeError('invalid species.')
 
 
-        w = eng/B
+    #     w = eng/B
 
-        if np.isscalar(in_eng):
-            # dsigma / dW, where W is the kinetic energy of the secondary (lower energy) electron
-            if species != 'HeII':
-                t = in_eng/B
+    #     if np.isscalar(in_eng):
+    #         # dsigma / dW, where W is the kinetic energy of the secondary (lower energy) electron
+    #         if species != 'HeII':
+    #             t = in_eng/B
 
-                # When t = w, this factor blows up, but w < t.
-                fac = np.divide(1,(t-w), out=np.zeros_like(w), where = w<=(t-1)/2)
+    #             # When t = w, this factor blows up, but w < t.
+    #             fac = np.divide(1,(t-w), out=np.zeros_like(w), where = w<=(t-1)/2)
 
-                low_eng_elec_dNdE = (
-                    S/(t + u + 1)/B*(
-                        (Ni/N-2)/(t+1)*(1/(w+1) + fac)+
-                        (2-(Ni/N))*(1/(w+1)**2  + fac**2)+
-                        np.log(t)/(N*(w+1)) * dfdw(w)
-                    )
-                )
-            else:
-                tt = in_eng/Z**2/rydberg
-                F_array = F(tt)
-                summation = sum(
-                        np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
-                        )
-                low_eng_elec_dNdE = S*summation/55
+    #             low_eng_elec_dNdE = (
+    #                 S/(t + u + 1)/B*(
+    #                     (Ni/N-2)/(t+1)*(1/(w+1) + fac)+
+    #                     (2-(Ni/N))*(1/(w+1)**2  + fac**2)+
+    #                     np.log(t)/(N*(w+1)) * dfdw(w)
+    #                 )
+    #             )
+    #         else:
+    #             tt = in_eng/Z**2/rydberg
+    #             F_array = F(tt)
+    #             summation = sum(
+    #                     np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
+    #                     )
+    #             low_eng_elec_dNdE = S*summation/55
 
-            # This spectrum describes the lower energy electron only.
-            low_eng_elec_dNdE[eng >= (in_eng - B)/2] = 0
-            # Normalize the spectrum to one electron.
+    #         # This spectrum describes the lower energy electron only.
+    #         low_eng_elec_dNdE[eng >= (in_eng - B)/2] = 0
+    #         # Normalize the spectrum to one electron.
 
-            low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
-            if np.sum(low_eng_elec_dNdE) == 0:
-                # Either in_eng < in_pot, or the lowest bin lies
-                # above the halfway point, (in_eng - B)/2.
-                # Add to the lowest bin.
-                return np.zeros_like(eng)
+    #         low_eng_elec_spec = Spectrum(eng, low_eng_elec_dNdE)
+    #         if np.sum(low_eng_elec_dNdE) == 0:
+    #             # Either in_eng < in_pot, or the lowest bin lies
+    #             # above the halfway point, (in_eng - B)/2.
+    #             # Add to the lowest bin.
+    #             return np.zeros_like(eng)
 
-            #low_eng_elec_spec /= low_eng_elec_spec.totN()
+    #         #low_eng_elec_spec /= low_eng_elec_spec.totN()
 
-            in_eng = np.array([in_eng])
+    #         in_eng = np.array([in_eng])
 
-            low_eng_elec_N = np.outer(
-                np.ones_like(in_eng), low_eng_elec_spec.N)
+    #         low_eng_elec_N = np.outer(
+    #             np.ones_like(in_eng), low_eng_elec_spec.N)
 
-            high_eng_elec_N = spectools.engloss_rebin_fast(
-                in_eng, eng + B, low_eng_elec_N, eng
-            )
+    #         high_eng_elec_N = spectools.engloss_rebin_fast(
+    #             in_eng, eng + B, low_eng_elec_N, eng
+    #         )
 
-            return np.squeeze(low_eng_elec_N + high_eng_elec_N)
+    #         return np.squeeze(low_eng_elec_N + high_eng_elec_N)
 
-        else:
+    #     else:
 
-            from darkhistory.spec.spectra import Spectra
+    #         from darkhistory.spec.spectra import Spectra
 
-            in_eng_mask = np.outer(in_eng, np.ones_like(eng))
-            eng_mask    = np.outer(np.ones_like(in_eng), eng)
+    #         in_eng_mask = np.outer(in_eng, np.ones_like(eng))
+    #         eng_mask    = np.outer(np.ones_like(in_eng), eng)
 
-            if species != 'HeII':
-                #t = in_eng/B
-                #fac = np.transpose(np.array([
-                #        np.divide(1,_t-w, out=np.zeros_like(w), where = w<=(_t-1)/2)
-                #        for _t in t]))
+    #         if species != 'HeII':
+    #             #t = in_eng/B
+    #             #fac = np.transpose(np.array([
+    #             #        np.divide(1,_t-w, out=np.zeros_like(w), where = w<=(_t-1)/2)
+    #             #        for _t in t]))
 
-                #prefac = S/(t + u + 1)/B
-                #a1 = prefac * (Ni/N-2)/(t+1)
-                #b1 = 1/(w+1)
-                #low_eng_elec_dNdE = np.outer(b1, a1)
-                #low_eng_elec_dNdE += a1 * fac
+    #             #prefac = S/(t + u + 1)/B
+    #             #a1 = prefac * (Ni/N-2)/(t+1)
+    #             #b1 = 1/(w+1)
+    #             #low_eng_elec_dNdE = np.outer(b1, a1)
+    #             #low_eng_elec_dNdE += a1 * fac
 
-                #low_eng_elec_dNdE += np.outer(b1**2, prefac * (2-(Ni/N)))
-                #low_eng_elec_dNdE += prefac * (2-(Ni/N)) * fac**2
+    #             #low_eng_elec_dNdE += np.outer(b1**2, prefac * (2-(Ni/N)))
+    #             #low_eng_elec_dNdE += prefac * (2-(Ni/N)) * fac**2
 
-                #low_eng_elec_dNdE += np.outer(dfdw(w)/(N*(w+1)), prefac * np.log(t))
-                #low_eng_elec_dNdE = low_eng_elec_dNdE.transpose()
-                low_eng_elec_dNdE = np.array([
-                    S/(t*B + U + B)*(
-                        (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
-                        (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
-                        np.log(t)/(N*(w+1)) * dfdw(w)
-                    ) for t in in_eng/B]
-                )
-            else:
-                tt_list = in_eng/Z**2/rydberg
-                low_eng_elec_dNdE = np.zeros((in_eng.size, eng.size))
-                for i,tt in enumerate(tt_list):
-                    F_array = F(tt)
-                    summation = sum(
-                            np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
-                            )
-                    low_eng_elec_dNdE[i] = S*summation
+    #             #low_eng_elec_dNdE += np.outer(dfdw(w)/(N*(w+1)), prefac * np.log(t))
+    #             #low_eng_elec_dNdE = low_eng_elec_dNdE.transpose()
+    #             low_eng_elec_dNdE = np.array([
+    #                 S/(t*B + U + B)*(
+    #                     (Ni/N-2)/(t+1)*(1/(w+1) + 1/(t-w))+
+    #                     (2-(Ni/N))*(1/(w+1)**2  + 1/(t-w)**2)+
+    #                     np.log(t)/(N*(w+1)) * dfdw(w)
+    #                 ) for t in in_eng/B]
+    #             )
+    #         else:
+    #             tt_list = in_eng/Z**2/rydberg
+    #             low_eng_elec_dNdE = np.zeros((in_eng.size, eng.size))
+    #             for i,tt in enumerate(tt_list):
+    #                 F_array = F(tt)
+    #                 summation = sum(
+    #                         np.array([(f(n,w) + ft(n,tt,w)) * F_array[n-1] for n in [1,2,3]])
+    #                         )
+    #                 low_eng_elec_dNdE[i] = S*summation
 
-            low_eng_elec_dNdE[eng_mask >= (in_eng_mask - B)/2] = 0
-            # Normalize the spectrum to one electron.
-            low_eng_elec_spec = Spectra(
-                low_eng_elec_dNdE, eng=eng, in_eng=in_eng
-            )
+    #         low_eng_elec_dNdE[eng_mask >= (in_eng_mask - B)/2] = 0
+    #         # Normalize the spectrum to one electron.
+    #         low_eng_elec_spec = Spectra(
+    #             low_eng_elec_dNdE, eng=eng, in_eng=in_eng
+    #         )
 
-            totN_arr = low_eng_elec_spec.totN()
-            # Avoids divide by zero errors.
-            totN_arr[totN_arr == 0] = np.inf
+    #         totN_arr = low_eng_elec_spec.totN()
+    #         # Avoids divide by zero errors.
+    #         totN_arr[totN_arr == 0] = np.inf
 
-            low_eng_elec_spec /= totN_arr
+    #         low_eng_elec_spec /= totN_arr
 
-            if low_eng_elec_spec.spec_type == 'dNdE':
-                low_eng_elec_spec.switch_spec_type()
+    #         if low_eng_elec_spec.spec_type == 'dNdE':
+    #             low_eng_elec_spec.switch_spec_type()
 
-            low_eng_elec_N = low_eng_elec_spec.grid_vals
+    #         low_eng_elec_N = low_eng_elec_spec.grid_vals
 
-            high_eng_elec_N = spectools.engloss_rebin_fast(
-                in_eng, eng + B, low_eng_elec_N, eng
-            )
+    #         high_eng_elec_N = spectools.engloss_rebin_fast(
+    #             in_eng, eng + B, low_eng_elec_N, eng
+    #         )
 
-    elif method == 'new':
-        raise TypeError('We have not developed the new method yet')
-        #if np.isscalar(in_eng):
-        #else:
-
-    return low_eng_elec_N + high_eng_elec_N
+            # return low_eng_elec_N + high_eng_elec_N
 
 
 def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):

@@ -135,9 +135,9 @@ def evolve(
     elec_method : {'new', 'old', 'eff'}
         Method for evaluating electron energy deposition. 
 
-        * *'new'* -- No separation into low-energy electrons. 
-        * *'old'* -- Low-energy electrons separated out, resolved with MEDEA. 
-        * *'eff'* -- f_exc computed using distortions. 
+        * *'old'* -- Low-energy electrons separated out, resolved with MEDEA. Old ionization and excitation cross sections. 
+        * *'new'* -- No separation into low-energy electrons, new ionization and excitation cross sections, deexcitations calculated by probability of downscattering to 2s and 2p. 
+        * *'eff'* -- f_exc computed using distortions, new ionization and excitation cross sections, effective f_exc calculated.  
 
         Default is 'new'. 
     distort : bool, optional
