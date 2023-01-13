@@ -1321,7 +1321,7 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
         # Eqn (5) of Kim, Stone, Desclaux (2002). 
         def xsec_asympt(species, state, KE):
             if (species == 'HeI') | (state[-1] == 'p'):
-                ind = int(state[0])-2
+                ind = int(state[:-1])-2
                 if species == 'HeI':
                     f_ratio = facc_HeI[ind]/fsc_HeI[ind]
                 else:
@@ -1411,7 +1411,7 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
             exc_eng = He_exc_eng[state]
             ion_eng = He_ion_eng
         elif species == 'HeII': 
-            return 0. 
+            return coll_exc_xsec(eng, species='HeII', method='old', state=state)
         else:
             # !!! Maybe it's wiser to throw a warning
             raise TypeError('invalid species.')
@@ -1420,26 +1420,140 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
         if isinstance(eng*1., float):
             eng = np.array([eng])
 
-        
+        # in units of cm^2, CCC data, for non-np states. 
+        if (species == 'HI' and state[-1] != 'p'):
+            xsec = load_data('exc_AcharyaKhatri')[species][state](eng)
+        # Use Kim, Rudd and Desclaux for np states and HeI. 
+        else: 
+            xsec = load_data('exc')[species][state](eng)
 
-        # Fit the last 3 data points to Eq (5) in Stone, Kim, Desclaux (2002).
-        CCC_params = {
-            '2s': [-0.0007159,  0.11452997, -0.13129725],
-            #'2p': array([0.56380322, 0.24049544, 0.14332047]),
-            '3s': [-0.00015347,  0.02289828, -0.03031804],
-            #'3p': array([0.09032339, 0.05555073, 0.0011389 ]),
-            '3d': [0.00070671, 0.01320006, 0.07995369],
-            '4s': [-3.54117891e-05,  8.44414752e-03, -1.12394267e-02],
-            #'4p': array([ 0.03147835,  0.0210285 , -0.00092276]),
-            '4d': [0.00024288, 0.00670803, 0.03401937],
-            '4f': [1.54630748e-05, 4.27514396e-05, 1.28250812e-03],
-            #'5p': array([ 0.01459854,  0.01110727, -0.00516594]),
-            #'6p': array([0.00843839, 0.00461011, 0.00694271]),
-            #'7p': array([ 0.00483998,  0.00435975, -0.00448719]),
-            #'8p': array([ 0.00311045,  0.0032473 , -0.00545291]),
-            #'9p': array([0.00231391, 0.00154275, 0.00091767]),
-            #'10p': array([ 0.00162042,  0.00135187, -0.00093072])
+        # b and gamma coefficients for optically forbidden transitions. 
+        # Bethe cross section given by 4*pi*a0^2 / (T/R) * (b + gamma/(T/R))
+        
+        coeffs_forbid = {}
+        coeffs_forbid['2s'] = [0.110709 , -3.61438]
+        coeffs_forbid['3s'] = [0.0220663, -0.794192]
+        coeffs_forbid['3d'] = [0.0164707,  0.340603]
+        coeffs_forbid['4s'] = [0.00823007,-0.306196]
+        coeffs_forbid['4d'] = [0.0078367,  0.140598]
+        coeffs_forbid['4f'] = [0.000114328, 0.00733581]
+
+        # a, b and c coefficients for optically allowed transitions. 
+        # Kim, Rudd and Desclaux parametrizes as 4*pi*a0^2 / (T+B+E)(a log (T/R) + b + c/(T/R)) ]
+        a_params = {
+            'HI':  [ .555512,  .089083,  .030956,  .014534,  .008031,
+                     .004919,  .003237,  .002246,  .001623],
+            'HeI': [ .165601,  .041611,  .016111,  .008298,  .004740,
+                     .002963,  .001975,  .001383,  .001006]
         }
+        b_params = {
+            'HI':  [ .271785,  .060202,  .022984,  .011243,  .006348,
+                    .003939,  .002550,  .001824,  .001323],
+            'HeI': [-.076942, -.018087, -.007040, -.003475, -.001972,
+                    -.001227, -.000816, -.000570, -.000414]
+        }
+        c_params = {
+            'HI':  [ .000112, -.019775, -.009279, -.004880, -.002853,
+                    -.001806, -.001213, -.000854, -.000623],
+            'HeI': [ .033306,  .002104, -.000045, -.000228, -.000194,
+                    -.000146, -.000108, -.000080, -.000061]
+        }
+
+        fsc_HeI = [ .2583,    .07061,   .02899,   .01466,   .00844,
+                   .00529,   .00354,   .00248,   .00181]
+        facc_HeI = [ .2762,    .07343,   .02986,   .01504,   .00863,
+                    .00541,   .00361,   .00253,   .00184]
+
+        def xsec_asympt_nonrel(species, state, KE):
+            if species == 'HI' and state[-1] == 'p': 
+                ind = int(state[:-1])-2
+
+                factor = (
+                    a_params[species][ind] * np.log(KE/rydberg)
+                    + b_params[species][ind]
+                    + c_params[species][ind] * rydberg/KE
+                )
+
+                return 4*np.pi*bohr_rad**2*rydberg/(
+                    KE + ion_eng + exc_eng
+                ) * factor
+
+            elif species == 'HI' and state[-1] != 'p':
+
+                factor = (
+                    coeffs_forbid[state][0]
+                    + coeffs_forbid[state][1] / (KE / rydberg)
+                )
+
+                return 4*np.pi*bohr_rad**2 * rydberg/KE * factor
+
+            elif species == 'HeI': 
+                ind = 0
+                f_ratio = facc_HeI[ind]/fsc_HeI[ind]
+                factor = (
+                    a_params[species][ind] * np.log(KE/rydberg)
+                    + b_params[species][ind]
+                    + c_params[species][ind] * rydberg/KE
+                )*f_ratio
+
+                return 4*np.pi*bohr_rad**2*rydberg/(KE + ion_eng + exc_eng) * factor
+
+        def xsec_asympt_rel(species, state, KE):
+            if species == 'HI' and state[-1] == 'p': 
+                ind = int(state[:-1])-2
+                M_n_squared = a_params[species][ind] 
+                c_n = rydberg / 4 * np.exp(b_params[species][ind] / M_n_squared)
+                beta = np.sqrt(KE**2 + 2*KE*me) / (KE + me)
+
+                factor = (
+                    M_n_squared*(np.log(beta**2) - np.log1p(-beta**2) - beta**2)
+                    + M_n_squared*(np.log(c_n) + np.log(2*me/rydberg))
+                )
+
+                return 4*np.pi*bohr_rad**2*rydberg/(
+                    0.5 * me * beta**2
+                ) * factor
+
+            elif species == 'HI' and state[-1] != 'p':
+
+                beta = np.sqrt(KE**2 + 2*KE*me) / (KE + me)
+
+                return 4*np.pi*bohr_rad**2 * rydberg/(0.5 * me * beta**2) * coeffs_forbid[state][0]
+
+            elif species == 'HeI': 
+                ind = 0
+                f_ratio = facc_HeI[ind]/fsc_HeI[ind]
+                factor = (
+                    a_params[species][ind] * np.log(KE/rydberg)
+                    + b_params[species][ind]
+                    + c_params[species][ind] * rydberg/KE
+                )*f_ratio
+
+                return 4*np.pi*bohr_rad**2*rydberg/(KE + ion_eng + exc_eng) * factor
+            
+        if species == 'HI' and state[-1] != 'p':
+            xsec[eng < 14.] = 0. 
+            xsec[(eng > 999) & (eng < 1e4)] = xsec_asympt_nonrel(
+                species, state, eng[(eng > 999) & (eng < 1e4)]
+            )
+            xsec[eng >= 1e4] = xsec_asympt_rel(
+                species, state, eng[eng >= 1e4]
+            )
+        else: 
+            xsec[eng < exc_eng] = 0.
+            xsec[(eng > 3e3) & (eng < 1e4)] = xsec_asympt_nonrel(
+                species, state, eng[(eng > 3e3) & (eng < 1e4)]
+            )
+            xsec[eng >= 1e4] = xsec_asympt_rel(
+                species, state, eng[eng >= 1e4]
+            )
+
+        return xsec
+
+
+
+
+            
 
 
     else:
@@ -1477,7 +1591,6 @@ def coll_ion_xsec(eng, species=None, method='old'):
     Returns the Arnaud and Rothenflug rate if method == 'old'.
 
     """
-    print('first: ', method)
 
     if method == 'AcharyaKhatri':
         if species != 'HI':
@@ -1662,11 +1775,7 @@ def coll_ion_xsec(eng, species=None, method='old'):
         return xsec
 
     else:
-        raise TypeError('method = new not developed yet')
-
-    print('last: ', method)
-
-    return xsec
+        raise TypeError('Invalid method.')
 
 
 def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
