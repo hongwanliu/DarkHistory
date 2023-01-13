@@ -117,7 +117,7 @@ for pri in ['elec', 'phot']:
 options_dict = {
     'start_rs': start_rs, 'high_rs': high_rs, 'end_rs':end_rs,
     'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
-    'coarsen_factor':cf, 'distort':True, 'fexc_switch': True, 
+    'coarsen_factor':cf, 'distort':True, 'fexc_switch': True, 'elec_method': 'new',
     'reprocess_distortion':True, 'nmax':nmax, 'rtol':rtol, 'use_tqdm':True, 'tqdm_jupyter':False, 'iterations':iter_max
 }
 
