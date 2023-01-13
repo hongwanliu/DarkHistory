@@ -61,12 +61,15 @@ def get_elec_cooling_tf(
     ics_engloss_data : EnglossRebinData
         An `EnglossRebinData` object which stores rebinning information (based
         on ``eleceng`` and ``photeng``) for speed. Default is None.
-    method : {'old', 'MEDEA', 'new'}
+    method : {'old', 'MEDEA', 'AcharyaKhatri', 'new'/'eff'}
         if method == 'old', see 0906.1197;
         if method == 'MEDEA',
             see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
-        if method == 'new', same as MEDEA,
-            but with more excited states from CCC database
+        if method == 'AcharyaKhatri'
+            see arXiv:1910.06272;
+        if method == 'new', same as MEDEA for collisional ionization,
+            Kim, Rudd, and Desclaux for collisional excitation to np states,
+            and CCC data for the remaining excited states.
         if method == 'eff', same as 'new'. 
     H_states : list of str
         Excited states to track.

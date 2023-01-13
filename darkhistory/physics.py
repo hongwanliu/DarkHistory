@@ -1200,12 +1200,20 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
         Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
-    method : {'old', 'MEDEA', 'new'}
+    method : {'old', 'MEDEA', 'AcharyaKhatri', 'new'/'eff'}
         if method == 'old', see 0906.1197;
         if method == 'MEDEA',
             see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
-        if method == 'new', same as MEDEA,
-            but with more excited states from CCC database
+        if method == 'AcharyaKhatri'
+            see arXiv:1910.06272;
+        if method == 'new',
+            For np states and HeI, use Kim, Rudd, and Desclaux below 3 keV;
+            between 3 and 10 keV, use nonrelativistic Bethe approximation.
+            For np states above 10 keV, use relativisitics Bethe approximation.
+            For states in {2s, 3s, 3d, 4s, 4d, 4f}, use CCC data below 999 eV;
+            above this energy, use nonrelativistic Bethe expression for < 10 keV
+            and relativistic expression above 10 keV.
+        if method == 'eff', same as 'new'. 
     state : str
         The excited state (option for methods other than 'old')
 
@@ -1569,10 +1577,12 @@ def coll_ion_xsec(eng, species=None, method='old'):
         Abscissa of *kinetic* energies.
     species : {'HI', 'HeI', 'HeII'}
         Species of interest.
-    method : {'old', 'MEDEA', 'new'}
-        if method == 'old', see 0906.1197; 
-        if method == 'MEDEA', see Mon. Not. R. Astron. Soc. 422, 420–433 (2012); 
-        if method == 'new', nothing yet
+        if method == 'MEDEA',
+            see Mon. Not. R. Astron. Soc. 422, 420–433 (2012);
+        if method == 'AcharyaKhatri'
+            see arXiv:1910.06272;
+        if method == 'new', same as MEDEA for collisional ionization,
+        if method == 'eff', same as 'new'. 
 
     Returns
     -------
