@@ -1429,11 +1429,8 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
             eng = np.array([eng])
 
         # in units of cm^2, CCC data, for non-np states. 
-        if (species == 'HI' and state[-1] != 'p'):
-            xsec = load_data('exc_AcharyaKhatri')[species][state](eng)
-        # Use Kim, Rudd and Desclaux for np states and HeI. 
-        else: 
-            xsec = load_data('exc')[species][state](eng)
+        # Kim, Rudd and Desclaux for np states and HeI. 
+        xsec = load_data('exc')[species][state](eng)
 
         # b and gamma coefficients for optically forbidden transitions. 
         # Bethe cross section given by 4*pi*a0^2 / (T/R) * (b + gamma/(T/R))
