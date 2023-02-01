@@ -282,7 +282,13 @@ def vir_event(rs, var, rs_vir, M):
     # Make sure this condition doesn't kick in before density and temperature can grow
     # if (phys.Tm_std(rs) < 0.7*T_cond) and (rho_TH(2000, rs_vir) * (rs/2000)**3 < 0.7*rho_cond):
     if (n_TH(rs, rs_vir) > n_TH(rs*np.exp(0.01), rs_vir)):
-        return (rho_cond - rho) * (T_cond - Tm)
+        if (rho < rho_cond) and (Tm < T_cond):
+            return min((rho_cond-rho)/rho_cond, (T_cond-Tm)/T_cond)
+        elif rho > rho_cond:
+            return (rho_cond-rho)/rho_cond
+        else:
+            return (T_cond-Tm)/T_cond
+        # return (rho_cond - rho) * (T_cond - Tm)
     else:
         return 1
 vir_event.terminal = True
@@ -514,8 +520,8 @@ def collapse_criterion(rs, Tm, rs_vir):
     
 def shooting_scheme(rs_vir_list, dists=0, H2_form_rate='new', H2_cool_rate='new', 
                     DM_switch=False, DM_args=None):
-    M_halo_list = np.zeros_like(rs_vir_list)
-    T_vir_list = np.zeros_like(rs_vir_list)
+    M_halo_list = np.zeros_like(rs_vir_list, dtype=float)
+    T_vir_list = np.zeros_like(rs_vir_list, dtype=float)
     
     for ii, rs_vir in enumerate(tqdm(rs_vir_list)):
         #print(f"1+z_vir = {rs_vir:.0f}")
@@ -547,7 +553,7 @@ def shooting_scheme(rs_vir_list, dists=0, H2_form_rate='new', H2_cool_rate='new'
                 dists=dists, H2_form_rate=H2_form_rate, H2_cool_rate=H2_cool_rate,
                 DM_switch=DM_switch, DM_args=DM_args
             )
-            
+        
         col_low = collapse_criterion(test_low['t'], test_low['y'][2], rs_vir_low)
 
         if not(col_high and not col_low):
@@ -573,7 +579,7 @@ def shooting_scheme(rs_vir_list, dists=0, H2_form_rate='new', H2_cool_rate='new'
             M_halo_list[ii] = np.sqrt(M_halo_high * M_halo_low)
             T_vir_list[ii] = T_vir(rs_vir, M_halo_list[ii])
             #print(f"Got M_halo = {M_halo_list[ii]:.2E} solar masses")
-        #print("~~~")
+        # print("~~~")
     
     return {
         'rs' : rs_vir_list,
