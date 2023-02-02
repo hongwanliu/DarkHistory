@@ -642,6 +642,13 @@ def evolve(
                 x_arr[-1, 0] = 1-10**(-4.4)
             if x_arr[-1, 1] == phys.chi:
                 x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
+        else:
+            # If the universe becomes fully ionized, offset slightly
+            # to prevent numerical issues.
+            if x_arr[-1, 0] == 1:
+                x_arr[-1, 0] = 1-10**(-12.)
+            if x_arr[-1, 1] == phys.chi:
+                x_arr[-1, 1] = phys.chi*(1 - 10**(-12.))
 
         # Ionized Fractions
         x_at_rs = np.array([1. - x_arr[-1, 0],
