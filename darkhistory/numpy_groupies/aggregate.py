@@ -250,7 +250,7 @@ def minimum_dtype_scalar(x, dtype, a):
 
 
 _forced_types = {
-    'array': np.object,
+    #'array': np.object,
     'all': np.bool_,
     'any': np.bool_,
     'nanall': np.bool_,

@@ -22,6 +22,7 @@ data_path = None
 use_v1_0_data = False
 
 if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
+    print(os.environ['DH_DATA_DIR'])
     data_path = os.environ['DH_DATA_DIR']
         
 
