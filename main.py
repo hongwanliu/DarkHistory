@@ -197,9 +197,19 @@ def evolve(
         lep_tf   = nntf_data['lep']
         
         nntf_data = load_model('ics_nntf', verbose=verbose)
+        
+        nntf_timer_start = time.time()
         ics_thomson_ref_tf = nntf_data['ics_thomson'].TransFuncAtRedshift()
+        ics_thomson_ref_tf_time = time.time() - nntf_timer_start
+        
+        
+        nntf_timer_start = time.time()
         engloss_ref_tf     = nntf_data['ics_engloss'].TransFuncAtRedshift()
+        engloss_ref_tf_time = time.time() - nntf_timer_start
+        
+        nntf_timer_start = time.time()
         ics_rel_ref_tf     = nntf_data['ics_rel'].TransFuncAtRedshift()
+        ics_rel_ref_tf_time = time.time() - nntf_timer_start
         
     else:
         raise ValueError('Invalid transfer function mode (tf_mode)!')
@@ -421,6 +431,12 @@ def evolve(
     
     if verbose >= 1:
         print('Initialization time: %.3f s' % (time.time()-timer_start))
+        
+    # timer
+    hep_runtime_arr = []
+    prp_runtime_arr = []
+    lee_runtime_arr = []
+    phot_runtime_arr = []
     
     #########################################################################
     #########################################################################
@@ -663,12 +679,16 @@ def evolve(
             
             rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             
+            tf_timer_start = time.time()
+            
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                 get_tf(
                     rs, xHII_to_interp, xHeII_to_interp,
                     dlnz, coarsen_factor=coarsen_factor
                 )
             )
+            
+            phot_runtime_arr.append( time.time() - tf_timer_start )
             
             # Get the spectra for the next step by applying the 
             # transfer functions. 
@@ -690,9 +710,27 @@ def evolve(
                             'xH' : xHII_to_interp,
                             'xHe': xHeII_to_interp }
             hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc)
+            
+            ########################################################################################################################
+            
+            nntf_timer_start = time.time()
+            
+            #nntf_timer_start = time.time()
             hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
+            #hep_runtime_arr.append( time.time() - nntf_timer_start )
+            
+            #nntf_timer_start = time.time()
             prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
+            #prp_runtime_arr.append( time.time() - nntf_timer_start )
+            
+            #nntf_timer_start = time.time()
             lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
+            #lee_runtime_arr.append( time.time() - nntf_timer_start )
+            
+            phot_runtime_arr.append( time.time() - nntf_timer_start )
+            
+            #print(hep_runtime_arr[-1], prp_runtime_arr[-1], lee_runtime_arr[-1])
+            
             lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
             hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
 
@@ -746,6 +784,15 @@ def evolve(
 
     if verbose >= 1:
         print('Main loop time: %.3f s' % (time.time()-timer_start))
+        
+        # print('hep', np.mean(hep_runtime_arr), np.std(hep_runtime_arr))
+        # print('prp', np.mean(prp_runtime_arr), np.std(prp_runtime_arr))
+        # print('lee', np.mean(lee_runtime_arr), np.std(lee_runtime_arr))
+        print('phot', np.mean(phot_runtime_arr), np.std(phot_runtime_arr))
+        
+        # print('ics_thomson_ref_tf', ics_thomson_ref_tf_time)
+        # print('engloss_ref_tf', engloss_ref_tf_time)
+        # print('ics_rel_ref_tf', ics_rel_ref_tf_time)
 
     if use_tqdm:
         pbar.close()
