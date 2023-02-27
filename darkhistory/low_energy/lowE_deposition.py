@@ -59,6 +59,13 @@ def compute_fs(MEDEA_interp, elec_spec, phot_spec, x, dE_dVdt_inj, dt, highengde
 
     # np.array syntax below needed so that a fresh copy of eng and N are passed to the
     # constructor, instead of simply a reference.
+    
+    if elec_spec.rs < 0:
+        raise ValueError('elec_spec.rs not set!')
+    if phot_spec.rs < 0:
+        raise ValueError('phot_spec.rs not set!')
+    if elec_spec.rs != phot_spec.rs:
+        raise ValueError('elec_spec.rs != phot_spec.rs')
 
     if method == 'no_He':
 
