@@ -2,7 +2,7 @@
 
 In additional to the data files needed for v1.0, this upgrade requires [additional data files](https://doi.org/10.5281/zenodo.7651517).
 
-The upgrades are described in a paper available at [arXiv:2303.????](https://arxiv.org/abs/2303.????), and examples of applications are given in [arXiv:2303.?????](https://arxiv.org/abs/2303.?????). Please cite these as well as [arXiv:1904.09296](https://arxiv.org/abs/1904.09296) if you use this version of DarkHistory in a scientific publication.
+The upgrades are described in a paper available at [arXiv:2303.07366](https://arxiv.org/abs/2303.07366), and examples of applications are given in [arXiv:2303.07370](https://arxiv.org/abs/2303.07370). Please cite these as well as [arXiv:1904.09296](https://arxiv.org/abs/1904.09296) if you use this version of DarkHistory in a scientific publication.
 
 # DarkHistory
 
