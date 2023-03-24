@@ -1,4 +1,4 @@
-# [DarkHistory v2.0](https://github.com/hongwanliu/DarkHistory/tree/lowengelec_upgrade), with improved treatment of low energy electrons and spectral distortions
+# [DarkHistory v2.0](https://github.com/hongwanliu/DarkHistory/releases/tag/v2.0.0), with improved treatment of low energy electrons and spectral distortions
 
 In additional to the data files needed for v1.0, this upgrade requires [additional data files](https://doi.org/10.5281/zenodo.7651517).
 
