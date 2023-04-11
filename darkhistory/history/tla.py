@@ -695,63 +695,78 @@ def get_history(
             xe_reion    = xe_reion_func(rs_vec)
             # Find where to solve the TLA. Must lie below reion_rs and 
             # have xe_reion > xe_no_reion.
+            
+            if np.all(xe_reion <= xe_no_reion):
+                # If xe_reion is smaller, ignore it.
+                soln = soln_no_reion
+                soln[:,1] = 0.5 + 0.5*np.tanh(soln[:,1])
+                soln[:,2] = chi/2 + chi/2*np.tanh(soln[:,2])
+                soln[:,3] = chi/2 + chi/2*np.tanh(soln[:,2])
+            else:
+                # Earliest redshift index where xe_reion > xe_no_reion. 
+                # min because redshift is in decreasing order.
+                where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
+                # Redshift index where rs_vec < reion_rs. 
+                where_rs = np.min(np.argwhere(rs_vec < reion_rs))
+                # Start at the later redshift, i.e. the larger index. 
+                where_start = np.max([where_xe, where_rs])
+                # Define the boolean mask.
+                where_new_soln = (np.arange(rs_vec.size) >= where_start)
 
-            # Earliest redshift index where xe_reion > xe_no_reion. 
-            # min because redshift is in decreasing order.
-            where_xe = np.min(np.argwhere(xe_reion > xe_no_reion))
-            # Redshift index where rs_vec < reion_rs. 
-            where_rs = np.min(np.argwhere(rs_vec < reion_rs))
-            # Start at the later redshift, i.e. the larger index. 
-            where_start = np.max([where_xe, where_rs])
-            # Define the boolean mask.
-            where_new_soln = (np.arange(rs_vec.size) >= where_start)
+                # Find the respective redshift arrays. 
+                rs_above_std_xe_vec = rs_vec[where_new_soln]
+                rs_below_std_xe_vec = rs_vec[~where_new_soln]
+                # Append the last redshift before reionization model.
+                added_init_step_flag = False
+                if len(rs_below_std_xe_vec) > 0: # don't if empty
+                    rs_above_std_xe_vec = np.insert(
+                        rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
+                    )
+                    added_init_step_flag = True
 
-
-            # Find the respective redshift arrays. 
-            rs_above_std_xe_vec = rs_vec[where_new_soln]
-            rs_below_std_xe_vec = rs_vec[~where_new_soln]
-            # Append the last redshift before reionization model. 
-            rs_above_std_xe_vec = np.insert(
-                rs_above_std_xe_vec, 0, rs_below_std_xe_vec[-1]
-            )
-
-            # Define the solution array. Get the entries from soln_no_reion.
-            soln = np.zeros_like(soln_no_reion)
-            # Copy Tm, xHII, xHeII only before reionization.
-            soln[~where_new_soln, :3] = soln_no_reion[~where_new_soln, :3]
-            # Copy xHeIII entirely with no reionization for now.
-            soln[:, 3] = soln_no_reion[:, 3]
-            # Convert to xe.
-            soln[~where_new_soln, 1] = 0.5 + 0.5*np.tanh(
-                soln[~where_new_soln, 1]
-            )
-            soln[~where_new_soln, 2] = chi/2 + chi/2*np.tanh(
-                soln[~where_new_soln, 2]
-            )
-            soln[:, 3] = chi/2 + chi/2*np.tanh(soln[:, 3])
-
-
-            # Solve for all subsequent redshifts. 
-            if rs_above_std_xe_vec.size > 0:
-                init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
-                soln_with_reion = odeint(
-                    tla_reion_fixed_xe, init_cond_fixed_xe, 
-                    rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol, 
-                    tfirst=True
+                # Define the solution array. Get the entries from soln_no_reion.
+                soln = np.zeros_like(soln_no_reion)
+                # Copy Tm, xHII, xHeII only before reionization.
+                soln[~where_new_soln, :3] = soln_no_reion[~where_new_soln, :3]
+                # Copy xHeIII entirely with no reionization for now.
+                soln[:, 3] = soln_no_reion[:, 3]
+                # Convert to xe.
+                soln[~where_new_soln, 1] = 0.5 + 0.5*np.tanh(
+                    soln[~where_new_soln, 1]
                 )
-                # Remove the initial step, save to soln.
-                soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:])
-                # Put in the solutions for xHII and xHeII. 
-                soln[where_new_soln, 1] = xe_reion_func(
-                    rs_vec[where_new_soln]
-                ) * (1. / (1. + phys.chi))
-                soln[where_new_soln, 2] = xe_reion_func(
-                    rs_vec[where_new_soln]
-                ) * (phys.chi / (1. + phys.chi))
+                soln[~where_new_soln, 2] = chi/2 + chi/2*np.tanh(
+                    soln[~where_new_soln, 2]
+                )
+                soln[:, 3] = chi/2 + chi/2*np.tanh(soln[:, 3])
+
+                # Solve for all subsequent redshifts. 
+                if rs_above_std_xe_vec.size > 0:
+                    if np.any(~where_new_soln):
+                        init_cond_fixed_xe = soln[~where_new_soln, 0][-1]
+                    else:
+                        init_cond_fixed_xe = _init_cond
+                    soln_with_reion = odeint(
+                        tla_reion_fixed_xe, init_cond_fixed_xe, 
+                        rs_above_std_xe_vec, mxstep=mxstep, rtol=rtol, 
+                        tfirst=True
+                    )
+                    if added_init_step_flag:
+                        # Remove the initial step, save to soln.
+                        soln[where_new_soln, 0] = np.squeeze(soln_with_reion[1:, 0])
+                    else:
+                        # This means rs_below_std_xe_vec is emtpy. Setting all of the soln array
+                        soln[:, 0] = soln_with_reion[:, 0]
+                    # Put in the solutions for xHII and xHeII. 
+                    soln[where_new_soln, 1] = xe_reion_func(
+                        rs_vec[where_new_soln]
+                    ) * (1. / (1. + phys.chi))
+                    soln[where_new_soln, 2] = xe_reion_func(
+                        rs_vec[where_new_soln]
+                    ) * (phys.chi / (1. + phys.chi))
 
         # Convert from log_T_m to T_m
         soln[:,0] = np.exp(soln[:,0])
-
+        
         return soln
 
     else:
