@@ -7,6 +7,7 @@ import numpy as np
 from numpy.linalg import matrix_power
 import pickle
 import time
+import logging
 
 # from config import data_path, photeng, eleceng
 # from tf_data import *
@@ -49,12 +50,16 @@ def evolve(
 
     Parameters
     -----------
-    in_spec_elec : :class:`.Spectrum`, optional
+    in_spec_elec : :class:`.Spectrum` or function, optional
         Spectrum per injection event into electrons. *in_spec_elec.rs*
         of the :class:`.Spectrum` must be the initial redshift. 
-    in_spec_phot : :class:`.Spectrum`, optional
+        Alternatively, a function taking :math:`(1+z)` as input and output a
+        :class:`.Spectrum` object with the corresponding redshift.
+    in_spec_phot : :class:`.Spectrum` or function, optional
         Spectrum per injection event into photons. *in_spec_phot.rs* 
         of the :class:`.Spectrum` must be the initial redshift. 
+        Alternatively, a function taking :math:`(1+z)` as input and output a
+        :class:`.Spectrum` object with the corresponding redshift.
     rate_func_N : function, optional
         Function returning number of injection events per volume per time, with redshift :math:`(1+z)` as an input.  
     rate_func_eng : function, optional
@@ -212,6 +217,7 @@ def evolve(
     #####################################
     
     timer_start = time.time()
+    USE_IN_SPEC_FUNC = False
 
     # Handle the case where a DM process is specified. 
     if DM_process == 'swave':
@@ -247,7 +253,7 @@ def evolve(
                 * struct_boost(rs)
             )
 
-    if DM_process == 'decay':
+    elif DM_process == 'decay':
         if lifetime is None or start_rs is None:
             raise ValueError(
                 'lifetime and start_rs must be specified.'
@@ -279,6 +285,45 @@ def evolve(
             )
         def rate_func_eng(rs):
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
+        
+    elif callable(in_spec_phot) and callable(in_spec_elec):
+        
+        USE_IN_SPEC_FUNC = True
+        
+        if start_rs is None:
+            raise ValueError(
+                'start_rs must be specified.'
+            )
+            
+        # Make shallow copies
+        in_spec_elec_func = in_spec_elec
+        in_spec_phot_func = in_spec_phot
+        
+        # Get initial input spectra
+        in_spec_elec = in_spec_elec_func(start_rs)
+        in_spec_phot = in_spec_phot_func(start_rs)
+        if in_spec_elec.rs != start_rs or in_spec_phot.rs != start_rs:
+            raise ValueError(
+                "must set output Spectrum objects' rs consistently."
+            )
+        in_spec_elec.switch_spec_type('N')
+        in_spec_phot.switch_spec_type('N')
+        
+        # Rebin if necessary
+        if not (np.array_equal(in_spec_elec.eng, eleceng) and
+                np.array_equal(in_spec_phot.eng, photeng)):
+            logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
+            in_spec_elec.rebin(eleceng)
+            in_spec_phot.rebin(photeng)
+            
+        if struct_boost is None:
+            def struct_boost(rs):
+                return 1.
+            
+        # User must define rate_func_N and rate_func_eng consistently.
+        
+    else: # custom injection spectrum with fixed spectral shape
+        pass # User must define rate_func_N and rate_func_eng consistently.
     
     #####################################
     # Input Checks                      #
@@ -447,7 +492,25 @@ def evolve(
             lowengphot_spec_at_rs  = in_spec_phot*0
             lowengelec_spec_at_rs  = in_spec_elec*0
             highengdep_at_rs       = np.zeros(4)
+        
+        if USE_IN_SPEC_FUNC and rs != start_rs:
+            # Except for first step, remake in_spec_elec/phot if necessary
+            in_spec_phot = in_spec_phot_func(rs)
+            in_spec_elec = in_spec_elec_func(rs)
 
+            if in_spec_elec.rs != rs or in_spec_phot.rs != rs:
+                raise ValueError(
+                    "must set output Spectrum objects' rs consistently."
+                )
+            in_spec_elec.switch_spec_type('N')
+            in_spec_phot.switch_spec_type('N')
+
+            # Rebin if necessary
+            if not (np.array_equal(in_spec_elec.eng, eleceng) and
+                    np.array_equal(in_spec_phot.eng, photeng)):
+                logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
+                in_spec_elec.rebin(eleceng)
+                in_spec_phot.rebin(photeng)
 
         #####################################################################
         #####################################################################
