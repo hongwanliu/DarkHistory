@@ -387,9 +387,9 @@ def evolve(
 
     # tqdm set-up.
     if use_tqdm:
-        from tqdm.auto import tqdm # Auto detect notebook or terminal.
+        from tqdm import tqdm # Auto detect notebook or terminal.
         pbar = tqdm(
-            total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
+            total=int(np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)), position=0
         ) 
 
     def norm_fac(rs):

@@ -241,7 +241,7 @@ def get_history(
 
     # Define conversion functions between x and y. 
     def xHII(yHII):
-            return 0.5 + 0.5*np.tanh(yHII)
+        return 0.5 + 0.5*np.tanh(yHII)
     def xHeII(yHeII):
         return chi/2 + chi/2*np.tanh(yHeII)
     def xHeIII(yHeIII):
