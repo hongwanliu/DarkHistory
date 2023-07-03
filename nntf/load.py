@@ -4,7 +4,7 @@
 import sys
 sys.path.append('..')
 
-from config import data_path
+from darkhistory.config import data_path
 from nntf.nntf import *
 
 glob_dep_nntfs = None

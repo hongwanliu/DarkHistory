@@ -8,7 +8,7 @@ import darkhistory.utilities as utils
 import darkhistory.spec.transferfunction as tf
 import darkhistory.spec.spectools as spectools
 
-from config import load_data
+from darkhistory.config import load_data
 
 from darkhistory.spec.spectrum import Spectrum
 

@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 from scipy.special import zeta
 
 # from config import data_path
-from config import load_data
+from darkhistory.config import load_data
 
 #############################################################################
 #############################################################################

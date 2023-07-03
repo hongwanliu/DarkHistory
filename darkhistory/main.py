@@ -12,7 +12,7 @@ import logging
 # from config import data_path, photeng, eleceng
 # from tf_data import *
 
-from config import load_data
+from darkhistory.config import load_data
 
 import darkhistory.physics as phys
 

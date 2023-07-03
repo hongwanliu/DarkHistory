@@ -8,7 +8,7 @@ from tensorflow import keras
 import sys
 sys.path.append('..')
 
-from config import load_data
+from darkhistory.config import load_data
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
