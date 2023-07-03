@@ -9,9 +9,9 @@ import numpy as np
 import json
 import pickle
 
-from scipy.interpolate import PchipInterpolator
-from scipy.interpolate import pchip_interpolate
-from scipy.interpolate import RegularGridInterpolator
+import scipy
+from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
+scipy.interpolate.interpolate.RegularGridInterpolator = scipy.interpolate.RegularGridInterpolator # for compatibility with old data files
 
 
 # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
