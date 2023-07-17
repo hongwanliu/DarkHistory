@@ -43,7 +43,8 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True, 
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
-    tf_mode='table', verbose=0
+    tf_mode='table', verbose=0,
+    custom_dlnz=False
 ):
     """
     Main function computing histories and spectra. 
@@ -474,12 +475,24 @@ def evolve(
     #########################################################################
     
     timer_start = time.time()
+    if custom_dlnz:
+        custom_dlnz_warning = True
 
     while rs > end_rs:
 
         # Update tqdm. 
         if use_tqdm:
             pbar.update(1)
+            
+        # Custom dlnz
+        if custom_dlnz:
+            if rs < 49:
+                coarsen_factor = 1
+                dlnz = np.log(1.01)
+                dt = dlnz * coarsen_factor/phys.hubble(rs)
+                if custom_dlnz_warning:
+                    logging.warning('Overwriting coarsen_factor and dlnz!')
+                    custom_dlnz_warning = False
         
         #############################
         # First Step Special Cases  #
