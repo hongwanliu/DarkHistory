@@ -172,7 +172,7 @@ class PchipInterpolator2D:
         )
     
 
-def load_data(data_type, verbose=1):
+def load_data(data_type, verbose=1, prefix=None):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -218,6 +218,8 @@ def load_data(data_type, verbose=1):
     global glob_dep_ctf_data, glob_tf_helper_data
     global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
     
+    if prefix is not None:
+        data_path = prefix
     if data_path is None or not os.path.isdir(data_path):
         print('NOTE: enter data directory in config.py or set DH_DATA_DIR environment variable to avoid this step.')
         data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
