@@ -172,7 +172,7 @@ class PchipInterpolator2D:
         )
     
 
-def load_data(data_type, verbose=1, prefix=None):
+def load_data(data_type, verbose=1, prefix=None, force_reload=False):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -229,7 +229,7 @@ def load_data(data_type, verbose=1, prefix=None):
     
     if data_type == 'binning':
 
-        if glob_binning_data is None:
+        if glob_binning_data is None or force_reload:
             
             try:
                 if use_v1_0_data:
@@ -252,7 +252,7 @@ def load_data(data_type, verbose=1, prefix=None):
     
     elif data_type == 'dep_tf':
 
-        if glob_dep_tf_data is None:
+        if glob_dep_tf_data is None or force_reload:
 
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
@@ -291,7 +291,7 @@ def load_data(data_type, verbose=1, prefix=None):
     
     elif data_type == 'hed_tf':
 
-        if glob_dep_tf_data is None:
+        if glob_dep_tf_data is None or force_reload:
 
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
@@ -309,7 +309,7 @@ def load_data(data_type, verbose=1, prefix=None):
     
     elif data_type == 'tf_helper':
         
-        if glob_tf_helper_data is None:
+        if glob_tf_helper_data is None or force_reload:
             
             try:
                 tf_E_interp   = pickle.load( open(data_path+'/tf_E_interp.raw', 'rb') )
@@ -332,7 +332,7 @@ def load_data(data_type, verbose=1, prefix=None):
 
     elif data_type == 'ics_tf':
 
-        if glob_ics_tf_data is None:
+        if glob_ics_tf_data is None or force_reload:
 
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
@@ -363,7 +363,7 @@ def load_data(data_type, verbose=1, prefix=None):
     
     elif data_type == 'struct':
 
-        if glob_struct_data is None:
+        if glob_struct_data is None or force_reload:
 
             boost_data = np.loadtxt(
                 open(data_path+'/boost_data.txt', 'rb')
@@ -383,7 +383,7 @@ def load_data(data_type, verbose=1, prefix=None):
 
     elif data_type == 'hist':
 
-        if glob_hist_data is None:
+        if glob_hist_data is None or force_reload:
 
             soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
 
@@ -398,7 +398,7 @@ def load_data(data_type, verbose=1, prefix=None):
 
     elif data_type == 'f':
 
-        if glob_f_data is None:
+        if glob_f_data is None or force_reload:
 
             phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
             phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
@@ -434,7 +434,7 @@ def load_data(data_type, verbose=1, prefix=None):
 
     elif data_type == 'pppc':
 
-        if glob_pppc_data is None:
+        if glob_pppc_data is None or force_reload:
 
             coords_file_name = (
                 data_path+'/dlNdlxIEW_coords_table.txt'

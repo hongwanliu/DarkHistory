@@ -44,7 +44,8 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
-    custom_dlnz=False
+    custom_dlnz=False,
+    debug=False
 ):
     """
     Main function computing histories and spectra. 
@@ -228,7 +229,10 @@ def evolve(
             )
         
         # Get input spectra from PPPC. 
-        in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
+        if mDM < eleceng[1]:
+            in_spec_elec = pppc.get_pppc_spec(1, eleceng, primary, 'elec') * 0
+        else:
+            in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
         in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
         # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs
@@ -656,7 +660,36 @@ def evolve(
                     phys.chi - phys.xHeII_std(rs), 
                     phys.xHeII_std(rs)
             ])
+        
+        if debug:
+            if not backreaction:
+                # Interpolate using the baseline solution.
+                xHII_to_interp  = phys.xHII_std(rs)
+                xHeII_to_interp = phys.xHeII_std(rs)
+            else:
+                # Interpolate using the current xHII, xHeII values.
+                xHII_to_interp  = x_arr[-1,0]
+                xHeII_to_interp = x_arr[-1,1]
+            #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            rs_to_interp = rs
 
+            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
+                get_tf(
+                    rs, xHII_to_interp, xHeII_to_interp,
+                    dlnz, coarsen_factor=coarsen_factor
+                )
+            )
+
+            # Get the spectra for the next step by applying the 
+            # transfer functions. 
+            highengdep_at_rs = np.dot(
+                np.swapaxes(highengdep_arr, 0, 1),
+                out_highengphot_specs[-1].N
+            )
+            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+        
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
@@ -737,24 +770,25 @@ def evolve(
         
         if tf_mode == 'table':
             
-            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-            
-            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-                get_tf(
-                    rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=coarsen_factor
+            if not debug:
+                rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+
+                highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
+                    get_tf(
+                        rs, xHII_to_interp, xHeII_to_interp,
+                        dlnz, coarsen_factor=coarsen_factor
+                    )
                 )
-            )
-            
-            # Get the spectra for the next step by applying the 
-            # transfer functions. 
-            highengdep_at_rs = np.dot(
-                np.swapaxes(highengdep_arr, 0, 1),
-                out_highengphot_specs[-1].N
-            )
-            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+
+                # Get the spectra for the next step by applying the 
+                # transfer functions. 
+                highengdep_at_rs = np.dot(
+                    np.swapaxes(highengdep_arr, 0, 1),
+                    out_highengphot_specs[-1].N
+                )
+                highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
+                lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
+                lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
             
         elif tf_mode == 'nn':
             
