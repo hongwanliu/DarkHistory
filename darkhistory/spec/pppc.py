@@ -112,16 +112,16 @@ def get_pppc_spec(mDM, eng, pri, sec, decay=False):
             eng_phot = mDM
         else:
             eng_phot = mDM/2
-        # Find the correct bin in photeng.
-        eng_to_inj = eng[eng < eng_phot][-1]
-        # Place 2*eng_phot worth of photons into that bin. Use
-        # rebinning to accomplish this. 
+        
         if sec == 'elec':
             return Spectrum(
                 eng, np.zeros_like(eng), spec_type='dNdE'
             )
-
         elif sec == 'phot':
+            # Find the correct bin in photeng.
+            eng_to_inj = eng[eng < eng_phot][-1]
+            # Place 2*eng_phot worth of photons into that bin. Use
+            # rebinning to accomplish this. 
             return rebin_N_arr(
                 np.array([2 * eng_phot / eng_to_inj]), 
                 np.array([eng_to_inj]), 
