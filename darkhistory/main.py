@@ -45,7 +45,9 @@ def evolve(
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
     custom_dlnz=False,
-    debug=False
+    debug=False,
+    debug_dt=None,
+    debug_turnoff_injection_rs=None,
 ):
     """
     Main function computing histories and spectra. 
@@ -490,10 +492,11 @@ def evolve(
             
         # Custom dlnz
         if custom_dlnz:
-            if rs < 49:
+            if rs < 45.001:
                 coarsen_factor = 1
                 dlnz = np.log(1.01)
-                dt = dlnz * coarsen_factor/phys.hubble(rs)
+                dt_dh = dlnz * coarsen_factor/phys.hubble(rs)
+                print(debug_dt, dt_dh)
                 if custom_dlnz_warning:
                     logging.warning('Overwriting coarsen_factor and dlnz!')
                     custom_dlnz_warning = False
@@ -669,7 +672,8 @@ def evolve(
             else:
                 # Interpolate using the current xHII, xHeII values.
                 xHII_to_interp  = x_arr[-1,0]
-                xHeII_to_interp = x_arr[-1,1]
+                #xHeII_to_interp = x_arr[-1,1]
+                xHeII_to_interp = xHII_to_interp * phys.chi # make sure xHeII=xHII
             #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             rs_to_interp = rs
 
@@ -679,6 +683,9 @@ def evolve(
                     dlnz, coarsen_factor=coarsen_factor
                 )
             )
+
+            dt = debug_dt
+            logging.warning('Overwriting dt!')
 
             # Get the spectra for the next step by applying the 
             # transfer functions. 
@@ -695,12 +702,24 @@ def evolve(
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
             highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
+        
+        if debug_turnoff_injection_rs is not None:
+            if rs < debug_turnoff_injection_rs:
+                f_raw = [[0., 0., 0., 0., 0.], [0., 0., 0., 0., 0.]]
 
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
         f_high = np.concatenate((f_high, [f_raw[1]]))
-
-        # print(f_low, f_high)
+        
+        # if debug and rs < 50:
+        #     print(rs, xHII_to_interp, xHeII_to_interp)
+        #     print(f'hep.rs : {highengphot_spec_at_rs.rs}')
+        #     print(f'hep [eV/Bavg] : {highengphot_spec_at_rs.toteng()}')
+        #     print(f'hed (ion exc heat cont) [eV/Bavg] : {highengdep_at_rs*dt}')
+        #     print(f'eng inj rate un : {rate_func_eng_unclustered(rs)/(phys.nB*rs**3)}')
+        #     print(f'struct boost : {struct_boost(rs)}')
+        #     print(f'eng inj rate : {rate_func_eng(rs)/(phys.nB*rs**3)}')
+        #     print(f'dt {dt}')
 
         # Save CMB upscattered rate and high-energy deposition rate.
         highengdep_grid = np.concatenate(
@@ -751,6 +770,9 @@ def evolve(
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
+        
+        # if debug and rs < 50:
+        #     print(f'Tk : {new_vals[-1,0]}')
 
         #####################################################################
         #####################################################################
@@ -771,7 +793,8 @@ def evolve(
         if tf_mode == 'table':
             
             if not debug:
-                rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+                #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+                rs_to_interp = rs
 
                 highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                     get_tf(
