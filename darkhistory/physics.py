@@ -65,22 +65,25 @@ ele_compton  = 2*np.pi*hbar * c / me
 # Densities and Hubble                  #
 #########################################
 
-h    = 0.6736
+from astropy.cosmology import Planck18 as cosmo
+from astropy import constants as const
+
+h    = cosmo.h
 """ h parameter."""
-H0   = 100*h*3.241e-20
+H0   = cosmo.H0.to('1/s').value
 """ Hubble parameter today in s\ :sup:`-1`\ ."""
 
-omega_m      = 0.3153
+omega_m      = cosmo.Om0
 """ Omega of all matter today."""
-omega_rad    = 8e-5
+omega_rad    = cosmo.Ogamma0 # FIX!!!!
 """ Omega of radiation today."""
-omega_lambda = 0.6847
+omega_lambda = cosmo.Ode0
 """ Omega of dark energy today."""
-omega_baryon = 0.02237/(h**2)
+omega_baryon = cosmo.Ob0
 """ Omega of baryons today."""
-omega_DM      = 0.1200/(h**2)
+omega_DM      = cosmo.Odm0
 """ Omega of dark matter today."""
-rho_crit     = 1.05371e4*(h**2)
+rho_crit     = (cosmo.critical_density0 * const.c**2).to('eV/cm^3').value
 """ Critical density of the universe in eV cm\ :sup:`-3`\ . 
 
 See [1] for the definition. This is a mass density, with mass measured in eV.
