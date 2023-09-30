@@ -44,9 +44,7 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
-    custom_dlnz=False,
-    debug=False,
-    debug_dt=None,
+    cross_check_21cmfast=False,
     debug_turnoff_injection_rs=None,
 ):
     """
@@ -481,8 +479,11 @@ def evolve(
     #########################################################################
     
     timer_start = time.time()
-    if custom_dlnz:
-        custom_dlnz_warning = True
+    if cross_check_21cmfast:
+        logging.warning('Cross checking 21cmfast!')
+        new_tf_start_rs = 49.
+        cross_check_21cmfast_warning = True
+        
 
     while rs > end_rs:
 
@@ -490,16 +491,18 @@ def evolve(
         if use_tqdm:
             pbar.update(1)
             
-        # Custom dlnz
-        if custom_dlnz:
-            if rs < 45.001:
-                coarsen_factor = 1
-                dlnz = np.log(1.01)
-                dt_dh = dlnz * coarsen_factor/phys.hubble(rs)
-                print(debug_dt, dt_dh)
-                if custom_dlnz_warning:
-                    logging.warning('Overwriting coarsen_factor and dlnz!')
-                    custom_dlnz_warning = False
+        # cross_check_21cmfast
+        if cross_check_21cmfast and rs < new_tf_start_rs:
+
+            coarsen_factor = 1
+            dlnz = np.log(1.01)
+            dt = dlnz * coarsen_factor/phys.hubble(rs)
+
+            if cross_check_21cmfast_warning:
+                logging.warning(f'Setting coarsen_factor={coarsen_factor}!')
+                logging.warning(f'Setting dlnz={dlnz}!')
+            cross_check_21cmfast_warning = False
+
         
         #############################
         # First Step Special Cases  #
@@ -664,7 +667,9 @@ def evolve(
                     phys.xHeII_std(rs)
             ])
         
-        if debug:
+
+        if cross_check_21cmfast: # inject first
+
             if not backreaction:
                 # Interpolate using the baseline solution.
                 xHII_to_interp  = phys.xHII_std(rs)
@@ -684,9 +689,6 @@ def evolve(
                 )
             )
 
-            dt = debug_dt
-            logging.warning('Overwriting dt!')
-
             # Get the spectra for the next step by applying the 
             # transfer functions. 
             highengdep_at_rs = np.dot(
@@ -696,12 +698,29 @@ def evolve(
             highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
             lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+
+            # TMP:: check inputs
+            # print('rs = ', rs)
+            # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
+            # print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
+            # print('x_vec_for_f = ', x_vec_for_f)
+            # print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
+            # print('dt = ', dt)
+            # print()
+            # print('where', np.where(out_highengphot_specs[-1].N!=0.))
+            # print('highengdep_at_rs = ', highengdep_at_rs)
+            # print('compute_fs_method = ', compute_fs_method)
+            # print('cross_check = ', cross_check)
+            # print('-----------')
         
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
             highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
+
+        # if cross_check_21cmfast:
+        #     print("f_raw = ", f_raw)
         
         if debug_turnoff_injection_rs is not None:
             if rs < debug_turnoff_injection_rs:
@@ -710,16 +729,6 @@ def evolve(
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
         f_high = np.concatenate((f_high, [f_raw[1]]))
-        
-        # if debug and rs < 50:
-        #     print(rs, xHII_to_interp, xHeII_to_interp)
-        #     print(f'hep.rs : {highengphot_spec_at_rs.rs}')
-        #     print(f'hep [eV/Bavg] : {highengphot_spec_at_rs.toteng()}')
-        #     print(f'hed (ion exc heat cont) [eV/Bavg] : {highengdep_at_rs*dt}')
-        #     print(f'eng inj rate un : {rate_func_eng_unclustered(rs)/(phys.nB*rs**3)}')
-        #     print(f'struct boost : {struct_boost(rs)}')
-        #     print(f'eng inj rate : {rate_func_eng(rs)/(phys.nB*rs**3)}')
-        #     print(f'dt {dt}')
 
         # Save CMB upscattered rate and high-energy deposition rate.
         highengdep_grid = np.concatenate(
@@ -771,7 +780,7 @@ def evolve(
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
         
-        # if debug and rs < 50:
+        # if cross_check_21cmfast and rs < 50:
         #     print(f'Tk : {new_vals[-1,0]}')
 
         #####################################################################
@@ -792,7 +801,7 @@ def evolve(
         
         if tf_mode == 'table':
             
-            if not debug:
+            if not cross_check_21cmfast:
                 #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
                 rs_to_interp = rs
 
