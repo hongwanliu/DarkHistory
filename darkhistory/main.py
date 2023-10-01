@@ -2,7 +2,7 @@
 
 """
 
-
+import os
 import numpy as np
 from numpy.linalg import matrix_power
 import pickle
@@ -47,6 +47,8 @@ def evolve(
     cross_check_21cmfast=False,
     debug_turnoff_injection_rs=None,
     debug_no_bath=False,
+    debug_bath_point_injection=False,
+    debug_use_tf_dt=False,
 ):
     """
     Main function computing histories and spectra. 
@@ -484,6 +486,10 @@ def evolve(
         logging.warning('Cross checking 21cmfast!')
         new_tf_start_rs = 49.
         cross_check_21cmfast_warning = True
+        bath_point_injected_flag = False
+        if debug_use_tf_dt:
+            dts = np.load(os.environ['DM21CM_DATA_DIR']+'/tf/zf01/phot/dt_rxneo.npy')
+            rs_abscs = np.array([ 5.        ,  6.45774833,  8.34050269, 10.77217345, 13.91279701, 17.96906832, 23.20794417, 29.97421252, 38.71318413, 50.        ])
         
 
     while rs > end_rs:
@@ -498,6 +504,10 @@ def evolve(
             coarsen_factor = 1
             dlnz = np.log(1.01)
             dt = dlnz * coarsen_factor/phys.hubble(rs)
+
+            if debug_use_tf_dt:
+                dt_dh = dt
+                dt = np.interp(rs, rs_abscs, dts[:,1])
 
             if cross_check_21cmfast_warning:
                 logging.warning(f'Setting coarsen_factor={coarsen_factor}!')
@@ -671,15 +681,9 @@ def evolve(
 
         if cross_check_21cmfast: # inject first
 
-            if not backreaction:
-                # Interpolate using the baseline solution.
-                xHII_to_interp  = phys.xHII_std(rs)
-                xHeII_to_interp = phys.xHeII_std(rs)
-            else:
-                # Interpolate using the current xHII, xHeII values.
-                xHII_to_interp  = x_arr[-1,0]
-                #xHeII_to_interp = x_arr[-1,1]
-                xHeII_to_interp = xHII_to_interp * phys.chi # make sure xHeII=xHII
+            xHII_to_interp  = x_arr[-1,0]
+            #xHeII_to_interp = x_arr[-1,1]
+            xHeII_to_interp = xHII_to_interp * phys.chi # make sure xHeII=xHII
             #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             rs_to_interp = rs
 
@@ -700,19 +704,31 @@ def evolve(
             lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
 
+            if debug_bath_point_injection:
+                if not bath_point_injected_flag:
+                    print(f'rs={rs}, bath point injection')
+                    highengphot_spec_at_rs.N *= 0.
+                    lowengphot_spec_at_rs.N *= 0.
+                    lowengelec_spec_at_rs.N *= 0.
+                    highengphot_spec_at_rs.N[307] = 1e-6
+                    bath_point_injected_flag = True
+                    print(f'bath energy', highengphot_spec_at_rs.toteng())
+                    print(f'eng per inj', in_spec_phot.toteng())
+                    print(f'inj_per_Bavg', norm_fac(rs, dt))
+                    print(f'inj eng', in_spec_phot.toteng() * norm_fac(rs, dt))
             if debug_no_bath:
                 highengphot_spec_at_rs *= 0.
 
             # TMP:: check inputs
-            print('rs = ', rs)
-            print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
-            print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
-            print('x_vec_for_f = ', x_vec_for_f)
-            print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
-            print('dt = ', dt)
-            print('highengdep_at_rs = ', highengdep_at_rs)
-            print('compute_fs_method = ', compute_fs_method)
-            print('cross_check = ', cross_check)
+            # print('rs = ', rs)
+            # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
+            # print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
+            # print('x_vec_for_f = ', x_vec_for_f)
+            # print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
+            # print('dt = ', dt)
+            # print('highengdep_at_rs = ', highengdep_at_rs)
+            # print('compute_fs_method = ', compute_fs_method)
+            # print('cross_check = ', cross_check)
         
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
@@ -720,9 +736,9 @@ def evolve(
             highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
 
-        if cross_check_21cmfast:
-            print("f_raw = ", f_raw)
-            print('-----------')
+        # if cross_check_21cmfast:
+        #     print("f_raw = ", f_raw)
+        #     print('-----------')
         
         if debug_turnoff_injection_rs is not None:
             if rs < debug_turnoff_injection_rs:
