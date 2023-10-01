@@ -46,6 +46,7 @@ def evolve(
     tf_mode='table', verbose=0,
     cross_check_21cmfast=False,
     debug_turnoff_injection_rs=None,
+    debug_no_bath=False,
 ):
     """
     Main function computing histories and spectra. 
@@ -397,11 +398,11 @@ def evolve(
             total=int(np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)), position=0
         ) 
 
-    def norm_fac(rs):
+    def norm_fac(rs, dt):
         # Normalization to convert from per injection event to 
         # per baryon per dlnz step. 
         return rate_func_N(rs) * (
-            dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
+            dt / (phys.nB * rs**3)
         )
 
     def rate_func_eng_unclustered(rs):
@@ -576,28 +577,28 @@ def evolve(
 
             # Add this to lowengelec_at_rs. 
             lowengelec_spec_at_rs += (
-                elec_processes_lowengelec_spec*norm_fac(rs)
+                elec_processes_lowengelec_spec*norm_fac(rs, dt)
             )
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
             deposited_ion  = np.dot(
-                deposited_ion_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_ion_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
             deposited_exc  = np.dot(
-                deposited_exc_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_exc_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
             deposited_heat = np.dot(
-                deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
+                deposited_heat_arr, in_spec_elec.N*norm_fac(rs, dt)
             )
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
             deposited_ICS  = np.dot(
-                deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
 
             #######################################
@@ -620,9 +621,9 @@ def evolve(
         if elec_processes:
             highengphot_spec_at_rs += (
                 in_spec_phot + ics_phot_spec + positronium_phot_spec
-            ) * norm_fac(rs)
+            ) * norm_fac(rs, dt)
         else:
-            highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
+            highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
 
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
@@ -699,19 +700,19 @@ def evolve(
             lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
 
+            if debug_no_bath:
+                highengphot_spec_at_rs *= 0.
+
             # TMP:: check inputs
-            # print('rs = ', rs)
-            # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
-            # print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
-            # print('x_vec_for_f = ', x_vec_for_f)
-            # print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
-            # print('dt = ', dt)
-            # print()
-            # print('where', np.where(out_highengphot_specs[-1].N!=0.))
-            # print('highengdep_at_rs = ', highengdep_at_rs)
-            # print('compute_fs_method = ', compute_fs_method)
-            # print('cross_check = ', cross_check)
-            # print('-----------')
+            print('rs = ', rs)
+            print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
+            print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
+            print('x_vec_for_f = ', x_vec_for_f)
+            print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
+            print('dt = ', dt)
+            print('highengdep_at_rs = ', highengdep_at_rs)
+            print('compute_fs_method = ', compute_fs_method)
+            print('cross_check = ', cross_check)
         
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
@@ -719,8 +720,9 @@ def evolve(
             highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
 
-        # if cross_check_21cmfast:
-        #     print("f_raw = ", f_raw)
+        if cross_check_21cmfast:
+            print("f_raw = ", f_raw)
+            print('-----------')
         
         if debug_turnoff_injection_rs is not None:
             if rs < debug_turnoff_injection_rs:
