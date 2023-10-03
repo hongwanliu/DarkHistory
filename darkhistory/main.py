@@ -3,6 +3,7 @@
 """
 
 import os
+import sys
 import numpy as np
 from numpy.linalg import matrix_power
 import pickle
@@ -490,6 +491,8 @@ def evolve(
         if debug_use_tf_dt:
             dts = np.load(os.environ['DM21CM_DATA_DIR']+'/tf/zf01/phot/dt_rxneo.npy')
             rs_abscs = np.array([ 5.        ,  6.45774833,  8.34050269, 10.77217345, 13.91279701, 17.96906832, 23.20794417, 29.97421252, 38.71318413, 50.        ])
+        sys.path.append("/n/home07/yitians/dm21cm/DM21cm/build_tf")
+        from low_energy.lowE_deposition import compute_fs # use dm21cm's compute_fs
         
 
     while rs > end_rs:
@@ -694,6 +697,23 @@ def evolve(
                 )
             )
 
+            if debug_bath_point_injection:
+                if not bath_point_injected_flag:
+                    print(f'rs={rs}, bath point injection')
+                    highengphot_spec_at_rs.N *= 0.
+                    lowengphot_spec_at_rs.N *= 0.
+                    lowengelec_spec_at_rs.N *= 0.
+                    highengphot_spec_at_rs.N[407] = 1e-5
+                    highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
+                    print(np.where(highengphot_spec_at_rs.N > 0.))
+                    bath_point_injected_flag = True
+                    print(f'bath energy', highengphot_spec_at_rs.toteng())
+                    print(f'eng per inj', in_spec_phot.toteng())
+                    print(f'inj_per_Bavg', norm_fac(rs, dt))
+                    print(f'inj eng', in_spec_phot.toteng() * norm_fac(rs, dt))
+            if debug_no_bath:
+                highengphot_spec_at_rs *= 0.
+
             # Get the spectra for the next step by applying the 
             # transfer functions. 
             highengdep_at_rs = np.dot(
@@ -703,22 +723,18 @@ def evolve(
             highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
             lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+            highengphot_spec_at_rs.rs = rs # manually set rs
+            lowengphot_spec_at_rs.rs  = rs
+            lowengelec_spec_at_rs.rs  = rs
 
-            if debug_bath_point_injection:
-                if not bath_point_injected_flag:
-                    print(f'rs={rs}, bath point injection')
-                    highengphot_spec_at_rs.N *= 0.
-                    lowengphot_spec_at_rs.N *= 0.
-                    lowengelec_spec_at_rs.N *= 0.
-                    highengphot_spec_at_rs.N[307] = 1e-6
-                    bath_point_injected_flag = True
-                    print(f'bath energy', highengphot_spec_at_rs.toteng())
-                    print(f'eng per inj', in_spec_phot.toteng())
-                    print(f'inj_per_Bavg', norm_fac(rs, dt))
-                    print(f'inj eng', in_spec_phot.toteng() * norm_fac(rs, dt))
-            if debug_no_bath:
-                highengphot_spec_at_rs *= 0.
+            # redshift back for f calculation
+            # if not np.isclose(highengphot_spec_at_rs.rs, rs):
+            #     raise ValueError(f'highengphot_spec_at_rs.rs {highengphot_spec_at_rs.rs} != rs {rs}')
+            rs_for_f = highengphot_spec_at_rs.rs * np.exp(dlnz) # coarsen_factor = 1
+            highengphot_spec_at_rs.redshift(rs_for_f)
 
+            xH = x_arr[-1, 0]
+            x_vec_for_f = np.array([1-xH, phys.chi * (1-xH), phys.chi*xH])
             # TMP:: check inputs
             # print('rs = ', rs)
             # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
@@ -730,15 +746,32 @@ def evolve(
             # print('compute_fs_method = ', compute_fs_method)
             # print('cross_check = ', cross_check)
         
-        f_raw = compute_fs(
-            MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-            x_vec_for_f, rate_func_eng_unclustered(rs), dt,
-            highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
-        )
+        if cross_check_21cmfast:
+            f_raw = compute_fs(
+                MEDEA_interp=MEDEA_interp,
+                rs=rs,
+                x=x_vec_for_f,
+                elec_spec=lowengelec_spec_at_rs,
+                phot_spec=lowengphot_spec_at_rs,
+                dE_dVdt_inj=rate_func_eng_unclustered(rs),
+                dt=dt,
+                highengdep=highengdep_at_rs,
+                cmbloss=0, # turned off in darkhistory main as well
+                method='no_He',
+                cross_check=False,
+                ion_old=False
+            )
+        else:
+            f_raw = compute_fs(
+                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
+            )
 
-        # if cross_check_21cmfast:
-        #     print("f_raw = ", f_raw)
-        #     print('-----------')
+        if cross_check_21cmfast:
+            highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
+            # print("f_raw = ", f_raw)
+            # print('-----------')
         
         if debug_turnoff_injection_rs is not None:
             if rs < debug_turnoff_injection_rs:
