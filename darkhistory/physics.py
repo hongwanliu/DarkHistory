@@ -6,6 +6,7 @@ Throughout DarkHistory, we choose cm, s and eV as our system of units. Masses an
 
 import pickle
 import sys
+import logging
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -75,7 +76,7 @@ H0   = cosmo.H0.to('1/s').value
 
 omega_m      = cosmo.Om0
 """ Omega of all matter today."""
-omega_rad    = cosmo.Ogamma0 # FIX!!!!
+omega_rad    = cosmo.Ogamma0 # FIX!!!! and neutrino
 """ Omega of radiation today."""
 omega_lambda = cosmo.Ode0
 """ Omega of dark energy today."""
@@ -95,7 +96,9 @@ rho_baryon   = rho_crit*omega_baryon
 nB          = rho_baryon/mp
 """ Baryon number density in eV cm\ :sup:`-3`\ ."""
 
-YHe         = 0.245
+#YHe         = 0.245
+YHe         = 1e-6
+logging.warning("DarkHistory: It's all hydrogen now.")
 """Helium abundance by mass."""
 nH          = (1-YHe)*nB
 """ Atomic hydrogen number density in cm\ :sup:`-3`\ ."""

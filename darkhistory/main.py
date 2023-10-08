@@ -4,14 +4,16 @@
 
 import os
 import sys
-import numpy as np
-from numpy.linalg import matrix_power
 import pickle
 import time
 import logging
 
-# from config import data_path, photeng, eleceng
-# from tf_data import *
+import numpy as np
+from numpy.linalg import matrix_power
+from scipy import interpolate
+from astropy import constants as const
+from astropy import units as u
+
 
 from darkhistory.config import load_data
 
@@ -49,7 +51,7 @@ def evolve(
     debug_turnoff_injection_rs=None,
     debug_no_bath=False,
     debug_bath_point_injection=False,
-    debug_use_tf_dt=False,
+    debug_inject_ST_xray=False, # within cross_check_21cmfast
 ):
     """
     Main function computing histories and spectra. 
@@ -483,16 +485,33 @@ def evolve(
     #########################################################################
     
     timer_start = time.time()
-    if cross_check_21cmfast:
+    if cross_check_21cmfast: # XC-PRELOOP
         logging.warning('Cross checking 21cmfast!')
+
+        sys.path.append(os.environ['DM21CM_DIR'])
+        from dm21cm.utils import load_h5_dict
+        
         new_tf_start_rs = 49.
         cross_check_21cmfast_warning = True
         bath_point_injected_flag = False
-        if debug_use_tf_dt:
-            dts = np.load(os.environ['DM21CM_DATA_DIR']+'/tf/zf01/phot/dt_rxneo.npy')
-            rs_abscs = np.array([ 5.        ,  6.45774833,  8.34050269, 10.77217345, 13.91279701, 17.96906832, 23.20794417, 29.97421252, 38.71318413, 50.        ])
+        tf_version = 'zf01'
+
+        logging.warning('Using dts associated with transfer functions!')
+        dts = np.load(os.environ['DM21CM_DATA_DIR'] + f"/tf/{tf_version}/phot/dt_rxneo.npy")
+        
+        xc21_abscs = load_h5_dict(os.environ['DM21CM_DIR'] + f"/data/abscissas/abscs_{tf_version}.h5")
+        rs_abscs = xc21_abscs['rs']
+        #rs_abscs = np.array([ 5.        ,  6.45774833,  8.34050269, 10.77217345, 13.91279701, 17.96906832, 23.20794417, 29.97421252, 38.71318413, 50.        ])
         sys.path.append("/n/home07/yitians/dm21cm/DM21cm/build_tf")
         from low_energy.lowE_deposition import compute_fs # use dm21cm's compute_fs
+
+        if debug_inject_ST_xray:
+            res_dict = np.load(f"{os.environ['DM21CM_DIR']}/data/xraycheck/Interpolators_0926_2.npz", allow_pickle=True)
+            z_range, delta_range, r_range = res_dict['SFRD_Params']
+            st_sfrd_table =  res_dict['ST_SFRD_Table']
+            # Takes the redshift as `z`
+            # Returns the mean ST star formation rate density star formation rate density in [M_Sun / Mpc^3 / s]
+            ST_SFRD_Interpolator = interpolate.interp1d(z_range, st_sfrd_table)
         
 
     while rs > end_rs:
@@ -501,16 +520,12 @@ def evolve(
         if use_tqdm:
             pbar.update(1)
             
-        # cross_check_21cmfast
-        if cross_check_21cmfast and rs < new_tf_start_rs:
+        if cross_check_21cmfast and rs < new_tf_start_rs: # XC-LOOPSTART
 
             coarsen_factor = 1
             dlnz = np.log(1.01)
-            dt = dlnz * coarsen_factor/phys.hubble(rs)
-
-            if debug_use_tf_dt:
-                dt_dh = dt
-                dt = np.interp(rs, rs_abscs, dts[:,1])
+            # dt = dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
+            dt = np.interp(rs, rs_abscs, dts[:,1])
 
             if cross_check_21cmfast_warning:
                 logging.warning(f'Setting coarsen_factor={coarsen_factor}!')
@@ -682,7 +697,7 @@ def evolve(
             ])
         
 
-        if cross_check_21cmfast: # inject first
+        if cross_check_21cmfast: # XC-INJECT
 
             xHII_to_interp  = x_arr[-1,0]
             #xHeII_to_interp = x_arr[-1,1]
@@ -697,6 +712,7 @@ def evolve(
                 )
             )
 
+            # debug injections
             if debug_bath_point_injection:
                 if not bath_point_injected_flag:
                     print(f'rs={rs}, bath point injection')
@@ -713,6 +729,33 @@ def evolve(
                     print(f'inj eng', in_spec_phot.toteng() * norm_fac(rs, dt))
             if debug_no_bath:
                 highengphot_spec_at_rs *= 0.
+
+            if debug_inject_ST_xray and rs < 50: # XC-ST
+                delta = 0.
+                z = rs_to_interp - 1
+                emissivity_bracket = ST_SFRD_Interpolator(z) # [Msun / (cMpc^3 s)]
+                emissivity_bracket *= (1 + delta) / (phys.nB * u.cm**-3).to('Mpc**-3').value * dt # [Msun / (cMpc^3 s)] * [s cMpc^3]
+
+                L_X_spec_prefac = 1e40 / np.log(4) * u.erg * u.s**-1 * u.M_sun**-1 * u.yr * u.keV**-1 # value in [erg yr / s Msun keV]
+                # L_X (E * dN/dE) \propto E^-1
+                L_X_dNdE = L_X_spec_prefac.to('1/Msun').value * (xc21_abscs['photE']/1000.)**-1 / xc21_abscs['photE'] # [1/Msun] * [1/eV] = [1/Msun eV]
+                
+                xray_eng_lo = 0.5 * 1000 # [eV]
+                xray_eng_hi = 10.0 * 1000 # [eV]
+                xray_i_lo = np.searchsorted(xc21_abscs['photE'], xray_eng_lo)
+                xray_i_hi = np.searchsorted(xc21_abscs['photE'], xray_eng_hi)
+
+                L_X_dNdE[:xray_i_lo] *= 0.
+                L_X_dNdE[xray_i_hi:] *= 0.
+                L_X_spec = Spectrum(xc21_abscs['photE'], L_X_dNdE, spec_type='dNdE', rs=1+z) # [1 / Msun eV]
+                L_X_spec.switch_spec_type('N') # [1 / Msun]
+                L_X_spec *= emissivity_bracket
+
+                print(f'xrayST: injecting {L_X_spec.toteng():.3e} eV/Bavg')
+
+                if np.allclose(L_X_spec.eng, out_highengphot_specs[-1].eng):
+                    L_X_spec.eng = out_highengphot_specs[-1].eng
+                out_highengphot_specs[-1] += L_X_spec
 
             # Get the spectra for the next step by applying the 
             # transfer functions. 
@@ -745,8 +788,9 @@ def evolve(
             # print('highengdep_at_rs = ', highengdep_at_rs)
             # print('compute_fs_method = ', compute_fs_method)
             # print('cross_check = ', cross_check)
+
         
-        if cross_check_21cmfast:
+        if cross_check_21cmfast: # XC-F
             f_raw = compute_fs(
                 MEDEA_interp=MEDEA_interp,
                 rs=rs,
@@ -768,7 +812,7 @@ def evolve(
                 highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
             )
 
-        if cross_check_21cmfast:
+        if cross_check_21cmfast: # XC-POSTF
             highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
             # print("f_raw = ", f_raw)
             # print('-----------')
@@ -830,9 +874,6 @@ def evolve(
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
-        
-        # if cross_check_21cmfast and rs < 50:
-        #     print(f'Tk : {new_vals[-1,0]}')
 
         #####################################################################
         #####################################################################
