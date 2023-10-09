@@ -523,14 +523,20 @@ def evolve(
         if cross_check_21cmfast and rs < new_tf_start_rs: # XC-LOOPSTART
 
             #===== time stepping =====
+            coarsen_factor_old = coarsen_factor
+            dlnz_old = dlnz
+            dt_old = dt # dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
+
             coarsen_factor = 1
             dlnz = xc21_abscs['dlnz']
-            # dt = dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
-            dt = dt_step(rs-1, dlnz)
+            dt = dt_step(rs-1, np.exp(dlnz))
+
+            dt_old_normalized = dt_old / dlnz_old * dlnz / coarsen_factor_old * coarsen_factor
 
             if cross_check_21cmfast_warning:
                 logging.warning(f'Setting coarsen_factor={coarsen_factor}!')
                 logging.warning(f'Setting dlnz={dlnz}!')
+                logging.warning(f'Setting dt={dt}! dt/dt_old_normalized={dt/dt_old_normalized:.6f}')
             cross_check_21cmfast_warning = False
 
         
