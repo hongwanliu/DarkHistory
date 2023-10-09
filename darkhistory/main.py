@@ -490,20 +490,20 @@ def evolve(
 
         sys.path.append(os.environ['DM21CM_DIR'])
         from dm21cm.utils import load_h5_dict
+        from dm21cm.physics import dt_step
+
+        sys.path.append(f"{os.environ['DM21CM_DIR']}/build_tf")
+        from low_energy.lowE_deposition import compute_fs
         
         new_tf_start_rs = 49.
         cross_check_21cmfast_warning = True
         bath_point_injected_flag = False
         tf_version = 'zf01'
 
-        logging.warning('Using dts associated with transfer functions!')
-        dts = np.load(os.environ['DM21CM_DATA_DIR'] + f"/tf/{tf_version}/phot/dt_rxneo.npy")
-        
         xc21_abscs = load_h5_dict(os.environ['DM21CM_DIR'] + f"/data/abscissas/abscs_{tf_version}.h5")
-        rs_abscs = xc21_abscs['rs']
-        #rs_abscs = np.array([ 5.        ,  6.45774833,  8.34050269, 10.77217345, 13.91279701, 17.96906832, 23.20794417, 29.97421252, 38.71318413, 50.        ])
-        sys.path.append("/n/home07/yitians/dm21cm/DM21cm/build_tf")
-        from low_energy.lowE_deposition import compute_fs # use dm21cm's compute_fs
+        
+        logging.warning("Using dm21cm's compute_fs!")
+        logging.warning('Using Planck18 dt!')
 
         if debug_inject_ST_xray:
             res_dict = np.load(f"{os.environ['DM21CM_DIR']}/data/xraycheck/Interpolators_0926_2.npz", allow_pickle=True)
@@ -522,10 +522,11 @@ def evolve(
             
         if cross_check_21cmfast and rs < new_tf_start_rs: # XC-LOOPSTART
 
+            #===== time stepping =====
             coarsen_factor = 1
-            dlnz = np.log(1.01)
+            dlnz = xc21_abscs['dlnz']
             # dt = dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
-            dt = np.interp(rs, rs_abscs, dts[:,1])
+            dt = dt_step(rs-1, dlnz)
 
             if cross_check_21cmfast_warning:
                 logging.warning(f'Setting coarsen_factor={coarsen_factor}!')
@@ -607,27 +608,33 @@ def evolve(
             lowengelec_spec_at_rs += (
                 elec_processes_lowengelec_spec*norm_fac(rs, dt)
             )
+            injE = rate_func_eng_unclustered(rs) * (dt / (phys.nB * rs**3))
+            print(f'lowengelec_spec_at_rs {lowengelec_spec_at_rs.toteng()/injE}')
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
             deposited_ion  = np.dot(
                 deposited_ion_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
+            print(f'deposited_ion {deposited_ion/injE}')
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
             deposited_exc  = np.dot(
                 deposited_exc_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
+            print(f'deposited_exc {deposited_exc/injE}')
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
             deposited_heat = np.dot(
                 deposited_heat_arr, in_spec_elec.N*norm_fac(rs, dt)
             )
+            print(f'deposited_heat {deposited_heat/injE}')
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
+            print(f'deposited_ICS {deposited_ICS/injE}')
 
             #######################################
             # Photons from Injected Electrons     #
@@ -636,6 +643,7 @@ def evolve(
             # ICS secondary photon spectrum after electron cooling, 
             # per injection event.
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
+            print(f'ics_phot_spec {ics_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
@@ -643,6 +651,7 @@ def evolve(
                 in_spec_elec.totN()/2
             )
             positronium_phot_spec.switch_spec_type('N')
+            print(f'positronium_phot_spec {positronium_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
 
         # Add injected photons + photons from injected electrons
         # to the photon spectrum that got propagated forward. 
@@ -652,7 +661,7 @@ def evolve(
             ) * norm_fac(rs, dt)
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
-
+        print(f'highengphot_spec_at_rs {highengphot_spec_at_rs.toteng()/injE}')
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
 
@@ -759,13 +768,17 @@ def evolve(
 
             # Get the spectra for the next step by applying the 
             # transfer functions. 
-            highengdep_at_rs = np.dot(
+            
+            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
+            # electron processes modified lowengelec_spec_at_rs highengdep_at_rs, we want to keep the value
+            lowengelec_spec_at_rs  += lowengelec_tf.sum_specs( out_highengphot_specs[-1] )
+            highengdep_at_rs += np.dot(
                 np.swapaxes(highengdep_arr, 0, 1),
                 out_highengphot_specs[-1].N
             )
-            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+            # but we then need to clear the values after f computation
+
             highengphot_spec_at_rs.rs = rs # manually set rs
             lowengphot_spec_at_rs.rs  = rs
             lowengelec_spec_at_rs.rs  = rs
@@ -814,6 +827,10 @@ def evolve(
 
         if cross_check_21cmfast: # XC-POSTF
             highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
+            # need to clear lowengelec_spec_at_rs highengdep_at_rs after f computation
+            lowengelec_spec_at_rs *= 0.
+            highengdep_at_rs *= 0.
+            
             # print("f_raw = ", f_raw)
             # print('-----------')
         
@@ -891,9 +908,8 @@ def evolve(
             xHII_to_interp  = x_arr[-1,0]
             xHeII_to_interp = x_arr[-1,1]
         
-        if tf_mode == 'table':
-            
-            if not cross_check_21cmfast:
+        if not cross_check_21cmfast:
+            if tf_mode == 'table':
                 #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
                 rs_to_interp = rs
 
@@ -914,33 +930,33 @@ def evolve(
                 lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
                 lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
             
-        elif tf_mode == 'nn':
-            
-            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-            
-            # Predict transfer functions
-            rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
-            rsxHxHe_key = { 'rs' : rs_to_interp,
-                            'xH' : xHII_to_interp,
-                            'xHe': xHeII_to_interp }
-            hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc)
-            hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
-            prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
-            lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
-            lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
-            hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
+            elif tf_mode == 'nn':
+                
+                rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+                
+                # Predict transfer functions
+                rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
+                rsxHxHe_key = { 'rs' : rs_to_interp,
+                                'xH' : xHII_to_interp,
+                                'xHe': xHeII_to_interp }
+                hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc)
+                hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
+                prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
+                lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
+                lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
+                hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
 
-            # Compound transfer functions
-            lep_tf.TF = np.matmul( prp_nntf.TF, lep_tf.TF )
-            lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF )
-            hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
-            
-            # Apply transfer functions
-            highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
-            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
-                                       out_highengphot_specs[-1].N )
+                # Compound transfer functions
+                lep_tf.TF = np.matmul( prp_nntf.TF, lep_tf.TF )
+                lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF )
+                hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
+                
+                # Apply transfer functions
+                highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
+                lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
+                lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
+                highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
+                                        out_highengphot_specs[-1].N )
         
         #############################
         # Parameters for next step  #

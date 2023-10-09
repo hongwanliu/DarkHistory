@@ -96,9 +96,9 @@ rho_baryon   = rho_crit*omega_baryon
 nB          = rho_baryon/mp
 """ Baryon number density in eV cm\ :sup:`-3`\ ."""
 
-#YHe         = 0.245
-YHe         = 1e-6
-logging.warning("DarkHistory: It's all hydrogen now.")
+YHe         = 0.245
+#YHe         = 1e-6
+#logging.warning("DarkHistory: It's all hydrogen now.")
 """Helium abundance by mass."""
 nH          = (1-YHe)*nB
 """ Atomic hydrogen number density in cm\ :sup:`-3`\ ."""
@@ -1238,7 +1238,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
         return low_eng_elec_N + high_eng_elec_N
 
 
-def elec_heating_engloss_rate(eng, xe, rs):
+def elec_heating_engloss_rate(eng, xe, rs, nBscale=1.):
     """Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .
 
     Parameters
@@ -1249,6 +1249,8 @@ def elec_heating_engloss_rate(eng, xe, rs):
         The free electron fraction.
     rs : float
         The redshift.
+    nBscale : float
+        The baryon number density scaling factor.
 
     Returns
     -------
@@ -1261,7 +1263,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     """
 
     w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
-    ne = xe*nH*rs**3
+    ne = xe * (nH * nBscale) * rs**3
 
     eps_0 = 8.85418782e-12 # in SI units
 
