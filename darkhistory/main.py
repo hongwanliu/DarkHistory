@@ -48,6 +48,7 @@ def evolve(
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
     cross_check_21cmfast=False,
+    cross_check_21cmfast_tf_version=None,
     debug_turnoff_injection_rs=None,
     debug_no_bath=False,
     debug_bath_point_injection=False,
@@ -477,6 +478,9 @@ def evolve(
     
     if verbose >= 1:
         print('Initialization time: %.3f s' % (time.time()-timer_start))
+
+    # recording
+    lep_s = []
     
     #########################################################################
     #########################################################################
@@ -498,9 +502,8 @@ def evolve(
         new_tf_start_rs = 49.
         cross_check_21cmfast_warning = True
         bath_point_injected_flag = False
-        tf_version = 'zf01'
 
-        xc21_abscs = load_h5_dict(os.environ['DM21CM_DIR'] + f"/data/abscissas/abscs_{tf_version}.h5")
+        xc21_abscs = load_h5_dict(os.environ['DM21CM_DIR'] + f"/data/abscissas/abscs_{cross_check_21cmfast_tf_version}.h5")
         
         logging.warning("Using dm21cm's compute_fs!")
         logging.warning('Using Planck18 dt!')
@@ -513,6 +516,7 @@ def evolve(
             # Returns the mean ST star formation rate density star formation rate density in [M_Sun / Mpc^3 / s]
             ST_SFRD_Interpolator = interpolate.interp1d(z_range, st_sfrd_table)
         
+        i_step_with_new_dlnz = -1
 
     while rs > end_rs:
 
@@ -522,10 +526,13 @@ def evolve(
             
         if cross_check_21cmfast and rs < new_tf_start_rs: # XC-LOOPSTART
 
+            i_step_with_new_dlnz += 1
+
             #===== time stepping =====
-            coarsen_factor_old = coarsen_factor
-            dlnz_old = dlnz
-            dt_old = dt # dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
+            if i_step_with_new_dlnz == 0:
+                coarsen_factor_old = coarsen_factor
+                dlnz_old = dlnz
+                dt_old = dt # dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
 
             coarsen_factor = 1
             dlnz = xc21_abscs['dlnz']
@@ -614,33 +621,33 @@ def evolve(
             lowengelec_spec_at_rs += (
                 elec_processes_lowengelec_spec*norm_fac(rs, dt)
             )
-            injE = rate_func_eng_unclustered(rs) * (dt / (phys.nB * rs**3))
-            print(f'lowengelec_spec_at_rs {lowengelec_spec_at_rs.toteng()/injE}')
+            # injE = rate_func_eng_unclustered(rs) * (dt / (phys.nB * rs**3))
+            # print(f'lowengelec_spec_at_rs {lowengelec_spec_at_rs.toteng()/injE}')
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
             deposited_ion  = np.dot(
                 deposited_ion_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
-            print(f'deposited_ion {deposited_ion/injE}')
+            # print(f'deposited_ion {deposited_ion/injE}')
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
             deposited_exc  = np.dot(
                 deposited_exc_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
-            print(f'deposited_exc {deposited_exc/injE}')
+            # print(f'deposited_exc {deposited_exc/injE}')
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
             deposited_heat = np.dot(
                 deposited_heat_arr, in_spec_elec.N*norm_fac(rs, dt)
             )
-            print(f'deposited_heat {deposited_heat/injE}')
+            # print(f'deposited_heat {deposited_heat/injE}')
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
-            print(f'deposited_ICS {deposited_ICS/injE}')
+            # print(f'deposited_ICS {deposited_ICS/injE}')
 
             #######################################
             # Photons from Injected Electrons     #
@@ -649,7 +656,7 @@ def evolve(
             # ICS secondary photon spectrum after electron cooling, 
             # per injection event.
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
-            print(f'ics_phot_spec {ics_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
+            # print(f'ics_phot_spec {ics_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
@@ -657,7 +664,7 @@ def evolve(
                 in_spec_elec.totN()/2
             )
             positronium_phot_spec.switch_spec_type('N')
-            print(f'positronium_phot_spec {positronium_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
+            # print(f'positronium_phot_spec {positronium_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
 
         # Add injected photons + photons from injected electrons
         # to the photon spectrum that got propagated forward. 
@@ -667,7 +674,7 @@ def evolve(
             ) * norm_fac(rs, dt)
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
-        print(f'highengphot_spec_at_rs {highengphot_spec_at_rs.toteng()/injE}')
+        # print(f'highengphot_spec_at_rs {highengphot_spec_at_rs.toteng()/injE}')
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
 
@@ -678,10 +685,11 @@ def evolve(
         #####################################################################
         
         # At this point, highengphot_at_rs, lowengphot_at_rs and 
-        # lowengelec_at_rs have been computed for this redshift. 
-        append_highengphot_spec(highengphot_spec_at_rs)
-        append_lowengphot_spec(lowengphot_spec_at_rs)
-        append_lowengelec_spec(lowengelec_spec_at_rs)
+        # lowengelec_at_rs have been computed for this redshift.
+        if not cross_check_21cmfast:
+            append_highengphot_spec(highengphot_spec_at_rs)
+            append_lowengphot_spec(lowengphot_spec_at_rs)
+            append_lowengelec_spec(lowengelec_spec_at_rs)
 
         #####################################################################
         #####################################################################
@@ -768,20 +776,24 @@ def evolve(
 
                 print(f'xrayST: injecting {L_X_spec.toteng():.3e} eV/Bavg')
 
-                if np.allclose(L_X_spec.eng, out_highengphot_specs[-1].eng):
-                    L_X_spec.eng = out_highengphot_specs[-1].eng
-                out_highengphot_specs[-1] += L_X_spec
+                if np.allclose(L_X_spec.eng, highengphot_spec_at_rs.eng):
+                    L_X_spec.eng = highengphot_spec_at_rs.eng
+                highengphot_spec_at_rs += L_X_spec
 
             # Get the spectra for the next step by applying the 
             # transfer functions. 
-            
-            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
+            input_phot_spec = highengphot_spec_at_rs * 1.0
+            highengphot_spec_at_rs = highengphot_tf.sum_specs( input_phot_spec )
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( input_phot_spec )
+            if i_step_with_new_dlnz == 0:
+                # first step after dlnz change, lowengphot is not set correct: they are processed
+                # in the second last step of the old dlnz, but outputed a step later, so we need to increase the dt manually
+                lowengphot_spec_at_rs *= dlnz / dlnz_old
             # electron processes modified lowengelec_spec_at_rs highengdep_at_rs, we want to keep the value
-            lowengelec_spec_at_rs  += lowengelec_tf.sum_specs( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  += lowengelec_tf.sum_specs( input_phot_spec )
             highengdep_at_rs += np.dot(
                 np.swapaxes(highengdep_arr, 0, 1),
-                out_highengphot_specs[-1].N
+                input_phot_spec.N
             )
             # but we then need to clear the values after f computation
 
@@ -793,20 +805,18 @@ def evolve(
             # if not np.isclose(highengphot_spec_at_rs.rs, rs):
             #     raise ValueError(f'highengphot_spec_at_rs.rs {highengphot_spec_at_rs.rs} != rs {rs}')
             rs_for_f = highengphot_spec_at_rs.rs * np.exp(dlnz) # coarsen_factor = 1
-            highengphot_spec_at_rs.redshift(rs_for_f)
+            # highengphot_spec_at_rs.redshift(rs_for_f)
 
             xH = x_arr[-1, 0]
             x_vec_for_f = np.array([1-xH, phys.chi * (1-xH), phys.chi*xH])
             # TMP:: check inputs
-            # print('rs = ', rs)
-            # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
-            # print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
-            # print('x_vec_for_f = ', x_vec_for_f)
-            # print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
-            # print('dt = ', dt)
-            # print('highengdep_at_rs = ', highengdep_at_rs)
-            # print('compute_fs_method = ', compute_fs_method)
-            # print('cross_check = ', cross_check)
+        # print('rs = ', rs)
+        # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
+        # print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
+        # print('x_vec_for_f = ', x_vec_for_f)
+        # print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
+        # print('dt = ', dt)
+        # print('highengdep_at_rs = ', highengdep_at_rs)
 
         
         if cross_check_21cmfast: # XC-F
@@ -832,13 +842,16 @@ def evolve(
             )
 
         if cross_check_21cmfast: # XC-POSTF
-            highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
+            # highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
             # need to clear lowengelec_spec_at_rs highengdep_at_rs after f computation
             lowengelec_spec_at_rs *= 0.
             highengdep_at_rs *= 0.
-            
             # print("f_raw = ", f_raw)
             # print('-----------')
+
+            append_highengphot_spec(highengphot_spec_at_rs)
+            append_lowengphot_spec(lowengphot_spec_at_rs)
+            append_lowengelec_spec(lowengelec_spec_at_rs)
         
         if debug_turnoff_injection_rs is not None:
             if rs < debug_turnoff_injection_rs:
@@ -1035,7 +1048,8 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
-        'f': f
+        'f': f,
+        'lep_s': lep_s,
     }
 
     return data
@@ -1158,7 +1172,8 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     highengdep_interp     = dep_tf_data['highengdep']
     
     if coarsen_factor > 1:
-        rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+        #rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+        rs_to_interpolate = rs
     else:
         rs_to_interpolate = rs
     

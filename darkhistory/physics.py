@@ -96,9 +96,9 @@ rho_baryon   = rho_crit*omega_baryon
 nB          = rho_baryon/mp
 """ Baryon number density in eV cm\ :sup:`-3`\ ."""
 
-YHe         = 0.245
-#YHe         = 1e-6
-#logging.warning("DarkHistory: It's all hydrogen now.")
+#YHe         = 0.245
+YHe         = 1e-6
+logging.warning("DarkHistory: It's all hydrogen now.")
 """Helium abundance by mass."""
 nH          = (1-YHe)*nB
 """ Atomic hydrogen number density in cm\ :sup:`-3`\ ."""
