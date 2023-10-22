@@ -932,7 +932,7 @@ def photo_ion_xsec(eng, species):
     
     xsec = np.zeros(eng.size)
 
-    if species == 'HI' or species =='HeII':
+    if species == 'HI' or species == 'HeII':
         eta = np.zeros(eng.size)
         eta[ind_above] = 1./np.sqrt(eng[ind_above]/eng_thres[species] - 1.)
         xsec[ind_above] = (2.**9*np.pi**2*ele_rad**2/(3.*alpha**3)
@@ -940,6 +940,8 @@ def photo_ion_xsec(eng, species):
             * np.exp(-4*eta[ind_above]*np.arctan(1./eta[ind_above]))
             / (1.-np.exp(-2*np.pi*eta[ind_above]))
             )
+        if species == 'HeII':
+            xsec[ind_above] *= 1./4. # 1/Z^2 factor
     elif species == 'HeI':
         x = np.zeros(eng.size)
         y = np.zeros(eng.size)
