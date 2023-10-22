@@ -788,7 +788,9 @@ def evolve(
             if i_step_with_new_dlnz == 0:
                 # first step after dlnz change, lowengphot is not set correct: they are processed
                 # in the second last step of the old dlnz, but outputed a step later, so we need to increase the dt manually
-                lowengphot_spec_at_rs *= dlnz / dlnz_old
+                logging.warning('not adjusting lowengphot when dlnz changes!')
+                #lowengphot_spec_at_rs *= dlnz / dlnz_old
+                pass
             # electron processes modified lowengelec_spec_at_rs highengdep_at_rs, we want to keep the value
             lowengelec_spec_at_rs  += lowengelec_tf.sum_specs( input_phot_spec )
             highengdep_at_rs += np.dot(
