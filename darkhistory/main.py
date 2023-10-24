@@ -1,6 +1,4 @@
-""" The main DarkHistory function.
-
-"""
+""" The main DarkHistory function."""
 
 import os
 import sys
@@ -49,10 +47,6 @@ def evolve(
     tf_mode='table', verbose=0,
     cross_check_21cmfast=False,
     cross_check_21cmfast_tf_version=None,
-    debug_turnoff_injection_rs=None,
-    debug_no_bath=False,
-    debug_bath_point_injection=False,
-    debug_inject_ST_xray=False, # within cross_check_21cmfast
 ):
     """
     Main function computing histories and spectra. 
@@ -507,14 +501,6 @@ def evolve(
         
         logging.warning("Using dm21cm's compute_fs!")
         logging.warning('Using Planck18 dt!')
-
-        if debug_inject_ST_xray:
-            res_dict = np.load(f"{os.environ['DM21CM_DIR']}/data/xraycheck/Interpolators_0926_2.npz", allow_pickle=True)
-            z_range, delta_range, r_range = res_dict['SFRD_Params']
-            st_sfrd_table =  res_dict['ST_SFRD_Table']
-            # Takes the redshift as `z`
-            # Returns the mean ST star formation rate density star formation rate density in [M_Sun / Mpc^3 / s]
-            ST_SFRD_Interpolator = interpolate.interp1d(z_range, st_sfrd_table)
         
         i_step_with_new_dlnz = -1
 
@@ -629,25 +615,21 @@ def evolve(
             deposited_ion  = np.dot(
                 deposited_ion_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
-            # print(f'deposited_ion {deposited_ion/injE}')
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
             deposited_exc  = np.dot(
                 deposited_exc_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
-            # print(f'deposited_exc {deposited_exc/injE}')
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
             deposited_heat = np.dot(
                 deposited_heat_arr, in_spec_elec.N*norm_fac(rs, dt)
             )
-            # print(f'deposited_heat {deposited_heat/injE}')
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
             deposited_ICS  = np.dot(
                 deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
-            # print(f'deposited_ICS {deposited_ICS/injE}')
 
             #######################################
             # Photons from Injected Electrons     #
@@ -656,7 +638,6 @@ def evolve(
             # ICS secondary photon spectrum after electron cooling, 
             # per injection event.
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
-            # print(f'ics_phot_spec {ics_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
@@ -664,7 +645,6 @@ def evolve(
                 in_spec_elec.totN()/2
             )
             positronium_phot_spec.switch_spec_type('N')
-            # print(f'positronium_phot_spec {positronium_phot_spec.toteng() * norm_fac(rs, dt)/injE}')
 
         # Add injected photons + photons from injected electrons
         # to the photon spectrum that got propagated forward. 
@@ -674,7 +654,6 @@ def evolve(
             ) * norm_fac(rs, dt)
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
-        # print(f'highengphot_spec_at_rs {highengphot_spec_at_rs.toteng()/injE}')
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
 
@@ -723,9 +702,7 @@ def evolve(
         if cross_check_21cmfast: # XC-INJECT
 
             xHII_to_interp  = x_arr[-1,0]
-            #xHeII_to_interp = x_arr[-1,1]
             xHeII_to_interp = xHII_to_interp * phys.chi # make sure xHeII=xHII
-            #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             rs_to_interp = rs
 
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
@@ -734,51 +711,6 @@ def evolve(
                     dlnz, coarsen_factor=coarsen_factor
                 )
             )
-
-            # debug injections
-            if debug_bath_point_injection:
-                if not bath_point_injected_flag:
-                    print(f'rs={rs}, bath point injection')
-                    highengphot_spec_at_rs.N *= 0.
-                    lowengphot_spec_at_rs.N *= 0.
-                    lowengelec_spec_at_rs.N *= 0.
-                    highengphot_spec_at_rs.N[407] = 1e-5
-                    highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
-                    print(np.where(highengphot_spec_at_rs.N > 0.))
-                    bath_point_injected_flag = True
-                    print(f'bath energy', highengphot_spec_at_rs.toteng())
-                    print(f'eng per inj', in_spec_phot.toteng())
-                    print(f'inj_per_Bavg', norm_fac(rs, dt))
-                    print(f'inj eng', in_spec_phot.toteng() * norm_fac(rs, dt))
-            if debug_no_bath:
-                highengphot_spec_at_rs *= 0.
-
-            if debug_inject_ST_xray and rs < 50: # XC-ST
-                delta = 0.
-                z = rs_to_interp - 1
-                emissivity_bracket = ST_SFRD_Interpolator(z) # [Msun / (cMpc^3 s)]
-                emissivity_bracket *= (1 + delta) / (phys.nB * u.cm**-3).to('Mpc**-3').value * dt # [Msun / (cMpc^3 s)] * [s cMpc^3]
-
-                L_X_spec_prefac = 1e40 / np.log(4) * u.erg * u.s**-1 * u.M_sun**-1 * u.yr * u.keV**-1 # value in [erg yr / s Msun keV]
-                # L_X (E * dN/dE) \propto E^-1
-                L_X_dNdE = L_X_spec_prefac.to('1/Msun').value * (xc21_abscs['photE']/1000.)**-1 / xc21_abscs['photE'] # [1/Msun] * [1/eV] = [1/Msun eV]
-                
-                xray_eng_lo = 0.5 * 1000 # [eV]
-                xray_eng_hi = 10.0 * 1000 # [eV]
-                xray_i_lo = np.searchsorted(xc21_abscs['photE'], xray_eng_lo)
-                xray_i_hi = np.searchsorted(xc21_abscs['photE'], xray_eng_hi)
-
-                L_X_dNdE[:xray_i_lo] *= 0.
-                L_X_dNdE[xray_i_hi:] *= 0.
-                L_X_spec = Spectrum(xc21_abscs['photE'], L_X_dNdE, spec_type='dNdE', rs=1+z) # [1 / Msun eV]
-                L_X_spec.switch_spec_type('N') # [1 / Msun]
-                L_X_spec *= emissivity_bracket
-
-                print(f'xrayST: injecting {L_X_spec.toteng():.3e} eV/Bavg')
-
-                if np.allclose(L_X_spec.eng, highengphot_spec_at_rs.eng):
-                    L_X_spec.eng = highengphot_spec_at_rs.eng
-                highengphot_spec_at_rs += L_X_spec
 
             # Get the spectra for the next step by applying the 
             # transfer functions. 
@@ -811,37 +743,12 @@ def evolve(
 
             xH = x_arr[-1, 0]
             x_vec_for_f = np.array([1-xH, phys.chi * (1-xH), phys.chi*xH])
-            # TMP:: check inputs
-        # print('rs = ', rs)
-        # print('lowengelec_spec_at_rs.toteng()=', lowengelec_spec_at_rs.toteng())
-        # print('lowengphot_spec_at_rs.toteng()=', lowengphot_spec_at_rs.toteng())
-        # print('x_vec_for_f = ', x_vec_for_f)
-        # print('rate_func_eng_unclustered(rs) = ', rate_func_eng_unclustered(rs))
-        # print('dt = ', dt)
-        # print('highengdep_at_rs = ', highengdep_at_rs)
 
-        
-        if cross_check_21cmfast: # XC-F
-            f_raw = compute_fs(
-                MEDEA_interp=MEDEA_interp,
-                rs=rs,
-                x=x_vec_for_f,
-                elec_spec=lowengelec_spec_at_rs,
-                phot_spec=lowengphot_spec_at_rs,
-                dE_dVdt_inj=rate_func_eng_unclustered(rs),
-                dt=dt,
-                highengdep=highengdep_at_rs,
-                cmbloss=0, # turned off in darkhistory main as well
-                method='no_He',
-                cross_check=False,
-                ion_old=False
-            )
-        else:
-            f_raw = compute_fs(
-                MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-                x_vec_for_f, rate_func_eng_unclustered(rs), dt,
-                highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
-            )
+        f_raw = compute_fs(
+            MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
+            x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+            highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
+        )
 
         if cross_check_21cmfast: # XC-POSTF
             # highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
@@ -854,10 +761,6 @@ def evolve(
             append_highengphot_spec(highengphot_spec_at_rs)
             append_lowengphot_spec(lowengphot_spec_at_rs)
             append_lowengelec_spec(lowengelec_spec_at_rs)
-        
-        if debug_turnoff_injection_rs is not None:
-            if rs < debug_turnoff_injection_rs:
-                f_raw = [[0., 0., 0., 0., 0.], [0., 0., 0., 0., 0.]]
 
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
