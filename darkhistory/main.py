@@ -41,12 +41,10 @@ def evolve(
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
-    init_cond=None, coarsen_factor=1, backreaction=True, 
+    init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
-    cross_check_21cmfast=False,
-    cross_check_21cmfast_tf_version=None,
 ):
     """
     Main function computing histories and spectra. 
@@ -155,7 +153,6 @@ def evolve(
     # Input                                                                 #
     #########################################################################
     #########################################################################
-
 
     #####################################
     # Loading data                      #
@@ -472,9 +469,6 @@ def evolve(
     
     if verbose >= 1:
         print('Initialization time: %.3f s' % (time.time()-timer_start))
-
-    # recording
-    lep_s = []
     
     #########################################################################
     #########################################################################
@@ -483,55 +477,12 @@ def evolve(
     #########################################################################
     
     timer_start = time.time()
-    if cross_check_21cmfast: # XC-PRELOOP
-        logging.warning('Cross checking 21cmfast!')
-
-        sys.path.append(os.environ['DM21CM_DIR'])
-        from dm21cm.utils import load_h5_dict
-        from dm21cm.physics import dt_step
-
-        sys.path.append(f"{os.environ['DM21CM_DIR']}/build_tf")
-        from low_energy.lowE_deposition import compute_fs
-        
-        new_tf_start_rs = 49.
-        cross_check_21cmfast_warning = True
-        bath_point_injected_flag = False
-
-        xc21_abscs = load_h5_dict(os.environ['DM21CM_DIR'] + f"/data/abscissas/abscs_{cross_check_21cmfast_tf_version}.h5")
-        
-        logging.warning("Using dm21cm's compute_fs!")
-        logging.warning('Using Planck18 dt!')
-        
-        i_step_with_new_dlnz = -1
 
     while rs > end_rs:
 
         # Update tqdm. 
         if use_tqdm:
             pbar.update(1)
-            
-        if cross_check_21cmfast and rs < new_tf_start_rs: # XC-LOOPSTART
-
-            i_step_with_new_dlnz += 1
-
-            #===== time stepping =====
-            if i_step_with_new_dlnz == 0:
-                coarsen_factor_old = coarsen_factor
-                dlnz_old = dlnz
-                dt_old = dt # dlnz * coarsen_factor/phys.hubble(rs) # DarkHistory
-
-            coarsen_factor = 1
-            dlnz = xc21_abscs['dlnz']
-            dt = dt_step(rs-1, np.exp(dlnz))
-
-            dt_old_normalized = dt_old / dlnz_old * dlnz / coarsen_factor_old * coarsen_factor
-
-            if cross_check_21cmfast_warning:
-                logging.warning(f'Setting coarsen_factor={coarsen_factor}!')
-                logging.warning(f'Setting dlnz={dlnz}!')
-                logging.warning(f'Setting dt={dt}! dt/dt_old_normalized={dt/dt_old_normalized:.6f}')
-            cross_check_21cmfast_warning = False
-
         
         #############################
         # First Step Special Cases  #
@@ -665,10 +616,9 @@ def evolve(
         
         # At this point, highengphot_at_rs, lowengphot_at_rs and 
         # lowengelec_at_rs have been computed for this redshift.
-        if not cross_check_21cmfast:
-            append_highengphot_spec(highengphot_spec_at_rs)
-            append_lowengphot_spec(lowengphot_spec_at_rs)
-            append_lowengelec_spec(lowengelec_spec_at_rs)
+        append_highengphot_spec(highengphot_spec_at_rs)
+        append_lowengphot_spec(lowengphot_spec_at_rs)
+        append_lowengelec_spec(lowengelec_spec_at_rs)
 
         #####################################################################
         #####################################################################
@@ -697,70 +647,12 @@ def evolve(
                     phys.chi - phys.xHeII_std(rs), 
                     phys.xHeII_std(rs)
             ])
-        
-
-        if cross_check_21cmfast: # XC-INJECT
-
-            xHII_to_interp  = x_arr[-1,0]
-            xHeII_to_interp = xHII_to_interp * phys.chi # make sure xHeII=xHII
-            rs_to_interp = rs
-
-            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-                get_tf(
-                    rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=coarsen_factor
-                )
-            )
-
-            # Get the spectra for the next step by applying the 
-            # transfer functions. 
-            input_phot_spec = highengphot_spec_at_rs * 1.0
-            highengphot_spec_at_rs = highengphot_tf.sum_specs( input_phot_spec )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( input_phot_spec )
-            if i_step_with_new_dlnz == 0:
-                # first step after dlnz change, lowengphot is not set correct: they are processed
-                # in the second last step of the old dlnz, but outputed a step later, so we need to increase the dt manually
-                logging.warning('not adjusting lowengphot when dlnz changes!')
-                #lowengphot_spec_at_rs *= dlnz / dlnz_old
-                pass
-            # electron processes modified lowengelec_spec_at_rs highengdep_at_rs, we want to keep the value
-            lowengelec_spec_at_rs  += lowengelec_tf.sum_specs( input_phot_spec )
-            highengdep_at_rs += np.dot(
-                np.swapaxes(highengdep_arr, 0, 1),
-                input_phot_spec.N
-            )
-            # but we then need to clear the values after f computation
-
-            highengphot_spec_at_rs.rs = rs # manually set rs
-            lowengphot_spec_at_rs.rs  = rs
-            lowengelec_spec_at_rs.rs  = rs
-
-            # redshift back for f calculation
-            # if not np.isclose(highengphot_spec_at_rs.rs, rs):
-            #     raise ValueError(f'highengphot_spec_at_rs.rs {highengphot_spec_at_rs.rs} != rs {rs}')
-            rs_for_f = highengphot_spec_at_rs.rs * np.exp(dlnz) # coarsen_factor = 1
-            # highengphot_spec_at_rs.redshift(rs_for_f)
-
-            xH = x_arr[-1, 0]
-            x_vec_for_f = np.array([1-xH, phys.chi * (1-xH), phys.chi*xH])
 
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
             x_vec_for_f, rate_func_eng_unclustered(rs), dt,
             highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
-
-        if cross_check_21cmfast: # XC-POSTF
-            # highengphot_spec_at_rs.redshift(rs) # redshift forward for next step
-            # need to clear lowengelec_spec_at_rs highengdep_at_rs after f computation
-            lowengelec_spec_at_rs *= 0.
-            highengdep_at_rs *= 0.
-            # print("f_raw = ", f_raw)
-            # print('-----------')
-
-            append_highengphot_spec(highengphot_spec_at_rs)
-            append_lowengphot_spec(lowengphot_spec_at_rs)
-            append_lowengelec_spec(lowengelec_spec_at_rs)
 
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
@@ -832,55 +724,52 @@ def evolve(
             xHII_to_interp  = x_arr[-1,0]
             xHeII_to_interp = x_arr[-1,1]
         
-        if not cross_check_21cmfast:
-            if tf_mode == 'table':
-                #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-                rs_to_interp = rs
+        if tf_mode == 'table':
+            rs_to_interp = rs
 
-                highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-                    get_tf(
-                        rs, xHII_to_interp, xHeII_to_interp,
-                        dlnz, coarsen_factor=coarsen_factor
-                    )
+            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
+                get_tf(
+                    rs, xHII_to_interp, xHeII_to_interp,
+                    dlnz, coarsen_factor=coarsen_factor
                 )
+            )
 
-                # Get the spectra for the next step by applying the 
-                # transfer functions. 
-                highengdep_at_rs = np.dot(
-                    np.swapaxes(highengdep_arr, 0, 1),
-                    out_highengphot_specs[-1].N
-                )
-                highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-                lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
-                lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+            # Get the spectra for the next step by applying the 
+            # transfer functions. 
+            highengdep_at_rs = np.dot(
+                np.swapaxes(highengdep_arr, 0, 1),
+                out_highengphot_specs[-1].N
+            )
+            highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+        
+        elif tf_mode == 'nn':
             
-            elif tf_mode == 'nn':
-                
-                rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-                
-                # Predict transfer functions
-                rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
-                rsxHxHe_key = { 'rs' : rs_to_interp,
-                                'xH' : xHII_to_interp,
-                                'xHe': xHeII_to_interp }
-                hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc)
-                hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
-                prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
-                lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
-                lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
-                hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
+            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            
+            # Predict transfer functions
+            rsxHxHe_loc = (xHII_to_interp, xHeII_to_interp, rs_to_interp)
+            rsxHxHe_key = { 'rs' : rs_to_interp,
+                            'xH' : xHII_to_interp,
+                            'xHe': xHeII_to_interp }
+            hep_E, prp_E, lee_E, lep_E = tf_E_interp.get_val(*rsxHxHe_loc)
+            hep_nntf.predict_TF(E_arr=hep_E, **rsxHxHe_key)
+            prp_nntf.predict_TF(E_arr=prp_E, **rsxHxHe_key)
+            lee_nntf.predict_TF(E_arr=lee_E, **rsxHxHe_key)
+            lep_tf.predict_TF(E_arr=lep_E, **rsxHxHe_key)
+            hed_arr = highengdep_interp.get_val(*rsxHxHe_loc)
 
-                # Compound transfer functions
-                lep_tf.TF = np.matmul( prp_nntf.TF, lep_tf.TF )
-                lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF )
-                hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
-                
-                # Apply transfer functions
-                highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
-                lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
-                lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
-                highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
-                                        out_highengphot_specs[-1].N )
+            # Compound transfer functions
+            lep_tf.TF = np.matmul( prp_nntf.TF, lep_tf.TF )
+            lee_nntf.TF = np.matmul( prp_nntf.TF, lee_nntf.TF )
+            hed_arr = np.matmul( prp_nntf.TF, hed_arr)/coarsen_factor
+            
+            # Apply transfer functions
+            highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
+            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1), out_highengphot_specs[-1].N )
         
         #############################
         # Parameters for next step  #
@@ -954,7 +843,6 @@ def evolve(
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
         'f': f,
-        'lep_s': lep_s,
     }
 
     return data
