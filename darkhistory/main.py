@@ -29,7 +29,6 @@ from   darkhistory.spec.spectools import EnglossRebinData
 from darkhistory.electrons import positronium as pos
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
-from darkhistory.low_energy.lowE_deposition import compute_fs
 from darkhistory.low_energy.lowE_electrons import make_interpolator
 
 from darkhistory.history import tla
@@ -509,14 +508,16 @@ def evolve(
         logging.warning('Using Planck18 dt!')
 
         if debug_inject_ST_xray:
-            res_dict = np.load(f"{os.environ['DM21CM_DIR']}/data/xraycheck/Interpolators_0926_2.npz", allow_pickle=True)
+            res_dict = np.load(f"{os.environ['DM21CM_DIR']}/data/sfrd/Interpolators_Nov11.npz", allow_pickle=True)
             z_range, delta_range, r_range = res_dict['SFRD_Params']
-            st_sfrd_table =  res_dict['ST_SFRD_Table']
+            st_sfrd_table = res_dict['ST_SFRD_Table']
             # Takes the redshift as `z`
             # Returns the mean ST star formation rate density star formation rate density in [M_Sun / Mpc^3 / s]
-            ST_SFRD_Interpolator = interpolate.interp1d(z_range, st_sfrd_table)
+            ST_SFRD_Interpolator = interpolate.interp1d(z_range, st_sfrd_table, bounds_error=False, fill_value="extrapolate")
         
         i_step_with_new_dlnz = -1
+    else:
+        from darkhistory.low_energy.lowE_deposition import compute_fs
 
     while rs > end_rs:
 
