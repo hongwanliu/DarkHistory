@@ -230,8 +230,11 @@ def dTm_dz(xe, xH2, T, n, dndt, rs, vir_switch=False, H2_cool_rate='new', DM_swi
     
     adiabatic = (2/3) * Tm * dndt / n # K/s
     compton = xe * (4.91e-22 * TCMB**4) * (TCMB - Tm) # K/s
+
+    # Expression below updated to use Eqn 15a from Cen 1992
+    # Only differs from Dalgarno+McCray 1972 for T >~ 1e5 K
     line = - (
-        7.5e-19 * n**2 * xe * (1-xe) * (np.exp(-118348/Tm) - np.exp(-118348/TCMB)) # erg / cm^3 / s
+        7.5e-19 * n**2 * xe * (1-xe) * (np.exp(-118348/Tm) - np.exp(-118348/TCMB)) / (1 + np.sqrt(Tm/1e5)) # erg / cm^3 / s
         * 1e-7 / phys.ele / phys.kB # K / erg
         / (3/2 * n * (1 + phys.chi + xe)) # cm^3
     ) 
