@@ -133,7 +133,7 @@ class Spectrum:
 
         if type(other) == type(self):
             # Some typical errors.
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two Spectrum objects.")
             if self._spec_type != other._spec_type:
                 raise TypeError("cannot add N to dN/dE.")
