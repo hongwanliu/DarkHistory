@@ -209,7 +209,7 @@ def evolve(
     else:
         raise ValueError('Invalid transfer function mode (tf_mode)!')
     
-    if verbose >= 1:
+    if verbose >= 2:
         print('Loading time: %.3f s' % (time.time()-timer_start))
     
     #####################################
@@ -467,7 +467,7 @@ def evolve(
     # Object to help us interpolate over MEDEA results. 
     MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
     
-    if verbose >= 1:
+    if verbose >= 2:
         print('Initialization time: %.3f s' % (time.time()-timer_start))
     
     #########################################################################
@@ -558,8 +558,6 @@ def evolve(
             lowengelec_spec_at_rs += (
                 elec_processes_lowengelec_spec*norm_fac(rs, dt)
             )
-            # injE = rate_func_eng_unclustered(rs) * (dt / (phys.nB * rs**3))
-            # print(f'lowengelec_spec_at_rs {lowengelec_spec_at_rs.toteng()/injE}')
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
@@ -807,7 +805,7 @@ def evolve(
     #########################################################################
     #########################################################################
 
-    if verbose >= 1:
+    if verbose >= 2:
         print('Main loop time: %.3f s' % (time.time()-timer_start))
 
     if use_tqdm:
