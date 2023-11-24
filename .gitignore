@@ -9,6 +9,8 @@
 
 *.pyc
 **/*.pyc
+
+tests/*.p
 #========================
 
 # Byte-compiled / optimized / DLL files
