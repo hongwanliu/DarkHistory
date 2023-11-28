@@ -5,6 +5,7 @@ import sys
 import pickle
 import time
 import logging
+import gc
 
 import numpy as np
 from numpy.linalg import matrix_power
@@ -45,6 +46,7 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
+    clean_up_tf=True,
 ):
     """
     Main function computing histories and spectra. 
@@ -160,19 +162,19 @@ def evolve(
     
     timer_start = time.time()
 
-    binning = load_data('binning', verbose=verbose)
+    binning = load_data('binning')
     photeng = binning['phot']
     eleceng = binning['elec']
 
     if tf_mode == 'table':
         
-        dep_tf_data = load_data('dep_tf', verbose=verbose)
+        dep_tf_data = load_data('dep_tf')
         highengphot_tf_interp = dep_tf_data['highengphot']
         lowengphot_tf_interp  = dep_tf_data['lowengphot']
         lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
         
-        ics_tf_data = load_data('ics_tf', verbose=verbose)
+        ics_tf_data = load_data('ics_tf')
         ics_thomson_ref_tf = ics_tf_data['thomson']
         ics_rel_ref_tf     = ics_tf_data['rel']
         engloss_ref_tf     = ics_tf_data['engloss']
@@ -188,10 +190,10 @@ def evolve(
             print('Warning: coarsen_factor is set to 12 (required for using nntf).')
             coarsen_factor = 12
         
-        dep_tf_data = load_data('hed_tf', verbose=verbose)
+        dep_tf_data = load_data('hed_tf')
         highengdep_interp = dep_tf_data['highengdep']
         
-        tf_helper_data = load_data('tf_helper', verbose=verbose)
+        tf_helper_data = load_data('tf_helper')
         tf_E_interp   = tf_helper_data['tf_E']
         hep_lb_interp = tf_helper_data['hep_lb']
         
@@ -842,6 +844,12 @@ def evolve(
         'lowengelec': out_lowengelec_specs,
         'f': f,
     }
+
+    if tf_mode == 'table' and clean_up_tf:
+        del dep_tf_data, ics_tf_data
+        del highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp
+        del ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
+    gc.collect()
 
     return data
 
