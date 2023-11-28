@@ -14,19 +14,8 @@ import scipy
 from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
 scipy.interpolate.interpolate.RegularGridInterpolator = scipy.interpolate.RegularGridInterpolator # for compatibility with old data files
 
-# Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
-# LOOK FOR THESE DATA FILES HERE.
-# Or use DH_DATA_DIR environment variable.
-
-data_path = None
-use_v1_0_data = False
-
-if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
-    data_path = os.environ['DH_DATA_DIR']
-
-
 logger = logging.getLogger('DarkHistory')
-logger.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
+logger.setLevel(logging.INFO)
 
 
 class PchipInterpolator2D: 
@@ -205,16 +194,18 @@ def load_data(data_type, prefix=None):
     :func:`.get_pppc_spec`
 
     """
+
+    use_v1_0_data = False
     
     if prefix is not None:
         data_path = prefix
-    if data_path is None or not os.path.isdir(data_path):
-        print('NOTE: enter data directory in config.py or set DH_DATA_DIR environment variable to avoid this step.')
-        data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
-
-    logger.info(f'Using data at {data_path} .')
+    else:
+        data_path = os.environ['DH_DATA_DIR']
     
     if data_type == 'binning':
+
+        logger.info(f'Using data at {data_path}')
+
         try:
             if use_v1_0_data:
                 binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
@@ -230,8 +221,11 @@ def load_data(data_type, prefix=None):
     
     elif data_type == 'dep_tf':
         tf_dict = {}
-        for k in ['highengphot', 'lowengphot', 'lowengelec', 'highengdep', 'CMB_engloss']:
-            tf_dict[k] = pickle.load(open(f'{data_path}/{k}_tf_interp.raw', 'rb'))
+        for k, tf_name in zip(
+            ['highengphot', 'lowengphot', 'lowengelec', 'highengdep', 'CMB_engloss'],
+            ['highengphot_tf', 'lowengphot_tf', 'lowengelec_tf', 'highengdep', 'CMB_engloss']
+        ):
+            tf_dict[k] = pickle.load(open(f'{data_path}/{tf_name}_interp.raw', 'rb'))
         logger.info('Loaded deposition transfer functions.')
 
         return tf_dict
@@ -239,7 +233,7 @@ def load_data(data_type, prefix=None):
     elif data_type == 'hed_tf':
         tf_dict = {}
         for k in ['highengdep']:
-            tf_dict[k] = pickle.load(open(f'{data_path}/{k}_tf_interp.raw', 'rb'))
+            tf_dict[k] = pickle.load(open(f'{data_path}/{k}_interp.raw', 'rb'))
         logger.info('Loaded high energy deposition transfer functions.')
         
         return tf_dict
@@ -260,6 +254,8 @@ def load_data(data_type, prefix=None):
         for k, tf_name in zip(['thomson', 'rel', 'engloss'], ['ics_thomson', 'ics_rel', 'engloss']):
             tf_dict[k] = pickle.load(open(f'{data_path}/{tf_name}_ref_tf.raw', 'rb'))
         logger.info('Loaded ICS transfer functions.')
+
+        return tf_dict
 
     ##################################################
     ### others

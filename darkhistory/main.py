@@ -730,7 +730,7 @@ def evolve(
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                 get_tf(
                     rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=coarsen_factor
+                    dlnz, dep_tf_data, coarsen_factor=coarsen_factor
                 )
             )
 
@@ -937,7 +937,7 @@ def get_elec_cooling_data(eleceng, photeng):
     )
 
 
-def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
+def get_tf(rs, xHII, xHeII, dlnz, dep_tf_data, coarsen_factor=1):
     """
     Returns the interpolated transfer functions. 
 
@@ -961,9 +961,6 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
         electron, high-energy deposition, and if coarsening is not 1, 
         coarsened propagating photon transfer functions. 
     """
-
-    # Load data.
-    dep_tf_data = load_data('dep_tf')
     
     highengphot_tf_interp = dep_tf_data['highengphot']
     lowengphot_tf_interp  = dep_tf_data['lowengphot']
