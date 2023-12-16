@@ -1,6 +1,4 @@
-""" Configuration and defaults.
-
-"""
+""" Configuration and defaults."""
 
 import os
 import sys
@@ -14,8 +12,12 @@ import scipy
 from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
 scipy.interpolate.interpolate.RegularGridInterpolator = scipy.interpolate.RegularGridInterpolator # for compatibility with old data files
 
-logger = logging.getLogger('DarkHistory')
+logger = logging.getLogger('darkhistory.config')
 logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(name)s: %(message)s'))
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 
 class PchipInterpolator2D: 
