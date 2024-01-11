@@ -48,7 +48,7 @@ def evolve(
     xe_reion_func=None, DeltaT=None, alpha_bk=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new', 
-    distort=False, fudge=1.125, nmax=10, fexc_switch=False, MLA_funcs=None,
+    distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
 ):
     """
