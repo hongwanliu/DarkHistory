@@ -1,44 +1,28 @@
 """ The main DarkHistory function."""
 
-import os
-import sys
-import pickle
 import time
 import logging
 import gc
 
 import numpy as np
 from numpy.linalg import matrix_power
-from scipy import interpolate
-from astropy import constants as const
-from astropy import units as u
 
-
-from darkhistory.config import load_data
-
+from   darkhistory.config import load_data
 import darkhistory.physics as phys
-
 from   darkhistory.spec import pppc
-from   darkhistory.spec.spectrum import Spectrum
 from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
-from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
-
-from darkhistory.electrons import positronium as pos
-from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
-
-from darkhistory.low_energy.lowE_deposition import compute_fs
-from darkhistory.low_energy.lowE_electrons import make_interpolator
-
-from darkhistory.history import tla
+from   darkhistory.electrons import positronium as pos
+from   darkhistory.electrons.elec_cooling import get_elec_cooling_tf
+from   darkhistory.low_energy.lowE_deposition import compute_fs
+from   darkhistory.low_energy.lowE_electrons import make_interpolator
+from   darkhistory.history import tla
 
 
 def evolve(
-    in_spec_elec=None, in_spec_phot=None,
-    rate_func_N=None, rate_func_eng=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
-    struct_boost=None,
+    in_spec_elec=None, in_spec_phot=None, rate_func_N=None, rate_func_eng=None, # custom injection API
+    DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None, struct_boost=None, # DM API
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
@@ -296,27 +280,20 @@ def evolve(
         USE_IN_SPEC_FUNC = True
         
         if start_rs is None:
-            raise ValueError(
-                'start_rs must be specified.'
-            )
+            raise ValueError('start_rs must be specified.')
             
-        # Make shallow copies
         in_spec_elec_func = in_spec_elec
         in_spec_phot_func = in_spec_phot
         
-        # Get initial input spectra
         in_spec_elec = in_spec_elec_func(start_rs)
         in_spec_phot = in_spec_phot_func(start_rs)
-        if in_spec_elec.rs != start_rs or in_spec_phot.rs != start_rs:
-            raise ValueError(
-                "must set output Spectrum objects' rs consistently."
-            )
+        in_spec_elec.rs = start_rs
+        in_spec_phot.rs = start_rs
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
         
-        # Rebin if necessary
-        if not (np.array_equal(in_spec_elec.eng, eleceng) and
-                np.array_equal(in_spec_phot.eng, photeng)):
+        if not (np.allclose(in_spec_elec.eng, eleceng) and
+                np.allclose(in_spec_phot.eng, photeng)):
             logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
             in_spec_elec.rebin(eleceng)
             in_spec_phot.rebin(photeng)
@@ -324,7 +301,6 @@ def evolve(
         if struct_boost is None:
             def struct_boost(rs):
                 return 1.
-            
         # User must define rate_func_N and rate_func_eng consistently.
         
     else: # custom injection spectrum with fixed spectral shape
@@ -335,8 +311,8 @@ def evolve(
     #####################################
 
     if (
-        not np.array_equal(in_spec_elec.eng, eleceng) 
-        or not np.array_equal(in_spec_phot.eng, photeng)
+        not np.allclose(in_spec_elec.eng, eleceng) 
+        or not np.allclose(in_spec_phot.eng, photeng)
     ):
         raise ValueError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
 
@@ -502,17 +478,14 @@ def evolve(
             # Except for first step, remake in_spec_elec/phot if necessary
             in_spec_phot = in_spec_phot_func(rs)
             in_spec_elec = in_spec_elec_func(rs)
-
-            if in_spec_elec.rs != rs or in_spec_phot.rs != rs:
-                raise ValueError(
-                    "must set output Spectrum objects' rs consistently."
-                )
+            in_spec_elec.rs = rs
+            in_spec_phot.rs = rs
             in_spec_elec.switch_spec_type('N')
             in_spec_phot.switch_spec_type('N')
 
             # Rebin if necessary
-            if not (np.array_equal(in_spec_elec.eng, eleceng) and
-                    np.array_equal(in_spec_phot.eng, photeng)):
+            if not (np.allclose(in_spec_elec.eng, eleceng) and
+                    np.allclose(in_spec_phot.eng, photeng)):
                 logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
                 in_spec_elec.rebin(eleceng)
                 in_spec_phot.rebin(photeng)
