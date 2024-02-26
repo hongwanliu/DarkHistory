@@ -139,9 +139,9 @@ class Spectrum:
                 raise TypeError("cannot add N to dN/dE.")
             new_rs = -1
             new_in_eng = -1
-            if np.array_equal(self.rs, other.rs):
+            if np.allclose(self.rs, other.rs):
                 new_rs = self.rs
-            if np.array_equal(self.in_eng, other.in_eng):
+            if np.allclose(self.in_eng, other.in_eng):
                 new_in_eng = self.in_eng
 
             new_spectrum = Spectrum(

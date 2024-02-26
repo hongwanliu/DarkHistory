@@ -126,7 +126,7 @@ class Spectra:
                     "all Spectrum must have spec_type 'N' or 'dNdE'."
                 )
 
-            if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+            if not utils.arrays_close([spec.eng for spec in spec_arr]):
                 raise TypeError("all abscissae must be the same.")
 
             self._grid_vals = np.atleast_2d(

@@ -20,14 +20,30 @@ def arrays_equal(ndarray_list):
             True if equal, False otherwise.
 
     """
+    first_row = ndarray_list[0]
+    for row in ndarray_list[1:]:
+        if not np.array_equal(first_row, row):
+            return False
+    return True
 
-    same = True
-    ind = 0
-    while same and ind < len(ndarray_list) - 1:
-        same = same & np.array_equal(ndarray_list[ind],
-            ndarray_list[ind+1])
-        ind += 1
-    return same
+def arrays_close(ndarray_list, rtol=1e-05, atol=1e-08):
+    """Checks if a list of arrays are all np.allclose.
+
+    Parameters
+    ----------
+    ndarray_list : sequence of ndarrays
+        List of arrays to compare.
+
+    Returns
+    -------
+        bool
+            True if all np.allclose, False otherwise.
+    """
+    first_row = ndarray_list[0]
+    for row in ndarray_list[1:]:
+        if not np.allclose(first_row, row, rtol=rtol, atol=atol):
+            return False
+    return True
 
 def is_log_spaced(arr):
     """Checks for a log-spaced array.

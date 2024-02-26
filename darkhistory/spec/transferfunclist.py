@@ -5,7 +5,7 @@ from numpy.linalg import matrix_power
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 
-from darkhistory.utilities import arrays_equal
+from darkhistory.utilities import arrays_close
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
@@ -46,7 +46,7 @@ class TransferFuncList:
 
             raise TypeError('transfer functions must be of the same type.')
 
-        if not arrays_equal(
+        if not arrays_close(
             [tfunc.eng for tfunc in self._tflist]
         ):
             raise TypeError('all transfer functions must have the same \
@@ -376,15 +376,15 @@ class TransferFuncListArray:
                 self._grid_vals = np.flip(self._grid_vals, 1)
 
         elif ndim == 1:
-            if not arrays_equal(
+            if not arrays_close(
                 [tflist.rs for tflist in tflist_arr]    
             ):
                 raise TypeError('All redshift bins must be identical.')
-            if not arrays_equal(
+            if not arrays_close(
                 [tflist.in_eng for tflist in tflist_arr]
             ):
                 raise TypeError('All in_eng bins must be identical.')
-            if not arrays_equal(
+            if not arrays_close(
                 [tflist.eng for tflist in tflist_arr]
             ):
                 raise TypeError('All eng bins must be identical.')
@@ -428,17 +428,17 @@ class TransferFuncListArray:
 
         elif ndim == 3:
             if not all(
-                arrays_equal([tflist.rs for tflist in tflist_xHe_arr]) 
+                arrays_close([tflist.rs for tflist in tflist_xHe_arr]) 
                 for tflist_xHe_arr in tflist_arr
             ):
                 raise TypeError('All redshift bins must be identical.')
             if not all(
-                arrays_equal([tflist.in_eng for tflist in tflist_xHe_arr]) 
+                arrays_close([tflist.in_eng for tflist in tflist_xHe_arr]) 
                 for tflist_xHe_arr in tflist_arr
             ):
                 raise TypeError('All in_eng bins must be identical.')
             if not all(
-                arrays_equal([tflist.eng for tflist in tflist_xHe_arr]) 
+                arrays_close([tflist.eng for tflist in tflist_xHe_arr]) 
                 for tflist_xHe_arr in tflist_arr
             ):
                 raise TypeError('All eng bins must be identical.')
@@ -548,12 +548,12 @@ class TransferFuncInterp:
     ):
 
         if not np.all(
-            arrays_equal([tfla.in_eng for tfla in tflistarrs])
+            arrays_close([tfla.in_eng for tfla in tflistarrs])
         ):
             raise TypeError('All in_eng bins must be identical.')
 
         if not np.all(
-            arrays_equal([tfla.eng for tfla in tflistarrs])
+            arrays_close([tfla.eng for tfla in tflistarrs])
         ):
             raise TypeError('All eng bins must be identical.')
 
