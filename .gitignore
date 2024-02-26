@@ -1,12 +1,4 @@
 #===== This project =====
-.ipynb_checkpoints
-.ipynb_checkpoints/
-**/.ipynb_checkpoints
-**/.ipynb_checkpoints/
-
-.DS_Store
-**/.DS_Store
-
 *.pyc
 **/*.pyc
 
@@ -142,3 +134,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# macOS
+.DS_Store
