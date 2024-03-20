@@ -558,7 +558,7 @@ def evolve(
         # binning
         hplanck = phys.hbar * 2*np.pi
         dist_eng = np.exp(np.linspace(np.log(hplanck*1e8),
-                                      np.log(phys.rydberg), 500))
+                                      np.log(phys.rydberg), 2000))
         #dist_eng = np.sort(np.append(dist_eng,
         #                             atomic.get_transition_energies(nmax)))
         distortion = Spectrum(dist_eng, np.zeros_like(dist_eng),
