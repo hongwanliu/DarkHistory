@@ -6,7 +6,7 @@ import darkhistory.physics as phys
 import darkhistory.spec.transferfunction as tf
 import darkhistory.spec.spectools as spectools
 
-from config import load_data
+from darkhistory.config import load_data
 
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra

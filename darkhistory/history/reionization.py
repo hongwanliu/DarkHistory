@@ -4,7 +4,7 @@
 
 import numpy as np 
 import darkhistory.physics as phys
-from config import load_data
+from darkhistory.config import load_data
 
 def photoion_rate(species, method = 'Puchwein'):
     """ Photoionization rate. 
