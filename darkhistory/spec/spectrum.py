@@ -786,7 +786,7 @@ class Spectrum:
             self.eng = new_eng
 
     def rebin(self, out_eng):
-        """ Rebins according to a new abscissa.
+        r""" Rebins according to a new abscissa.
 
         The total number and total energy is conserved.
 
