@@ -332,9 +332,9 @@ def load_data(data_type, prefix=None):
         )
 
         with open(coords_file_name) as data_file:    
-            coords_data = np.array(json.load(data_file))
+            coords_data = np.array(json.load(data_file), dtype=object)
         with open(values_file_name) as data_file:
-            values_data = np.array(json.load(data_file))
+            values_data = np.array(json.load(data_file), dtype=object)
 
         # coords_data is a (2, 23, 2) array. 
         # axis 0: stable SM secondaries, {'elec', 'phot'}
