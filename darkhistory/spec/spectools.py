@@ -347,7 +347,7 @@ def get_normalized_spec(spec, dE_dVdt, rs):
 
     dE_dNBdlnz = dE_dVdt/(phys.nB*rs**3)/phys.hubble(rs)
 
-    return spec/spec.toteng()*dEdNBdlnz
+    return spec/spec.toteng()*dE_dNBdlnz
 
 def engloss_rebin_fast(in_eng, eng, grid_vals, final_eng):
     """
