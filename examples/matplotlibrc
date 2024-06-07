@@ -6,9 +6,6 @@ font.family : serif
 #font.serif  : Palatino
 mathtext.fontset : stix
 
-# Need this for proper alignment in legends with LaTeX.
-text.latex.preview : False
-
 axes.titlepad : 15
 axes.titlesize : 24
 axes.labelsize : 18
