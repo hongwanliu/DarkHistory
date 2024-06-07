@@ -7,7 +7,7 @@ import numpy as np
 import json
 
 # from config import data_path
-from config import load_data
+from darkhistory.config import load_data
 
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum

@@ -4,7 +4,7 @@ from scipy.special import loggamma
 import darkhistory.physics as phys
 from darkhistory.spec.spectrum import Spectrum
 
-from config import load_data
+from darkhistory.config import load_data
 
 
 def g(l, lp, n, kappa=None):
