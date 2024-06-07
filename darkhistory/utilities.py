@@ -151,7 +151,7 @@ def log_series_diff(b, a):
     )
 
 def spence_series_diff(b, a):
-    """ Returns the Taylor series for Li\ :sub:`2`\ (b) - Li\ :sub:`2`\ (a).
+    r""" Returns the Taylor series for Li\ :sub:`2`\ (b) - Li\ :sub:`2`\ (a).
 
     Li2 is the polylogarithm function defined by
     

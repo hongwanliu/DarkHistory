@@ -28,15 +28,15 @@ mu_ep = (mp * me) / (mp + me)
 hbar        = 6.58211951e-16
 """hbar in eV s."""
 c           = 299792458e2
-"""Speed of light in cm s\ :sup:`-1`\ ."""
+r"""Speed of light in cm s\ :sup:`-1`\ ."""
 kB          = 8.617333262145e-5
-"""Boltzmann constant in eV K\ :sup:`-1`\ ."""
+r"""Boltzmann constant in eV K\ :sup:`-1`\ ."""
 alpha       = 1/137.035999139
 """Fine structure constant."""
 ele         = 1.60217662e-19
 """Electron charge in coulombs."""
 G = 6.6730e-8
-"""Newton's Gravitational Constant in cm\ :sup:`3` g\ :sup:`-1` s\ :sup:`-2`\ ."""
+r"""Newton's Gravitational Constant in cm\ :sup:`3` g\ :sup:`-1` s\ :sup:`-2`\ ."""
 
 mass = {
     'e': me,         'mu': 105.6583745e6, 'tau': 1776.86e6,
@@ -45,9 +45,9 @@ mass = {
 }
 """Masses of Standard Model particles."""
 thomson_xsec = 6.652458734e-25
-"""Thomson cross section in cm\ :sup:`2`\ ."""
+r"""Thomson cross section in cm\ :sup:`2`\ ."""
 stefboltz    = np.pi**2 / (60 * (hbar**3) * (c**2))
-"""Stefan-Boltzmann constant in eV\ :sup:`-3` cm\ :sup:`-2` s\ :sup:`-1`\ .
+r"""Stefan-Boltzmann constant in eV\ :sup:`-3` cm\ :sup:`-2` s\ :sup:`-1`\ .
 """
 ele_rad      = hbar * c * alpha / me
 """Classical electron radius in cm."""
@@ -67,7 +67,7 @@ ele_compton  = 2*np.pi*hbar * c / me
 h    = 0.6736
 """ h parameter."""
 H0   = 100*h*3.241e-20
-""" Hubble parameter today in s\ :sup:`-1`\ ."""
+r""" Hubble parameter today in s\ :sup:`-1`\ ."""
 
 omega_m      = 0.3153
 """ Omega of all matter today."""
@@ -80,33 +80,33 @@ omega_baryon = 0.02237/(h**2)
 omega_DM      = 0.1200/(h**2)
 """ Omega of dark matter today."""
 rho_crit     = 1.05371e4*(h**2)
-""" Critical density of the universe in eV cm\ :sup:`-3`\ . 
+r""" Critical density of the universe in eV cm\ :sup:`-3`\ . 
 
 See [1] for the definition. This is a mass density, with mass measured in eV.
 """
 rho_DM       = rho_crit*omega_DM
-""" DM density in eV cm\ :sup:`-3`\ ."""
+r""" DM density in eV cm\ :sup:`-3`\ ."""
 rho_baryon   = rho_crit*omega_baryon
-""" Baryon density in eV cm\ :sup:`-3`\ ."""
+r""" Baryon density in eV cm\ :sup:`-3`\ ."""
 nB          = rho_baryon/mp
-""" Baryon number density in eV cm\ :sup:`-3`\ ."""
+r""" Baryon number density in eV cm\ :sup:`-3`\ ."""
 s0          = 2891.2
-""" Entropy density of CMB in cm\ :sup:`-3`\ ."""
+r""" Entropy density of CMB in cm\ :sup:`-3`\ ."""
 
 YHe         = 0.245
 """Helium abundance by mass."""
 nH          = (1-YHe)*nB
-""" Atomic hydrogen number density in cm\ :sup:`-3`\ ."""
+r""" Atomic hydrogen number density in cm\ :sup:`-3`\ ."""
 nHe         = (YHe/4)*nB
-""" Atomic helium number density in cm\ :sup:`-3`\ ."""
+r""" Atomic helium number density in cm\ :sup:`-3`\ ."""
 nA          = nH + nHe
-""" Hydrogen and helium number density in cm\ :sup:`-3`\ .""" 
+r""" Hydrogen and helium number density in cm\ :sup:`-3`\ .""" 
 chi         = nHe/nH
 """Ratio of helium to hydrogen nuclei."""
 
 
 def hubble(rs, H0=H0, omega_m=omega_m, omega_rad=omega_rad, omega_lambda=omega_lambda):
-    """ Hubble parameter in s\ :sup:`-1`\ .
+    r""" Hubble parameter in s\ :sup:`-1`\ .
 
     Assumes a flat universe.
 
@@ -177,7 +177,7 @@ def TCMB(rs):
 
 
 def CMB_spec(eng, temp):
-    """CMB spectrum in number of photons cm\ :sup:`-3` eV\ :sup:`-1`\ .
+    r"""CMB spectrum in number of photons cm\ :sup:`-3` eV\ :sup:`-1`\ .
 
     The normalization used here is
 
@@ -227,7 +227,7 @@ def CMB_spec(eng, temp):
 
 
 def CMB_N_density(T):
-    """ CMB number density in cm\ :sup:`-3`\ .
+    r""" CMB number density in cm\ :sup:`-3`\ .
 
     Parameters
     ----------
@@ -246,7 +246,7 @@ def CMB_N_density(T):
 
 
 def CMB_eng_density(T):
-    """CMB energy density in eV cm\ :sup:`-3`\ .
+    r"""CMB energy density in eV cm\ :sup:`-3`\ .
 
     Parameters
     ----------
@@ -267,7 +267,7 @@ def CMB_eng_density(T):
 
 
 def inj_rate(inj_type, rs, mDM=None, sigmav=None, lifetime=None):
-    """ Dark matter annihilation/decay energy injection rate.
+    r""" Dark matter annihilation/decay energy injection rate.
 
     Parameters
     ----------
@@ -420,7 +420,7 @@ lya_eng      = rydberg*3/4
 lya_freq     = lya_eng / (2*np.pi*hbar)
 """Lyman alpha transition frequency in Hz."""
 width_2s1s_H = 8.22458
-"""Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
+r"""Hydrogen 2s to 1s decay width in s\ :sup:`-1`\ ."""
 bohr_rad     = (hbar*c) / (mu_ep*alpha)
 """Bohr radius in cm."""
 
@@ -483,11 +483,11 @@ He_exc_eng = {
 """HeI n=1 to n=2 excitation energies in eV, and n=1 to 3p through 10p"""
 
 A_He_21p = 1.798287e9
-"""Einstein coefficient for 2\ :sup:`1`\ p :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
+r"""Einstein coefficient for 2\ :sup:`1`\ p :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 A_He_23P1 = 177.58
-"""Einstein coefficient for 2\ :sup:`3`\ P\ :sub:`1` :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
+r"""Einstein coefficient for 2\ :sup:`3`\ P\ :sub:`1` :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 width_21s_1s_He = 51.3
-"""Width of He 2\ :sup:`1`\ s :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
+r"""Width of He 2\ :sup:`1`\ s :math:`\\to` 1s decay in s\ :sup:`-1`\ ."""
 
 
 #########################################
@@ -495,7 +495,7 @@ width_21s_1s_He = 51.3
 #########################################
 
 def alpha_recomb(T_m, species, fudge=1.125):
-    """Case-B recombination coefficient.
+    r"""Case-B recombination coefficient.
 
     Parameters
     ----------
@@ -556,7 +556,7 @@ def alpha_recomb(T_m, species, fudge=1.125):
 
 
 def beta_ion(T_rad, species, fudge=1.125):
-    """Case-B photoionization coefficient.
+    r"""Case-B photoionization coefficient.
 
     Parameters
     ----------
@@ -1082,7 +1082,7 @@ def Tm_std(rs, rs_extrap=None):
 # Atomic Cross-Sections
 
 def photo_ion_xsec(eng, species):
-    """Photoionization cross section in cm\ :sup:`2`\ .
+    r"""Photoionization cross section in cm\ :sup:`2`\ .
 
     Cross sections for hydrogen, neutral helium
     and singly-ionized helium are available.
@@ -1147,7 +1147,7 @@ def photo_ion_xsec(eng, species):
 
 
 def photo_ion_rate(rs, eng, xH, xe, atom=None):
-    """Photoionization rate in cm\ :sup:`-3` s\ :sup:`-1`\ .
+    r"""Photoionization rate in cm\ :sup:`-3` s\ :sup:`-1`\ .
 
     Parameters
     ----------
@@ -1190,7 +1190,7 @@ def photo_ion_rate(rs, eng, xH, xe, atom=None):
 
 
 def coll_exc_xsec(eng, species=None, method='old', state=None):
-    """ e-H or e-He collisional excitation cross section in cm\ :sup:`2`\ . 
+    r""" e-H or e-He collisional excitation cross section in cm\ :sup:`2`\ . 
 
     see under method for references
 
@@ -1561,7 +1561,7 @@ def coll_exc_xsec(eng, species=None, method='old', state=None):
 
 
 def coll_ion_xsec(eng, species=None, method='old'):
-    """ e-e collisional ionization cross section in cm\ :sup:`2`\ . 
+    r""" e-e collisional ionization cross section in cm\ :sup:`2`\ . 
 
     For the 'old' method, see 0906.1197.
     For the 'MEDEA' method, see Mon. Not. R. Astron. Soc. 422, 420–433 (2012).
@@ -2092,7 +2092,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
 
 
 def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
-    """Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .
+    r"""Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .
 
     Parameters
     ----------
