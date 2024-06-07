@@ -1298,15 +1298,8 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
             "channel must be in ['H ion', 'He ion', 'exc', 'heat', 'cont']"
         )
 
-    if isinstance(mDM, (int, float)):
-        mDM = np.array([mDM])*1.
-    else:
-        mDM = np.array(mDM)*1.
-
-    if isinstance(rs, (int, float)):
-        rs = np.array([rs])*1.
-    else:
-        rs = np.array(rs)*1.
+    mDM = np.array(mDM)*1.
+    rs = np.array(rs)*1.
 
     struct_str = ''
     if inj_type == 'swave':
@@ -1323,24 +1316,38 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
         else:
             Einj = mDM/2 - me
 
-
     ind_dict = {'H ion' : 0, 'He ion' : 1, 'exc' : 2, 'heat' : 3, 'cont' : 4}
     ind = ind_dict[channel]
     f_data_baseline = load_data('f')[inj_particle+'_'+inj_type+struct_str]
 
-    Einj[Einj<5.001e3] = 5.001e3
-    Einj[Einj>10**12.6015] = 10**12.6015
-
-    if inj_particle != 'phot' or inj_type != 'swave':
-        rs[rs<4.017] = 4.017
+    if isinstance(mDM, (int, float)):
+        if Einj < 5.001e3:
+            Einj = 5.001e3
+        elif Einj > 10**12.6015:
+            Einj = 10**12.6015
     else:
-        rs[rs<5.2] = 5.2
-    rs[rs>3000] = 3000
+        Einj[Einj<5.001e3] = 5.001e3
+        Einj[Einj>10**12.6015] = 10**12.6015
 
+    if isinstance(rs, (int, float)):
+        if inj_particle != 'phot' or inj_type != 'swave':
+            if rs < 4.017:
+                rs = 4.017
+        else:
+            if rs > 3000:
+                rs = 3000
+    else:
+        if inj_particle != 'phot' or inj_type != 'swave':
+            rs[rs<4.017] = 4.017
+        else:
+            rs[rs<5.2] = 5.2
+        rs[rs>3000] = 3000
 
-    return np.exp(
-            f_data_baseline((np.log10(Einj), np.log(rs)))[:,ind]
-    )
+    fdb = f_data_baseline((np.log10(Einj), np.log(rs)))
+    if len(fdb.shape) > 1:
+        return np.exp(fdb[:,ind])
+    else:
+        return np.exp(fdb[ind])
 
 # Unused for now.
 

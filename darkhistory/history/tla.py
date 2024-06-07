@@ -266,7 +266,6 @@ def get_history(
             # This rate is temperature loss per redshift.
             adiabatic_cooling_rate = 2 * T_m/rs
 
-
             return 1 / T_m * adiabatic_cooling_rate + 1 / T_m * (
                 phys.dtdz(rs)*(
                     compton_cooling_rate(

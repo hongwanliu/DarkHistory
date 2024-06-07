@@ -18,7 +18,7 @@ from scipy.interpolate import RegularGridInterpolator
 # LOOK FOR THESE DATA FILES HERE.
 # Or use DH_DATA_DIR environment variable.
 
-data_path = None
+data_path = "/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data/"
 use_v1_0_data = False
 
 if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
@@ -441,10 +441,10 @@ def load_data(data_type, verbose=1):
                 data_path+'/dlNdlxIEW_values_table.txt'
             )
 
-            with open(coords_file_name) as data_file:    
-                coords_data = np.array(json.load(data_file))
+            with open(coords_file_name) as data_file:   
+                coords_data = np.array(json.load(data_file), dtype=object)
             with open(values_file_name) as data_file:
-                values_data = np.array(json.load(data_file))
+                values_data = np.array(json.load(data_file), dtype=object)
 
             # coords_data is a (2, 23, 2) array. 
             # axis 0: stable SM secondaries, {'elec', 'phot'}
