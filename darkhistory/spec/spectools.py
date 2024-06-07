@@ -264,7 +264,7 @@ def rebin_N_arr(
 
 
 def discretize(eng, func_dNdE, *args):
-    """Discretizes a continuous function. 
+    r"""Discretizes a continuous function. 
 
     The function is integrated between the bin boundaries specified by `eng` to obtain the discretized spectrum, so that the final spectrum conserves number and energy between the bin **boundaries**.
 
