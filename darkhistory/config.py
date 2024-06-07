@@ -583,7 +583,7 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
 
     """
 
-    import main 
+    import darkhistory.main as main 
 
     if date_str is None: 
         std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
