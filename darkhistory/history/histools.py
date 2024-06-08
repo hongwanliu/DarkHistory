@@ -50,7 +50,7 @@ class IonRSArray:
                     self._grid_vals = np.flip(self._grid_vals, 2)
                 else:
                     # dim 0: rs.
-                    raise TypeError('invalid dimensions for x_arr.')
+                    raise ValueError('invalid dimensions for x_arr.')
             else:
                 self._grid_vals = np.flip(self._grid_vals, 0)
             # Now, data stored in *increasing* rs. 
@@ -64,11 +64,48 @@ class IonRSArray:
         def __setitem__(self, key, value):
             self.tflist_arr[key] = value
 
+
+
+def dict_from_inhom_list(l, key):
+    """Get hdf5 compatible dictionary from an inhomogeneous list of arrays.
+
+    Parameters
+    ----------
+    l : list
+        List of arrays.
+    key : str
+        Key to use for dictionary.
+    """
+    d = {}
+    for i, arr in enumerate(l):
+        d[key + str(i)] = arr
+    return d
+
+
+def inhom_list_from_dict(d, key):
+    """Get inhomogeneous list of arrays from dictionary.
+
+    Parameters
+    ----------
+    d : dict
+        Dictionary to extract arrays from.
+    key : str
+        Key to use for dictionary.
+    """
+    l = []
+    i = 0
+    while key + str(i) in d:
+        l.append(d[key + str(i)])
+        i += 1
+    return l
+
+
+
 class IonRSInterp:
     """Interpolation function over list of IonRSArray objects. 
 
     Parameters
-    -----------
+    ----------
     ionrsarrays : list of IonRSArray
         IonRSArray objects to interpolate over. 
     rs_nodes : ndarray
@@ -79,67 +116,78 @@ class IonRSInterp:
 
     def __init__(self, ionrsarrays, rs_nodes=None, log_interp=False):
 
-        # rs_nodes must have 1 less entry than tflistarrs.
-        if (
-            (rs_nodes is not None and len(rs_nodes) != len(ionrsarrays)-1)
-            or (rs_nodes is None and len(ionrsarrays) > 1)
-        ):
-            raise TypeError('rs_nodes incompatible with given ionrsarrays.')
+        if isinstance(ionrsarrays, dict): # initialize from dictionary.
+            self.from_dict(ionrsarrays)
+        else: # original initialization.
+            # rs_nodes must have 1 less entry than tflistarrs.
+            if (
+                (rs_nodes is not None and len(rs_nodes) != len(ionrsarrays)-1)
+                or (rs_nodes is None and len(ionrsarrays) > 1)
+            ):
+                raise ValueError('rs_nodes incompatible with given ionrsarrays.')
 
-        # rs_nodes must be in *increasing* redshift
-        if rs_nodes is not None and len(rs_nodes) > 1:
-            if not np.all(np.diff(rs_nodes) > 0):
-                raise TypeError('rs_nodes must be in increasing order.')
+            # rs_nodes must be in *increasing* redshift
+            if rs_nodes is not None and len(rs_nodes) > 1:
+                if not np.all(np.diff(rs_nodes) > 0):
+                    raise ValueError('rs_nodes must be in increasing order.')
 
-        self.rs       = [ionrsarr.rs for ionrsarr in ionrsarrays]
-        self.in_eng   = [ionrsarr.in_eng for ionrsarr in ionrsarrays]
-        self.eng      = [ionrsarr.eng for ionrsarr in ionrsarrays]
-        self.rs_nodes = rs_nodes
+            self.rs        = [ionrsarr.rs for ionrsarr in ionrsarrays]
+            # self.in_eng    = [ionrsarr.in_eng for ionrsarr in ionrsarrays]
+            # self.eng       = [ionrsarr.eng for ionrsarr in ionrsarrays]
+            self.rs_nodes  = rs_nodes
+            self.grid_vals = [ionrsarr._grid_vals for ionrsarr in ionrsarrays]
 
-        self.grid_vals = [ionrsarr._grid_vals for ionrsarr in ionrsarrays]
-        self.x         = []
+            self.x         = []
+            for ionrsarr in ionrsarrays:
+                try:
+                    self.x.append(ionrsarr.x)
+                except:
+                    self.x.append(None)
 
-        for ionrsarr in ionrsarrays:
-            try:
-                self.x.append(ionrsarr.x)
-            except:
-                self.x.append(None)
+            self._log_interp = log_interp
 
-        self._log_interp = log_interp
-
+        # common: build interpolation function
         if self._log_interp:
             for grid in self.grid_vals:
                 grid[grid <= 0] = 1e-200
             func = np.log
         else:
-            print('noninterp')
-            def func(obj):
-                return obj
+            func = lambda x: x
 
         self.interp_func = []
-        for x_vals,z,grid in zip(self.x, self.rs, self.grid_vals):
-            if x_vals is None:
-                self.interp_func.append(
-                    interp1d(func(z), func(np.squeeze(grid)), axis=0)
-                )
-            elif x_vals.ndim == 1:
-                # xH dependence.
-                self.interp_func.append(
-                    RegularGridInterpolator(
-                        (func(x_vals), func(z)), func(grid)
-                    )
-                )
-            elif x_vals.ndim == 3:
-                # xH, xHe dependence.
+        for x_vals, z, grid in zip(self.x, self.rs, self.grid_vals):
+            if np.isscalar(x_vals): # no x dependence.
+                self.interp_func.append(interp1d(func(z), func(np.squeeze(grid)), axis=0))
+            elif x_vals.ndim == 1: # xH dependence.
+                self.interp_func.append(RegularGridInterpolator((func(x_vals), func(z)), func(grid)))
+            elif x_vals.ndim == 3: # xH, xHe dependence.
                 xH_arr = x_vals[:,0,0]
                 xHe_arr = x_vals[0,:,1]
-                self.interp_func.append(
-                    RegularGridInterpolator(
-                        (func(xH_arr), func(xHe_arr), func(z)), func(grid)
-                    )
-                )
+                self.interp_func.append(RegularGridInterpolator((func(xH_arr), func(xHe_arr), func(z)), func(grid)))
             else:
-                raise TypeError('grid has anomalous dimensions (and not in a good QFT way).')
+                raise ValueError('x_vals has anomalous dimensions (and not in a good QFT way).')
+            
+
+    def to_dict(self):
+        """Return hdf5 compatible dictionary. Does not save eng and in_eng information."""
+        d = {
+            'rs_nodes': self.rs_nodes,
+            'log_interp': self._log_interp,
+        }
+        d.update(dict_from_inhom_list(self.rs, 'rs'))
+        d.update(dict_from_inhom_list(self.x, 'x'))
+        d.update(dict_from_inhom_list(self.grid_vals, 'grid_vals'))
+        return d
+    
+
+    def from_dict(self, d):
+        """Initialize from hdf5 compatible dictionary."""
+        self.rs_nodes = d['rs_nodes']
+        self._log_interp = d['log_interp']
+        self.rs = inhom_list_from_dict(d, 'rs')
+        self.x = inhom_list_from_dict(d, 'x')
+        self.grid_vals = inhom_list_from_dict(d, 'grid_vals')
+
 
     def get_val(self, xH, xHe, rs):
 
@@ -147,13 +195,11 @@ class IonRSInterp:
             func = np.log
             inv_func = np.exp
         else:
-            def func(obj):
-                return obj
-            inv_func = func
+            inv_func = func = lambda x: x
 
         rs_regime_ind = np.searchsorted(self.rs_nodes, rs)
         if rs > self.rs[rs_regime_ind][-1] or rs < self.rs[rs_regime_ind][0]:
-            raise TypeError('redshift lies outside of range.')
+            raise ValueError('redshift lies outside of range.')
 
         rs_regime_interp_func = self.interp_func[rs_regime_ind]
 
@@ -196,6 +242,6 @@ class IonRSInterp:
                 )
             )
         else:
-            raise TypeError('x has an anomalous dimension (and not in a good QFT way).')
+            raise ValueError('x has an anomalous dimension (and not in a good QFT way).')
 
         return out_grid_vals
