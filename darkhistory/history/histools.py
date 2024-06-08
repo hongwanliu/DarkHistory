@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
+from darkhistory.utilities import dict_from_inhom_list, inhom_list_from_dict
 
 class IonRSArray:
     """Array of objects indexed by ionization and redshift. 
@@ -66,41 +67,6 @@ class IonRSArray:
 
 
 
-def dict_from_inhom_list(l, key):
-    """Get hdf5 compatible dictionary from an inhomogeneous list of arrays.
-
-    Parameters
-    ----------
-    l : list
-        List of arrays.
-    key : str
-        Key to use for dictionary.
-    """
-    d = {}
-    for i, arr in enumerate(l):
-        d[key + str(i)] = arr
-    return d
-
-
-def inhom_list_from_dict(d, key):
-    """Get inhomogeneous list of arrays from dictionary.
-
-    Parameters
-    ----------
-    d : dict
-        Dictionary to extract arrays from.
-    key : str
-        Key to use for dictionary.
-    """
-    l = []
-    i = 0
-    while key + str(i) in d:
-        l.append(d[key + str(i)])
-        i += 1
-    return l
-
-
-
 class IonRSInterp:
     """Interpolation function over list of IonRSArray objects. 
 
@@ -118,16 +84,15 @@ class IonRSInterp:
 
         if isinstance(ionrsarrays, dict): # initialize from dictionary.
             self.from_dict(ionrsarrays)
+
         else: # original initialization.
-            # rs_nodes must have 1 less entry than tflistarrs.
-            if (
+            if ( # rs_nodes must have 1 less entry than tflistarrs.
                 (rs_nodes is not None and len(rs_nodes) != len(ionrsarrays)-1)
                 or (rs_nodes is None and len(ionrsarrays) > 1)
             ):
                 raise ValueError('rs_nodes incompatible with given ionrsarrays.')
 
-            # rs_nodes must be in *increasing* redshift
-            if rs_nodes is not None and len(rs_nodes) > 1:
+            if rs_nodes is not None and len(rs_nodes) > 1: # rs_nodes must be in *increasing* redshift
                 if not np.all(np.diff(rs_nodes) > 0):
                     raise ValueError('rs_nodes must be in increasing order.')
 
@@ -156,7 +121,7 @@ class IonRSInterp:
 
         self.interp_func = []
         for x_vals, z, grid in zip(self.x, self.rs, self.grid_vals):
-            if np.isscalar(x_vals): # no x dependence.
+            if x_vals is None: # no x dependence.
                 self.interp_func.append(interp1d(func(z), func(np.squeeze(grid)), axis=0))
             elif x_vals.ndim == 1: # xH dependence.
                 self.interp_func.append(RegularGridInterpolator((func(x_vals), func(z)), func(grid)))
@@ -175,7 +140,8 @@ class IonRSInterp:
             'log_interp': self._log_interp,
         }
         d.update(dict_from_inhom_list(self.rs, 'rs'))
-        d.update(dict_from_inhom_list(self.x, 'x'))
+        x_save = [(-1 if x is None else x) for x in self.x]
+        d.update(dict_from_inhom_list(x_save, 'x'))
         d.update(dict_from_inhom_list(self.grid_vals, 'grid_vals'))
         return d
     
@@ -186,6 +152,9 @@ class IonRSInterp:
         self._log_interp = d['log_interp']
         self.rs = inhom_list_from_dict(d, 'rs')
         self.x = inhom_list_from_dict(d, 'x')
+        for i, x in enumerate(self.x):
+            if np.isscalar(x) and x == -1:
+                self.x[i] = None
         self.grid_vals = inhom_list_from_dict(d, 'grid_vals')
 
 

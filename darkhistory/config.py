@@ -1,18 +1,11 @@
 """ Configuration and defaults."""
 
 import os
-import sys
 import numpy as np
 import json
-import pickle
 import h5py
 
-import scipy
 from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
-scipy.interpolate.interpolate.RegularGridInterpolator = scipy.interpolate.RegularGridInterpolator # tmp hack
-
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from history.histools import IonRSInterp
 
 
 #===== SET DATA PATH HERE =====#
@@ -246,22 +239,23 @@ def load_data(data_type, verbose=1):
     ### transfer functions
     
     elif data_type == 'dep_tf':
-
+        from darkhistory.spec.transferfunclist import TransferFuncInterp
+        from darkhistory.history.histools import IonRSInterp
+        # prevent Spectrum -> physics -> load_data -> TransferFuncInterp -> Spectrum ciruclar import
         if glob_dep_tf_data is None:
-
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
                 print('Using data at %s' % data_path)
                 print('    for propagating photons... ', end =' ', flush=True)
-            highengphot_tf_interp = pickle.load( open(data_path+'/highengphot_tf_interp.raw', 'rb') )
+            highengphot_tf_interp = TransferFuncInterp(load_h5_dict(data_path+'/highengphot.h5'))
             if verbose >= 1:
                 print(' Done!')
                 print('    for low-energy photons... ', end=' ', flush=True)
-            lowengphot_tf_interp  = pickle.load( open(data_path+'/lowengphot_tf_interp.raw', 'rb') )
+            lowengphot_tf_interp  = TransferFuncInterp(load_h5_dict(data_path+'/lowengphot.h5'))
             if verbose >= 1:
                 print('Done!')
                 print('    for low-energy electrons... ', end=' ', flush=True)
-            lowengelec_tf_interp  = pickle.load( open(data_path+'/lowengelec_tf_interp.raw', 'rb') )
+            lowengelec_tf_interp  = TransferFuncInterp(load_h5_dict(data_path+'/lowengelec.h5'))
             if verbose >= 1:
                 print('Done!')
                 print('    for high-energy deposition... ', end=' ', flush=True)
@@ -269,7 +263,7 @@ def load_data(data_type, verbose=1):
             if verbose >= 1:
                 print('Done!')
                 print('    for total upscattered CMB energy rate... ', end=' ', flush=True)
-            CMB_engloss_interp    = pickle.load( open(data_path+'/CMB_engloss_interp.raw', 'rb') )
+            CMB_engloss_interp    = IonRSInterp(load_h5_dict(data_path+'/CMB_engloss.h5'))
             if verbose >= 1:
                 print('Done!')
                 print('****** Loading complete! ******', flush=True)
@@ -281,11 +275,11 @@ def load_data(data_type, verbose=1):
                 'highengdep'  : highengdep_interp,
                 'CMB_engloss' : CMB_engloss_interp
             }
-
         return glob_dep_tf_data
     
 
     elif data_type == 'hed_tf':
+        from darkhistory.history.histools import IonRSInterp
         if glob_dep_tf_data is None:
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
@@ -299,6 +293,7 @@ def load_data(data_type, verbose=1):
     
 
     elif data_type == 'tf_helper':
+        from darkhistory.history.histools import IonRSInterp
         if glob_tf_helper_data is None:
             try:
                 glob_tf_helper_data = {k : IonRSInterp(load_h5_dict(data_path+f'/{k}.h5')) for k in ['tf_E', 'hep_lb', 'lci', 'hci']}
@@ -309,29 +304,28 @@ def load_data(data_type, verbose=1):
 
 
     elif data_type == 'ics_tf':
+        from darkhistory.spec.transferfunction import TransFuncAtRedshift
         if glob_ics_tf_data is None:
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
                 print('    for inverse Compton (Thomson)... ', end=' ', flush=True)
-            ics_thomson_ref_tf = pickle.load( open(data_path+'/ics_thomson_ref_tf.raw', 'rb') )
+            ics_thomson_ref_tf = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_thomson_ref.h5'))
             if verbose >= 1:
                 print('Done!')
                 print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
-            ics_rel_ref_tf     = pickle.load( open(data_path+'/ics_rel_ref_tf.raw',     'rb') )
+            ics_rel_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_rel_ref.h5'))
             if verbose >= 1:
                 print('Done!')
                 print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
-            engloss_ref_tf     = pickle.load( open(data_path+'/engloss_ref_tf.raw',     'rb') )
+            engloss_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_engloss_ref.h5'))
             if verbose >= 1:
                 print('Done!')
                 print('****** Loading complete! ******', flush=True)
-
             glob_ics_tf_data = {
                 'thomson' : ics_thomson_ref_tf,
                 'rel'     : ics_rel_ref_tf,
                 'engloss' : engloss_ref_tf
             }
-
         return glob_ics_tf_data
 
 
