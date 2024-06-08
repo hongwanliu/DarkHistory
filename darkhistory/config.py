@@ -245,7 +245,7 @@ def load_data(data_type, verbose=1):
         if glob_dep_tf_data is None:
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
-                print('Using data at %s' % data_path)
+                print(f'Using data at {data_path}')
                 print('    for propagating photons... ', end =' ', flush=True)
             highengphot_tf_interp = TransferFuncInterp(load_h5_dict(data_path+'/highengphot.h5'))
             if verbose >= 1:
@@ -283,7 +283,7 @@ def load_data(data_type, verbose=1):
         if glob_dep_tf_data is None:
             if verbose >= 1:
                 print('****** Loading transfer functions... ******')
-                print('Using data at %s' % data_path)
+                print(f'Using data at {data_path}')
                 print('    for high-energy deposition... ', end=' ', flush=True)
             highengdep_interp     = IonRSInterp(load_h5_dict(data_path+'/highengdep.h5'))
             if verbose >= 1:
@@ -334,7 +334,7 @@ def load_data(data_type, verbose=1):
     
     elif data_type == 'struct':
         if glob_struct_data is None:
-            boost_data = np.loadtxt(open(data_path+'/boost_data.txt', 'rb'))
+            boost_data = np.loadtxt(data_path+'/boost_data.txt')
             #einasto_subs = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
             glob_struct_data = {
                 'einasto_subs'    : boost_data[:,[0,1]],
@@ -379,17 +379,8 @@ def load_data(data_type, verbose=1):
 
     elif data_type == 'pppc':
         if glob_pppc_data is None:
-            coords_file_name = (
-                data_path+'/dlNdlxIEW_coords_table.txt'
-            )
-            values_file_name = (
-                data_path+'/dlNdlxIEW_values_table.txt'
-            )
-            with open(coords_file_name) as data_file:   
-                coords_data = np.array(json.load(data_file), dtype=object)
-            with open(values_file_name) as data_file:
-                values_data = np.array(json.load(data_file), dtype=object)
 
+            coords_data = np.array(json.load(open(data_path+'/dlNdlxIEW_coords_table.json')), dtype=object)
             # coords_data is a (2, 23, 2) array. 
             # axis 0: stable SM secondaries, {'elec', 'phot'}
             # axis 1: annihilation primary channel.
@@ -397,6 +388,7 @@ def load_data(data_type, verbose=1):
             # the secondary. 
             # Each element is a 1D array.
 
+            values_data = np.array(json.load(open(data_path+'/dlNdlxIEW_values_table.json')), dtype=object)
             # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
             # axis 0: stable SM secondaries, {'elec', 'phot'}
             # axis 1: annihilation primary channel.
