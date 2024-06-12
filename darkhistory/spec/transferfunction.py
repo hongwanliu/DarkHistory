@@ -256,8 +256,8 @@ class TransFuncAtRedshift (Spectra):
             non_zero_grid = self.grid_vals
             non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200 # set zero values to some small value for log interp.
             interp_grid = non_zero_grid
-            self.interp_func = interpolate.RegularGridInterpolator(
-                (np.log(self.in_eng), np.log(self.eng)),
+            self.interp_func = interpolate.interp2d(
+                np.log(self.in_eng), np.log(self.eng),
                 np.transpose(interp_grid), bounds_error = False,
                 fill_value = 1e-200
             )
@@ -519,8 +519,8 @@ class TransFuncAtRedshift (Spectra):
                 N_und_grid   = non_zero_N_und
                 eng_und_grid = non_zero_eng_und
 
-            interp_func = interpolate.RegularGridInterpolator(
-                (np.log(self.eng), np.log(self.in_eng)),
+            interp_func = interpolate.interp2d(
+                np.log(self.eng), np.log(self.in_eng),
                 interp_grid,
                 bounds_error=bounds_error,
                 fill_value=np.log(fill_value)
