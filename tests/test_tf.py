@@ -17,7 +17,7 @@ def data_loader():
         'ics_tf' : load_data('ics_tf', verbose=0),
         'expected' : {},
     }
-    with h5py.File(os.path.dirname(os.path.realpath(__file__)) + '/data/test_tf.h5', 'r') as hf:
+    with h5py.File(os.path.dirname(os.path.realpath(__file__)) + '/data/test_tf_2261700c.h5', 'r') as hf:
         for k in hf.keys():
             data['expected'][k] = hf[k][()]
     return data
