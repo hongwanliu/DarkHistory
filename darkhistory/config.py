@@ -205,13 +205,11 @@ def load_data(data_type, prefix=None):
     data_path = prefix if prefix is not None else os.environ['DH_DATA_DIR']
     
     if data_type == 'binning':
-        if glob_binning_data is None:
-            try:
-                glob_binning_data = load_h5_dict(data_path+'/binning.h5')
-            except FileNotFoundError as err:
-                print(type(err).__name__, ':', err)
-                raise FileNotFoundError('Please update your dataset! See README.md for instructions.')
-        return glob_binning_data
+        try:
+            return load_h5_dict(data_path+'/binning.h5')
+        except FileNotFoundError as err:
+            print(type(err).__name__, ':', err)
+            raise FileNotFoundError('Please update your dataset! See README.md for instructions.')
     
     elif data_type == 'dep_tf':
         from darkhistory.spec.transferfunclist import TransferFuncInterp
@@ -226,6 +224,7 @@ def load_data(data_type, prefix=None):
         return tf_dict
     
     elif data_type == 'hed_tf':
+        from darkhistory.history.histools import IonRSInterp
         tf_dict = {}
         for k in ['highengdep']:
             tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
@@ -233,10 +232,11 @@ def load_data(data_type, prefix=None):
         return tf_dict
     
     elif data_type == 'tf_helper':
+        from darkhistory.history.histools import IonRSInterp
         try:
             tf_dict = {}
             for k in ['tf_E', 'hep_lb', 'lci', 'hci']:
-                tf_dict[k] = load_h5_dict(f'{data_path}/{k}.h5')
+                tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
             logger.info('Loaded transfer function helpers.')
             return tf_dict
         except FileNotFoundError as err:

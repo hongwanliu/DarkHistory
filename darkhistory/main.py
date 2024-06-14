@@ -316,14 +316,6 @@ def evolve(
     ):
         raise ValueError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
 
-    if tf_mode == 'table':
-        if (
-            highengphot_tf_interp.dlnz    != lowengphot_tf_interp.dlnz
-            or highengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz
-            or lowengphot_tf_interp.dlnz  != lowengelec_tf_interp.dlnz
-        ):
-            raise ValueError('TransferFuncInterp objects must all have the same dlnz.')
-
     if in_spec_elec.rs != in_spec_phot.rs:
         raise ValueError('Input spectra must have the same rs.')
 
