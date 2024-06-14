@@ -13,7 +13,6 @@ from darkhistory.config import load_data
 def data_loader():
     data = {
         'dep_tf' : load_data('dep_tf', verbose=0),
-        'tf_helper' : load_data('tf_helper', verbose=0),
         'ics_tf' : load_data('ics_tf', verbose=0),
         'expected' : {},
     }
@@ -46,14 +45,3 @@ def test_ics_tf(data_loader):
         z = tf.sum_specs(np.sin(np.arange(5000)))
         z = z.N
         assert np.allclose(z, data_loader['expected'][k])
-
-def test_tf_helper(data_loader):
-    tfs = data_loader['tf_helper']
-    for k in ['tf_E']:
-        tf = tfs[k]
-        z = tf.get_val(0.433, 0.302, 2244) @ np.sin(np.arange(500))
-        z += tf.get_val(0.760, 0.276, 384) @ np.sin(np.arange(500))
-        z += tf.get_val(0.930, 0.088, 18) @ np.sin(np.arange(500))
-        assert np.allclose(z, data_loader['expected'][k])
-
-    

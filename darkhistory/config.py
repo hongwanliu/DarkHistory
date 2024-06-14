@@ -10,7 +10,7 @@ from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridI
 
 #===== SET DATA PATH HERE =====#
 # or set the environment variable DH_DATA_DIR.
-data_path = "/path/to/data"
+data_path = "/n/holystore01/LABS/iaifi_lab/Users/yitians/darkhistory/DHupdate/DHdata_v1_1_full_new"
 
 if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
     data_path = os.environ['DH_DATA_DIR']

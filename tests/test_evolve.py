@@ -3,10 +3,13 @@ import sys
 import h5py
 from pytest import approx
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from darkhistory.main import evolve
+
 
 
 def test_evolve():
+    
+    from darkhistory.main import evolve
+
     soln = evolve(
         DM_process='decay', mDM=1e8, lifetime=3e25, primary='elec_delta',
         start_rs = 3000,
