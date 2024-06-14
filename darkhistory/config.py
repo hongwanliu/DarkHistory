@@ -1,25 +1,21 @@
-""" Configuration and defaults.
-
-"""
+""" Configuration and defaults."""
 
 import os
-import sys
-
 import numpy as np
 import json
-import pickle
+import h5py
 
-from scipy.interpolate import PchipInterpolator
-from scipy.interpolate import pchip_interpolate
-from scipy.interpolate import RegularGridInterpolator
-from scipy.interpolate import interp1d
+from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
 
 
+#===== SET DATA PATH HERE =====#
+# or set the environment variable DH_DATA_DIR.
+data_path = "/path/to/data"
 
-# Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
-# LOOK FOR THESE DATA FILES HERE. 
+if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
+    data_path = os.environ['DH_DATA_DIR']
+#==============================#
 
-data_path = '/scratch/gpfs/hongwanl/DarkHistory/data'
 
 # Global variables for data.
 glob_binning_data   = None
@@ -170,7 +166,17 @@ class PchipInterpolator2D:
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
 
-def load_data(data_type):
+
+def load_h5_dict(fn):
+    """Load a dictionary from an HDF5 file."""
+    d = {}
+    with h5py.File(fn, 'r') as hf:
+        for k, v in hf.items():
+            d[k] = v[()]
+    return d
+    
+
+def load_data(data_type, verbose=1):
     """ Loads data from downloaded files. 
 
     Parameters
@@ -194,6 +200,8 @@ def load_data(data_type):
 
         - *'exc'* -- cross-sections for e- H(1s) -> e- H(2s) or e- H(np) where n is within 2 through 10.
 
+    verbose : {0, 1}
+        Set verbosity.
 
     Returns
     --------
@@ -212,60 +220,47 @@ def load_data(data_type):
     global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data, glob_reion_data
     global glob_bnd_free_data
 
-    if data_path == '' or not os.path.isdir(data_path):
-        print('NOTE: enter data directory in config.py to avoid this step.')
-        data_path = input('Enter the data directory, e.g. /Users/foo/bar: ')
-
+    if data_path is None or not os.path.isdir(data_path):
+        raise ValueError('Please set data directory in darkhistory.config or to `DH_DATA_DIR` environment variable.')
+    
     if data_type == 'binning':
-
-        binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
-
         if glob_binning_data is None:
-
-            glob_binning_data =  {
-                'phot' : binning[0],
-                'elec' : binning[1]
-            }
-
+            try:
+                glob_binning_data = load_h5_dict(data_path+'/binning.h5')
+            except FileNotFoundError as err:
+                print(type(err).__name__, ':', err)
+                raise FileNotFoundError('Please update your dataset! See README.md for instructions.')
         return glob_binning_data
 
     elif data_type == 'dep_tf':
-
+        from darkhistory.spec.transferfunclist import TransferFuncInterp
+        from darkhistory.history.histools import IonRSInterp
+        # prevent Spectrum -> physics -> load_data -> TransferFuncInterp -> Spectrum ciruclar import
         if glob_dep_tf_data is None:
-
-            print('****** Loading transfer functions... ******')
-
-            print('    for propagating photons... ', end =' ')
-            highengphot_tf_interp = pickle.load(
-                open(data_path+'/highengphot_tf_interp.raw', 'rb')
-            )
-            print(' Done!')
-
-            print('    for low-energy photons... ', end=' ')
-            lowengphot_tf_interp  = pickle.load(
-                open(data_path+'/lowengphot_tf_interp.raw', 'rb')
-            )
-            print('Done!')
-
-            print('    for low-energy electrons... ', end=' ')
-            lowengelec_tf_interp  = pickle.load(
-                open(data_path+"/lowengelec_tf_interp.raw", "rb")
-            )
-            print('Done!')
-
-            print('    for high-energy deposition... ', end=' ')
-            highengdep_interp     = pickle.load(
-                open(data_path+"/highengdep_interp.raw", "rb")
-            )
-            print('Done!')
-
-            print('    for total upscattered CMB energy rate... ', end=' ')
-            CMB_engloss_interp    = pickle.load(
-                open(data_path+"/CMB_engloss_interp.raw", "rb")
-            )
-            print('Done!')
-
-            print('****** Loading complete! ******')
+            if verbose >= 1:
+                print('****** Loading transfer functions... ******')
+                print(f'Using data at {data_path}')
+                print('    for propagating photons... ', end =' ', flush=True)
+            highengphot_tf_interp = TransferFuncInterp(load_h5_dict(data_path+'/highengphot.h5'))
+            if verbose >= 1:
+                print(' Done!')
+                print('    for low-energy photons... ', end=' ', flush=True)
+            lowengphot_tf_interp  = TransferFuncInterp(load_h5_dict(data_path+'/lowengphot.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('    for low-energy electrons... ', end=' ', flush=True)
+            lowengelec_tf_interp  = TransferFuncInterp(load_h5_dict(data_path+'/lowengelec.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('    for high-energy deposition... ', end=' ', flush=True)
+            highengdep_interp     = IonRSInterp(load_h5_dict(data_path+'/highengdep.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('    for total upscattered CMB energy rate... ', end=' ', flush=True)
+            CMB_engloss_interp    = IonRSInterp(load_h5_dict(data_path+'/CMB_engloss.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('****** Loading complete! ******', flush=True)
 
             glob_dep_tf_data = {
                 'highengphot' : highengphot_tf_interp,
@@ -274,81 +269,87 @@ def load_data(data_type):
                 'highengdep'  : highengdep_interp,
                 'CMB_engloss' : CMB_engloss_interp
             }
-
         return glob_dep_tf_data
 
     elif data_type == 'ics_tf':
-
+        from darkhistory.spec.transferfunction import TransFuncAtRedshift
         if glob_ics_tf_data is None:
-
-            print('****** Loading transfer functions... ******')
-
-            print('    for inverse Compton (Thomson)... ', end=' ')
-            ics_thomson_ref_tf = pickle.load(
-                open(data_path+"/ics_thomson_ref_tf.raw", "rb")
-            )
-            print('Done!')
-
-            print('    for inverse Compton (relativistic)... ', end=' ')
-            ics_rel_ref_tf     = pickle.load(
-                open(data_path+"/ics_rel_ref_tf.raw",     "rb")
-            )
-            print('Done!')
-
-            print('    for inverse Compton (energy loss)... ', end=' ')
-            engloss_ref_tf     = pickle.load(
-                open(data_path+"/engloss_ref_tf.raw",     "rb")
-            )
-            print('Done!')
-
-            print('****** Loading complete! ******')
-
+            if verbose >= 1:
+                print('****** Loading transfer functions... ******')
+                print('    for inverse Compton (Thomson)... ', end=' ', flush=True)
+            ics_thomson_ref_tf = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_thomson_ref.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
+            ics_rel_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_rel_ref.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
+            engloss_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_engloss_ref.h5'))
+            if verbose >= 1:
+                print('Done!')
+                print('****** Loading complete! ******', flush=True)
             glob_ics_tf_data = {
                 'thomson' : ics_thomson_ref_tf,
                 'rel'     : ics_rel_ref_tf,
                 'engloss' : engloss_ref_tf
             }
-
         return glob_ics_tf_data
 
     elif data_type == 'struct':
-
         if glob_struct_data is None:
-
-            boost_data = np.loadtxt(
-                open(data_path+'/boost_data.txt', 'rb')
-            )
-            # einasto_subs = np.loadtxt(
-            #     open(data_path+'/boost_Einasto_subs.txt', 'rb')
-            # )
-
+            boost_data = np.loadtxt(data_path+'/boost_data.txt')
+            #einasto_subs = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
             glob_struct_data = {
-                'einasto_subs'      : boost_data[:,[0,1]],
-                'einasto_no_subs'   : boost_data[:,[0,2]],
-                'NFW_subs'          : boost_data[:,[0,3]],
-                'NFW_no_subs'       : boost_data[:,[0,4]],
-                'pwave_NFW_no_subs' : boost_data[:,[0,5]]
+                'einasto_subs'    : boost_data[:,[0,1]],
+                'einasto_no_subs' : boost_data[:,[0,2]],
+                'NFW_subs'        : boost_data[:,[0,3]],
+                'NFW_no_subs'     : boost_data[:,[0,4]] 
             }
-
         return glob_struct_data
 
     elif data_type == 'hist':
-
         if glob_hist_data is None:
-
-            soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
-
-            glob_hist_data = {
-                'rs'    : soln_baseline[0],
-                'xHII'  : soln_baseline[2],
-                'xHeII' : soln_baseline[3],
-                'Tm'    : soln_baseline[1]
-            }
-
+            glob_hist_data = load_h5_dict(data_path+'/std_soln_He.h5')
         return glob_hist_data
 
     elif data_type == 'f':
 
+        raise NotImplementedError('needs merging')
+
+        ###################################
+        # START OF NEW CODE FOR V1.1
+        if glob_f_data is None:
+            phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
+            phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
+            elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
+
+            log10eng0 = 3.6989700794219966
+            log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
+            log10eng[-1] = 12.601505994846297
+
+            f_dict = load_h5_dict(data_path+'/f_std.h5')
+            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_decay']))
+            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_dict['f_phot_swave']))
+            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_swave_struct']))
+            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_decay']))
+            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave']))
+            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave_struct']))
+
+            glob_f_data = {
+                'phot_decay'        : f_phot_decay_interp,
+                'phot_swave'        : f_phot_swave_interp,
+                'phot_swave_struct' : f_phot_swave_struct_interp,
+                'elec_decay'        : f_elec_decay_interp,
+                'elec_swave'        : f_elec_swave_interp,
+                'elec_swave_struct' : f_elec_swave_struct_interp
+            }
+        return glob_f_data
+        # END OF NEW CODE FOR V1.1
+        ###################################
+    
+        ###################################
+        # START OF ORIGINAL CODE FOR V2.0
         if glob_f_data is None:
 
             ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
@@ -393,23 +394,13 @@ def load_data(data_type):
             #glob_f_data['elec_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
 
         return glob_f_data
+        # END OF ORIGINAL CODE FOR V2.0
+        ###################################
 
     elif data_type == 'pppc':
-
         if glob_pppc_data is None:
 
-            coords_file_name = (
-                data_path+'/dlNdlxIEW_coords_table.txt'
-            )
-            values_file_name = (
-                data_path+'/dlNdlxIEW_values_table.txt'
-            )
-
-            with open(coords_file_name) as data_file:    
-                coords_data = np.array(json.load(data_file), dtype=object)
-            with open(values_file_name) as data_file:
-                values_data = np.array(json.load(data_file), dtype=object)
-
+            coords_data = np.array(json.load(open(data_path+'/dlNdlxIEW_coords_table.json')), dtype=object)
             # coords_data is a (2, 23, 2) array. 
             # axis 0: stable SM secondaries, {'elec', 'phot'}
             # axis 1: annihilation primary channel.
@@ -417,6 +408,7 @@ def load_data(data_type):
             # the secondary. 
             # Each element is a 1D array.
 
+            values_data = np.array(json.load(open(data_path+'/dlNdlxIEW_values_table.json')), dtype=object)
             # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
             # axis 0: stable SM secondaries, {'elec', 'phot'}
             # axis 1: annihilation primary channel.
@@ -448,6 +440,8 @@ def load_data(data_type):
         return glob_pppc_data
     
     elif data_type == 'exc':
+        raise NotImplementedError('pickle files need to be updated.')
+    
         if glob_exc_data == None:
             species_list = ['HI', 'HeI']
             state_list = [
@@ -489,6 +483,7 @@ def load_data(data_type):
         return glob_exc_data
 
     elif data_type == 'exc_AcharyaKhatri':
+        raise NotImplementedError('pickle files need to be updated.')
         if glob_exc_data == None:
             #CCC cross-sections in units of cm^2
             species_list = ['HI', 'HeI']
@@ -512,12 +507,14 @@ def load_data(data_type):
         return glob_exc_data
 
     elif data_type == 'reion':
+        raise NotImplementedError('pickle files need to be updated.')
         if glob_reion_data == None:
             glob_reion_data = pickle.load(open(data_path+'/Onorbe_data.p','rb'))
 
         return glob_reion_data
 
     elif data_type == 'bnd_free':
+        raise NotImplementedError('pickle files need to be updated.')
         if glob_bnd_free_data == None:
 
             glob_bnd_free_data = {}
@@ -557,8 +554,8 @@ def load_data(data_type):
                     glob_bnd_free_data['h_ary'][n, 11*i:11*(i+1)] = np.ones(11) * (abscissa[1] - abscissa[0])
 
         return glob_bnd_free_data
+    
     else:
-
         raise ValueError('invalid data_type.')
 
 
