@@ -8,8 +8,8 @@ sys.path.append('..')
 
 import darkhistory.physics as phys
 
-from nntf.utils import *
-from nntf.tfbase import *
+from darkhistory.nntf.utils import *
+from darkhistory.nntf.tfbase import *
 
 class LEP_TF (TFBase):
     """ Low energy photon transfer function.

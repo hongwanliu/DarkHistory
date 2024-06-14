@@ -2,17 +2,41 @@
 """
 
 import numpy as np
+import h5py
 import tensorflow as tf
 from tensorflow import keras
 
 import sys
 sys.path.append('..')
 
-from config import load_data
+from darkhistory.config import load_data
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.transferfunction import TransFuncAtRedshift
 
-from nntf.utils import *
+from darkhistory.nntf.utils import *
+
+
+def tf_dnn_from_h5(file_path):
+
+    with h5py.File(file_path, 'r') as f:
+        layers = []
+        i = 0
+        weights_list = []
+        while str(i) in f:
+            weights = f[str(i)][()]
+            biases = f[str(i+1)][()]
+            if i == 0:
+                layers.append(tf.keras.layers.Input(shape=(weights.shape[0],)))
+            activation = 'relu' if i < len(f)-2 else 'linear'
+            layers.append(tf.keras.layers.Dense(weights.shape[1], activation=activation))
+            weights_list.append([weights, biases])
+            i += 2
+
+    model = tf.keras.Sequential(layers)
+    for layer, (weights, biases) in zip(model.layers, weights_list):
+        layer.set_weights([weights, biases])
+        
+    return model
 
 
 class TFBase:
@@ -70,7 +94,7 @@ class NNTFBase (TFBase):
     def __init__(self, model_dir, TF_type):
         
         super().__init__()
-        self.model = keras.models.load_model(model_dir)
+        self.model = tf_dnn_from_h5(model_dir)
         self.TF_type = TF_type
         self._init_helpers()   # define helpers
         self._init_abscs()     # define self.abscs

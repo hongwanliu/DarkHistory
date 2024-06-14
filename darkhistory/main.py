@@ -177,7 +177,7 @@ def evolve(
         import tensorflow
         tensorflow.get_logger().setLevel('ERROR') # disable tf.function retracing warnings
         
-        from nntf.load import load_model
+        from darkhistory.nntf.load import load_model
         
         if coarsen_factor != 12:
             print('Warning: coarsen_factor is set to 12 (required for using nntf).')

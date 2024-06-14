@@ -4,8 +4,8 @@
 import sys
 sys.path.append('..')
 
-from config import data_path
-from nntf.nntf import *
+from darkhistory.config import data_path
+from darkhistory.nntf.nntf import *
 
 glob_dep_nntfs = None
 glob_ics_nntfs = None
@@ -44,21 +44,21 @@ def load_model(model_type, verbose=1):
                 print('****** Loading (NN) transfer functions... ******')
                 print('Using data at %s' % model_path)
                 print('    for propagating photons (compounded)...  ', end='', flush=True)
-            hep_p12_nntf = NNTFMultiR([model_path+'/hep_p12_r0',
-                                       model_path+'/hep_p12_r1',
-                                       model_path+'/hep_p12_r2'], HEP_NNTF, 'hep_p12')
+            hep_p12_nntf = NNTFMultiR([model_path+'/hep_p12_r0_weights.h5',
+                                       model_path+'/hep_p12_r1_weights.h5',
+                                       model_path+'/hep_p12_r2_weights.h5'], HEP_NNTF, 'hep_p12')
             if verbose >= 1:
                 print('Done!')
                 print('    for propagating photons (propagator)...  ', end='', flush=True)
-            hep_s11_nntf = NNTFMultiR([model_path+'/hep_s11_r0',
-                                       model_path+'/hep_s11_r1',
-                                       model_path+'/hep_s11_r2'], HEP_NNTF, 'hep_s11')
+            hep_s11_nntf = NNTFMultiR([model_path+'/hep_s11_r0_weights.h5',
+                                       model_path+'/hep_s11_r1_weights.h5',
+                                       model_path+'/hep_s11_r2_weights.h5'], HEP_NNTF, 'hep_s11')
             if verbose >= 1:
                 print('Done!')
                 print('    for low-energy electrons...  ', end='', flush=True)
-            lee_nntf = NNTFMultiR([model_path+'/lee_r0',
-                                   model_path+'/lee_r1',
-                                   model_path+'/lee_r2'], LEE_NNTF, 'lee')
+            lee_nntf = NNTFMultiR([model_path+'/lee_r0_weights.h5',
+                                   model_path+'/lee_r1_weights.h5',
+                                   model_path+'/lee_r2_weights.h5'], LEE_NNTF, 'lee')
             if verbose >= 1:
                 print('Done!')
                 print('    for low-energy photons...  ', end='', flush=True)
@@ -83,15 +83,15 @@ def load_model(model_type, verbose=1):
                 print('****** Loading (NN) transfer functions... ******')
                 print('Using models at %s' % model_path)
                 print('    for inverse Compton (Thomson)... ', end='', flush=True)
-            ics_thomson_nntf = ICS_NNTF(model_path+'/ics_thomson', 'ics_thomson')
+            ics_thomson_nntf = ICS_NNTF(model_path+'/ics_thomson_weights.h5', 'ics_thomson')
             if verbose >= 1:
                 print('Done!')
                 print('    for inverse Compton (energy loss)... ', end='', flush=True)
-            ics_engloss_nntf = ICS_NNTF(model_path+'/ics_engloss', 'ics_engloss')
+            ics_engloss_nntf = ICS_NNTF(model_path+'/ics_engloss_weights.h5', 'ics_engloss')
             if verbose >= 1:
                 print('Done!')
                 print('    for inverse Compton (relativistic)... ', end='', flush=True)
-            ics_rel_nntf     = ICS_NNTF(model_path+'/ics_rel', 'ics_rel')
+            ics_rel_nntf     = ICS_NNTF(model_path+'/ics_rel_weights.h5', 'ics_rel')
             if verbose >= 1:
                 print('Done!')
                 print('****** Loading complete! ******', flush=True)
