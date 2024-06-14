@@ -193,7 +193,7 @@ class TransFuncAtEnergy(Spectra):
         super().append(spec)
 
 
-class TransFuncAtRedshift(Spectra):
+class TransFuncAtRedshift (Spectra):
     """Transfer function at a given redshift.
 
     Collection of Spectrum objects, each at different injection energies.
@@ -234,65 +234,45 @@ class TransFuncAtRedshift(Spectra):
 
     def __init__(
         self, spec_arr, eng=None, in_eng=None, rs=None,
-        dlnz=-1, spec_type='dNdE', rebin_eng=None, with_interp_func = False
+        dlnz=-1, spec_type='dNdE', rebin_eng=None, with_interp_func=False
     ):
 
-        super().__init__(
-            spec_arr, eng=eng, in_eng=in_eng, rs=rs,spec_type=spec_type, rebin_eng=rebin_eng
-        )
+        if isinstance(spec_arr, dict): # initialize from dictionary.
+            d = spec_arr
+            super().__init__(
+                d['grid_vals'], eng=d['eng'], in_eng=d['in_eng'], rs=d['rs'],
+                spec_type=d['spec_type'].decode(), rebin_eng=rebin_eng
+            )
+            with_interp_func = d['with_interp_func'] # force from dictionary.
+        else: # original initialization.
+            super().__init__(
+                spec_arr, eng=eng, in_eng=in_eng, rs=rs, spec_type=spec_type, rebin_eng=rebin_eng
+            )
+
+        # common: build interpolation function
         self.dlnz = dlnz
-
-        if with_interp_func:
+        self.with_interp_func = with_interp_func
+        if self.with_interp_func:
             non_zero_grid = self.grid_vals
-            # set zero values to some small value for log interp.
-            non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200
-
-            # interp_grid  = np.log(non_zero_grid)
-
-            interp_grid  = non_zero_grid
-
+            non_zero_grid[np.abs(non_zero_grid) < 1e-100] = 1e-200 # set zero values to some small value for log interp.
+            interp_grid = non_zero_grid
             self.interp_func = interpolate.interp2d(
                 np.log(self.in_eng), np.log(self.eng),
                 np.transpose(interp_grid), bounds_error = False,
                 fill_value = 1e-200
             )
 
-            # self.interp_func = interpolate.RegularGridInterpolator(
-            #     (np.log(self.in_eng), np.log(self.eng)), interp_grid,
-            #     bounds_error = False, fill_value = 1e-200
-            # )
-
-
-        # if spec_arr != []:
-        #     self._grid_vals = np.atleast_2d(
-        #             np.stack([spec._data for spec in spec_arr])
-        #         )
-        #     self._spec_type = spec_arr[0].spec_type
-        #     self._eng = spec_arr[0].eng
-        #     if np.any(self.in_eng <= 0):
-        #         raise TypeError("injection energy of all spectra must be set.")
-        #     self._in_eng = np.array([spec.in_eng for spec in spec_arr])
-        #     self._rs = np.array([spec.rs for spec in spec_arr])
-        #     if len(set(self._rs)) > 1:
-        #         raise TypeError('all spectra must have the same redshift.')
-        #     self._N_underflow = np.array(
-        #         [spec.underflow['N'] for spec in spec_arr]
-        #     )
-        #     self._eng_underflow = np.array(
-        #         [spec.underflow['eng'] for spec in spec_arr]
-        #     )
-
-        # else:
-
-        #     self._grid_vals = np.atleast_2d([])
-        #     self._spec_type = spec_type
-        #     self._eng = np.array([])
-        #     self._in_eng = np.array([])
-        #     self._rs = np.array([])
-        #     self._N_underflow = np.array([])
-        #     self._eng_underflow = np.array([])
-
-
+    def to_dict(self):
+        """Return hdf5 compatible dictionary."""
+        return {
+            'eng' : self.eng,
+            'in_eng' : self.in_eng,
+            'rs' : self.rs,
+            'dlnz' : self.dlnz,
+            'spec_type' : self.spec_type,
+            'grid_vals' : self.grid_vals,
+            'with_interp_func' : self.with_interp_func,
+        }
 
     def at_in_eng(self, new_eng, interp_type='val', log_interp=False, bounds_error=None, fill_value=np.nan):
         """Interpolates the transfer function at a new injection energy.

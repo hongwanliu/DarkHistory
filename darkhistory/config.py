@@ -1,15 +1,12 @@
 """ Configuration and defaults."""
 
 import os
-import logging
-
 import numpy as np
 import json
-import pickle
+import h5py
+import logging
 
-import scipy
 from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
-scipy.interpolate.interpolate.RegularGridInterpolator = scipy.interpolate.RegularGridInterpolator # for compatibility with old data files
 
 logger = logging.getLogger('darkhistory.config')
 logger.setLevel(logging.INFO)
@@ -154,6 +151,15 @@ class PchipInterpolator2D:
         return np.log10(
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
+
+    
+def load_h5_dict(fn):
+    """Load a dictionary from an HDF5 file."""
+    d = {}
+    with h5py.File(fn, 'r') as hf:
+        for k, v in hf.items():
+            d[k] = v[()]
+    return d
     
 
 def load_data(data_type, prefix=None):
@@ -195,55 +201,42 @@ def load_data(data_type, prefix=None):
     :func:`.get_pppc_spec`
 
     """
-
-    use_v1_0_data = False
     
-    if prefix is not None:
-        data_path = prefix
-    else:
-        data_path = os.environ['DH_DATA_DIR']
+    data_path = prefix if prefix is not None else os.environ['DH_DATA_DIR']
     
     if data_type == 'binning':
-
-        logger.info(f'Using data at {data_path}')
-
-        try:
-            if use_v1_0_data:
-                binning = np.loadtxt(open(data_path+'/default_binning.p', 'rb'))
-                binning_data =  {
-                    'phot' : binning[0],
-                    'elec' : binning[1]
-                }
-            else: # binning data expanded for v1.1
-                binning_data = pickle.load(open(data_path+'/binning.p', 'rb'))
-            return binning_data # keys: 'phot', 'elec', 'ics_eng', 'ics_rel_eng'
-        except FileNotFoundError as err:
-            raise FileNotFoundError('Please make sure to match the data set version with use_v1_0_data value in config.py!')
+        if glob_binning_data is None:
+            try:
+                glob_binning_data = load_h5_dict(data_path+'/binning.h5')
+            except FileNotFoundError as err:
+                print(type(err).__name__, ':', err)
+                raise FileNotFoundError('Please update your dataset! See README.md for instructions.')
+        return glob_binning_data
     
     elif data_type == 'dep_tf':
+        from darkhistory.spec.transferfunclist import TransferFuncInterp
+        from darkhistory.history.histools import IonRSInterp
+        # prevent Spectrum -> physics -> load_data -> TransferFuncInterp -> Spectrum ciruclar import
         tf_dict = {}
-        for k, tf_name in zip(
-            ['highengphot', 'lowengphot', 'lowengelec', 'highengdep', 'CMB_engloss'],
-            ['highengphot_tf', 'lowengphot_tf', 'lowengelec_tf', 'highengdep', 'CMB_engloss']
-        ):
-            tf_dict[k] = pickle.load(open(f'{data_path}/{tf_name}_interp.raw', 'rb'))
+        for k in ['highengphot', 'lowengphot', 'lowengelec']:
+            tf_dict[k] = TransferFuncInterp(load_h5_dict(f'{data_path}/{k}.h5'))
+        for k in ['highengdep', 'CMB_engloss']:
+            tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
         logger.info('Loaded deposition transfer functions.')
-
         return tf_dict
     
     elif data_type == 'hed_tf':
         tf_dict = {}
         for k in ['highengdep']:
-            tf_dict[k] = pickle.load(open(f'{data_path}/{k}_interp.raw', 'rb'))
+            tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
         logger.info('Loaded high energy deposition transfer functions.')
-        
         return tf_dict
     
     elif data_type == 'tf_helper':
         try:
             tf_dict = {}
             for k in ['tf_E', 'hep_lb', 'lci', 'hci']:
-                tf_dict[k] = pickle.load(open(f'{data_path}/{k}_interp.raw', 'rb'))
+                tf_dict[k] = load_h5_dict(f'{data_path}/{k}.h5')
             logger.info('Loaded transfer function helpers.')
             return tf_dict
         except FileNotFoundError as err:
@@ -251,25 +244,15 @@ def load_data(data_type, prefix=None):
             raise FileNotFoundError('Neural network transfer function functionalities requires v1.1 data set!')
 
     elif data_type == 'ics_tf':
+        from darkhistory.spec.transferfunction import TransFuncAtRedshift
         tf_dict = {}
-        for k, tf_name in zip(['thomson', 'rel', 'engloss'], ['ics_thomson', 'ics_rel', 'engloss']):
-            tf_dict[k] = pickle.load(open(f'{data_path}/{tf_name}_ref_tf.raw', 'rb'))
+        for k in ['thomson', 'rel', 'engloss']:
+            tf_dict[k] = TransFuncAtRedshift(load_h5_dict(f'{data_path}/ics_{k}_ref.h5'))
         logger.info('Loaded ICS transfer functions.')
-
         return tf_dict
-
-    ##################################################
-    ### others
     
     elif data_type == 'struct':
-
-        boost_data = np.loadtxt(
-            open(data_path+'/boost_data.txt', 'rb')
-        )
-        # einasto_subs = np.loadtxt(
-        #     open(data_path+'/boost_Einasto_subs.txt', 'rb')
-        # )
-
+        boost_data = np.loadtxt(data_path+'/boost_data.txt')
         return {
             'einasto_subs'    : boost_data[:,[0,1]],
             'einasto_no_subs' : boost_data[:,[0,2]],
@@ -278,18 +261,9 @@ def load_data(data_type, prefix=None):
         }
 
     elif data_type == 'hist':
-
-        soln_baseline = pickle.load(open(data_path+'/std_soln_He.p', 'rb'))
-
-        return {
-            'rs'    : soln_baseline[0,:],
-            'xHII'  : soln_baseline[2,:],
-            'xHeII' : soln_baseline[3,:],
-            'Tm'    : soln_baseline[1,:]
-        }
+        return load_h5_dict(data_path+'/std_soln_He.h5')
 
     elif data_type == 'f':
-
         phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
         phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
         elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
@@ -298,19 +272,13 @@ def load_data(data_type, prefix=None):
         log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
         log10eng[-1] = 12.601505994846297
 
-        f_phot_decay        = pickle.load(open(data_path+'/f_phot_decay_std.p', 'rb'))
-        f_phot_swave        = pickle.load(open(data_path+'/f_phot_swave_std.p', 'rb'))
-        f_phot_swave_struct = pickle.load(open(data_path+'/f_phot_swave_std_einasto_subs.p', 'rb'))
-        f_elec_decay        = pickle.load(open(data_path+'/f_elec_decay_std.p', 'rb'))
-        f_elec_swave        = pickle.load(open(data_path+'/f_elec_swave_std.p', 'rb'))
-        f_elec_swave_struct = pickle.load(open(data_path+'/f_elec_swave_std_einasto_subs.p', 'rb'))
-
-        f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_decay))
-        f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_phot_swave))
-        f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)), np.log(f_phot_swave_struct))
-        f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_decay))
-        f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave))
-        f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)), np.log(f_elec_swave_struct))
+        f_dict = load_h5_dict(data_path+'/f_std.h5')
+        f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_decay']))
+        f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_dict['f_phot_swave']))
+        f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_swave_struct']))
+        f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_decay']))
+        f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave']))
+        f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave_struct']))
 
         return {
             'phot_decay'        : f_phot_decay_interp,
@@ -323,18 +291,7 @@ def load_data(data_type, prefix=None):
 
     elif data_type == 'pppc':
         
-        coords_file_name = (
-            data_path+'/dlNdlxIEW_coords_table.txt'
-        )
-        values_file_name = (
-            data_path+'/dlNdlxIEW_values_table.txt'
-        )
-
-        with open(coords_file_name) as data_file:    
-            coords_data = np.array(json.load(data_file), dtype=object)
-        with open(values_file_name) as data_file:
-            values_data = np.array(json.load(data_file), dtype=object)
-
+        coords_data = np.array(json.load(open(data_path+'/dlNdlxIEW_coords_table.json')), dtype=object)
         # coords_data is a (2, 23, 2) array. 
         # axis 0: stable SM secondaries, {'elec', 'phot'}
         # axis 1: annihilation primary channel.
@@ -342,6 +299,7 @@ def load_data(data_type, prefix=None):
         # the secondary. 
         # Each element is a 1D array.
 
+        values_data = np.array(json.load(open(data_path+'/dlNdlxIEW_values_table.json')), dtype=object)
         # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
         # axis 0: stable SM secondaries, {'elec', 'phot'}
         # axis 1: annihilation primary channel.
