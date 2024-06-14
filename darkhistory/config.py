@@ -169,27 +169,18 @@ def load_data(data_type, prefix=None):
     ----------
     data_type : {'binning', 'dep_tf', 'hed_tf', 'tf_helper', 'ics_tf', 'struct', 'hist', 'f', 'pppc'}
         Type of data to load. The options are: 
-
         - *'binning'* -- Default binning for all transfer functions;
-
         - *'dep_tf'* -- Transfer functions for propagating photons and deposition into low-energy photons, low-energy electrons, high-energy deposition and upscattered CMB energy rate;
-        
         - *'hed_tf'* -- Transfer functions for high-energy deposition only;
-        
         - *'tf_helper'* -- Helper functions used in reconstructing transfer functions (from neural network);
-
         - *'ics_tf'* -- Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
-
         - *'struct'* -- Structure formation boosts; 
-
         - *'hist'* -- Baseline ionization and temperature histories;
-
         - *'f'* -- :math:`f_c(z)` fractions without backreaction; and
-
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
         
-    verbose : {0, 1}
-        Set verbosity.
+    prefix : str, optional
+        Path to the data directory. If not specified, the path is taken from the environment variable DH_DATA_DIR.
         
     Returns
     --------
