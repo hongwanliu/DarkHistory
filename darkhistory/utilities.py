@@ -1,9 +1,41 @@
-""" Non-physics convenience and mathematical functions.
-
-"""
+""" Non-physics convenience and mathematical functions."""
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+
+
+def dict_from_inhom_list(l, key):
+    """Get hdf5 compatible dictionary from an inhomogeneous list of arrays.
+
+    Parameters
+    ----------
+    l : list
+        List of arrays.
+    key : str
+        Key to use for dictionary.
+    """
+    d = {}
+    for i, arr in enumerate(l):
+        d[key + str(i)] = arr
+    return d
+
+
+def inhom_list_from_dict(d, key):
+    """Get inhomogeneous list of arrays from dictionary.
+
+    Parameters
+    ----------
+    d : dict
+        Dictionary to extract arrays from.
+    key : str
+        Key to use for dictionary.
+    """
+    l = []
+    i = 0
+    while key + str(i) in d:
+        l.append(d[key + str(i)])
+        i += 1
+    return l
 
 
 def arrays_equal(ndarray_list):
