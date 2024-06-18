@@ -469,7 +469,7 @@ def load_data(data_type, verbose=1):
 
             # Contains a pre-computed dictionary indexed by [n][l][lp] of g values,
             # using the generate_g_table_dict function at the end of this module. See arXiv:0911.1359 Eq. (30) for definition.
-            glob_bnd_free_data['g_table_dict']  = load_h5_dict(data_path+'/g_table_dict.h5')
+            glob_bnd_free_data['g_table_dict']  = load_h5_dict(data_path+'/g_table_dict.h5')['g_table_dict']
 
             # Number of log-spaced large bins for kappa^2 = E_e / R, where E_e is the electron energy and R is the
             # ionization potential of hydrogen.            

@@ -38,7 +38,11 @@ def g(l, lp, n, kappa=None):
         raise ValueError('l must be less than n')
     if kappa is None:
         # If no abscissa specified, using the default kappa^2 given above. Return the table values.
-        return load_data('bnd_free')['g_table_dict'][str(n)][str(l)][str(lp)]
+        # return load_data('bnd_free')['g_table_dict'][str(n)][str(l)][str(lp)]i
+
+        a = int(n*(n-1)/2 + l)
+        b = int((lp - l + 1) / 2)
+        return load_data('bnd_free')['g_table_dict'][a, b]
     else:
         if l+1==lp and lp==n:
             # kappa can be vectorized.
@@ -174,8 +178,10 @@ def populate_thetas(nmax):
     for n in np.arange(1,nmax+1):
         prefac = (1 + n**2 * kappa2[n])
         for l in np.arange(n):
-            Theta_up[n][l] = prefac * g_table[str(n)][str(l)][str(l+1)]**2
-            Theta_dn[n][l] = prefac * g_table[str(n)][str(l)][str(l-1)]**2
+            a = int(n*(n-1)/2 + l)
+
+            Theta_up[n][l] = prefac * g_table[a, 1]**2
+            Theta_dn[n][l] = prefac * g_table[a, 0]**2
 
     return {'up': Theta_up, 'dn': Theta_dn}
 
@@ -1062,3 +1068,15 @@ def generate_g_table_dict():
         print(n)
 
     return g_table_dict
+
+def convert_to_better_g_table(g_table):i
+    g_big_table = np.zeros((301*150, 2, 550))
+    for n in tqdm(range(1,301)):
+        for l in range(n):
+            for m in [l-1, l+1]:
+               a = int(n*(n-1)/2 + l)
+                b = int((m - l + 1) / 2)
+                # print(a, b)
+                g_big_table[a, b] = g_table[n][l][m]
+
+return g_big_table
