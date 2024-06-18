@@ -10,7 +10,7 @@ from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridI
 
 #===== SET DATA PATH HERE =====#
 # or set the environment variable DH_DATA_DIR.
-data_path = "/n/holystore01/LABS/iaifi_lab/Users/yitians/darkhistory/DHupdate/DHdata_v1_1_full_new"
+data_path = "/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data_new"
 
 if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
     data_path = os.environ['DH_DATA_DIR']
@@ -314,42 +314,6 @@ def load_data(data_type, verbose=1):
         return glob_hist_data
 
     elif data_type == 'f':
-
-        raise NotImplementedError('needs merging')
-
-        ###################################
-        # START OF NEW CODE FOR V1.1
-        if glob_f_data is None:
-            phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
-            phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
-            elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
-
-            log10eng0 = 3.6989700794219966
-            log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
-            log10eng[-1] = 12.601505994846297
-
-            f_dict = load_h5_dict(data_path+'/f_std.h5')
-            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_decay']))
-            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_dict['f_phot_swave']))
-            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_swave_struct']))
-            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_decay']))
-            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave']))
-            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave_struct']))
-
-            glob_f_data = {
-                'phot_decay'        : f_phot_decay_interp,
-                'phot_swave'        : f_phot_swave_interp,
-                'phot_swave_struct' : f_phot_swave_struct_interp,
-                'elec_decay'        : f_elec_decay_interp,
-                'elec_swave'        : f_elec_swave_interp,
-                'elec_swave_struct' : f_elec_swave_struct_interp
-            }
-        return glob_f_data
-        # END OF NEW CODE FOR V1.1
-        ###################################
-    
-        ###################################
-        # START OF ORIGINAL CODE FOR V2.0
         if glob_f_data is None:
 
             ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
@@ -373,29 +337,14 @@ def load_data(data_type, verbose=1):
               'phot_swave_NFW', 'elec_swave_NFW',
               'phot_pwave_NFW', 'elec_pwave_NFW']
 
-            f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
+            f_data = load_h5_dict(data_path+'/f_std_with_pwave_09_19_2019.h5')
 
             glob_f_data = {label : RegularGridInterpolator(
                 (log10eng, np.flipud(get_rs_arr(label))), np.flip(np.log(f_data[label]),1)
                 ) for label in labels}
 
-            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
-            #log10eng = np.array(data[:71*40:71,0])
-            #log10rs = np.array(data[:70,1])
-            #tmp=np.resize(data[:,2],(5,40,70))
-            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
-            #glob_f_data['phot_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
-
-            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_electron_decay.dat", delimiter=',')
-            #log10eng = np.array(data[:71*40:71,0])
-            #log10rs = np.array(data[:70,1])
-            #tmp=np.resize(data[:,2],(5,40,70))
-            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
-            #glob_f_data['elec_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
 
         return glob_f_data
-        # END OF ORIGINAL CODE FOR V2.0
-        ###################################
 
     elif data_type == 'pppc':
         if glob_pppc_data is None:
