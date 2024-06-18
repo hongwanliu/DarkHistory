@@ -5,12 +5,12 @@ import numpy as np
 import json
 import h5py
 
-from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
+from scipy.interpolate import interp1d, PchipInterpolator, pchip_interpolate, RegularGridInterpolator
 
 
 #===== SET DATA PATH HERE =====#
 # or set the environment variable DH_DATA_DIR.
-data_path = "/Users/viviesque/OneDrive - Massachusetts Institute of Technology/DarkHistory/data_new"
+data_path = None
 
 if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
     data_path = os.environ['DH_DATA_DIR']
@@ -392,8 +392,6 @@ def load_data(data_type, verbose=1):
         return glob_pppc_data
     
     elif data_type == 'exc':
-        raise NotImplementedError('pickle files need to be updated.')
-    
         if glob_exc_data == None:
             species_list = ['HI', 'HeI']
             state_list = [
@@ -404,12 +402,12 @@ def load_data(data_type, verbose=1):
             ]
 
             KimRudd_list = ['2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
-            KimRudd_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
-                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
+            KimRudd_data = {'HI': load_h5_dict(data_path+'/H_exc_xsec_data.h5'),
+                    'HeI': load_h5_dict(data_path+'/He_exc_xsec_data.h5')
                     }
 
             CCC_states = ['2s','3s','3d','4s','4d','4f']
-            CCC_data = pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb'))
+            CCC_data = load_h5_dict(data_path+'/H_exc_xsec_data_CCC.h5')
 
 
             def make_interpolator(species,state):
@@ -435,12 +433,11 @@ def load_data(data_type, verbose=1):
         return glob_exc_data
 
     elif data_type == 'exc_AcharyaKhatri':
-        raise NotImplementedError('pickle files need to be updated.')
         if glob_exc_data == None:
             #CCC cross-sections in units of cm^2
             species_list = ['HI', 'HeI']
-            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb')),
-                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data_CCC.p','rb'))
+            exc_data = {'HI': load_h5_dict(data_path+'/H_exc_xsec_data_CCC.h5'),
+                    'HeI': load_h5_dict(data_path+'/He_exc_xsec_data_CCC.h5')
                     }
 
             state_list = ['2s', '2p', '3p']
