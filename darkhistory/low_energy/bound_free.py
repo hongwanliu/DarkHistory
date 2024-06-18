@@ -38,7 +38,7 @@ def g(l, lp, n, kappa=None):
         raise ValueError('l must be less than n')
     if kappa is None:
         # If no abscissa specified, using the default kappa^2 given above. Return the table values.
-        return load_data('bnd_free')['g_table_dict'][n][l][lp]
+        return load_data('bnd_free')['g_table_dict'][str(n)][str(l)][str(lp)]
     else:
         if l+1==lp and lp==n:
             # kappa can be vectorized.
@@ -139,7 +139,7 @@ def Theta(l, lp, n, kappa=None):
 
         kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
 
-        return (1 + n**2 * kappa2) * load_data('bnd_free')['g_table_dict'][n][l][lp]**2
+        return (1 + n**2 * kappa2) * load_data('bnd_free')['g_table_dict'][str(n)][str(l)][str(lp)]**2
 
     else:
 
@@ -174,8 +174,8 @@ def populate_thetas(nmax):
     for n in np.arange(1,nmax+1):
         prefac = (1 + n**2 * kappa2[n])
         for l in np.arange(n):
-            Theta_up[n][l] = prefac * g_table[n][l][l+1]**2
-            Theta_dn[n][l] = prefac * g_table[n][l][l-1]**2
+            Theta_up[n][l] = prefac * g_table[str(n)][str(l)][str(l+1)]**2
+            Theta_dn[n][l] = prefac * g_table[str(n)][str(l)][str(l-1)]**2
 
     return {'up': Theta_up, 'dn': Theta_dn}
 
