@@ -1069,14 +1069,13 @@ def generate_g_table_dict():
 
     return g_table_dict
 
-def convert_to_better_g_table(g_table):i
+def convert_to_better_g_table(g_table):
     g_big_table = np.zeros((301*150, 2, 550))
     for n in tqdm(range(1,301)):
         for l in range(n):
             for m in [l-1, l+1]:
-               a = int(n*(n-1)/2 + l)
+                a = int(n*(n-1)/2 + l)
                 b = int((m - l + 1) / 2)
                 # print(a, b)
                 g_big_table[a, b] = g_table[n][l][m]
-
-return g_big_table
+    return g_big_table
