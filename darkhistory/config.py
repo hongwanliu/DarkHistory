@@ -165,13 +165,18 @@ class PchipInterpolator2D:
         )
 
 
-def load_h5_dict(fn):
-    """Load a dictionary from an HDF5 file."""
-    d = {}
-    with h5py.File(fn, 'r') as hf:
-        for k, v in hf.items():
-            d[k] = v[()]
-    return d
+def load_h5_dict(file_path):
+   def recursive_load(h5_obj):
+       data_dict = {}
+       for key, item in h5_obj.items():
+           if isinstance(item, h5py.Group):
+               data_dict[key] = recursive_load(item)
+           elif isinstance(item, h5py.Dataset):
+               data_dict[key] = item[()]
+       return data_dict
+
+   with h5py.File(file_path, 'r') as h5_file:
+       return recursive_load(h5_file)
     
 
 def load_data(data_type, verbose=1):
