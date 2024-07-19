@@ -5,7 +5,7 @@ import numpy as np
 import json
 import h5py
 
-from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
+from scipy.interpolate import interp1d, PchipInterpolator, pchip_interpolate, RegularGridInterpolator
 
 
 #===== SET DATA PATH HERE =====#
@@ -166,15 +166,18 @@ class PchipInterpolator2D:
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
 
+def load_h5_dict(file_path):
+    def recursive_load(h5_obj):
+        data_dict = {}
+        for key, item in h5_obj.items():
+            if isinstance(item, h5py.Group):
+                data_dict[key] = recursive_load(item)
+            elif isinstance(item, h5py.Dataset):
+                data_dict[key] = item[()]
+        return data_dict
 
-def load_h5_dict(fn):
-    """Load a dictionary from an HDF5 file."""
-    d = {}
-    with h5py.File(fn, 'r') as hf:
-        for k, v in hf.items():
-            d[k] = v[()]
-    return d
-    
+    with h5py.File(file_path, 'r') as h5_file:
+        return recursive_load(h5_file)    
 
 def load_data(data_type, verbose=1):
     """ Loads data from downloaded files. 
@@ -314,42 +317,6 @@ def load_data(data_type, verbose=1):
         return glob_hist_data
 
     elif data_type == 'f':
-
-        raise NotImplementedError('needs merging')
-
-        ###################################
-        # START OF NEW CODE FOR V1.1
-        if glob_f_data is None:
-            phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
-            phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
-            elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
-
-            log10eng0 = 3.6989700794219966
-            log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
-            log10eng[-1] = 12.601505994846297
-
-            f_dict = load_h5_dict(data_path+'/f_std.h5')
-            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_decay']))
-            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_dict['f_phot_swave']))
-            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_swave_struct']))
-            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_decay']))
-            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave']))
-            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave_struct']))
-
-            glob_f_data = {
-                'phot_decay'        : f_phot_decay_interp,
-                'phot_swave'        : f_phot_swave_interp,
-                'phot_swave_struct' : f_phot_swave_struct_interp,
-                'elec_decay'        : f_elec_decay_interp,
-                'elec_swave'        : f_elec_swave_interp,
-                'elec_swave_struct' : f_elec_swave_struct_interp
-            }
-        return glob_f_data
-        # END OF NEW CODE FOR V1.1
-        ###################################
-    
-        ###################################
-        # START OF ORIGINAL CODE FOR V2.0
         if glob_f_data is None:
 
             ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
@@ -373,29 +340,14 @@ def load_data(data_type, verbose=1):
               'phot_swave_NFW', 'elec_swave_NFW',
               'phot_pwave_NFW', 'elec_pwave_NFW']
 
-            f_data = pickle.load(open(data_path+'/f_std_data_with_pwave_09_19_2019.p', 'rb'))
+            f_data = load_h5_dict(data_path+'/f_std_with_pwave_09_19_2019.h5')
 
             glob_f_data = {label : RegularGridInterpolator(
                 (log10eng, np.flipud(get_rs_arr(label))), np.flip(np.log(f_data[label]),1)
                 ) for label in labels}
 
-            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_photon_decay.dat", delimiter=',')
-            #log10eng = np.array(data[:71*40:71,0])
-            #log10rs = np.array(data[:70,1])
-            #tmp=np.resize(data[:,2],(5,40,70))
-            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
-            #glob_f_data['phot_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
-
-            #data = np.loadtxt("/Users/gridgway/Dropbox (MIT)/21cm_pwave/TLA_code/fz_electron_decay.dat", delimiter=',')
-            #log10eng = np.array(data[:71*40:71,0])
-            #log10rs = np.array(data[:70,1])
-            #tmp=np.resize(data[:,2],(5,40,70))
-            #tmp = np.swapaxes(np.swapaxes(tmp,0,2),0,1)
-            #glob_f_data['elec_decay'] = RegularGridInterpolator((log10eng, np.log(10**log10rs)), np.log(10**tmp))
 
         return glob_f_data
-        # END OF ORIGINAL CODE FOR V2.0
-        ###################################
 
     elif data_type == 'pppc':
         if glob_pppc_data is None:
@@ -440,8 +392,6 @@ def load_data(data_type, verbose=1):
         return glob_pppc_data
     
     elif data_type == 'exc':
-        raise NotImplementedError('pickle files need to be updated.')
-    
         if glob_exc_data == None:
             species_list = ['HI', 'HeI']
             state_list = [
@@ -452,12 +402,12 @@ def load_data(data_type, verbose=1):
             ]
 
             KimRudd_list = ['2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p']
-            KimRudd_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data.p','rb')),
-                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data.p','rb'))
+            KimRudd_data = {'HI': load_h5_dict(data_path+'/H_exc_xsec_data.h5'),
+                    'HeI': load_h5_dict(data_path+'/He_exc_xsec_data.h5')
                     }
 
             CCC_states = ['2s','3s','3d','4s','4d','4f']
-            CCC_data = pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb'))
+            CCC_data = load_h5_dict(data_path+'/H_exc_xsec_data_CCC.h5')
 
 
             def make_interpolator(species,state):
@@ -483,12 +433,11 @@ def load_data(data_type, verbose=1):
         return glob_exc_data
 
     elif data_type == 'exc_AcharyaKhatri':
-        raise NotImplementedError('pickle files need to be updated.')
         if glob_exc_data == None:
             #CCC cross-sections in units of cm^2
             species_list = ['HI', 'HeI']
-            exc_data = {'HI': pickle.load(open(data_path+'/H_exc_xsec_data_CCC.p','rb')),
-                    'HeI': pickle.load(open(data_path+'/He_exc_xsec_data_CCC.p','rb'))
+            exc_data = {'HI': load_h5_dict(data_path+'/H_exc_xsec_data_CCC.h5'),
+                    'HeI': load_h5_dict(data_path+'/He_exc_xsec_data_CCC.h5')
                     }
 
             state_list = ['2s', '2p', '3p']
@@ -514,14 +463,13 @@ def load_data(data_type, verbose=1):
         return glob_reion_data
 
     elif data_type == 'bnd_free':
-        raise NotImplementedError('pickle files need to be updated.')
         if glob_bnd_free_data == None:
 
             glob_bnd_free_data = {}
 
             # Contains a pre-computed dictionary indexed by [n][l][lp] of g values,
             # using the generate_g_table_dict function at the end of this module. See arXiv:0911.1359 Eq. (30) for definition.
-            glob_bnd_free_data['g_table_dict']  = pickle.load(open(data_path+'/g_table_dict.p',  'rb'))
+            glob_bnd_free_data['g_table_dict']  = load_h5_dict(data_path+'/g_table_dict.h5')['g_table_dict']
 
             # Number of log-spaced large bins for kappa^2 = E_e / R, where E_e is the electron energy and R is the
             # ionization potential of hydrogen.            

@@ -6,6 +6,9 @@ import pickle
 from numpy.linalg import matrix_power
 from scipy.interpolate import interp1d, interp2d
 
+# from config import data_path, photeng, eleceng
+# from tf_data import *
+
 from darkhistory.config import load_data
 
 
@@ -375,9 +378,9 @@ def evolve(
                          and config.eleceng respectively as abscissa.')
 
     if (
-        highengphot_tf_interp.dlnz != lowengphot_tf_interp.dlnz
-        or highengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz
-        or lowengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz
+        np.any(highengphot_tf_interp.dlnz != lowengphot_tf_interp.dlnz)
+        or np.any(highengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz)
+        or np.any(lowengphot_tf_interp.dlnz != lowengelec_tf_interp.dlnz)
     ):
         raise ValueError('TransferFuncInterp objects must all have the same \
                          dlnz.')
