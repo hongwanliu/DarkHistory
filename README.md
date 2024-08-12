@@ -1,3 +1,7 @@
+# New formats for required data files
+
+For versatility, all data files required to use DarkHistory have been converted to HDF5, JSON, and plain text files. All active branches of DarkHistory have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509).
+
 # [DarkHistory v1.1.1](https://github.com/hongwanliu/DarkHistory/releases/tag/v1.1.1) for [DM21cm](https://github.com/yitiansun/DM21cm)
 
 The branch of DarkHistory used in [DM21cm](https://github.com/yitiansun/DM21cm), a semi-numerical simulation of inhomogemeous dark matter energy injection based on DarkHistory and [21cmFAST](https://github.com/joshwfoster/21cmFAST). The data files used for this release is the same as v1.1 (see below). DM21cm is described in [arXiv:2312.11608](https://arxiv.org/abs/2312.11608).
