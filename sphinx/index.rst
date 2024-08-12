@@ -18,6 +18,7 @@ Announcements
 
 *2019-04-22* -- First release of DarkHistory (v1.0.0). 
 
+*2024-08-12* -- DarkHistory is now compatible with versions of Python up to 3.12, numpy up to 1.26, and scipy up to 1.13. We have also converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
 
 What is DarkHistory?
 =======================================
