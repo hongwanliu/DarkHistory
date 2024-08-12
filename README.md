@@ -1,3 +1,9 @@
+# [DarkHistory v1.1.1](https://github.com/hongwanliu/DarkHistory/releases/tag/v1.1.1) for [DM21cm](https://github.com/yitiansun/DM21cm)
+
+The branch of DarkHistory used in [DM21cm](https://github.com/yitiansun/DM21cm), a semi-numerical simulation of inhomogemeous dark matter energy injection based on DarkHistory and [21cmFAST](https://github.com/joshwfoster/21cmFAST). The data files used for this release is the same as v1.1 (see below). DM21cm is described in [arXiv:2312.11608](https://arxiv.org/abs/2312.11608).
+
+# Other versions:
+
 # [DarkHistory v2.0](https://github.com/hongwanliu/DarkHistory/releases/tag/v2.0.0), with improved treatment of low energy electrons and spectral distortions
 
 The branch containing the upgraded treatment for low energy electrons and spectral distortions can be found [here](https://github.com/hongwanliu/DarkHistory/tree/lowengelec_upgrade). In additional to the data files needed for v1.0, this upgrade requires [additional data files](https://doi.org/10.5281/zenodo.7651517).
