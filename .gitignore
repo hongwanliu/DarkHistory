@@ -1,12 +1,9 @@
-#----- This project -----
-.ipynb_checkpoints/
-**/.ipynb_checkpoints
-**/.ipynb_checkpoints/
-.DS_Store
-**/.DS_Store
+#===== This project =====
 *.pyc
 **/*.pyc
-#------------------------
+
+tests/*.p
+#========================
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -137,3 +134,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# macOS
+.DS_Store

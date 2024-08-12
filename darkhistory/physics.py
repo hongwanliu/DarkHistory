@@ -4,6 +4,10 @@ Throughout DarkHistory, we choose cm, s and eV as our system of units. Masses an
 
 """
 
+import pickle
+import sys
+import logging
+
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.special import zeta
@@ -62,20 +66,23 @@ ele_compton  = 2*np.pi*hbar * c / me
 # Densities and Hubble                  #
 #########################################
 
-h    = 0.6736
+from astropy.cosmology import Planck18 as cosmo
+from astropy import constants as const
+
+h    = cosmo.h
 """ h parameter."""
 H0   = 100*h*3.241e-20
 r""" Hubble parameter today in s\ :sup:`-1`\ ."""
 
-omega_m      = 0.3153
+omega_m      = cosmo.Om0
 """ Omega of all matter today."""
-omega_rad    = 8e-5
+omega_rad    = cosmo.Ogamma0 # FIX!!!! and neutrino
 """ Omega of radiation today."""
-omega_lambda = 0.6847
+omega_lambda = cosmo.Ode0
 """ Omega of dark energy today."""
-omega_baryon = 0.02237/(h**2)
+omega_baryon = cosmo.Ob0
 """ Omega of baryons today."""
-omega_DM      = 0.1200/(h**2)
+omega_DM      = cosmo.Odm0
 """ Omega of dark matter today."""
 rho_crit     = 1.05371e4*(h**2)
 r""" Critical density of the universe in eV cm\ :sup:`-3`\ . 
@@ -90,6 +97,8 @@ nB          = rho_baryon/mp
 r""" Baryon number density in eV cm\ :sup:`-3`\ ."""
 
 YHe         = 0.245
+#YHe         = 1e-6
+#logging.warning("DarkHistory: It's all hydrogen now.")
 """Helium abundance by mass."""
 nH          = (1-YHe)*nB
 r""" Atomic hydrogen number density in cm\ :sup:`-3`\ ."""
@@ -1231,7 +1240,7 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None):
         return low_eng_elec_N + high_eng_elec_N
 
 
-def elec_heating_engloss_rate(eng, xe, rs):
+def elec_heating_engloss_rate(eng, xe, rs, nBscale=1.):
     r"""Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .
 
     Parameters
@@ -1242,6 +1251,8 @@ def elec_heating_engloss_rate(eng, xe, rs):
         The free electron fraction.
     rs : float
         The redshift.
+    nBscale : float
+        The baryon number density scaling factor.
 
     Returns
     -------
@@ -1254,7 +1265,7 @@ def elec_heating_engloss_rate(eng, xe, rs):
     """
 
     w = c*np.sqrt(1 - 1/(1 + eng/me)**2)
-    ne = xe*nH*rs**3
+    ne = xe * (nH * nBscale) * rs**3
 
     eps_0 = 8.85418782e-12 # in SI units
 
@@ -1345,6 +1356,7 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
         return np.exp(fdb[:,ind])
     else:
         return np.exp(fdb[ind])
+
 
 # Unused for now.
 

@@ -12,9 +12,9 @@ from darkhistory.config import load_data
 @pytest.fixture(scope='module')
 def data_loader():
     data = {
-        'dep_tf' : load_data('dep_tf', verbose=0),
-        'tf_helper' : load_data('tf_helper', verbose=0),
-        'ics_tf' : load_data('ics_tf', verbose=0),
+        'dep_tf' : load_data('dep_tf'),
+        'tf_helper' : load_data('tf_helper'),
+        'ics_tf' : load_data('ics_tf'),
         'expected' : {},
     }
     with h5py.File(os.path.dirname(os.path.realpath(__file__)) + '/data/test_tf_2261700c.h5', 'r') as hf:

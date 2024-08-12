@@ -23,7 +23,8 @@ def get_elec_cooling_tf(
     raw_thomson_tf=None, raw_rel_tf=None, raw_engloss_tf=None,
     coll_ion_sec_elec_specs=None, coll_exc_sec_elec_specs=None,
     ics_engloss_data=None, 
-    check_conservation_eng = False, verbose=False
+    check_conservation_eng=False, verbose=False,
+    nBscale=1.,
 ):
 
     """Transfer functions for complete electron cooling through inverse Compton scattering (ICS) and atomic processes.
@@ -57,6 +58,8 @@ def get_elec_cooling_tf(
         If True, lower=True, checks for energy conservation. Default is False.
     verbose : bool
         If True, prints energy conservation checks. Default is False.
+    nBscale : float
+        The baryon number scaling factor. Default is 1.
     
     Returns
     -------
@@ -225,15 +228,15 @@ def get_elec_cooling_tf(
 
     # Collisional excitation rates.
     rate_vec_exc_HI = (
-        (1 - xHII)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
+        (1 - xHII) * (phys.nH * nBscale) * rs**3 * phys.coll_exc_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_exc_HeI = (
-        (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
+        (phys.nHe/phys.nH - xHeII) * (phys.nH * nBscale) * rs**3 * phys.coll_exc_xsec(eleceng, species='HeI') * beta_ele * phys.c
     )
     
     rate_vec_exc_HeII = (
-        xHeII*phys.nH*rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
+        xHeII * (phys.nH * nBscale) * rs**3 * phys.coll_exc_xsec(eleceng, species='HeII') * beta_ele * phys.c
     )
 
     # Normalized electron spectrum after excitation.
@@ -265,17 +268,17 @@ def get_elec_cooling_tf(
 
     # Collisional ionization rates.
     rate_vec_ion_HI = (
-        (1 - xHII)*phys.nH*rs**3 
+        (1 - xHII) * (phys.nH * nBscale) * rs**3 
         * phys.coll_ion_xsec(eleceng, species='HI') * beta_ele * phys.c
     )
     
     rate_vec_ion_HeI = (
-        (phys.nHe/phys.nH - xHeII)*phys.nH*rs**3 
+        (phys.nHe/phys.nH - xHeII) * (phys.nH * nBscale) * rs**3 
         * phys.coll_ion_xsec(eleceng, species='HeI') * beta_ele * phys.c
     )
     
     rate_vec_ion_HeII = (
-        xHeII*phys.nH*rs**3
+        xHeII * (phys.nH * nBscale) * rs**3
         * phys.coll_ion_xsec(eleceng, species='HeII') * beta_ele * phys.c
     )
 
@@ -307,11 +310,11 @@ def get_elec_cooling_tf(
     # Deposited energy for ionization.
     deposited_ion_vec = np.zeros_like(eleceng)
 
-     #############################################
+    #############################################
     # Heating
     #############################################
     
-    dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs)
+    dE_heat_dt = phys.elec_heating_engloss_rate(eleceng, xe, rs, nBscale=nBscale)
     
     deposited_heat_vec = np.zeros_like(eleceng)
 

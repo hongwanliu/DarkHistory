@@ -126,7 +126,7 @@ class Spectra:
                     "all Spectrum must have spec_type 'N' or 'dNdE'."
                 )
 
-            if not utils.arrays_equal([spec.eng for spec in spec_arr]):
+            if not utils.arrays_close([spec.eng for spec in spec_arr]):
                 raise TypeError("all abscissae must be the same.")
 
             self._grid_vals = np.atleast_2d(
@@ -242,7 +242,7 @@ class Spectra:
 
     def __setitem__(self, key, value):
         if np.issubdtype(type(key), int):
-            if not np.array_equal(value.eng, self.eng):
+            if not np.allclose(value.eng, self.eng):
                     raise TypeError("the energy abscissa of the new Spectrum does not agree with this Spectra.")
             self._in_eng[key] = value.in_eng
             self._rs[key] = value.rs
@@ -254,7 +254,7 @@ class Spectra:
             self._eng_underflow[key] = value.underflow['eng']
         elif isinstance(key, slice):
             for i,spec in zip(key, value):
-                if not np.array_equal(value.eng, self.eng):
+                if not np.allclose(value.eng, self.eng):
                     raise TypeError("the energy abscissa of the new Spectrum does not agree with this Spectra.")
                 self._in_eng[i] = spec.in_eng
                 self._rs[i] = spec.rs
@@ -291,7 +291,7 @@ class Spectra:
         """
         if np.issubclass_(type(other), Spectra):
 
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError('abscissae are different for the two spectra.')
 
             if self.spec_type != other.spec_type:
@@ -301,9 +301,9 @@ class Spectra:
             out_spectra._spec_type = self.spec_type
             out_spectra._grid_vals = self.grid_vals + other.grid_vals
             out_spectra._eng = self.eng
-            if np.array_equal(self.in_eng, other.in_eng):
+            if np.allclose(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
-            if np.array_equal(self.rs, other.rs):
+            if np.allclose(self.rs, other.rs):
                 out_spectra._rs = self.rs
 
             out_spectra._N_underflow = self.N_underflow + other.N_underflow
@@ -347,7 +347,7 @@ class Spectra:
         """
         if npissubclass_(type(other), Spectra):
 
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError('abscissae are different from the two spectra.')
 
             if self.spec_type != other.spec_type:
@@ -359,9 +359,9 @@ class Spectra:
                 self.grid_vals + other.grid_vals
             )
             out_spectra._eng = self.eng
-            if np.array_equal(self.in_eng, other.in_eng):
+            if np.allclose(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
-            if np.array_equal(self.rs, other.rs):
+            if np.allclose(self.rs, other.rs):
                 out_spectra._rs = self.rs
 
             out_spectra._N_underflow = self.N_underflow + other.N_underflow
@@ -495,14 +495,14 @@ class Spectra:
 
         elif np.issubclass_(type(other), Spectra):
 
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError('the two spectra do not have the same abscissa.')
 
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
-            if np.array_equal(self.in_eng, other.in_eng):
+            if np.allclose(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
-            if np.array_equal(self.rs, other.rs):
+            if np.allclose(self.rs, other.rs):
                 out_spectra._rs = self.rs
             if self.spec_type == other.spec_type:
                 out_spectra._spec_type = self.spec_type
@@ -568,14 +568,14 @@ class Spectra:
 
         elif np.issubclass_(type(other), Spectra):
 
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError('the two spectra do not have the same abscissa.')
 
             out_spectra = Spectra([])
             out_spectra._eng = self.eng
-            if np.array_equal(self.in_eng, other.in_eng):
+            if np.allclose(self.in_eng, other.in_eng):
                 out_spectra._in_eng = self.in_eng
-            if np.array_equal(self.rs, other.rs):
+            if np.allclose(self.rs, other.rs):
                 out_spectra._rs = self.rs
             if self.spec_type == other.spec_type:
                 out_spectra._spec_type = self.spec_type
@@ -1046,7 +1046,7 @@ class Spectra:
             new_data = np.dot(weight, self.grid_vals)
             return Spectrum(self.eng, new_data, spec_type=self.spec_type)
         elif isinstance(weight, Spectrum):
-            if not np.array_equal(self.in_eng, weight.eng):
+            if not np.allclose(self.in_eng, weight.eng):
                 raise TypeError('spectra.in_eng must equal weight.eng')
 
             # new_data = np.dot(weight._data, self.grid_vals)
@@ -1223,7 +1223,7 @@ class Spectra:
         """
         # Checks if spec_arr is empty
         if self.eng.size != 0:
-            if not np.array_equal(self.eng, spec.eng):
+            if not np.allclose(self.eng, spec.eng):
                 raise TypeError("new Spectrum does not have the same energy abscissa.")
 
         if self.spec_type != spec.spec_type:

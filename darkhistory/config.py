@@ -4,29 +4,26 @@ import os
 import numpy as np
 import json
 import h5py
+import logging
 
 from scipy.interpolate import PchipInterpolator, pchip_interpolate, RegularGridInterpolator
+
+logger = logging.getLogger('darkhistory.config')
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(name)s: %(message)s'))
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
 
 
 #===== SET DATA PATH HERE =====#
 # or set the environment variable DH_DATA_DIR.
-data_path = None
+data_path_default = None
 
-if data_path is None and 'DH_DATA_DIR' in os.environ.keys():
-    data_path = os.environ['DH_DATA_DIR']
+if data_path_default is None and 'DH_DATA_DIR' in os.environ.keys():
+    data_path_default = os.environ['DH_DATA_DIR']
 #==============================#
 
-        
-# Global variables for data.
-glob_binning_data = None
-glob_dep_tf_data  = None
-glob_ics_tf_data  = None
-glob_struct_data  = None
-glob_hist_data    = None
-glob_pppc_data    = None
-glob_f_data       = None
-glob_dep_ctf_data = None
-glob_tf_helper_data = None
 
 class PchipInterpolator2D: 
 
@@ -164,7 +161,7 @@ class PchipInterpolator2D:
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
 
-
+    
 def load_h5_dict(file_path):
    def recursive_load(h5_obj):
        data_dict = {}
@@ -179,34 +176,25 @@ def load_h5_dict(file_path):
        return recursive_load(h5_file)
     
 
-def load_data(data_type, verbose=1):
+def load_data(data_type, prefix=None):
     """ Loads data from downloaded files. 
 
     Parameters
     ----------
     data_type : {'binning', 'dep_tf', 'hed_tf', 'tf_helper', 'ics_tf', 'struct', 'hist', 'f', 'pppc'}
         Type of data to load. The options are: 
-
         - *'binning'* -- Default binning for all transfer functions;
-
         - *'dep_tf'* -- Transfer functions for propagating photons and deposition into low-energy photons, low-energy electrons, high-energy deposition and upscattered CMB energy rate;
-        
         - *'hed_tf'* -- Transfer functions for high-energy deposition only;
-        
         - *'tf_helper'* -- Helper functions used in reconstructing transfer functions (from neural network);
-
         - *'ics_tf'* -- Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
-
         - *'struct'* -- Structure formation boosts; 
-
         - *'hist'* -- Baseline ionization and temperature histories;
-
         - *'f'* -- :math:`f_c(z)` fractions without backreaction; and
-
         - *'pppc'* -- Data from PPPC4DMID for annihilation spectra. Specify the primary channel in *primary*.
         
-    verbose : {0, 1}
-        Set verbosity.
+    prefix : str, optional
+        Path to the data directory. If not specified, the path is taken from the environment variable DH_DATA_DIR.
         
     Returns
     --------
@@ -218,211 +206,132 @@ def load_data(data_type, verbose=1):
     :func:`.get_pppc_spec`
 
     """
-
-    global data_path
     
-    global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
-    global glob_dep_ctf_data, glob_tf_helper_data
-    global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data
-    
-    if data_path is None or not os.path.isdir(data_path):
-        raise ValueError('Please set data directory in darkhistory.config or to `DH_DATA_DIR` environment variable.')
-
-    ##################################################
-    ### binning
+    data_path = prefix if prefix is not None else data_path_default
     
     if data_type == 'binning':
-        if glob_binning_data is None:
-            try:
-                glob_binning_data = load_h5_dict(data_path+'/binning.h5')
-            except FileNotFoundError as err:
-                print(type(err).__name__, ':', err)
-                raise FileNotFoundError('Please update your dataset! See README.md for instructions.')
-        return glob_binning_data
-
-    ##################################################
-    ### transfer functions
+        try:
+            return load_h5_dict(data_path+'/binning.h5')
+        except FileNotFoundError as err:
+            print(type(err).__name__, ':', err)
+            raise FileNotFoundError('Please update your dataset! See README.md for instructions.')
     
     elif data_type == 'dep_tf':
         from darkhistory.spec.transferfunclist import TransferFuncInterp
         from darkhistory.history.histools import IonRSInterp
         # prevent Spectrum -> physics -> load_data -> TransferFuncInterp -> Spectrum ciruclar import
-        if glob_dep_tf_data is None:
-            if verbose >= 1:
-                print('****** Loading transfer functions... ******')
-                print(f'Using data at {data_path}')
-                print('    for propagating photons... ', end =' ', flush=True)
-            highengphot_tf_interp = TransferFuncInterp(load_h5_dict(data_path+'/highengphot.h5'))
-            if verbose >= 1:
-                print(' Done!')
-                print('    for low-energy photons... ', end=' ', flush=True)
-            lowengphot_tf_interp  = TransferFuncInterp(load_h5_dict(data_path+'/lowengphot.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('    for low-energy electrons... ', end=' ', flush=True)
-            lowengelec_tf_interp  = TransferFuncInterp(load_h5_dict(data_path+'/lowengelec.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('    for high-energy deposition... ', end=' ', flush=True)
-            highengdep_interp     = IonRSInterp(load_h5_dict(data_path+'/highengdep.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('    for total upscattered CMB energy rate... ', end=' ', flush=True)
-            CMB_engloss_interp    = IonRSInterp(load_h5_dict(data_path+'/CMB_engloss.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('****** Loading complete! ******', flush=True)
-
-            glob_dep_tf_data = {
-                'highengphot' : highengphot_tf_interp,
-                'lowengphot'  : lowengphot_tf_interp,
-                'lowengelec'  : lowengelec_tf_interp,
-                'highengdep'  : highengdep_interp,
-                'CMB_engloss' : CMB_engloss_interp
-            }
-        return glob_dep_tf_data
+        tf_dict = {}
+        for k in ['highengphot', 'lowengphot', 'lowengelec']:
+            tf_dict[k] = TransferFuncInterp(load_h5_dict(f'{data_path}/{k}.h5'))
+        for k in ['highengdep', 'CMB_engloss']:
+            tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
+        logger.info('Loaded deposition transfer functions.')
+        return tf_dict
     
-
     elif data_type == 'hed_tf':
         from darkhistory.history.histools import IonRSInterp
-        if glob_dep_tf_data is None:
-            if verbose >= 1:
-                print('****** Loading transfer functions... ******')
-                print(f'Using data at {data_path}')
-                print('    for high-energy deposition... ', end=' ', flush=True)
-            highengdep_interp     = IonRSInterp(load_h5_dict(data_path+'/highengdep.h5'))
-            if verbose >= 1:
-                print('Done!', flush=True)
-            glob_dep_tf_data = {'highengdep'  : highengdep_interp}
-        return glob_dep_tf_data
+        tf_dict = {}
+        for k in ['highengdep']:
+            tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
+        logger.info('Loaded high energy deposition transfer functions.')
+        return tf_dict
     
-
     elif data_type == 'tf_helper':
         from darkhistory.history.histools import IonRSInterp
-        if glob_tf_helper_data is None:
-            try:
-                glob_tf_helper_data = {k : IonRSInterp(load_h5_dict(data_path+f'/{k}.h5')) for k in ['tf_E', 'hep_lb', 'lci', 'hci']}
-            except FileNotFoundError as err:
-                print(type(err).__name__, ':', err)
-                raise FileNotFoundError('Neural network transfer function functionalities requires v1.1 data set!')
-        return glob_tf_helper_data
-
+        try:
+            tf_dict = {}
+            for k in ['tf_E', 'hep_lb', 'lci', 'hci']:
+                tf_dict[k] = IonRSInterp(load_h5_dict(f'{data_path}/{k}.h5'))
+            logger.info('Loaded transfer function helpers.')
+            return tf_dict
+        except FileNotFoundError as err:
+            print(type(err).__name__, ':', err)
+            raise FileNotFoundError('Neural network transfer function functionalities requires v1.1 data set!')
 
     elif data_type == 'ics_tf':
         from darkhistory.spec.transferfunction import TransFuncAtRedshift
-        if glob_ics_tf_data is None:
-            if verbose >= 1:
-                print('****** Loading transfer functions... ******')
-                print('    for inverse Compton (Thomson)... ', end=' ', flush=True)
-            ics_thomson_ref_tf = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_thomson_ref.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
-            ics_rel_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_rel_ref.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
-            engloss_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_engloss_ref.h5'))
-            if verbose >= 1:
-                print('Done!')
-                print('****** Loading complete! ******', flush=True)
-            glob_ics_tf_data = {
-                'thomson' : ics_thomson_ref_tf,
-                'rel'     : ics_rel_ref_tf,
-                'engloss' : engloss_ref_tf
-            }
-        return glob_ics_tf_data
-
-
-    ##################################################
-    ### others
+        tf_dict = {}
+        for k in ['thomson', 'rel', 'engloss']:
+            tf_dict[k] = TransFuncAtRedshift(load_h5_dict(f'{data_path}/ics_{k}_ref.h5'))
+        logger.info('Loaded ICS transfer functions.')
+        return tf_dict
     
     elif data_type == 'struct':
-        if glob_struct_data is None:
-            boost_data = np.loadtxt(data_path+'/boost_data.txt')
-            #einasto_subs = np.loadtxt(open(data_path+'/boost_Einasto_subs.txt', 'rb'))
-            glob_struct_data = {
-                'einasto_subs'    : boost_data[:,[0,1]],
-                'einasto_no_subs' : boost_data[:,[0,2]],
-                'NFW_subs'        : boost_data[:,[0,3]],
-                'NFW_no_subs'     : boost_data[:,[0,4]] 
-            }
-        return glob_struct_data
+        boost_data = np.loadtxt(data_path+'/boost_data.txt')
+        return {
+            'einasto_subs'    : boost_data[:,[0,1]],
+            'einasto_no_subs' : boost_data[:,[0,2]],
+            'NFW_subs'        : boost_data[:,[0,3]],
+            'NFW_no_subs'     : boost_data[:,[0,4]] 
+        }
 
     elif data_type == 'hist':
-        if glob_hist_data is None:
-            glob_hist_data = load_h5_dict(data_path+'/std_soln_He.h5')
-        return glob_hist_data
+        return load_h5_dict(data_path+'/std_soln_He.h5')
 
     elif data_type == 'f':
-        if glob_f_data is None:
-            phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
-            phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
-            elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
+        phot_ln_rs = np.array([np.log(3000) - 0.001*i for i in np.arange(6620)])
+        phot_ln_rs_noStruct = np.array([np.log(3000) - 0.002*i for i in np.arange(3199)])
+        elec_ln_rs = np.array([np.log(3000) - 0.008*i for i in np.arange(828)])
 
-            log10eng0 = 3.6989700794219966
-            log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
-            log10eng[-1] = 12.601505994846297
+        log10eng0 = 3.6989700794219966
+        log10eng = np.array([log10eng0 + 0.23252559*i for i in np.arange(40)])
+        log10eng[-1] = 12.601505994846297
 
-            f_dict = load_h5_dict(data_path+'/f_std.h5')
-            f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_decay']))
-            f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_dict['f_phot_swave']))
-            f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_swave_struct']))
-            f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_decay']))
-            f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave']))
-            f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave_struct']))
+        f_dict = load_h5_dict(data_path+'/f_std.h5')
+        f_phot_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_decay']))
+        f_phot_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs_noStruct)), np.log(f_dict['f_phot_swave']))
+        f_phot_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(phot_ln_rs)),          np.log(f_dict['f_phot_swave_struct']))
+        f_elec_decay_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_decay']))
+        f_elec_swave_interp        = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave']))
+        f_elec_swave_struct_interp = RegularGridInterpolator((log10eng, np.flipud(elec_ln_rs)),          np.log(f_dict['f_elec_swave_struct']))
 
-            glob_f_data = {
-                'phot_decay'        : f_phot_decay_interp,
-                'phot_swave'        : f_phot_swave_interp,
-                'phot_swave_struct' : f_phot_swave_struct_interp,
-                'elec_decay'        : f_elec_decay_interp,
-                'elec_swave'        : f_elec_swave_interp,
-                'elec_swave_struct' : f_elec_swave_struct_interp
-            }
-        return glob_f_data
+        return {
+            'phot_decay'        : f_phot_decay_interp,
+            'phot_swave'        : f_phot_swave_interp,
+            'phot_swave_struct' : f_phot_swave_struct_interp,
+            'elec_decay'        : f_elec_decay_interp,
+            'elec_swave'        : f_elec_swave_interp,
+            'elec_swave_struct' : f_elec_swave_struct_interp
+        }
 
     elif data_type == 'pppc':
-        if glob_pppc_data is None:
+        
+        coords_data = np.array(json.load(open(data_path+'/dlNdlxIEW_coords_table.json')), dtype=object)
+        # coords_data is a (2, 23, 2) array. 
+        # axis 0: stable SM secondaries, {'elec', 'phot'}
+        # axis 1: annihilation primary channel.
+        # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of 
+        # the secondary. 
+        # Each element is a 1D array.
 
-            coords_data = np.array(json.load(open(data_path+'/dlNdlxIEW_coords_table.json')), dtype=object)
-            # coords_data is a (2, 23, 2) array. 
-            # axis 0: stable SM secondaries, {'elec', 'phot'}
-            # axis 1: annihilation primary channel.
-            # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of 
-            # the secondary. 
-            # Each element is a 1D array.
+        values_data = np.array(json.load(open(data_path+'/dlNdlxIEW_values_table.json')), dtype=object)
+        # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
+        # axis 0: stable SM secondaries, {'elec', 'phot'}
+        # axis 1: annihilation primary channel.
+        # Each element is a 2D array indexed by {mDM in GeV, np.log10(K/mDM)}
+        # as saved in coords_data. 
 
-            values_data = np.array(json.load(open(data_path+'/dlNdlxIEW_values_table.json')), dtype=object)
-            # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
-            # axis 0: stable SM secondaries, {'elec', 'phot'}
-            # axis 1: annihilation primary channel.
-            # Each element is a 2D array indexed by {mDM in GeV, np.log10(K/mDM)}
-            # as saved in coords_data. 
+        # Compile a dictionary of all of the interpolators.
+        dlNdlxIEW_interp = {'elec':{}, 'phot':{}}
 
-            # Compile a dictionary of all of the interpolators.
-            dlNdlxIEW_interp = {'elec':{}, 'phot':{}}
+        chan_list = [
+            'e_L','e_R', 'e', 'mu_L', 'mu_R', 'mu', 
+            'tau_L', 'tau_R', 'tau',
+            'q',  'c',  'b', 't',
+            'W_L', 'W_T', 'W', 'Z_L', 'Z_T', 'Z', 'g',  'gamma', 'h',
+            'nu_e', 'nu_mu', 'nu_tau',
+            'VV_to_4e', 'VV_to_4mu', 'VV_to_4tau'
+        ]
 
-            chan_list = [
-                'e_L','e_R', 'e', 'mu_L', 'mu_R', 'mu', 
-                'tau_L', 'tau_R', 'tau',
-                'q',  'c',  'b', 't',
-                'W_L', 'W_T', 'W', 'Z_L', 'Z_T', 'Z', 'g',  'gamma', 'h',
-                'nu_e', 'nu_mu', 'nu_tau',
-                'VV_to_4e', 'VV_to_4mu', 'VV_to_4tau'
-            ]
+        for pri in chan_list:
+            dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(
+                coords_data, values_data, pri, 'elec'
+            )
+            dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(
+                coords_data, values_data, pri, 'phot'
+            )
 
-            for pri in chan_list:
-                dlNdlxIEW_interp['elec'][pri] = PchipInterpolator2D(
-                    coords_data, values_data, pri, 'elec'
-                )
-                dlNdlxIEW_interp['phot'][pri] = PchipInterpolator2D(
-                    coords_data, values_data, pri, 'phot'
-                )
-
-            glob_pppc_data = dlNdlxIEW_interp
-
-        return glob_pppc_data
+        return dlNdlxIEW_interp
 
     else:
         raise ValueError('Invalid data_type.')

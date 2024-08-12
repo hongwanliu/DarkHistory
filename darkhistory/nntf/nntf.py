@@ -7,7 +7,6 @@ import sys
 sys.path.append('..')
 
 import darkhistory.physics as phys
-
 from darkhistory.nntf.utils import *
 from darkhistory.nntf.tfbase import *
 

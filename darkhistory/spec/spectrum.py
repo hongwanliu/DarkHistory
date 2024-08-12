@@ -133,15 +133,15 @@ class Spectrum:
 
         if type(other) == type(self):
             # Some typical errors.
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two Spectrum objects.")
             if self._spec_type != other._spec_type:
                 raise TypeError("cannot add N to dN/dE.")
             new_rs = -1
             new_in_eng = -1
-            if np.array_equal(self.rs, other.rs):
+            if np.allclose(self.rs, other.rs):
                 new_rs = self.rs
-            if np.array_equal(self.in_eng, other.in_eng):
+            if np.allclose(self.in_eng, other.in_eng):
                 new_in_eng = self.in_eng
 
             new_spectrum = Spectrum(
@@ -198,7 +198,7 @@ class Spectrum:
 
         if type(other) == type(self):
             # Some typical errors.
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError("abscissae are different for the two :class:`Spectrum` objects.")
             if self._spec_type != other._spec_type:
                 raise TypeError("cannot add N to dN/dE.")
@@ -359,7 +359,7 @@ class Spectrum:
                 new_rs = self.rs
             if self.in_eng == other.in_eng:
                 new_in_eng = self.in_eng
-            if not np.array_equal(self.eng, other.eng):
+            if not np.allclose(self.eng, other.eng):
                 raise TypeError("energy abscissae are not the same.")
             return Spectrum(
                 self.eng, self._data*other._data,
@@ -494,12 +494,12 @@ class Spectrum:
         if target is not None: 
             if target != 'N' and target != 'dNdE':
                 raise ValueError('Invalid target specified.')
-
-        log_bin_width = get_log_bin_width(self.eng)
         if self._spec_type == 'N' and not target == 'N':
+            log_bin_width = get_log_bin_width(self.eng)
             self._data = self._data/(self.eng*log_bin_width)
             self._spec_type = 'dNdE'
         elif self._spec_type == 'dNdE' and not target == 'dNdE':
+            log_bin_width = get_log_bin_width(self.eng)
             self._data = self._data*self.eng*log_bin_width
             self._spec_type = 'N'
 

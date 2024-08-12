@@ -1,60 +1,52 @@
-""" The main DarkHistory function.
+""" The main DarkHistory function."""
 
-"""
-
+import time
+import logging
+import gc
 
 import numpy as np
 from numpy.linalg import matrix_power
-import pickle
-import time
 
-# from config import data_path, photeng, eleceng
-# from tf_data import *
-
-from darkhistory.config import load_data
-
+from   darkhistory.config import load_data
 import darkhistory.physics as phys
-
 from   darkhistory.spec import pppc
-from   darkhistory.spec.spectrum import Spectrum
 from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
-from   darkhistory.spec.spectools import rebin_N_arr
 from   darkhistory.spec.spectools import EnglossRebinData
-
-from darkhistory.electrons import positronium as pos
-from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
-
-from darkhistory.low_energy.lowE_deposition import compute_fs
-from darkhistory.low_energy.lowE_electrons import make_interpolator
-
-from darkhistory.history import tla
+from   darkhistory.electrons import positronium as pos
+from   darkhistory.electrons.elec_cooling import get_elec_cooling_tf
+from   darkhistory.low_energy.lowE_deposition import compute_fs
+from   darkhistory.low_energy.lowE_electrons import make_interpolator
+from   darkhistory.history import tla
 
 
 def evolve(
-    in_spec_elec=None, in_spec_phot=None,
-    rate_func_N=None, rate_func_eng=None,
-    DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None,
-    struct_boost=None,
+    in_spec_elec=None, in_spec_phot=None, rate_func_N=None, rate_func_eng=None, # custom injection API
+    DM_process=None, mDM=None, sigmav=None, lifetime=None, primary=None, struct_boost=None, # DM API
     start_rs=None, end_rs=4, helium_TLA=False,
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
-    init_cond=None, coarsen_factor=1, backreaction=True, 
+    init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
-    tf_mode='table', verbose=0
+    tf_mode='table', verbose=0,
+    clean_up_tf=True,
 ):
     """
     Main function computing histories and spectra. 
 
     Parameters
     -----------
-    in_spec_elec : :class:`.Spectrum`, optional
+    in_spec_elec : :class:`.Spectrum` or function, optional
         Spectrum per injection event into electrons. *in_spec_elec.rs*
         of the :class:`.Spectrum` must be the initial redshift. 
-    in_spec_phot : :class:`.Spectrum`, optional
+        Alternatively, a function taking :math:`(1+z)` as input and output a
+        :class:`.Spectrum` object with the corresponding redshift.
+    in_spec_phot : :class:`.Spectrum` or function, optional
         Spectrum per injection event into photons. *in_spec_phot.rs* 
         of the :class:`.Spectrum` must be the initial redshift. 
+        Alternatively, a function taking :math:`(1+z)` as input and output a
+        :class:`.Spectrum` object with the corresponding redshift.
     rate_func_N : function, optional
         Function returning number of injection events per volume per time, with redshift :math:`(1+z)` as an input.  
     rate_func_eng : function, optional
@@ -148,26 +140,25 @@ def evolve(
     #########################################################################
     #########################################################################
 
-
     #####################################
     # Loading data                      #
     #####################################
     
     timer_start = time.time()
 
-    binning = load_data('binning', verbose=verbose)
+    binning = load_data('binning')
     photeng = binning['phot']
     eleceng = binning['elec']
 
     if tf_mode == 'table':
         
-        dep_tf_data = load_data('dep_tf', verbose=verbose)
+        dep_tf_data = load_data('dep_tf')
         highengphot_tf_interp = dep_tf_data['highengphot']
         lowengphot_tf_interp  = dep_tf_data['lowengphot']
         lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
         
-        ics_tf_data = load_data('ics_tf', verbose=verbose)
+        ics_tf_data = load_data('ics_tf')
         ics_thomson_ref_tf = ics_tf_data['thomson']
         ics_rel_ref_tf     = ics_tf_data['rel']
         engloss_ref_tf     = ics_tf_data['engloss']
@@ -183,10 +174,10 @@ def evolve(
             print('Warning: coarsen_factor is set to 12 (required for using nntf).')
             coarsen_factor = 12
         
-        dep_tf_data = load_data('hed_tf', verbose=verbose)
+        dep_tf_data = load_data('hed_tf')
         highengdep_interp = dep_tf_data['highengdep']
         
-        tf_helper_data = load_data('tf_helper', verbose=verbose)
+        tf_helper_data = load_data('tf_helper')
         tf_E_interp   = tf_helper_data['tf_E']
         hep_lb_interp = tf_helper_data['hep_lb']
         
@@ -204,7 +195,7 @@ def evolve(
     else:
         raise ValueError('Invalid transfer function mode (tf_mode)!')
     
-    if verbose >= 1:
+    if verbose >= 2:
         print('Loading time: %.3f s' % (time.time()-timer_start))
     
     #####################################
@@ -212,6 +203,7 @@ def evolve(
     #####################################
     
     timer_start = time.time()
+    USE_IN_SPEC_FUNC = False
 
     # Handle the case where a DM process is specified. 
     if DM_process == 'swave':
@@ -221,7 +213,10 @@ def evolve(
             )
         
         # Get input spectra from PPPC. 
-        in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
+        if mDM < eleceng[1]:
+            in_spec_elec = pppc.get_pppc_spec(1, eleceng, primary, 'elec') * 0
+        else:
+            in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
         in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
         # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs
@@ -247,7 +242,7 @@ def evolve(
                 * struct_boost(rs)
             )
 
-    if DM_process == 'decay':
+    elif DM_process == 'decay':
         if lifetime is None or start_rs is None:
             raise ValueError(
                 'lifetime and start_rs must be specified.'
@@ -279,14 +274,45 @@ def evolve(
             )
         def rate_func_eng(rs):
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
+        
+    elif callable(in_spec_phot) and callable(in_spec_elec):
+        
+        USE_IN_SPEC_FUNC = True
+        
+        if start_rs is None:
+            raise ValueError('start_rs must be specified.')
+            
+        in_spec_elec_func = in_spec_elec
+        in_spec_phot_func = in_spec_phot
+        
+        in_spec_elec = in_spec_elec_func(start_rs)
+        in_spec_phot = in_spec_phot_func(start_rs)
+        in_spec_elec.rs = start_rs
+        in_spec_phot.rs = start_rs
+        in_spec_elec.switch_spec_type('N')
+        in_spec_phot.switch_spec_type('N')
+        
+        if not (np.allclose(in_spec_elec.eng, eleceng) and
+                np.allclose(in_spec_phot.eng, photeng)):
+            logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
+            in_spec_elec.rebin(eleceng)
+            in_spec_phot.rebin(photeng)
+            
+        if struct_boost is None:
+            def struct_boost(rs):
+                return 1.
+        # User must define rate_func_N and rate_func_eng consistently.
+        
+    else: # custom injection spectrum with fixed spectral shape
+        pass # User must define rate_func_N and rate_func_eng consistently.
     
     #####################################
     # Input Checks                      #
     #####################################
 
     if (
-        not np.array_equal(in_spec_elec.eng, eleceng) 
-        or not np.array_equal(in_spec_phot.eng, photeng)
+        not np.allclose(in_spec_elec.eng, eleceng) 
+        or not np.allclose(in_spec_phot.eng, photeng)
     ):
         raise ValueError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
 
@@ -334,16 +360,16 @@ def evolve(
 
     # tqdm set-up.
     if use_tqdm:
-        from tqdm.auto import tqdm # Auto detect notebook or terminal.
+        from tqdm import tqdm # Auto detect notebook or terminal.
         pbar = tqdm(
-            total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
+            total=int(np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)), position=0
         ) 
 
-    def norm_fac(rs):
+    def norm_fac(rs, dt):
         # Normalization to convert from per injection event to 
         # per baryon per dlnz step. 
         return rate_func_N(rs) * (
-            dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
+            dt / (phys.nB * rs**3)
         )
 
     def rate_func_eng_unclustered(rs):
@@ -411,7 +437,7 @@ def evolve(
     # Object to help us interpolate over MEDEA results. 
     MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
     
-    if verbose >= 1:
+    if verbose >= 2:
         print('Initialization time: %.3f s' % (time.time()-timer_start))
     
     #########################################################################
@@ -439,7 +465,22 @@ def evolve(
             lowengphot_spec_at_rs  = in_spec_phot*0
             lowengelec_spec_at_rs  = in_spec_elec*0
             highengdep_at_rs       = np.zeros(4)
+        
+        if USE_IN_SPEC_FUNC and rs != start_rs:
+            # Except for first step, remake in_spec_elec/phot if necessary
+            in_spec_phot = in_spec_phot_func(rs)
+            in_spec_elec = in_spec_elec_func(rs)
+            in_spec_elec.rs = rs
+            in_spec_phot.rs = rs
+            in_spec_elec.switch_spec_type('N')
+            in_spec_phot.switch_spec_type('N')
 
+            # Rebin if necessary
+            if not (np.allclose(in_spec_elec.eng, eleceng) and
+                    np.allclose(in_spec_phot.eng, photeng)):
+                logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
+                in_spec_elec.rebin(eleceng)
+                in_spec_phot.rebin(photeng)
 
         #####################################################################
         #####################################################################
@@ -482,28 +523,28 @@ def evolve(
 
             # Add this to lowengelec_at_rs. 
             lowengelec_spec_at_rs += (
-                elec_processes_lowengelec_spec*norm_fac(rs)
+                elec_processes_lowengelec_spec*norm_fac(rs, dt)
             )
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
             deposited_ion  = np.dot(
-                deposited_ion_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_ion_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
             deposited_exc  = np.dot(
-                deposited_exc_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_exc_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
             deposited_heat = np.dot(
-                deposited_heat_arr, in_spec_elec.N*norm_fac(rs)
+                deposited_heat_arr, in_spec_elec.N*norm_fac(rs, dt)
             )
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
             deposited_ICS  = np.dot(
-                deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs)
+                deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs, dt)
             )
 
             #######################################
@@ -526,10 +567,9 @@ def evolve(
         if elec_processes:
             highengphot_spec_at_rs += (
                 in_spec_phot + ics_phot_spec + positronium_phot_spec
-            ) * norm_fac(rs)
+            ) * norm_fac(rs, dt)
         else:
-            highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
-
+            highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
         # Set the redshift correctly. 
         highengphot_spec_at_rs.rs = rs
 
@@ -540,7 +580,7 @@ def evolve(
         #####################################################################
         
         # At this point, highengphot_at_rs, lowengphot_at_rs and 
-        # lowengelec_at_rs have been computed for this redshift. 
+        # lowengelec_at_rs have been computed for this redshift.
         append_highengphot_spec(highengphot_spec_at_rs)
         append_lowengphot_spec(lowengphot_spec_at_rs)
         append_lowengelec_spec(lowengelec_spec_at_rs)
@@ -582,8 +622,6 @@ def evolve(
         # Save the f_c(z) values.
         f_low  = np.concatenate((f_low,  [f_raw[0]]))
         f_high = np.concatenate((f_high, [f_raw[1]]))
-
-        # print(f_low, f_high)
 
         # Save CMB upscattered rate and high-energy deposition rate.
         highengdep_grid = np.concatenate(
@@ -652,16 +690,15 @@ def evolve(
             xHeII_to_interp = x_arr[-1,1]
         
         if tf_mode == 'table':
-            
             rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-            
+
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                 get_tf(
                     rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=coarsen_factor
+                    dlnz, dep_tf_data, coarsen_factor=coarsen_factor
                 )
             )
-            
+
             # Get the spectra for the next step by applying the 
             # transfer functions. 
             highengdep_at_rs = np.dot(
@@ -671,7 +708,7 @@ def evolve(
             highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
             lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
-            
+        
         elif tf_mode == 'nn':
             
             rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
@@ -697,8 +734,7 @@ def evolve(
             highengphot_spec_at_rs = hep_nntf( out_highengphot_specs[-1] )
             lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
             lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
-            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1),
-                                       out_highengphot_specs[-1].N )
+            highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1), out_highengphot_specs[-1].N )
         
         #############################
         # Parameters for next step  #
@@ -736,7 +772,7 @@ def evolve(
     #########################################################################
     #########################################################################
 
-    if verbose >= 1:
+    if verbose >= 2:
         print('Main loop time: %.3f s' % (time.time()-timer_start))
 
     if use_tqdm:
@@ -771,8 +807,14 @@ def evolve(
         'highengphot': out_highengphot_specs,
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
-        'f': f
+        'f': f,
     }
+
+    if tf_mode == 'table' and clean_up_tf:
+        del dep_tf_data, ics_tf_data
+        del highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp
+        del ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
+    gc.collect()
 
     return data
 
@@ -860,7 +902,7 @@ def get_elec_cooling_data(eleceng, photeng):
     )
 
 
-def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
+def get_tf(rs, xHII, xHeII, dlnz, dep_tf_data, coarsen_factor=1):
     """
     Returns the interpolated transfer functions. 
 
@@ -884,9 +926,6 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
         electron, high-energy deposition, and if coarsening is not 1, 
         coarsened propagating photon transfer functions. 
     """
-
-    # Load data.
-    dep_tf_data = load_data('dep_tf')
     
     highengphot_tf_interp = dep_tf_data['highengphot']
     lowengphot_tf_interp  = dep_tf_data['lowengphot']
@@ -895,6 +934,7 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     
     if coarsen_factor > 1:
         rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+        #rs_to_interpolate = rs
     else:
         rs_to_interpolate = rs
     
