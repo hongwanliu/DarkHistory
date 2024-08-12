@@ -71,7 +71,7 @@ from astropy import constants as const
 
 h    = cosmo.h
 """ h parameter."""
-H0   = 100*h*3.241e-20
+H0   = cosmo.H0.to('1/s').value
 r""" Hubble parameter today in s\ :sup:`-1`\ ."""
 
 omega_m      = cosmo.Om0
@@ -84,7 +84,7 @@ omega_baryon = cosmo.Ob0
 """ Omega of baryons today."""
 omega_DM      = cosmo.Odm0
 """ Omega of dark matter today."""
-rho_crit     = 1.05371e4*(h**2)
+rho_crit     = (cosmo.critical_density0 * const.c**2).to('eV/cm^3').value
 r""" Critical density of the universe in eV cm\ :sup:`-3`\ . 
 
 See [1] for the definition. This is a mass density, with mass measured in eV.
@@ -1432,5 +1432,3 @@ def f_std(mDM, rs, inj_particle=None, inj_type=None, struct=False, channel=None)
 #         probability density of emitting those two photons.
 #     """
 #     return 0
-
-

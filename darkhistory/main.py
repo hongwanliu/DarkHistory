@@ -690,7 +690,8 @@ def evolve(
             xHeII_to_interp = x_arr[-1,1]
         
         if tf_mode == 'table':
-            rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+            rs_to_interp = rs # consistent Euler steps
 
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
                 get_tf(
@@ -933,8 +934,8 @@ def get_tf(rs, xHII, xHeII, dlnz, dep_tf_data, coarsen_factor=1):
     highengdep_interp     = dep_tf_data['highengdep']
     
     if coarsen_factor > 1:
-        rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
-        #rs_to_interpolate = rs
+        #rs_to_interpolate = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
+        rs_to_interpolate = rs # consistent Euler steps
     else:
         rs_to_interpolate = rs
     
