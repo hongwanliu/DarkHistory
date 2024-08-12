@@ -1,3 +1,7 @@
+# New formats for required data files
+
+For versatility, all data files required to use DarkHistory have been converted to HDF5, JSON, and plain text files. All active branches of DarkHistory have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509).
+
 # DarkHistory, with improved treatment of low energy electrons and spectral distortions
 
 In additional to the data files needed for v1.0, this upgrade requires [additional data files](https://doi.org/10.5281/zenodo.7651517).
