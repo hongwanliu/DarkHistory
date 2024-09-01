@@ -1,6 +1,6 @@
 # New formats for required data files
 
-For versatility, all data files required to use DarkHistory have been converted to HDF5, JSON, and plain text files. All active branches of DarkHistory have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509).
+For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509).
 
 # [DarkHistory v1.1.1](https://github.com/hongwanliu/DarkHistory/releases/tag/v1.1.1) for [DM21cm](https://github.com/yitiansun/DM21cm)
 
