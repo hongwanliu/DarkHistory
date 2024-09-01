@@ -12,6 +12,8 @@ dependencies = [
     "matplotlib",
     "numpy>=1.25.2",
     "scipy>=1.11.2",
+    "astropy>=5.3",
+    "h5py",
     "tqdm"
 ]
 
