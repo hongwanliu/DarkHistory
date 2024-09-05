@@ -1,11 +1,11 @@
 import os
-import sys
+# import sys
 import pytest
 import h5py
 
 import numpy as np
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from darkhistory.config import load_data
 
 
@@ -25,7 +25,7 @@ def data_loader():
 
 def test_dep_tf(data_loader):
     tfs = data_loader['dep_tf']
-    for k  in ['highengphot', 'lowengphot', 'lowengelec']:
+    for k in ['highengphot', 'lowengphot', 'lowengelec']:
         tf = tfs[k]
         z = tf.get_tf(0.433, 0.302, 2244).sum_specs(np.sin(np.arange(500)))
         z += tf.get_tf(0.760, 0.276, 384).sum_specs(np.sin(np.arange(500)))

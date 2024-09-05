@@ -289,7 +289,7 @@ class Spectra:
         :meth:`Spectra.__radd__`
 
         """
-        if np.issubclass_(type(other), Spectra):
+        if issubclass(type(other), Spectra):
 
             if not np.allclose(self.eng, other.eng):
                 raise TypeError('abscissae are different for the two spectra.')
@@ -493,7 +493,7 @@ class Spectra:
 
             return out_spectra
 
-        elif np.issubclass_(type(other), Spectra):
+        elif issubclass(type(other), Spectra):
 
             if not np.allclose(self.eng, other.eng):
                 raise TypeError('the two spectra do not have the same abscissa.')
@@ -566,7 +566,7 @@ class Spectra:
 
             return out_spectra
 
-        elif np.issubclass_(type(other), Spectra):
+        elif issubclass(type(other), Spectra):
 
             if not np.allclose(self.eng, other.eng):
                 raise TypeError('the two spectra do not have the same abscissa.')
@@ -606,7 +606,7 @@ class Spectra:
         --------
         :meth:`Spectra.__rtruediv__`
         """
-        if np.issubclass_(type(other), Spectra):
+        if issubclass(type(other), Spectra):
             inv_spectra = Spectra([])
             inv_spectra._eng = other.eng
             inv_spectra._in_eng = other.in_eng
