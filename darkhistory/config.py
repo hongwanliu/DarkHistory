@@ -133,7 +133,7 @@ class PchipInterpolator2D:
     def get_val(self, mDM_in_GeV, log10x):
         
         if (
-            mDM_in_GeV < self._mDM_in_GeV_arrs[0][0] 
+            mDM_in_GeV < self._mDM_in_GeV_arrs[0][0]
             or mDM_in_GeV < self._mDM_in_GeV_arrs[1][0]
             or mDM_in_GeV > self._mDM_in_GeV_arrs[0][-1]
             or mDM_in_GeV > self._mDM_in_GeV_arrs[1][-1]

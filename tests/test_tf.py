@@ -1,11 +1,11 @@
 import os
-# import sys
+import sys
 import pytest
 import h5py
 
 import numpy as np
 
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from darkhistory.config import load_data
 
 
