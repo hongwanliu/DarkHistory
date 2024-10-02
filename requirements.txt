@@ -3,3 +3,5 @@ numpy>=1.25.2
 scipy>=1.11.2
 tqdm>=4.66.1
 numpydoc>=1.8.0
+astropy>=6.1.0
+h5py>=3.11.0
