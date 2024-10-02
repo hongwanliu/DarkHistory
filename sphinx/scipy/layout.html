@@ -105,7 +105,6 @@
 {%- macro css() %}
     <link rel="stylesheet" type="text/css" href="{{ pathto('_static/css/spc-bootstrap.css', 1) }}">
     <link rel="stylesheet" type="text/css" href="{{ pathto('_static/css/spc-extend.css', 1) }}">
-    <link rel="stylesheet" href="{{ pathto('_static/' + style, 1) }}" type="text/css" >
     <link rel="stylesheet" href="{{ pathto('_static/pygments.css', 1) }}" type="text/css" >
     {%- for cssfile in css_files %}
     <link rel="stylesheet" href="{{ pathto(cssfile, 1) }}" type="text/css" >
