@@ -6,8 +6,8 @@ DarkHistory
 .. autosummary::
    :toctree: _autosummary
    
-   main
-   config
+   darkhistory/main
+   darkhistory/config
 
 .. rubric:: Table of Packages
 
