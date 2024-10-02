@@ -16,7 +16,18 @@ Announcements
 
 *Please check this page frequently for new updates, as the code is still in its infancy!*
 
-*2024-08-12* -- DarkHistory is now compatible with versions of Python up to 3.12, numpy up to 1.26, and scipy up to 1.13. We have also converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
+*2024-08-12* -- DarkHistory is now compatible with versions of Python up to 3.12. The following packages are required, with recommended version numbers. 
+
+* `Numpy 1.26.4 <http://www.numpy.org/>`_
+* `Scipy 1.13.1 <https://scipy.org/scipylib/index.html>`_
+* `Matplotlib 3.8.4 <https://matplotlib.org/>`_
+* `Jupyter 1.0.0 <https://jupyter.org/>`_
+* `Unofficial Jupyter Notebook Extensions 0.5.0 <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
+* `tqdm 4.66.4 <https://github.com/tqdm/tqdm>`_
+* `astropy 6.1.0 <https://www.astropy.org/>`_
+* `h5py 3.11.0 <https://www.h5py.org/>`_
+
+We have also converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
 
 *2019-04-22* -- First release of DarkHistory (v1.0.0). 
 
