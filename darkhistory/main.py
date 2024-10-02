@@ -129,9 +129,6 @@ def evolve(
 
     :func:`.photoion_rate`, :func:`.photoheat_rate`
 
-    :func:`.Tm_std`, :func:`.xHII_std` and :func:`.xHeII_std`
-
-
     """
     
     #########################################################################
