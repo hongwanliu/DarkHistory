@@ -19,6 +19,13 @@ from   darkhistory.low_energy.lowE_deposition import compute_fs
 from   darkhistory.low_energy.lowE_electrons import make_interpolator
 from   darkhistory.history import tla
 
+logger = logging.getLogger('darkhistory.main')
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s: %(name)s: %(message)s'))
+handler.setLevel(logging.INFO)
+logger.addHandler(handler)
+
 
 def evolve(
     in_spec_elec=None, in_spec_phot=None, rate_func_N=None, rate_func_eng=None, # custom injection API
@@ -162,13 +169,16 @@ def evolve(
         
     elif tf_mode == 'nn':
         
-        import tensorflow
-        tensorflow.get_logger().setLevel('ERROR') # disable tf.function retracing warnings
+        try:
+            import tensorflow
+            tensorflow.get_logger().setLevel('ERROR') # disable tf.function retracing warnings
+        except ImportError:
+            raise ImportError('Tensorflow is required for using neural network transfer functions.')
         
         from darkhistory.nntf.load import load_model
         
         if coarsen_factor != 12:
-            print('Warning: coarsen_factor is set to 12 (required for using nntf).')
+            logger.warning('coarsen_factor is set to 12 (required for using nntf).')
             coarsen_factor = 12
         
         dep_tf_data = load_data('hed_tf')
@@ -356,6 +366,7 @@ def evolve(
     dt   = dlnz * coarsen_factor / phys.hubble(rs)
 
     # tqdm set-up.
+    logger.info(f'Starting evolution from rs = {start_rs:.2f} to rs = {end_rs:.2f}.')
     if use_tqdm:
         from tqdm import tqdm # Auto detect notebook or terminal.
         pbar = tqdm(
