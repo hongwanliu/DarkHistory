@@ -10,7 +10,7 @@ DarkHistory is a Python code package that calculates the global temperature and 
 *Updated 2024/10/04*
 
 - Clone this repository. Checkout the branch you would like to use. (Current active branches: `master`, `lowengelec_upgrade`, `early_halo_cooling`)
-- It is recommended to create a new virtual environment for DarkHistory, for example via `conda`:
+- Create a new virtual environment for DarkHistory (recommended). For example, using `conda`:
 ```bash
 conda create -n darkhistory python=3.12 pip
 conda activate darkhistory
@@ -19,13 +19,13 @@ conda activate darkhistory
 ```bash
 pip install .
 ```
-- Download data files required to run DarkHistory [here](https://doi.org/10.5281/zenodo.13259509).
-- Let DarkHistory know the data location by setting variable `data_path_default` in `darkhistory/config.py` or the environment variable `DH_DATA_DIR` to the directory containing data files.
-- Now you should be able to run DarkHistory. You can familiarize yourself with DarkHistory using notebooks in *examples/*.
+- Download [data files](https://doi.org/10.5281/zenodo.13259509) required to run DarkHistory and save to an arbitrary location.
+- Inform DarkHistory of the location by setting the variable `data_path_default` in `darkhistory/config.py` or the environment variable `DH_DATA_DIR` to the directory containing data files.
+- Now you should be able to run DarkHistory. Test with the example code below. You can also familiarize yourself with DarkHistory using notebooks in *examples/*.
 
 Notes:
 - 2024/10/04: Package dependency is now updated in *pyproject.toml* and *requirements.txt*. Installing via `pip install .` will automatically install the required packages. We currently do now recommend `pip install darkhistory`, as the PyPI version may not be most up-to-date.
-- 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509).
+- 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509). See below for older datasets.
 
 # Available Versions
 
@@ -62,8 +62,8 @@ solution = evolve(
     start_rs = 3000,      # 1+z
     coarsen_factor = 12,  # log(1+z) would change by 0.001 * coarsen_factor for next step
     backreaction = True,  # Enable injection backreaction on matter temperature and ionization levels.
-    helium_TLA = True,
-    reion_switch = True
+    helium_TLA = True,    # Enable Helium Three Level Atom (TLA).
+    reion_switch = True,  # Enable a pre-defined reionization energy injection.
 )
 
 solution.keys() # 'rs', 'x', 'Tm', 'highengphot', 'lowengphot', 'lowengelec', 'f'
