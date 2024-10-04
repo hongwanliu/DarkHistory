@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "darkhistory"
+version = "2.0.0.20241004"
+readme = "README.md"
+description = "DarkHistory, with improved treatment of low energy electrons and spectral distortions."
+requires-python = ">=3.10"
+dependencies = [
+    "astropy>=5.3",
+    "h5py",
+    "matplotlib",
+    "numpy>=1.25.2",
+    "scipy>=1.11.2, <=1.13.1",
+    "tqdm"
+]
+
+[project.urls]
+Homepage = "https://github.com/hongwanliu/DarkHistory"
+
+[tool.setuptools.packages.find]
+include = [
+    "darkhistory",
+    "examples",
+    "README.md",
+    "LICENSE"
+]
+exclude = [
+    "tests",
+    "dist",
+    "docs",
+    "sphinx",
+    "*.egg-info",
+    "build",
+    "*.pyc",
+    "*.pyo",
+    "__pycache__"
+]
