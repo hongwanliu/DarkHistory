@@ -24,6 +24,7 @@ pip install .
 - Now you should be able to run DarkHistory. Test with the example code below. You can also familiarize yourself with DarkHistory using notebooks in *examples/*.
 
 Notes:
+- 2024/10/04: Please make sure to set cosmology parameters in *darkhistory/physics.py* consistent with your purpose! The current `master` branch may have updated parameters compared to earlier versions.
 - 2024/10/04: Package dependency is now updated in *pyproject.toml* and *requirements.txt*. Installing via `pip install .` will automatically install the required packages. We currently do not recommend `pip install darkhistory`, as the PyPI version may not be most up-to-date.
 - 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509). See below for older datasets.
 
