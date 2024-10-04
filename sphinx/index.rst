@@ -16,16 +16,15 @@ Announcements
 
 *Please check this page frequently for new updates, as the code is still in its infancy!*
 
-*2024-08-12* -- DarkHistory is now compatible with versions of Python up to 3.12. The following packages are required, with recommended version numbers. 
+*2024-08-12* -- DarkHistory is now compatible with python >= 3.10. The following packages are required, with recommended version numbers. See ``requirements.txt`` or ``pyproject.toml`` for more information.
 
-* `Numpy 1.26.4 <http://www.numpy.org/>`_
-* `Scipy 1.13.1 <https://scipy.org/scipylib/index.html>`_
-* `Matplotlib 3.8.4 <https://matplotlib.org/>`_
-* `Jupyter 1.0.0 <https://jupyter.org/>`_
-* `Unofficial Jupyter Notebook Extensions 0.5.0 <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
-* `tqdm 4.66.4 <https://github.com/tqdm/tqdm>`_
-* `astropy 6.1.0 <https://www.astropy.org/>`_
-* `h5py 3.11.0 <https://www.h5py.org/>`_
+* astropy>=5.3
+* h5py
+* matplotlib
+* numpy>=1.25.2
+* numpydoc
+* scipy>=1.11.2, <=1.13.1
+* tqdm
 
 We have also converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
 
@@ -77,14 +76,15 @@ Without these files, users *cannot* use the function :func:`main.evolve`, but ca
 Getting Started
 =======================================
 
-DarkHistory is written in Python 3, and uses the following Python packages: 
+DarkHistory uses python >= 3.10, and uses the following packages:
 
-* `Numpy 1.6.2 <http://www.numpy.org/>`_
-* `Scipy 1.2.1 <https://scipy.org/scipylib/index.html>`_
-* `Matplotlib 3.0.3 <https://matplotlib.org/>`_
-* `Jupyter 1.0.0 <https://jupyter.org/>`_
-* `Unofficial Jupyter Notebook Extensions 0.5.0 <https://jupyter-contrib-nbextensions.readthedocs.io/>`_
-* `tqdm 4.31.1 <https://github.com/tqdm/tqdm>`_
+* astropy>=5.3
+* h5py
+* matplotlib
+* numpy>=1.25.2
+* numpydoc
+* scipy>=1.11.2, <=1.13.1
+* tqdm
 
 DarkHistory has been tested with the package versions shown above, and using different versions may result in unexpected behavior. We recommend using `Conda <https://conda.io/en/latest/>`_, which helps manage libraries, dependencies and environments. To install all of these packages with the recommended versions, users can simply do
 
@@ -100,6 +100,12 @@ Alternatively, if the user would like to use ``pip`` instead, installing all of 
 .. sourcecode:: bash
 
     $ pip install -r requirements.txt
+
+For the ``master`` branch, the user can directly install the code along with requirements by running the following command from the ``DarkHistory/`` directory:
+
+.. sourcecode:: bash
+
+    $ pip install .
 
 After installation, users can specify the location of the downloaded data files, so that DarkHistory knows where they're stored. This is done by inserting the following line into ``config.py`` (found in the ``DarkHistory/`` directory): 
 
