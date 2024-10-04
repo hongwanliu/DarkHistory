@@ -14,9 +14,9 @@ Welcome to the DarkHistory page! Here, users will find installation instructions
 Announcements
 ======================================
 
-*Please check this page frequently for new updates, as the code is still in its infancy!*
+*Please check this page frequently for new updates!*
 
-*2024-08-12* -- DarkHistory is now compatible with python >= 3.10. The following packages are required, with recommended version numbers. See ``requirements.txt`` or ``pyproject.toml`` for more information.
+*2024-10-04* -- DarkHistory is now compatible with python >= 3.10, <= 3.12. The following packages are required, with recommended version numbers. See ``requirements.txt`` or ``pyproject.toml`` for more information.
 
 * astropy>=5.3
 * h5py
@@ -26,7 +26,7 @@ Announcements
 * scipy>=1.11.2, <=1.13.1
 * tqdm
 
-We have also converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
+*2024-08-12* We have converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
 
 *2019-04-22* -- First release of DarkHistory (v1.0.0). 
 
@@ -50,88 +50,47 @@ Due to these improvements, DarkHistory allows for rapid scans over many differen
 Installation
 =======================================
 
-There are two parts to DarkHistory: the code stored as a `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_, and the data files. 
+Updated 2024/10/04
 
-Code
--------------------
-
-The code can be downloaded as a ``.zip`` file from the `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_ page, or a local version of the repository can be cloned using ``git``. 
-
-Data Files
---------------------
-
-The data files that are necessary for DarkHistory to perform its calculations can be found on `Dataverse <https://doi.org/10.7910/DVN/DUOUWA>`_. 
-
-Using DarkHistory Without Backreaction or Spectral Information
----------------------------------------------------------------
-
-Some of the data files are several gigabytes in size, and are required when taking into account backreaction, so that the actual spectrum of particles in the bath are important. Users can choose not to download the following files:
-
-* The propagating photon, low-energy photon and low-energy electron transfer functions, *highengphot_tf_interp.raw.zip*, *lowengphot_tf_interp.raw.zip*, *lowengelec_tf_interp.raw.zip*;
-* The high-energy deposition transfer function, *highengdep_interp.raw*; and
-* Tabulated inverse Compton scattering transfer functions, *ics_thomson_ref_tf.raw*, *ics_thomson_ref_tf.raw* and *engloss_ref_tf.raw*. 
-
-Without these files, users *cannot* use the function :func:`main.evolve`, but can evaluate temperature and ionization histories using :func:`.tla.get_history` using a tabulated set of :math:`f_c(z)` data. DarkHistory comes with its own tabulated set of :math:`f_c(z)` data for dark matter annihilation and decay into :math:`e^+e^-` and :math:`\gamma \gamma`.
-
-Getting Started
-=======================================
-
-DarkHistory uses python >= 3.10, and uses the following packages:
-
-* astropy>=5.3
-* h5py
-* matplotlib
-* numpy>=1.25.2
-* numpydoc
-* scipy>=1.11.2, <=1.13.1
-* tqdm
-
-DarkHistory has been tested with the package versions shown above, and using different versions may result in unexpected behavior. We recommend using `Conda <https://conda.io/en/latest/>`_, which helps manage libraries, dependencies and environments. To install all of these packages with the recommended versions, users can simply do
+Clone the `GitHub repository <https://github.com/hongwanliu/DarkHistory/>`_ using ``git``, for example:
 
 .. sourcecode:: bash
 
-    $ conda config --add channels conda-forge
-    $ conda install --file requirements.txt
+    $ git clone git@github.com:hongwanliu/DarkHistory.git
 
-from the ``DarkHistory/`` directory. The user can also choose to install packages individually; the unofficial Jupyter notebook extensions must be installed from the ``conda-forge`` channel within Conda.
-
-Alternatively, if the user would like to use ``pip`` instead, installing all of the relevant packages can be done by the following command:
+Check out the specific version of the code you want to use, for example:
 
 .. sourcecode:: bash
 
-    $ pip install -r requirements.txt
+    $ git checkout lowengelec_upgrade
 
-For the ``master`` branch, the user can directly install the code along with requirements by running the following command from the ``DarkHistory/`` directory:
+For legacy versions of the code, check out published versions:
+
+.. sourcecode:: bash
+
+    $ git checkout v1.0.0
+
+We recommend creating a new virtual environment for DarkHistory and using ``pip`` to install the required packages. To create a new virtual environment using for example ``conda``, run the following command:
+
+.. sourcecode:: bash
+
+    $ conda create -n darkhistory python=3.12 pip
+
+From the ``DarkHistory/`` directory, install the DarkHistory and required packages by:
 
 .. sourcecode:: bash
 
     $ pip install .
 
-After installation, users can specify the location of the downloaded data files, so that DarkHistory knows where they're stored. This is done by inserting the following line into ``config.py`` (found in the ``DarkHistory/`` directory): 
+Download data files required to run DarkHistory `here <https://doi.org/10.5281/zenodo.13259509>`_.
 
-.. sourcecode:: python
+Let DarkHistory know the data location by setting variable ``data_path_default`` in ``darkhistory/config.py`` or the environment variable ``DH_DATA_DIR`` to the directory containing data files. Now you should be able to run DarkHistory. You can familiarize yourself with DarkHistory using notebooks in ``examples/``.
 
-    # Location of all data files. CHANGE THIS FOR DARKHISTORY TO ALWAYS
-    # LOOK FOR THESE DATA FILES HERE. 
-
-    data_path = '/foo/bar'
-
-where ``/foo/bar`` is the directory in which the data files are stored. 
-
-Within the ``examples/`` directory of the repository are several Jupyter notebooks aimed at helping the user learn how to use DarkHistory. To begin, navigate to the ``DarkHistory/`` directory and ensure that you are in a Python 3 environment. If you are using Conda, please see the `Conda documentation <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`_ for instructions on how to create a Python 3 environment. 
-
-Next, execute the following line:
-
-.. sourcecode:: bash
-
-    $ jupyter notebook
-
-This should open a window showing a list of files and directories in the ``DarkHistory/`` directory. The user should be able to run all of the examples in ``DarkHistory/examples/`` to learn how to use this code. 
 
 Getting Help
 =======================================
 
-For questions regarding physics and using the code, please contact the authors directly. For suspected bugs or issues with the code, please open a new issue on GitHub. 
+For questions regarding physics and using the code, please contact the authors directly (see GitHub). For suspected bugs or issues with the code, please open a new issue on GitHub. 
 
 Documentation
 =======================================
