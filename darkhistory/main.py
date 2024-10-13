@@ -47,17 +47,19 @@ def evolve(
     in_spec_elec : :class:`.Spectrum` or function, optional
         Spectrum per injection event into electrons. *in_spec_elec.rs*
         of the :class:`.Spectrum` must be the initial redshift. 
-        Alternatively, a function taking :math:`(1+z)` as input and output a
-        :class:`.Spectrum` object with the corresponding redshift.
+        Alternatively, a function taking (rs, next_rs=..., dt=...) as input and output a :class:`.Spectrum` object with the corresponding redshift.
+        If next_rs and dt are not specified, must return the instantaneous spectrum.
     in_spec_phot : :class:`.Spectrum` or function, optional
         Spectrum per injection event into photons. *in_spec_phot.rs* 
         of the :class:`.Spectrum` must be the initial redshift. 
-        Alternatively, a function taking :math:`(1+z)` as input and output a
-        :class:`.Spectrum` object with the corresponding redshift.
+        Alternatively, a function taking (rs, next_rs=..., dt=...) as input and output a :class:`.Spectrum` object with the corresponding redshift.
+        If next_rs and dt are not specified, must return the instantaneous spectrum.
     rate_func_N : function, optional
-        Function returning number of injection events per volume per time, with redshift :math:`(1+z)` as an input.  
+        Function returning number of injection events per volume per time, with (rs, next_rs=..., dt=...) as an input.
+        If next_rs and dt are not specified, must return the instantaneous rate.
     rate_func_eng : function, optional
-        Function returning energy injected per volume per time, with redshift :math:`(1+z)` as an input. 
+        Function returning energy injected per volume per time, with (rs, next_rs=..., dt=...) as an input.
+        If next_rs and dt are not specified, must return the instantaneous rate.
     DM_process : {'swave', 'decay'}, optional
         Dark matter process to use. 
     sigmav : float, optional
@@ -236,9 +238,9 @@ def evolve(
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
 
-        def rate_func_N(rs):
+        def rate_func_N(rs, next_rs=None, dt=None):
             return phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) * struct_boost(rs) / (2*mDM)
-        def rate_func_eng(rs):
+        def rate_func_eng(rs, next_rs=None, dt=None):
             return phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) * struct_boost(rs)
 
     elif DM_process == 'decay':
@@ -257,9 +259,9 @@ def evolve(
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
 
-        def rate_func_N(rs):
+        def rate_func_N(rs, next_rs=None, dt=None):
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) / mDM
-        def rate_func_eng(rs):
+        def rate_func_eng(rs, next_rs=None, dt=None):
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
         
     elif callable(in_spec_phot) and callable(in_spec_elec):
@@ -296,18 +298,21 @@ def evolve(
     
 
     #----- Injection dependent functions -----#
-    def norm_fac(rs, dt):
-        """Normalization factor to convert from per injection event to per baryon per dlnz step."""
-        return rate_func_N(rs) * (dt / (phys.nB * rs**3))
+    def norm_fac(rs, next_rs=None, dt=None):
+        """Normalization factor to convert from per injection event to per baryon per dlnz step.
+        If next_rs and dt are not specified, returns the instantaneous rate.
+        """
+        return rate_func_N(rs, next_rs=next_rs, dt=dt) * (dt / (phys.nB * rs**3))
 
-    def rate_func_eng_unclustered(rs):
+    def rate_func_eng_unclustered(rs, next_rs=None, dt=None):
         """Rate function excluding structure formation boost for s-wave annihilation.
         This is the correct normalization for f_c(z).
+        If next_rs and dt are not specified, returns the instantaneous rate.
         """
         if struct_boost is not None:
-            return rate_func_eng(rs)/struct_boost(rs)
+            return rate_func_eng(rs, next_rs=next_rs, dt=dt) / struct_boost(rs)
         else:
-            return rate_func_eng(rs)
+            return rate_func_eng(rs, next_rs=next_rs, dt=dt)
 
     elec_processes = in_spec_elec.totN() > 0 # If there are no electrons, we get a speed up by ignoring them.
     if elec_processes: # High-Energy Electrons
@@ -377,6 +382,8 @@ def evolve(
         #========== Electron Cooling ==========#
         # Get the transfer functions corresponding to electron cooling. 
         # These are \bar{T}_\gamma, \bar{T}_e and \bar{R}_c. 
+        norm_fac_this_rs = norm_fac(rs, next_rs=next_rs, dt=dt)
+
         if elec_processes:
 
             if backreaction:
@@ -407,23 +414,23 @@ def evolve(
             elec_processes_lowengelec_spec = elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
 
             # Add this to lowengelec_at_rs. 
-            lowengelec_spec_at_rs += elec_processes_lowengelec_spec * norm_fac(rs, dt)
+            lowengelec_spec_at_rs += elec_processes_lowengelec_spec * norm_fac_this_rs
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
-            deposited_ion = np.dot(deposited_ion_arr, in_spec_elec.N * norm_fac(rs, dt))
+            deposited_ion = np.dot(deposited_ion_arr, in_spec_elec.N) * norm_fac_this_rs
 
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
-            deposited_exc = np.dot(deposited_exc_arr, in_spec_elec.N * norm_fac(rs, dt))
+            deposited_exc = np.dot(deposited_exc_arr, in_spec_elec.N) * norm_fac_this_rs
 
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
-            deposited_heat = np.dot(deposited_heat_arr, in_spec_elec.N * norm_fac(rs, dt))
+            deposited_heat = np.dot(deposited_heat_arr, in_spec_elec.N) * norm_fac_this_rs
 
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
-            deposited_ICS = np.dot(deposited_ICS_arr, in_spec_elec.N * norm_fac(rs, dt))
+            deposited_ICS = np.dot(deposited_ICS_arr, in_spec_elec.N) * norm_fac_this_rs
 
             #----- Photons from injected electrons -----#
             # ICS secondary photon spectrum after electron cooling, per injection event.
@@ -438,9 +445,9 @@ def evolve(
         if elec_processes:
             highengphot_spec_at_rs += (
                 in_spec_phot + ics_phot_spec + positronium_phot_spec
-            ) * norm_fac(rs, dt)
+            ) * norm_fac_this_rs
         else:
-            highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
+            highengphot_spec_at_rs += in_spec_phot * norm_fac_this_rs
         # Set the redshift correctly.
         highengphot_spec_at_rs.rs = rs
 
@@ -481,7 +488,7 @@ def evolve(
 
         f_raw = compute_fs(
             MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
-            x_vec_for_f, rate_func_eng_unclustered(rs), dt,
+            x_vec_for_f, rate_func_eng_unclustered(rs, next_rs=next_rs, dt=dt), dt,
             highengdep_at_rs, method=compute_fs_method, cross_check=cross_check
         )
 

@@ -7,26 +7,30 @@
 DarkHistory is a Python code package that calculates the global temperature and ionization history of the universe given an exotic source of energy injection, such as dark matter annihilation or decay. DarkHistory is described in a paper available at [arXiv:1904.09296](https://arxiv.org/abs/1904.09296). Please cite this paper if you use DarkHistory in a scientific publication. For detailed information, please visit our readthedocs webpage [here](https://darkhistory.readthedocs.io).
 
 # Installation
-*Updated 2024/10/12*
+*Updated 2024/10/13*
 
-- Clone this repository. Checkout the branch you would like to use. (Current active branches: `master`, `lowengelec_upgrade`, `early_halo_cooling`)
+- Clone this repository and checkout the branch you wish to use. The currently active branches are: `master`, `lowengelec_upgrade`, and `early_halo_cooling`.
 - Create a new virtual environment for DarkHistory (recommended). For example, using `conda`:
 ```bash
 conda create -n darkhistory python=3.12 pip
 conda activate darkhistory
 ```
-- Install via `pip` in the *DarkHistory/* directory
+- Install the package via `pip` in the *DarkHistory/* directory
 ```bash
 pip install .
 ```
-- Download [data files](https://doi.org/10.5281/zenodo.13259509) required to run DarkHistory and save to an arbitrary location.
-- Inform DarkHistory of the location by setting the variable `data_path_default` in `darkhistory/config.py` or the environment variable `DH_DATA_DIR` to the directory containing data files.
-- Now you should be able to run DarkHistory. Test with the example code below. You can also familiarize yourself with DarkHistory using notebooks in *examples/*.
+- Download the [data files](https://doi.org/10.5281/zenodo.13259509) required to run DarkHistory and save them to a preferred location.
+- Inform DarkHistory of the data files' location by either:
+  - Setting the environment variable `DH_DATA_DIR` to the directory containing data files,
+  - Setting the variable `data_path_default` in *darkhistory/config.py* directly.
 
-Updates:
-- 2024/10/12: Custom injection slightly changed (now passes `next_rs`, `dt` keyword arguments to `in_spec_phot` and `in_spec_elec`). Updated scipy dependency (removed `interp2d`).
+DarkHistory is now ready to use. You can test your installation with the example code below. Additionally, familiarize yourself with DarkHistory by exploring the notebooks in the *examples/* directory.
+
+Recent updates (See [CHANGELOG](CHANGELOG.md) for details.):
+- 2024/10/13: Custom injection updated.
+<!-- - 2024/10/13: Updated dataset by downgrading float128 arrays to float64. -->
+- 2024/10/13: Updated scipy dependency (removed `interp2d`).
 - 2024/10/04: Please make sure to set cosmology parameters in *darkhistory/physics.py* consistent with your purpose! The current `master` branch may have updated parameters compared to earlier versions.
-- 2024/10/04: Package dependency is now updated in *pyproject.toml* and *requirements.txt*. Installing via `pip install .` will automatically install the required packages. We currently do not recommend `pip install darkhistory`, as the PyPI version may not be most up-to-date.
 - 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509). See below for older datasets.
 
 # Available Versions
