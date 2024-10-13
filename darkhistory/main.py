@@ -137,25 +137,16 @@ def evolve(
     :func:`.photoion_rate`, :func:`.photoheat_rate`
 
     """
-    
-    #########################################################################
-    #########################################################################
-    # Input                                                                 #
-    #########################################################################
-    #########################################################################
 
-    #####################################
-    # Loading data                      #
-    #####################################
-    
-    timer_start = time.time()
+
+    #========== Load data ==========#
 
     binning = load_data('binning')
     photeng = binning['phot']
     eleceng = binning['elec']
+    MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
 
     if tf_mode == 'table':
-        
         dep_tf_data = load_data('dep_tf')
         highengphot_tf_interp = dep_tf_data['highengphot']
         lowengphot_tf_interp  = dep_tf_data['lowengphot']
@@ -168,7 +159,6 @@ def evolve(
         engloss_ref_tf     = ics_tf_data['engloss']
         
     elif tf_mode == 'nn':
-        
         try:
             import tensorflow
             tensorflow.get_logger().setLevel('ERROR') # disable tf.function retracing warnings
@@ -186,7 +176,7 @@ def evolve(
         
         tf_helper_data = load_data('tf_helper')
         tf_E_interp   = tf_helper_data['tf_E']
-        hep_lb_interp = tf_helper_data['hep_lb']
+        # hep_lb_interp = tf_helper_data['hep_lb']
         
         nntf_data = load_model('dep_nntf', verbose=verbose)
         hep_nntf = nntf_data['hep_p12']
@@ -201,29 +191,41 @@ def evolve(
         
     else:
         raise ValueError('Invalid transfer function mode (tf_mode)!')
-    
-    if verbose >= 2:
-        print('Loading time: %.3f s' % (time.time()-timer_start))
-    
-    #####################################
-    # Initialization for DM_process     #
-    #####################################
-    
-    timer_start = time.time()
-    USE_IN_SPEC_FUNC = False
+
+
+    #========== Initialize evolution ==========#
+
+    if init_cond is None: # Default to baseline
+        xH_init  = phys.xHII_std(start_rs)
+        xHe_init = phys.xHeII_std(start_rs)
+        Tm_init  = phys.Tm_std(start_rs)
+    else: # User-specified.
+        xH_init  = init_cond[0]
+        xHe_init = init_cond[1]
+        Tm_init  = init_cond[2]
+
+    dlnz = 0.001 # Default for table and nn transfer functions
+    if tf_mode == 'table':
+        assert highengphot_tf_interp.dlnz[-1] == dlnz
 
     assert start_rs is not None, 'start_rs must be specified.'
+    rs = start_rs
+    dt = dlnz * coarsen_factor / phys.hubble(rs)
+    next_rs = np.exp(np.log(rs) - dlnz * coarsen_factor) # compute this here since injection functions may need it
+    
 
-    # Handle the case where a DM process is specified. 
+    #----- Injection -----#
+    USE_IN_SPEC_FUNC = False
+
     if DM_process == 'swave':
         
         assert sigmav is not None, 'sigmav must be specified.'
-
         if struct_boost is None:
+            logger.warning('No structure formation boost specified. Setting to 1.')
             def struct_boost(rs):
                 return 1.
         
-        # Get input spectra from PPPC. 
+        # Get input spectra from PPPC.
         if mDM < eleceng[1]:
             in_spec_elec = pppc.get_pppc_spec(1, eleceng, primary, 'elec') * 0
         else:
@@ -242,8 +244,9 @@ def evolve(
     elif DM_process == 'decay':
         
         assert lifetime is not None, 'lifetime must be specified.'
-
-        def struct_boost(rs): # The decay rate is insensitive to structure formation
+        if struct_boost is not None:
+            logger.warning('Structure formation boost is set to 1. for decay.')
+        def struct_boost(rs): # Decay is insensitive to structure formation
             return 1
         
         # Get spectra from PPPC.
@@ -260,12 +263,17 @@ def evolve(
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
         
     elif callable(in_spec_phot) and callable(in_spec_elec):
+        # Redshift-dependent injection spectra
+        # User must define rate_func_N and rate_func_eng consistently.
         
         USE_IN_SPEC_FUNC = True
+
+        if struct_boost is None:
+            def struct_boost(rs):
+                return 1.
             
         in_spec_elec_func = in_spec_elec
         in_spec_phot_func = in_spec_phot
-        
         in_spec_elec = in_spec_elec_func(start_rs)
         in_spec_phot = in_spec_phot_func(start_rs)
         in_spec_elec.rs = start_rs
@@ -278,165 +286,69 @@ def evolve(
             logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
             in_spec_elec.rebin(eleceng)
             in_spec_phot.rebin(photeng)
-            
-        if struct_boost is None:
-            def struct_boost(rs):
-                return 1.
-        # User must define rate_func_N and rate_func_eng consistently.
         
-    else: # custom injection spectrum with fixed spectral shape
+    else: # Custom injection spectrum with fixed spectral shape
         # User must define rate_func_N and rate_func_eng consistently.
         assert in_spec_phot is not None and in_spec_elec is not None, 'in_spec_phot and in_spec_elec must be specified.'
+
+    assert np.allclose(in_spec_elec.eng, eleceng)
+    assert np.allclose(in_spec_phot.eng, photeng)
     
-    #####################################
-    # Input Checks                      #
-    #####################################
 
-    if (
-        not np.allclose(in_spec_elec.eng, eleceng) 
-        or not np.allclose(in_spec_phot.eng, photeng)
-    ):
-        raise ValueError('in_spec_elec and in_spec_phot must use config.photeng and config.eleceng respectively as abscissa.')
-
-    if in_spec_elec.rs != in_spec_phot.rs:
-        raise ValueError('Input spectra must have the same rs.')
-
-    if cross_check:
-        print('cross_check has been set to True -- No longer using all MEDEA files and no longer using partial-binning.')
-    
-    #####################################
-    # Initialization                    #
-    #####################################
-
-    # Initialize the initial x and Tm. 
-    if init_cond is None:
-        # Default to baseline
-        xH_init  = phys.xHII_std(start_rs)
-        xHe_init = phys.xHeII_std(start_rs)
-        Tm_init  = phys.Tm_std(start_rs)
-    else:
-        # User-specified.
-        xH_init  = init_cond[0]
-        xHe_init = init_cond[1]
-        Tm_init  = init_cond[2]
-
-    # Initialize redshift/timestep related quantities. 
-
-    if tf_mode == 'table':
-        # Default step in the transfer function. Note highengphot_tf_interp.dlnz 
-        # contains 3 different regimes, and we start with the first.
-        dlnz = highengphot_tf_interp.dlnz[-1]
-    else:
-        # Default step for NN transfer functions.
-        dlnz = 0.001
-
-    # The current redshift. 
-    rs   = start_rs
-
-    # The timestep between evaluations of transfer functions, including 
-    # coarsening. 
-    dt   = dlnz * coarsen_factor / phys.hubble(rs)
-
-    # tqdm set-up.
-    logger.info(f'Starting evolution from rs = {start_rs:.2f} to rs = {end_rs:.2f}.')
-    if use_tqdm:
-        from tqdm import tqdm # Auto detect notebook or terminal.
-        pbar = tqdm(
-            total=int(np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)), position=0
-        ) 
-
+    #----- Injection dependent functions -----#
     def norm_fac(rs, dt):
-        # Normalization to convert from per injection event to 
-        # per baryon per dlnz step. 
-        return rate_func_N(rs) * (
-            dt / (phys.nB * rs**3)
-        )
+        """Normalization factor to convert from per injection event to per baryon per dlnz step."""
+        return rate_func_N(rs) * (dt / (phys.nB * rs**3))
 
     def rate_func_eng_unclustered(rs):
-        # The rate excluding structure formation for s-wave annihilation. 
-        # This is the correct normalization for f_c(z). 
+        """Rate function excluding structure formation boost for s-wave annihilation.
+        This is the correct normalization for f_c(z).
+        """
         if struct_boost is not None:
             return rate_func_eng(rs)/struct_boost(rs)
         else:
             return rate_func_eng(rs)
 
+    elec_processes = in_spec_elec.totN() > 0 # If there are no electrons, we get a speed up by ignoring them.
+    if elec_processes: # High-Energy Electrons
+        coll_ion_sec_elec_specs, coll_exc_sec_elec_specs, ics_engloss_data = get_elec_cooling_data(eleceng, photeng)
+        # coll_ion_sec_elec_specs is \bar{N} for collisional ionization
+        # coll_exc_sec_elec_specs \bar{N} for collisional excitation
+        # Heating and others are evaluated in get_elec_cooling_tf itself.
+        # Contains information that makes converting an energy loss spectrum to a scattered electron spectrum fast.
 
-    # If there are no electrons, we get a speed up by ignoring them. 
-    elec_processes = False
-    if in_spec_elec.totN() > 0:
-        elec_processes = True
+    if cross_check:
+        logger.warning('cross_check has been set to True -- No longer using all MEDEA files and no longer using partial-binning.')
 
-    if elec_processes:
 
-        #####################################
-        # High-Energy Electrons             #
-        #####################################
-
-        # Get the data necessary to compute the electron cooling results. 
-        # coll_ion_sec_elec_specs is \bar{N} for collisional ionization, 
-        # and coll_exc_sec_elec_specs \bar{N} for collisional excitation. 
-        # Heating and others are evaluated in get_elec_cooling_tf
-        # itself.
-
-        # Contains information that makes converting an energy loss spectrum 
-        # to a scattered electron spectrum fast. 
-        (
-            coll_ion_sec_elec_specs, coll_exc_sec_elec_specs,
-            ics_engloss_data
-        ) = get_elec_cooling_data(eleceng, photeng)
-
-    #########################################################################
-    #########################################################################
-    # Pre-Loop Preliminaries                                                #
-    #########################################################################
-    #########################################################################
-    
-    # Initialize the arrays that will contain x and Tm results. 
+    #----- Result containers -----#
     x_arr  = np.array([[xH_init, xHe_init]])
     Tm_arr = np.array([Tm_init])
 
-    # Initialize Spectra objects to contain all of the output spectra.
+    out_highengphot_specs = Spectra([], spec_type='N') # for high-energy photons
+    out_lowengphot_specs  = Spectra([], spec_type='N') # for low-energy photons
+    out_lowengelec_specs  = Spectra([], spec_type='N') # for low-energy electrons
 
-    out_highengphot_specs = Spectra([], spec_type='N')
-    out_lowengphot_specs  = Spectra([], spec_type='N')
-    out_lowengelec_specs  = Spectra([], spec_type='N')
-
-    # Define these methods for speed.
-    append_highengphot_spec = out_highengphot_specs.append
-    append_lowengphot_spec  = out_lowengphot_specs.append
-    append_lowengelec_spec  = out_lowengelec_specs.append
-
-    # Initialize arrays to store f values. 
     f_low  = np.empty((0,5))
     f_high = np.empty((0,5))
 
-    # Initialize array to store high-energy energy deposition rate. 
-    highengdep_grid = np.empty((0,4))
+    highengdep_grid = np.empty((0,4)) # for high-energy deposition rates
 
 
-    # Object to help us interpolate over MEDEA results. 
-    MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
-    
-    if verbose >= 2:
-        print('Initialization time: %.3f s' % (time.time()-timer_start))
-    
-    #########################################################################
-    #########################################################################
-    # LOOP! LOOP! LOOP! LOOP!                                               #
-    #########################################################################
-    #########################################################################
-    
-    timer_start = time.time()
+    #=============================================#
+    #========== LOOP! LOOP! LOOP! LOOP! ==========#
+
+    logger.info(f'Starting evolution from rs = {start_rs:.2f} to rs = {end_rs:.2f}.')
+    if use_tqdm:
+        from tqdm import tqdm
+        pbar = tqdm(total=int(np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)))
 
     while rs > end_rs:
 
-        # Update tqdm. 
         if use_tqdm:
             pbar.update(1)
         
-        #############################
-        # First Step Special Cases  #
-        #############################
+        #========== First step special case ==========#
         if rs == start_rs:
             # Initialize the electron and photon arrays. 
             # These will carry the spectra produced by applying the
@@ -458,16 +370,11 @@ def evolve(
             # Rebin if necessary
             if not (np.allclose(in_spec_elec.eng, eleceng) and
                     np.allclose(in_spec_phot.eng, photeng)):
-                logging.warning('rebinning in_spec_elec and in_spec_phot to config.eleceng and config.photeng respectively.')
+                logging.warning('rebinning in_spec_elec and in_spec_phot to default eleceng and photeng respectively.')
                 in_spec_elec.rebin(eleceng)
                 in_spec_phot.rebin(photeng)
 
-        #####################################################################
-        #####################################################################
-        # Electron Cooling                                                  #
-        #####################################################################
-        #####################################################################
-        
+        #========== Electron Cooling ==========#
         # Get the transfer functions corresponding to electron cooling. 
         # These are \bar{T}_\gamma, \bar{T}_e and \bar{R}_c. 
         if elec_processes:
@@ -497,79 +404,56 @@ def evolve(
             # Apply the transfer function to the input electron spectrum. 
 
             # Low energy electrons from electron cooling, per injection event.
-            elec_processes_lowengelec_spec = (
-                elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
-            )
+            elec_processes_lowengelec_spec = elec_processes_lowengelec_tf.sum_specs(in_spec_elec)
 
             # Add this to lowengelec_at_rs. 
-            lowengelec_spec_at_rs += (
-                elec_processes_lowengelec_spec*norm_fac(rs, dt)
-            )
+            lowengelec_spec_at_rs += elec_processes_lowengelec_spec * norm_fac(rs, dt)
 
             # High-energy deposition into ionization, 
             # *per baryon in this step*. 
-            deposited_ion  = np.dot(
-                deposited_ion_arr,  in_spec_elec.N*norm_fac(rs, dt)
-            )
+            deposited_ion = np.dot(deposited_ion_arr, in_spec_elec.N * norm_fac(rs, dt))
+
             # High-energy deposition into excitation, 
             # *per baryon in this step*. 
-            deposited_exc  = np.dot(
-                deposited_exc_arr,  in_spec_elec.N*norm_fac(rs, dt)
-            )
+            deposited_exc = np.dot(deposited_exc_arr, in_spec_elec.N * norm_fac(rs, dt))
+
             # High-energy deposition into heating, 
             # *per baryon in this step*. 
-            deposited_heat = np.dot(
-                deposited_heat_arr, in_spec_elec.N*norm_fac(rs, dt)
-            )
+            deposited_heat = np.dot(deposited_heat_arr, in_spec_elec.N * norm_fac(rs, dt))
+
             # High-energy deposition numerical error, 
             # *per baryon in this step*. 
-            deposited_ICS  = np.dot(
-                deposited_ICS_arr,  in_spec_elec.N*norm_fac(rs, dt)
-            )
+            deposited_ICS = np.dot(deposited_ICS_arr, in_spec_elec.N * norm_fac(rs, dt))
 
-            #######################################
-            # Photons from Injected Electrons     #
-            #######################################
-
-            # ICS secondary photon spectrum after electron cooling, 
-            # per injection event.
+            #----- Photons from injected electrons -----#
+            # ICS secondary photon spectrum after electron cooling, per injection event.
             ics_phot_spec = ics_sec_phot_tf.sum_specs(in_spec_elec)
 
             # Get the spectrum from positron annihilation, per injection event.
             # Only half of in_spec_elec is positrons!
-            positronium_phot_spec = pos.weighted_photon_spec(photeng) * (
-                in_spec_elec.totN()/2
-            )
+            positronium_phot_spec = pos.weighted_photon_spec(photeng) * (in_spec_elec.totN()/2)
             positronium_phot_spec.switch_spec_type('N')
 
-        # Add injected photons + photons from injected electrons
-        # to the photon spectrum that got propagated forward. 
+        # Add injected photons + photons from injected electrons to the photon spectrum that got propagated forward. 
         if elec_processes:
             highengphot_spec_at_rs += (
                 in_spec_phot + ics_phot_spec + positronium_phot_spec
             ) * norm_fac(rs, dt)
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs, dt)
-        # Set the redshift correctly. 
+        # Set the redshift correctly.
         highengphot_spec_at_rs.rs = rs
 
-        #####################################################################
-        #####################################################################
-        # Save the Spectra!                                                 #
-        #####################################################################
-        #####################################################################
-        
+
+        #========== Save the Spectra! ==========#
         # At this point, highengphot_at_rs, lowengphot_at_rs and 
         # lowengelec_at_rs have been computed for this redshift.
-        append_highengphot_spec(highengphot_spec_at_rs)
-        append_lowengphot_spec(lowengphot_spec_at_rs)
-        append_lowengelec_spec(lowengelec_spec_at_rs)
+        out_highengphot_specs.append(highengphot_spec_at_rs)
+        out_lowengphot_specs.append(lowengphot_spec_at_rs)
+        out_lowengelec_specs.append(lowengelec_spec_at_rs)
 
-        #####################################################################
-        #####################################################################
-        # Compute f_c(z)                                                    #
-        #####################################################################
-        #####################################################################
+
+        #========== Compute f_c(z) ==========#
         if elec_processes:
             # High-energy deposition from input electrons. 
             highengdep_at_rs += np.array([
@@ -582,15 +466,17 @@ def evolve(
         # Values of (xHI, xHeI, xHeII) to use for computing f.
         if backreaction:
             # Use the previous values with backreaction.
-            x_vec_for_f = np.array(
-                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
-            )
+            x_vec_for_f = np.array([
+                1. - x_arr[-1, 0],
+                phys.chi - x_arr[-1, 1],
+                x_arr[-1, 1]
+            ])
         else:
             # Use baseline values if no backreaction. 
             x_vec_for_f = np.array([
-                    1. - phys.xHII_std(rs), 
-                    phys.chi - phys.xHeII_std(rs), 
-                    phys.xHeII_std(rs)
+                1. - phys.xHII_std(rs), 
+                phys.chi - phys.xHeII_std(rs), 
+                phys.xHeII_std(rs)
             ])
 
         f_raw = compute_fs(
@@ -604,9 +490,7 @@ def evolve(
         f_high = np.concatenate((f_high, [f_raw[1]]))
 
         # Save CMB upscattered rate and high-energy deposition rate.
-        highengdep_grid = np.concatenate(
-            (highengdep_grid, [highengdep_at_rs])
-        )
+        highengdep_grid = np.concatenate((highengdep_grid, [highengdep_at_rs]))
 
         # Compute f for TLA: sum of low and high. 
         f_H_ion = f_raw[0][0] + f_raw[1][0]
@@ -614,32 +498,17 @@ def evolve(
         f_heat  = f_raw[0][3] + f_raw[1][3]
 
         if compute_fs_method == 'old':
-            # The old method neglects helium.
-            f_He_ion = 0. 
+            f_He_ion = 0. # The old method neglects helium.
         else:
             f_He_ion = f_raw[0][1] + f_raw[1][1]
-        
 
-        #####################################################################
-        #####################################################################
-        # ********* AFTER THIS, COMPUTE QUANTITIES FOR NEXT STEP *********  #
-        #####################################################################
-        #####################################################################
 
-        # Define the next redshift step. 
-        next_rs = np.exp(np.log(rs) - dlnz * coarsen_factor)
+        #========== AFTER THIS, COMPUTE QUANTITIES FOR NEXT STEP ==========#
 
-        #####################################################################
-        #####################################################################
-        # TLA Integration                                                   #
-        #####################################################################
-        #####################################################################
-
+        #========== TLA Integration ==========#
         # Initial conditions for the TLA, (Tm, xHII, xHeII, xHeIII). 
         # This is simply the last set of these variables. 
-        init_cond_TLA = np.array(
-            [Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0]
-        )
+        init_cond_TLA = np.array([Tm_arr[-1], x_arr[-1,0], x_arr[-1,1], 0])
 
         # Solve the TLA for x, Tm for the *next* step. 
         new_vals = tla.get_history(
@@ -653,12 +522,8 @@ def evolve(
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
         )
 
-        #####################################################################
-        #####################################################################
-        # Photon Cooling Transfer Functions                                 #
-        #####################################################################
-        #####################################################################
-        
+
+        #========== Photon Cooling Transfer Functions ==========#
         # Get the transfer functions for this step.
         if not backreaction:
             # Interpolate using the baseline solution.
@@ -673,25 +538,19 @@ def evolve(
             #rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             rs_to_interp = rs # consistent Euler steps
 
-            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf = (
-                get_tf(
-                    rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, dep_tf_data, coarsen_factor=coarsen_factor
-                )
+            highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, _ = get_tf(
+                rs, xHII_to_interp, xHeII_to_interp,
+                dlnz, dep_tf_data, coarsen_factor=coarsen_factor
             )
 
             # Get the spectra for the next step by applying the 
             # transfer functions. 
-            highengdep_at_rs = np.dot(
-                np.swapaxes(highengdep_arr, 0, 1),
-                out_highengphot_specs[-1].N
-            )
+            highengdep_at_rs = np.dot( np.swapaxes(highengdep_arr, 0, 1), out_highengphot_specs[-1].N )
             highengphot_spec_at_rs = highengphot_tf.sum_specs( out_highengphot_specs[-1] )
-            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs ( out_highengphot_specs[-1] )
-            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs ( out_highengphot_specs[-1] )
+            lowengphot_spec_at_rs  = lowengphot_tf.sum_specs( out_highengphot_specs[-1] )
+            lowengelec_spec_at_rs  = lowengelec_tf.sum_specs( out_highengphot_specs[-1] )
         
         elif tf_mode == 'nn':
-            
             rs_to_interp = np.exp(np.log(rs) - dlnz * coarsen_factor/2)
             
             # Predict transfer functions
@@ -717,10 +576,8 @@ def evolve(
             lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
             highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1), out_highengphot_specs[-1].N )
         
-        #############################
-        # Parameters for next step  #
-        #############################
-        
+
+        #========== Parameters for next step ==========#
         highengphot_spec_at_rs.rs = next_rs
         lowengphot_spec_at_rs.rs  = next_rs
         lowengelec_spec_at_rs.rs  = next_rs
@@ -734,54 +591,54 @@ def evolve(
 
             if helium_TLA:
                 # Append the calculated xHe to x_arr. 
-                x_arr  = np.append(
-                        x_arr,  [[new_vals[-1,1], new_vals[-1,2]]], axis=0
-                    )
+                x_arr = np.append(x_arr, [[new_vals[-1,1], new_vals[-1,2]]], axis=0)
             else:
                 # Append the baseline solution value. 
-                x_arr  = np.append(
-                    x_arr,  [[new_vals[-1,1], phys.xHeII_std(next_rs)]], axis=0
-                )
+                x_arr = np.append(x_arr, [[new_vals[-1,1], phys.xHeII_std(next_rs)]], axis=0)
 
         # Re-define existing variables. 
         rs = next_rs
         dt = dlnz * coarsen_factor/phys.hubble(rs)
-
-    #########################################################################
-    #########################################################################
-    # END OF LOOP! END OF LOOP!                                             #
-    #########################################################################
-    #########################################################################
-
-    if verbose >= 2:
-        print('Main loop time: %.3f s' % (time.time()-timer_start))
+        next_rs = np.exp(np.log(rs) - dlnz * coarsen_factor) # compute this here since injection functions may need it
 
     if use_tqdm:
         pbar.close()
 
-    f_to_return = (f_low, f_high)
+    #========== END OF LOOP! END OF LOOP! ==========#
+    #===============================================#
+
     
-    # Some processing to get the data into presentable shape. 
+    #========== Clean up ==========#
+
+    if tf_mode == 'table' and clean_up_tf:
+        del dep_tf_data, ics_tf_data
+        del highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp
+        del ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
+    gc.collect()
+
+
+    #========== Return the results ==========#
+
     f_low_dict = {
         'H ion':  f_low[:,0],
         'He ion': f_low[:,1],
         'exc':    f_low[:,2],
         'heat':   f_low[:,3],
-        'cont':   f_low[:,4]
+        'cont':   f_low[:,4],
     }
     f_high_dict = {
         'H ion':  f_high[:,0],
         'He ion': f_high[:,1],
         'exc':    f_high[:,2],
         'heat':   f_high[:,3],
-        'cont':   f_high[:,4]
+        'cont':   f_high[:,4],
     }
-
     f = {
-        'low': f_low_dict, 'high': f_high_dict
+        'low': f_low_dict,
+        'high': f_high_dict,
     }
 
-    data = {
+    return {
         'rs': out_highengphot_specs.rs,
         'x': x_arr,
         'Tm': Tm_arr, 
@@ -790,14 +647,6 @@ def evolve(
         'lowengelec': out_lowengelec_specs,
         'f': f,
     }
-
-    if tf_mode == 'table' and clean_up_tf:
-        del dep_tf_data, ics_tf_data
-        del highengphot_tf_interp, lowengphot_tf_interp, lowengelec_tf_interp, highengdep_interp
-        del ics_thomson_ref_tf, ics_rel_ref_tf, engloss_ref_tf
-    gc.collect()
-
-    return data
 
 
 def get_elec_cooling_data(eleceng, photeng):
@@ -836,28 +685,29 @@ def get_elec_cooling_data(eleceng, photeng):
     # of energy eleceng - phys.lya.eng. Similar for helium. 
     coll_exc_sec_elec_tf_HI = tf.TransFuncAtRedshift(
         np.squeeze(id_mat[:, np.where(eleceng > phys.lya_eng)]),
-        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+        in_eng = eleceng,
+        rs = -1*np.ones_like(eleceng),
         eng = eleceng[eleceng > phys.lya_eng] - phys.lya_eng,
-        dlnz = -1, spec_type = 'N'
+        dlnz = -1,
+        spec_type = 'N'
     )
 
     coll_exc_sec_elec_tf_HeI = tf.TransFuncAtRedshift(
-        np.squeeze(
-            id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]
-        ),
-        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
-        eng = (
-            eleceng[eleceng > phys.He_exc_eng['23s']] 
-            - phys.He_exc_eng['23s']
-        ), 
-        dlnz = -1, spec_type = 'N'
+        np.squeeze(id_mat[:, np.where(eleceng > phys.He_exc_eng['23s'])]),
+        in_eng = eleceng,
+        rs = -1*np.ones_like(eleceng),
+        eng = eleceng[eleceng > phys.He_exc_eng['23s']] - phys.He_exc_eng['23s'], 
+        dlnz = -1,
+        spec_type = 'N'
     )
 
     coll_exc_sec_elec_tf_HeII = tf.TransFuncAtRedshift(
         np.squeeze(id_mat[:, np.where(eleceng > 4*phys.lya_eng)]),
-        in_eng = eleceng, rs = -1*np.ones_like(eleceng),
+        in_eng = eleceng,
+        rs = -1*np.ones_like(eleceng),
         eng = eleceng[eleceng > 4*phys.lya_eng] - 4*phys.lya_eng,
-        dlnz = -1, spec_type = 'N'
+        dlnz = -1,
+        spec_type = 'N'
     )
 
     # Rebin the data so that the spectra stored above now have an abscissa
@@ -878,9 +728,7 @@ def get_elec_cooling_data(eleceng, photeng):
     # electron spectrum fast. 
     ics_engloss_data = EnglossRebinData(eleceng, photeng, eleceng)
 
-    return (
-        coll_ion_sec_elec_specs, coll_exc_sec_elec_specs, ics_engloss_data
-    )
+    return coll_ion_sec_elec_specs, coll_exc_sec_elec_specs, ics_engloss_data
 
 
 def get_tf(rs, xHII, xHeII, dlnz, dep_tf_data, coarsen_factor=1):
@@ -919,40 +767,21 @@ def get_tf(rs, xHII, xHeII, dlnz, dep_tf_data, coarsen_factor=1):
     else:
         rs_to_interpolate = rs
     
-    highengphot_tf = highengphot_tf_interp.get_tf(
-        xHII, xHeII, rs_to_interpolate
-    )
-    lowengphot_tf  = lowengphot_tf_interp.get_tf(
-        xHII, xHeII, rs_to_interpolate
-    )
-    lowengelec_tf  = lowengelec_tf_interp.get_tf(
-        xHII, xHeII, rs_to_interpolate
-    )
-    highengdep_arr = highengdep_interp.get_val(
-        xHII, xHeII, rs_to_interpolate
-    )
+    highengphot_tf = highengphot_tf_interp.get_tf(xHII, xHeII, rs_to_interpolate)
+    lowengphot_tf  = lowengphot_tf_interp.get_tf(xHII, xHeII, rs_to_interpolate)
+    lowengelec_tf  = lowengelec_tf_interp.get_tf(xHII, xHeII, rs_to_interpolate)
+    highengdep_arr = highengdep_interp.get_val(xHII, xHeII, rs_to_interpolate)
     
     if coarsen_factor > 1:
         prop_tf = np.zeros_like(highengphot_tf._grid_vals)
         for i in np.arange(coarsen_factor):
             prop_tf += matrix_power(highengphot_tf._grid_vals, i)
-        lowengphot_tf._grid_vals = np.matmul(
-            prop_tf, lowengphot_tf._grid_vals
-        )
-        lowengelec_tf._grid_vals = np.matmul(
-            prop_tf, lowengelec_tf._grid_vals
-        )
-        highengphot_tf._grid_vals = matrix_power(
-            highengphot_tf._grid_vals, coarsen_factor
-        )
+        lowengphot_tf._grid_vals = np.matmul(prop_tf, lowengphot_tf._grid_vals)
+        lowengelec_tf._grid_vals = np.matmul(prop_tf, lowengelec_tf._grid_vals)
+        highengphot_tf._grid_vals = matrix_power(highengphot_tf._grid_vals, coarsen_factor)
         # cmbloss_arr = np.matmul(prop_tf, cmbloss_arr)/coarsen_factor
-        highengdep_arr = (
-            np.matmul(prop_tf, highengdep_arr)/coarsen_factor
-        )
+        highengdep_arr = np.matmul(prop_tf, highengdep_arr) / coarsen_factor
     else:
         prop_tf = None
     
-    return(
-        highengphot_tf, lowengphot_tf,
-        lowengelec_tf, highengdep_arr, prop_tf
-    )
+    return highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr, prop_tf
