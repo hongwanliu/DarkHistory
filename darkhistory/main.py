@@ -212,12 +212,16 @@ def evolve(
     timer_start = time.time()
     USE_IN_SPEC_FUNC = False
 
+    assert start_rs is not None, 'start_rs must be specified.'
+
     # Handle the case where a DM process is specified. 
     if DM_process == 'swave':
-        if sigmav is None or start_rs is None:
-            raise ValueError(
-                'sigmav and start_rs must be specified.'
-            )
+        
+        assert sigmav is not None, 'sigmav must be specified.'
+
+        if struct_boost is None:
+            def struct_boost(rs):
+                return 1.
         
         # Get input spectra from PPPC. 
         if mDM < eleceng[1]:
@@ -225,69 +229,39 @@ def evolve(
         else:
             in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec')
         in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot')
-        # Initialize the input spectrum redshift. 
         in_spec_elec.rs = start_rs
         in_spec_phot.rs = start_rs
-        # Convert to type 'N'. 
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
 
-        # If struct_boost is none, just set to 1. 
-        if struct_boost is None:
-            def struct_boost(rs):
-                return 1.
-
-        # Define the rate functions. 
         def rate_func_N(rs):
-            return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav)
-                * struct_boost(rs) / (2*mDM)
-            )
+            return phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) * struct_boost(rs) / (2*mDM)
         def rate_func_eng(rs):
-            return (
-                phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) 
-                * struct_boost(rs)
-            )
+            return phys.inj_rate('swave', rs, mDM=mDM, sigmav=sigmav) * struct_boost(rs)
 
     elif DM_process == 'decay':
-        if lifetime is None or start_rs is None:
-            raise ValueError(
-                'lifetime and start_rs must be specified.'
-            )
+        
+        assert lifetime is not None, 'lifetime must be specified.'
 
-        # The decay rate is insensitive to structure formation
-        def struct_boost(rs):
+        def struct_boost(rs): # The decay rate is insensitive to structure formation
             return 1
         
         # Get spectra from PPPC.
-        in_spec_elec = pppc.get_pppc_spec(
-            mDM, eleceng, primary, 'elec', decay=True
-        )
-        in_spec_phot = pppc.get_pppc_spec(
-            mDM, photeng, primary, 'phot', decay=True
-        )
-
-        # Initialize the input spectrum redshift. 
+        in_spec_elec = pppc.get_pppc_spec(mDM, eleceng, primary, 'elec', decay=True)
+        in_spec_phot = pppc.get_pppc_spec(mDM, photeng, primary, 'phot', decay=True)
         in_spec_elec.rs = start_rs
         in_spec_phot.rs = start_rs
-        # Convert to type 'N'. 
         in_spec_elec.switch_spec_type('N')
         in_spec_phot.switch_spec_type('N')
 
-        # Define the rate functions. 
         def rate_func_N(rs):
-            return (
-                phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) / mDM
-            )
+            return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) / mDM
         def rate_func_eng(rs):
             return phys.inj_rate('decay', rs, mDM=mDM, lifetime=lifetime) 
         
     elif callable(in_spec_phot) and callable(in_spec_elec):
         
         USE_IN_SPEC_FUNC = True
-        
-        if start_rs is None:
-            raise ValueError('start_rs must be specified.')
             
         in_spec_elec_func = in_spec_elec
         in_spec_phot_func = in_spec_phot
@@ -311,7 +285,8 @@ def evolve(
         # User must define rate_func_N and rate_func_eng consistently.
         
     else: # custom injection spectrum with fixed spectral shape
-        pass # User must define rate_func_N and rate_func_eng consistently.
+        # User must define rate_func_N and rate_func_eng consistently.
+        assert in_spec_phot is not None and in_spec_elec is not None, 'in_spec_phot and in_spec_elec must be specified.'
     
     #####################################
     # Input Checks                      #
@@ -332,9 +307,6 @@ def evolve(
     #####################################
     # Initialization                    #
     #####################################
-
-    # Initialize start_rs for arbitrary injection. 
-    start_rs = in_spec_elec.rs
 
     # Initialize the initial x and Tm. 
     if init_cond is None:
