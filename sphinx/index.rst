@@ -23,7 +23,7 @@ Announcements
 * matplotlib
 * numpy>=1.25.2
 * numpydoc
-* scipy>=1.11.2, <=1.13.1
+* scipy>=1.11.2
 * tqdm
 
 *2024-08-12* We have converted all data files to more stable and versatile formats (HDF5, JSON, and plain text), which you can download `here <https://doi.org/10.5281/zenodo.13259509>`_.
