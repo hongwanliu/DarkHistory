@@ -55,6 +55,7 @@ First release of DarkHistory. DarkHistory v1.0 is described in a paper available
 
 ```python
 from darkhistory.main import evolve
+import darkhistory.physics as phys
 
 solution = evolve(
     DM_process = 'decay',   # 'decay' or 'swave'
@@ -83,4 +84,4 @@ Example output: \
 [2024-10-12 23:01:10,374] INFO: darkhistory.config: Loaded ICS transfer functions. \
 [2024-10-12 23:01:10,493] INFO: darkhistory.main: Starting evolution from rs = 3000.00 to rs = 4.00. \
 100%|██████████| 552/552 [02:27<00:00,  3.75it/s]
-<p align="left"><img src="examples/example_run_results.png" width=800/></p>
+<p align="left"><img src="examples/example_run_results.png" width=600/></p>
