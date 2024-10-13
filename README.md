@@ -61,11 +61,11 @@ solution = evolve(
     mDM = 1e8,              # [eV]
     lifetime = 3e25,        # [s]
     primary = 'elec_delta', # primary decay channel
-    start_rs = 3000,        # 1+z
+    start_rs = 3000,        # starting 1+z
     coarsen_factor = 12,    # log(1+z) would change by 0.001 * coarsen_factor for next step
-    backreaction = True,    # Enable injection backreaction on matter temperature and ionization levels.
-    helium_TLA = True,      # Enable Helium Three Level Atom (TLA).
-    reion_switch = True,    # Enable a customizable reionization energy injection.
+    backreaction = True,    # Enables injection backreaction on matter temperature and ionization.
+    helium_TLA = True,      # Enables the Helium Three Level Atom (TLA) solver.
+    reion_switch = True,    # Enables a customizable reionization energy injection.
 )
 
 import matplotlib.pyplot as plt
@@ -78,5 +78,9 @@ plt.ylim(1e-4, 1e1)
 plt.loglog()
 plt.legend(frameon=False)
 ```
-Output:
-<p align="left"><img src="examples/example_run_results.png" /></p>
+Example output: \
+[2024-10-12 23:01:05,651] INFO: darkhistory.config: Loaded deposition transfer functions. \
+[2024-10-12 23:01:10,374] INFO: darkhistory.config: Loaded ICS transfer functions. \
+[2024-10-12 23:01:10,493] INFO: darkhistory.main: Starting evolution from rs = 3000.00 to rs = 4.00. \
+100%|██████████| 552/552 [02:27<00:00,  3.75it/s]
+<p align="left"><img src="examples/example_run_results.png" width=800/></p>
