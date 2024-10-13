@@ -3,5 +3,5 @@ h5py
 matplotlib
 numpy>=1.25.2
 numpydoc
-scipy>=1.11.2, <=1.13.1
+scipy>=1.11.2
 tqdm
