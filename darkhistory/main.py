@@ -274,8 +274,8 @@ def evolve(
             
         in_spec_elec_func = in_spec_elec
         in_spec_phot_func = in_spec_phot
-        in_spec_elec = in_spec_elec_func(start_rs)
-        in_spec_phot = in_spec_phot_func(start_rs)
+        in_spec_elec = in_spec_elec_func(start_rs, next_rs=next_rs, dt=dt)
+        in_spec_phot = in_spec_phot_func(start_rs, next_rs=next_rs, dt=dt)
         in_spec_elec.rs = start_rs
         in_spec_phot.rs = start_rs
         in_spec_elec.switch_spec_type('N')
@@ -360,8 +360,8 @@ def evolve(
         
         if USE_IN_SPEC_FUNC and rs != start_rs:
             # Except for first step, remake in_spec_elec/phot if necessary
-            in_spec_phot = in_spec_phot_func(rs)
-            in_spec_elec = in_spec_elec_func(rs)
+            in_spec_phot = in_spec_phot_func(rs, next_rs=next_rs, dt=dt)
+            in_spec_elec = in_spec_elec_func(rs, next_rs=next_rs, dt=dt)
             in_spec_elec.rs = rs
             in_spec_phot.rs = rs
             in_spec_elec.switch_spec_type('N')
