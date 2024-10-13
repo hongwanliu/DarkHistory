@@ -37,7 +37,7 @@ def evolve(
     compute_fs_method='no_He', mxstep=1000, rtol=1e-4,
     use_tqdm=True, cross_check=False,
     tf_mode='table', verbose=0,
-    clean_up_tf=True,
+    clean_up_tf=True, data_prefix=None
 ):
     """
     Main function computing histories and spectra. 
@@ -141,19 +141,19 @@ def evolve(
 
     #========== Load data ==========#
 
-    binning = load_data('binning')
+    binning = load_data('binning', prefix=data_prefix)
     photeng = binning['phot']
     eleceng = binning['elec']
     MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
 
     if tf_mode == 'table':
-        dep_tf_data = load_data('dep_tf')
+        dep_tf_data = load_data('dep_tf', prefix=data_prefix)
         highengphot_tf_interp = dep_tf_data['highengphot']
         lowengphot_tf_interp  = dep_tf_data['lowengphot']
         lowengelec_tf_interp  = dep_tf_data['lowengelec']
         highengdep_interp     = dep_tf_data['highengdep']
         
-        ics_tf_data = load_data('ics_tf')
+        ics_tf_data = load_data('ics_tf', prefix=data_prefix)
         ics_thomson_ref_tf = ics_tf_data['thomson']
         ics_rel_ref_tf     = ics_tf_data['rel']
         engloss_ref_tf     = ics_tf_data['engloss']
@@ -171,10 +171,10 @@ def evolve(
             logger.warning('coarsen_factor is set to 12 (required for using nntf).')
             coarsen_factor = 12
         
-        dep_tf_data = load_data('hed_tf')
+        dep_tf_data = load_data('hed_tf', prefix=data_prefix)
         highengdep_interp = dep_tf_data['highengdep']
         
-        tf_helper_data = load_data('tf_helper')
+        tf_helper_data = load_data('tf_helper', prefix=data_prefix)
         tf_E_interp   = tf_helper_data['tf_E']
         # hep_lb_interp = tf_helper_data['hep_lb']
         
