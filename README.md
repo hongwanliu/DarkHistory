@@ -7,7 +7,7 @@
 DarkHistory is a Python code package that calculates the global temperature and ionization history of the universe given an exotic source of energy injection, such as dark matter annihilation or decay. DarkHistory is described in a paper available at [arXiv:1904.09296](https://arxiv.org/abs/1904.09296). Please cite this paper if you use DarkHistory in a scientific publication. For detailed information, please visit our readthedocs webpage [here](https://darkhistory.readthedocs.io).
 
 # Installation
-*Updated 2024/10/13*
+*Updated 2024/10/14*
 
 - Clone this repository and checkout the branch you wish to use. The currently active branches are: `master`, `lowengelec_upgrade`, and `early_halo_cooling`.
 - Create a new virtual environment for DarkHistory (recommended). For example, using `conda`:
@@ -19,7 +19,7 @@ conda activate darkhistory
 ```bash
 pip install .
 ```
-- Download the [data files](https://doi.org/10.5281/zenodo.13259509) required to run DarkHistory and save them to a preferred location.
+- Download the [data files](https://doi.org/10.5281/zenodo.13931543) required to run DarkHistory and save them to a preferred location.
 - Inform DarkHistory of the data files' location by either:
   - Setting the environment variable `DH_DATA_DIR` to the directory containing data files,
   - Setting the variable `data_path_default` in *darkhistory/config.py* directly.
@@ -27,11 +27,11 @@ pip install .
 DarkHistory is now ready to use. You can test your installation with the example code below. Additionally, familiarize yourself with DarkHistory by exploring the notebooks in the *examples/* directory.
 
 ### Recent updates
-- 2024/10/14: Updated code and dataset by downgrading float128 arrays to float64.
+- 2024/10/14: Downgraded float128 arrays to float64 in code and dataset. This does not result in changes beyond machine precision.
 - 2024/10/13: Custom injection updated.
 - 2024/10/13: Updated scipy dependency (removed `interp2d`).
 - 2024/10/04: Please make sure to set cosmology parameters in *darkhistory/physics.py* consistent with your purpose! The current `master` branch may have updated parameters compared to earlier versions.
-- 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509). See below for older datasets.
+- 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13931543). See below for older datasets.
 
 See [CHANGELOG](CHANGELOG.md) for more detail.
 

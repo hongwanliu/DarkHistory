@@ -8,7 +8,7 @@ Changes:
 - Custom injection API updated. Custom functions now takes `next_rs`, `dt` keyword arguments for injection with rapidly varying power. See `main.evolve` docstring.
 
 Fixes:
-- Updated dataset and some ICS code by downgrading `float128` arrays to `float64` for compatibility with M2, M3 chips. The updated dataset can be found [here]() (same repository as v1.1.2). This update does not lead to any change in result above machine precision.
+- Downgraded `float128` arrays to `float64` in some portion of ICS code and dataset for compatibility with M2, M3 chips. The updated dataset can be found [here](https://doi.org/10.5281/zenodo.13931543) (same repository as v1.1.2). This update does not lead to any change in results above machine precision.
 - Updated scipy dependency (replaced the removed `interp2d`). Now compatible with scipy 1.14.
 
 ## [1.1.2] - 2024/10/04
