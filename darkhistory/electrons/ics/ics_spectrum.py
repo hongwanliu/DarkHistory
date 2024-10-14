@@ -862,7 +862,7 @@ def ics_spec(
         eleceng_mask = np.outer(eleceng, np.ones(photeng.size))
         eleckineng_mask = np.outer(eleckineng, np.ones(photeng.size))
         photeng_mask = np.outer(np.ones(eleceng.size), photeng)
-        spec = np.zeros((eleceng.size, photeng.size), dtype='float128')
+        spec = np.zeros((eleceng.size, photeng.size), dtype=np.float64)
 
     rel_bound = 20
 

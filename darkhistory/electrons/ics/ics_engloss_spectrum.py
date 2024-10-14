@@ -287,7 +287,7 @@ def engloss_spec(
         eleceng_mask = np.outer(eleceng, np.ones_like(eta))
         delta_mask = np.outer(np.ones_like(eleckineng), delta)
         spec = np.zeros(
-            (eleckineng.size, delta.size), dtype='float128'
+            (eleckineng.size, delta.size), dtype=np.float64
         )
 
     beta_small = beta_mask < 0.1
