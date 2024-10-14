@@ -26,12 +26,14 @@ pip install .
 
 DarkHistory is now ready to use. You can test your installation with the example code below. Additionally, familiarize yourself with DarkHistory by exploring the notebooks in the *examples/* directory.
 
-Recent updates (See [CHANGELOG](CHANGELOG.md) for details.):
+### Recent updates
+- 2024/10/14: Updated code and dataset by downgrading float128 arrays to float64.
 - 2024/10/13: Custom injection updated.
-<!-- - 2024/10/13: Updated dataset by downgrading float128 arrays to float64. -->
 - 2024/10/13: Updated scipy dependency (removed `interp2d`).
 - 2024/10/04: Please make sure to set cosmology parameters in *darkhistory/physics.py* consistent with your purpose! The current `master` branch may have updated parameters compared to earlier versions.
 - 2024/08/12: For versatility, all data files required to use DarkHistory have been converted to either HDF5, JSON, or plain text files. All active branches of DarkHistory (`master`, `lowengelec_upgrade`, and`early_halo_cooling`) have been updated to use the new set of data files. You can download the new data files at the [following link](https://doi.org/10.5281/zenodo.13259509). See below for older datasets.
+
+See [CHANGELOG](CHANGELOG.md) for more detail.
 
 # Available Versions
 
