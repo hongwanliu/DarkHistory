@@ -49,7 +49,8 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new', 
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, 
+    use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
     Main function computing histories and spectra.
@@ -264,18 +265,18 @@ def evolve(
     #####################################
 
     # Load data.
-    binning = load_data('binning')
+    binning = load_data('binning', verbose=verbose)
     photeng = binning['phot']
     eleceng = binning['elec']
 
-    dep_tf_data = load_data('dep_tf')
+    dep_tf_data = load_data('dep_tf', verbose=verbose)
 
     highengphot_tf_interp = dep_tf_data['highengphot']
     lowengphot_tf_interp = dep_tf_data['lowengphot']
     lowengelec_tf_interp = dep_tf_data['lowengelec']
     highengdep_interp = dep_tf_data['highengdep']
 
-    ics_tf_data = load_data('ics_tf')
+    ics_tf_data = load_data('ics_tf', verbose=verbose)
 
     ics_thomson_ref_tf = ics_tf_data['thomson']
     ics_rel_ref_tf = ics_tf_data['rel']
@@ -1561,7 +1562,7 @@ def get_elec_cooling_dataTMP(eleceng, photeng):
     )
 
 
-def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
+def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1, verbose=0):
     """
     Returns the interpolated transfer functions.
 
@@ -1588,7 +1589,7 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
 
     # Load data.
 
-    dep_tf_data = load_data('dep_tf')
+    dep_tf_data = load_data('dep_tf', verbose=verbose)
 
     highengphot_tf_interp = dep_tf_data['highengphot']
     lowengphot_tf_interp = dep_tf_data['lowengphot']
@@ -1690,6 +1691,51 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
     return None
 
 
+def repackage_for_CLASS(DH_data, file_name, start_rs=3000, end_rs=4):
+    # Keep only last iteration
+    if len(DH_data) > 1:
+        DH_data = DH_data[-1]
+
+    # Repackage output in nice to read format
+    # define redshift and data arrays
+    dz = 0.5
+    z_list = np.arange(0,10000+2*dz,dz)
+
+    early_inds = np.argwhere(1+z_list > start_rs)
+    late_inds = np.argwhere(1+z_list <= end_rs)
+    DH_inds = np.argwhere((1+z_list <= start_rs)*(1+z_list > end_rs))
+
+    repackaged = np.zeros((len(z_list),4))
+    repackaged[:,0] = z_list
+
+    # Fill in x_e and T_m
+    repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
+    repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
+
+    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
+    repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
+
+    repackaged[late_inds,1] = 10**interp1d(
+        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),1]), 
+        fill_value="extrapolate", bounds_error=False
+        )(np.log10(1+repackaged[late_inds,0]))
+    repackaged[late_inds,2] = 10**interp1d(
+        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),2]), 
+        fill_value="extrapolate", bounds_error=False
+        )(np.log10(1+repackaged[late_inds,0]))
+
+    repackaged[:,2] /= phys.kB # convert temperature to K
+
+    # Redshift derivative of matter temp
+    repackaged[:,3] = np.gradient(repackaged[:,2], 0.5)
+
+    # Save data as text file
+    np.savetxt(
+        file_name, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
+    )
+
+    return
+
 
 def evolve_for_CLASS(
     save_dir, file_name_str, save_DH=False,  
@@ -1758,45 +1804,8 @@ def evolve_for_CLASS(
         )
         pickle.dump({'DM_params':pars_save, 'data':DH_data}, open(fn, 'wb'))
         print('Successfully produced DH file: ', fn)
-        
-    # Keep only last iteration
-    if iterations > 1:
-        DH_data = DH_data[-1]
 
-    # Repackage output in nice to read format
-    # define redshift and data arrays
-    dz = 0.5
-    z_list = np.arange(0,10000+2*dz,dz)
-
-    early_inds = np.argwhere(1+z_list > start_rs)
-    late_inds = np.argwhere(1+z_list <= end_rs)
-    DH_inds = np.argwhere((1+z_list <= start_rs)*(1+z_list > end_rs))
-
-    repackaged = np.zeros((len(z_list),4))
-    repackaged[:,0] = z_list
-
-    # Fill in x_e and T_m
-    repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
-    repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
-
-    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
-    repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
-
-    repackaged[late_inds,1] = 10**interp1d(
-        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),1]), 
-        fill_value="extrapolate", bounds_error=False
-        )(np.log10(1+repackaged[late_inds,0]))
-    repackaged[late_inds,2] = 10**interp1d(
-        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),2]), 
-        fill_value="extrapolate", bounds_error=False
-        )(np.log10(1+repackaged[late_inds,0]))
-
-    repackaged[:,2] /= phys.kB # convert temperature to K
-
-    # Redshift derivative of matter temp
-    repackaged[:,3] = np.gradient(repackaged[:,2], 0.5)
-
-    # Save data as text file
+    # Repackage DH_data for class
     fn = (
         save_dir+'/'
         +params['primary']+'_'+params['DM_process']
@@ -1804,8 +1813,6 @@ def evolve_for_CLASS(
         +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
         +'_'+file_name_str+'_CLASSformat.txt'
     )
-    np.savetxt(
-        fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
-    )
-
+    repackage_for_CLASS(DH_data, fn, start_rs=start_rs, end_rs=end_rs)
+    
     return
