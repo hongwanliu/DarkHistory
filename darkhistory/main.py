@@ -49,7 +49,9 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
+    first_iter=True, init_distort=None, prev_output=None, 
+    use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
 ):
     """
     Main function computing histories and spectra.
@@ -172,6 +174,8 @@ def evolve(
         Number of iterations to run for the MLA iterative method.
     first_iter : bool, optional
         If *True*, treat this as the first iteration. Default is *True*.
+    init_distort : Spectrum object, optional
+        The spectral distortion at start_rs. If None, initialized with zeros.
     prev_output : list of dict, optional
         Output from a previous iteration of this function.
     use_tqdm : bool, optional
@@ -561,8 +565,12 @@ def evolve(
                                       np.log(phys.rydberg), 2000))
         #dist_eng = np.sort(np.append(dist_eng,
         #                             atomic.get_transition_energies(nmax)))
-        distortion = Spectrum(dist_eng, np.zeros_like(dist_eng),
-                              rs=1, spec_type='N')
+        if init_distort is None:
+            distortion = Spectrum(
+                dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N'
+            )
+        else:
+            distortion = init_distort
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
@@ -1706,8 +1714,9 @@ def evolve_for_CLASS(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True,
-    prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose =0
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, 
+    first_iter=True, init_distort=None, prev_output=None, 
+    use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose =0
 ):
     """
     Run evolve() and save output in format easily readable for use with CLASS.
