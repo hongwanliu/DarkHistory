@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import numpy as np
-from main_CLASS import evolve_for_CLASS
+from darkhistory.main import evolve_for_CLASS
 
 ### Use argparse to read in all the parameters
 parser = argparse.ArgumentParser()
