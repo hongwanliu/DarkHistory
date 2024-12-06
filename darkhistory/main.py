@@ -44,12 +44,12 @@ def evolve(
     start_rs=None, high_rs=np.inf, end_rs=4,
     helium_TLA=False, reion_switch=False,
     reion_rs=None, reion_method='Puchwein',
-    heat_switch=True, photoion_rate_func=None, photoheat_rate_func=None, 
+    heat_switch=True, photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, DeltaT=None, alpha_bk=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
-    compute_fs_method='no_He', elec_method='new', 
+    compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True, prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
 ):
     """
     Main function computing histories and spectra.
@@ -98,12 +98,12 @@ def evolve(
     reion_rs : float, optional
         Redshift :math:`(1+z)` at which reionization effects turn on.
     reion_method : string, optional
-        Reionization model, options are {'Puchwein', 'early', 'middle', 'late'}. 
+        Reionization model, options are {'Puchwein', 'early', 'middle', 'late'}.
     heat_switch : bool, optional
-        If *True*, includes photoheating during reionization. 
+        If *True*, includes photoheating during reionization.
     photoion_rate_func : tuple of functions, optional
         Functions take redshift :math:`1+z` as input, return the
-        photoionization rate in s\ :sup:`-1` of HI, HeI and HeII respectively.
+        photoionization rate in s :sup:`-1` of HI, HeI and HeII respectively.
         If not specified, defaults to :func:`.photoion_rate`.
     photoheat_rate_func : tuple of functions, optional
         Functions take redshift :math:`1+z` as input, return the photoheating
@@ -112,9 +112,9 @@ def evolve(
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.
     DeltaT : float, optional
-        For fixed reionization models, constant of proportionality for photoheating. See arXiv:2008.01084. 
+        For fixed reionization models, constant of proportionality for photoheating. See arXiv:2008.01084.
     alpha_bk : float, optional
-        Post-reionization heating power law. See arXiv:2008.01084. 
+        Post-reionization heating power law. See arXiv:2008.01084.
     init_cond : tuple of floats
         Specifies the initial (xH, xHe, Tm). Defaults to :func:`.Tm_std`,
         :func:`.x_std` at the *start_rs*.
@@ -133,13 +133,13 @@ def evolve(
 
         Default is 'no_He'.
     elec_method : {'new', 'old', 'eff'}
-        Method for evaluating electron energy deposition. 
+        Method for evaluating electron energy deposition.
 
-        * *'old'* -- Low-energy electrons separated out, resolved with MEDEA. Old ionization and excitation cross sections. 
-        * *'new'* -- No separation into low-energy electrons, new ionization and excitation cross sections, deexcitations calculated by probability of downscattering to 2s and 2p. 
-        * *'eff'* -- f_exc computed using distortions, new ionization and excitation cross sections, effective f_exc calculated.  
+        * *'old'* -- Low-energy electrons separated out, resolved with MEDEA. Old ionization and excitation cross sections.
+        * *'new'* -- No separation into low-energy electrons, new ionization and excitation cross sections, deexcitations calculated by probability of downscattering to 2s and 2p.
+        * *'eff'* -- f_exc computed using distortions, new ionization and excitation cross sections, effective f_exc calculated.
 
-        Default is 'new'. 
+        Default is 'new'.
     distort : bool, optional
         If *True* calculate the distortion. This sets elec_processes to True.
         If *False* speed up the code by skipping slow electron cooling code.
@@ -167,15 +167,15 @@ def evolve(
         earlier redshifts to be absorbed or stimulate emission, i.e. be
         reprocessed.
     simple_2s1s : bool, optional
-        if *True*, fixes the decay rate to :math:`8.22` s:math:`^{-1}`. Default is *False*. 
+        if *True*, fixes the decay rate to :math:`8.22` s:math:`^{-1}`. Default is *False*.
     iterations : int, optional
         Number of iterations to run for the MLA iterative method.
-    first_iter : bool, optional 
-        If *True*, treat this as the first iteration. Default is *True*. 
+    first_iter : bool, optional
+        If *True*, treat this as the first iteration. Default is *True*.
     prev_output : list of dict, optional
-        Output from a previous iteration of this function. 
+        Output from a previous iteration of this function.
     use_tqdm : bool, optional
-        If *True*, uses `tqdm` to track progress. Default is *True*. 
+        If *True*, uses `tqdm` to track progress. Default is *True*.
     tqdm_jupyter : bool, optional
         Uses `tqdm` in Jupyter notebooks if *True*. Otherwise, uses tqdm for terminals. Default is *True*.
     mxstep : int, optional
@@ -188,7 +188,7 @@ def evolve(
     Returns
     -------
     dict
-        Result of the calculation, including ... 
+        Result of the calculation, including ...
 
 
     Examples
@@ -238,23 +238,23 @@ def evolve(
     #########################################################################
 
 
-    # Save the initial options for subsequent iterations. 
+    # Save the initial options for subsequent iterations.
     options = dict(
-        in_spec_elec=in_spec_elec, in_spec_phot=in_spec_phot, 
-        rate_func_N=rate_func_N, rate_func_eng=rate_func_eng, 
-        DM_process=DM_process, mDM=mDM, sigmav=sigmav, 
-        lifetime=lifetime, primary=primary, 
-        struct_boost=struct_boost, 
-        start_rs=start_rs, high_rs=high_rs, end_rs=end_rs, 
-        helium_TLA=helium_TLA, reion_switch=reion_switch, 
-        reion_rs=reion_rs, reion_method=reion_method, 
-        heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk, 
-        photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func, xe_reion_func=xe_reion_func, 
-        init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction, 
-        compute_fs_method=compute_fs_method, elec_method=elec_method, mxstep=mxstep, rtol=rtol, 
+        in_spec_elec=in_spec_elec, in_spec_phot=in_spec_phot,
+        rate_func_N=rate_func_N, rate_func_eng=rate_func_eng,
+        DM_process=DM_process, mDM=mDM, sigmav=sigmav,
+        lifetime=lifetime, primary=primary,
+        struct_boost=struct_boost,
+        start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
+        helium_TLA=helium_TLA, reion_switch=reion_switch,
+        reion_rs=reion_rs, reion_method=reion_method,
+        heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
+        photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func, xe_reion_func=xe_reion_func,
+        init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction,
+        compute_fs_method=compute_fs_method, elec_method=elec_method, mxstep=mxstep, rtol=rtol,
         distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
-        use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check, 
-        reprocess_distortion=reprocess_distortion, simple_2s1s=simple_2s1s, 
+        use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check,
+        reprocess_distortion=reprocess_distortion, simple_2s1s=simple_2s1s,
         iterations=iterations, first_iter=first_iter, prev_output=prev_output
     )
 
@@ -264,18 +264,18 @@ def evolve(
     #####################################
 
     # Load data.
-    binning = load_data('binning')
+    binning = load_data('binning',verbose=verbose)
     photeng = binning['phot']
     eleceng = binning['elec']
 
-    dep_tf_data = load_data('dep_tf')
+    dep_tf_data = load_data('dep_tf',verbose=verbose)
 
     highengphot_tf_interp = dep_tf_data['highengphot']
     lowengphot_tf_interp = dep_tf_data['lowengphot']
     lowengelec_tf_interp = dep_tf_data['lowengelec']
     highengdep_interp = dep_tf_data['highengdep']
 
-    ics_tf_data = load_data('ics_tf')
+    ics_tf_data = load_data('ics_tf',verbose=verbose)
 
     ics_thomson_ref_tf = ics_tf_data['thomson']
     ics_rel_ref_tf = ics_tf_data['rel']
@@ -395,22 +395,22 @@ def evolve(
     if cross_check:
         print('cross_check has been set to True -- No longer using all MEDEA \
               files and no longer using partial-binning.')
-    
-    if DeltaT is not None and xe_reion_func is None: 
+
+    if DeltaT is not None and xe_reion_func is None:
         raise ValueError('DeltaT is only for fixed reionization histories using xe_reion_func.')
-    
-    if alpha_bk is not None and xe_reion_func is None: 
+
+    if alpha_bk is not None and xe_reion_func is None:
         raise ValueError('alpha_bk is only for fixed reionization histories using xe_reion_func.')
 
-    if xe_reion_func is not None and (DeltaT is None or alpha_bk is None): 
+    if xe_reion_func is not None and (DeltaT is None or alpha_bk is None):
         raise ValueError('Photoheating model needed for fixed reionization histories using xe_reion_func.')
 
-    if elec_method == 'eff' and not distort: 
+    if elec_method == 'eff' and not distort:
         raise ValueError('Can only use effective f_exc if distortions are calculated.')
 
-    if elec_method == 'eff' and not fexc_switch: 
+    if elec_method == 'eff' and not fexc_switch:
         raise ValueError('Can only use effective f_exc if excitations are passed to the distortion code.')
-    if iterations > 1 and first_iter and not distort: 
+    if iterations > 1 and first_iter and not distort:
 
         raise ValueError('No reason to iterate more than once if not using distortions.')
 
@@ -458,7 +458,7 @@ def evolve(
 
         else:
             from tqdm import tqdm
-            
+
         pbar = tqdm(
             total=np.ceil((np.log(rs) - np.log(end_rs))/dlnz/coarsen_factor)
         )
@@ -470,8 +470,8 @@ def evolve(
             dlnz * coarsen_factor / phys.hubble(rs) / (phys.nB * rs**3)
         )
 
-    # If there are no injected electrons, we get a speed-up by ignoring them. 
-    # If we are calculating distortions, then we need to use one of the new methods, 
+    # If there are no injected electrons, we get a speed-up by ignoring them.
+    # If we are calculating distortions, then we need to use one of the new methods,
     # which treats low-energy electrons in the same way as high-energy electrons.
     if (in_spec_elec.totN() > 0) or distort or elec_method != 'old':
         elec_processes = True
@@ -598,7 +598,7 @@ def evolve(
     else:
         distortion = None
         # Object to help us interpolate over MEDEA results.
-        
+
     if elec_method == 'old':
         MEDEA_interp = lowE_electrons.make_interpolator(
             interp_type='2D', cross_check=cross_check
@@ -718,8 +718,8 @@ def evolve(
                 #       '7p': 0.3353, '8p': 0.3410, '9p': 0.3448, '10p': 0.3476}
                 Ps = {
                     '2s': 0.0000, '2p': 1.0000, '3s': 1.0000, '3p': 0.0000,
-                    '3d': 1.0000, '4s': 0.5841, '4p': 0.2609, '4d': 0.7456, 
-                    '4f': 1.0000, '5p': 0.3078, '6p': 0.3259, '7p': 0.3353, 
+                    '3d': 1.0000, '4s': 0.5841, '4p': 0.2609, '4d': 0.7456,
+                    '4f': 1.0000, '5p': 0.3078, '6p': 0.3259, '7p': 0.3353,
                     '8p': 0.3410, '9p': 0.3448, '10p': 0.3476
                 }
                 deposited_Lya_arr = np.sum([
@@ -836,7 +836,7 @@ def evolve(
                 else:
                     delta_b = {}
 
-                # If true, fixes xHI to be the standard value. 
+                # If true, fixes xHI to be the standard value.
                 MLA_cross_check = False
 
                 MLA_step, atomic_dist_spec, x_full = atomic.process_MLA(
@@ -850,7 +850,7 @@ def evolve(
                 )
 
                 # Find the effective contribution dxe/dz from 1) distortions
-                # affecting the recombination/photoionization and 2) DM excitations. 
+                # affecting the recombination/photoionization and 2) DM excitations.
 
                 xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1])
                 xHII_at_rs = 1. - xHI_at_rs
@@ -870,12 +870,12 @@ def evolve(
                 beta_DM_at_rs   = MLA_step[2]
 
                 dxe_dt_MLA = (
-                    - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3 
-                    + beta_MLA_at_rs * xHI_at_rs 
+                    - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3
+                    + beta_MLA_at_rs * xHI_at_rs
                     + beta_DM_at_rs
                 )
 
-                dxe_dt_exc = dxe_dt_MLA - dxe_dt_std 
+                dxe_dt_exc = dxe_dt_MLA - dxe_dt_std
 
 
                 MLA_data[0].append(rs)
@@ -974,13 +974,13 @@ def evolve(
         # else:
         # High-energy deposition from input electrons.
 
-        if not elec_processes: 
+        if not elec_processes:
 
-            deposited_H_ion = 0. 
-            deposited_Lya   = 0. 
-            deposited_heat  = 0. 
-            deposited_cont  = 0. 
-            deposited_err   = 0. 
+            deposited_H_ion = 0.
+            deposited_Lya   = 0.
+            deposited_heat  = 0.
+            deposited_cont  = 0.
+            deposited_err   = 0.
 
         highengdep_at_rs += np.array([
             deposited_H_ion/dt,
@@ -1003,11 +1003,11 @@ def evolve(
                 'err': deposited_err/dt * norm
             }
 
-        elif elec_method == 'eff': 
+        elif elec_method == 'eff':
 
-            # High-energy deposition from input electrons, 
+            # High-energy deposition from input electrons,
             # but Lya is calculated
-            # from the impact of distortions on xe_dot. 
+            # from the impact of distortions on xe_dot.
             norm = phys.nB*rs**3 / rate_func_eng(rs)
             f_elec = {
                 'H ion': highengdep_at_rs[0] * norm,
@@ -1062,16 +1062,16 @@ def evolve(
         f_H_ion = f_phot['H ion'] + f_elec['H ion']
         f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         f_Lya = f_phot['H exc'] + f_elec['Lya']
-        if elec_method == 'eff': 
+        if elec_method == 'eff':
             f_exc = f_elec['exc']
         else:
-            f_exc = 0. 
-            
+            f_exc = 0.
+
         f_heat = f_elec['heat']
         # Including f_elec['cont'] here would be double-counting.
         # It's just deposited_cont, which is accounted for in
         # the distortion already.
-        # Just revert to the old way of calculating f: we either use the old way or use the full MLA, which doesn't care about f_cont anyway. 
+        # Just revert to the old way of calculating f: we either use the old way or use the full MLA, which doesn't care about f_cont anyway.
         f_cont = f_phot['cont'] + f_elec['cont']
         # This keeps track of numerical error from ICS,
         # which is absent when there are no electrons
@@ -1106,7 +1106,7 @@ def evolve(
 
         # elif elec_method == 'old':
 
-        #     #### This should be the old method, but somehow we're bringing in new method stuff, like the comment about f _cont. 
+        #     #### This should be the old method, but somehow we're bringing in new method stuff, like the comment about f _cont.
 
         #     f_raw = compute_fs_OLD(
         #         MEDEA_interp, lowengelec_spec_at_rs, lowengphot_spec_at_rs,
@@ -1153,7 +1153,7 @@ def evolve(
                     f_heat * rate_func_eng(rs)
                 ) / (3/2 * phys.nH * rs**3 * (1 + phys.chi + xe))
                 TmTr = - (phys.TCMB(rs) / J) + (- dTdz_dm / phys.dtdz(rs) / phys.hubble(rs)) / J
-            dydz = TmTr * phys.thomson_xsec * xe * phys.nH * rs**3 * phys.c / phys.me / rs / phys.hubble(rs) 
+            dydz = TmTr * phys.thomson_xsec * xe * phys.nH * rs**3 * phys.c / phys.me / rs / phys.hubble(rs)
             y = dydz * (rs * (1 - np.exp(-dlnz * coarsen_factor)))
             y_heat_spec = phys.ymu_distortion(dist_eng, y, rs, 'y')
             streaming_lowengphot.N += y_heat_spec.N
@@ -1192,12 +1192,12 @@ def evolve(
             print(rs, init_cond_TLA)
             raise ValueError('Encountered nan in Tm or x')
 
-        if first_iter: 
-            # Solve using the TLA rate coefficients. 
-            # Don't use any DM excitation if reprocess_distortion == True, 
+        if first_iter:
+            # Solve using the TLA rate coefficients.
+            # Don't use any DM excitation if reprocess_distortion == True,
             # since excitation is calculated in MLA_funcs.
 
-            if reprocess_distortion: 
+            if reprocess_distortion:
 
                 new_vals = tla.get_history(
                     np.array([rs, next_rs]), init_cond=init_cond_TLA,
@@ -1231,8 +1231,8 @@ def evolve(
                     MLA_funcs=None
                 )
 
-        else: 
-            # Solve using supplied MLA_funcs. 
+        else:
+            # Solve using supplied MLA_funcs.
 
             new_vals = tla.get_history(
                 np.array([rs, next_rs]), init_cond=init_cond_TLA,
@@ -1276,7 +1276,7 @@ def evolve(
             highengphot_tf, lowengphot_tf, lowengelec_tf, highengdep_arr = (
                 get_tf(
                     rs, xHII_to_interp, xHeII_to_interp,
-                    dlnz, coarsen_factor=coarsen_factor
+                    dlnz, coarsen_factor=coarsen_factor, verbose=verbose
                 )
             )
 
@@ -1341,7 +1341,7 @@ def evolve(
         'Lya':    f_c[:, 2],
         'heat':   f_c[:, 3],
         'cont':   f_c[:, 4],
-        'err':    f_c[:, 5], 
+        'err':    f_c[:, 5],
         'eff_exc':    f_c[:, 6]
     }
 
@@ -1362,43 +1362,43 @@ def evolve(
 
     if distort:
         data['MLA'] = np.array(MLA_data)
-        # Only save states up to 4f. 
+        # Only save states up to 4f.
         data['x_full'] = np.array(x_full_data)[:,:10]
 
-    # End of the iteration. 
+    # End of the iteration.
     iterations -= 1
 
-    # If iteration > 0, then call this function recursively to perform next iteration. 
-    if iterations > 0: 
+    # If iteration > 0, then call this function recursively to perform next iteration.
+    if iterations > 0:
 
         MLA_funcs_next_iter = [
             interp1d(MLA_data[0], MLA_data[i], fill_value = 'extrapolate') for i in range(1, 4)
         ]
 
-        if prev_output is not None: 
+        if prev_output is not None:
 
-            prev_output.append(data) 
+            prev_output.append(data)
 
         else:
 
-            prev_output = [data] 
+            prev_output = [data]
 
-        # change the options for the next run. 
-        options['MLA_funcs'] = MLA_funcs_next_iter 
+        # change the options for the next run.
+        options['MLA_funcs'] = MLA_funcs_next_iter
         options['iterations'] = iterations
-        options['first_iter'] = False 
-        options['prev_output'] = prev_output 
-        
+        options['first_iter'] = False
+        options['prev_output'] = prev_output
+
 
         return evolve(**options)
 
     else:
 
-        if prev_output is None: 
+        if prev_output is None:
 
             return data
 
-        else: 
+        else:
 
             prev_output.append(data)
             return prev_output
@@ -1477,6 +1477,7 @@ def get_elec_cooling_data(eleceng, photeng, H_states):
         coll_ion_sec_elec_specs, coll_exc_sec_elec_specs, ics_engloss_data
     )
 
+
 def get_elec_cooling_dataTMP(eleceng, photeng):
     """
     Returns electron cooling data for use in :func:`main.evolve`.
@@ -1484,20 +1485,20 @@ def get_elec_cooling_dataTMP(eleceng, photeng):
     Parameters
     ----------
     eleceng : ndarray
-        The electron energy abscissa. 
+        The electron energy abscissa.
     photeng : ndarray
-        The photon energy abscissa. 
+        The photon energy abscissa.
 
     Returns
     -------
     tuple of ndarray
-        A tuple with containing 3 tuples. The first tuple contains the 
-        normalized collisional ionization scattered electron spectrum for 
-        HI, HeI and HeII. The second contains the normalized collisional 
-        excitation scattered electron spectrum for HI, HeI and HeII. The 
-        last tuple is an 
-        :class:`.EnglossRebinData` object for use in rebinning ICS energy loss data to obtain the ICS scattered 
-        electron spectrum. 
+        A tuple with containing 3 tuples. The first tuple contains the
+        normalized collisional ionization scattered electron spectrum for
+        HI, HeI and HeII. The second contains the normalized collisional
+        excitation scattered electron spectrum for HI, HeI and HeII. The
+        last tuple is an
+        :class:`.EnglossRebinData` object for use in rebinning ICS energy loss data to obtain the ICS scattered
+        electron spectrum.
     """
 
     # Compute the (normalized) collisional ionization spectra.
@@ -1510,7 +1511,7 @@ def get_elec_cooling_dataTMP(eleceng, photeng):
     id_mat = np.identity(eleceng.size)
 
     # Electron with energy eleceng produces a spectrum with one particle
-    # of energy eleceng - phys.lya.eng. Similar for helium. 
+    # of energy eleceng - phys.lya.eng. Similar for helium.
     coll_exc_sec_elec_tf_HI = tf.TransFuncAtRedshift(
         np.squeeze(id_mat[:, np.where(eleceng > phys.lya_eng)]),
         in_eng = eleceng, rs = -1*np.ones_like(eleceng),
@@ -1524,9 +1525,9 @@ def get_elec_cooling_dataTMP(eleceng, photeng):
         ),
         in_eng = eleceng, rs = -1*np.ones_like(eleceng),
         eng = (
-            eleceng[eleceng > phys.He_exc_eng['23s']] 
+            eleceng[eleceng > phys.He_exc_eng['23s']]
             - phys.He_exc_eng['23s']
-        ), 
+        ),
         dlnz = -1, spec_type = 'N'
     )
 
@@ -1552,7 +1553,7 @@ def get_elec_cooling_dataTMP(eleceng, photeng):
 
     # Store the ICS rebinning data for speed. Contains information
     # that makes converting an energy loss spectrum to a scattered
-    # electron spectrum fast. 
+    # electron spectrum fast.
     ics_engloss_data = EnglossRebinData(eleceng, photeng, eleceng)
 
     return (
@@ -1560,7 +1561,7 @@ def get_elec_cooling_dataTMP(eleceng, photeng):
     )
 
 
-def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
+def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1,verbose=0):
     """
     Returns the interpolated transfer functions.
 
@@ -1587,7 +1588,7 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
 
     # Load data.
 
-    dep_tf_data = load_data('dep_tf')
+    dep_tf_data = load_data('dep_tf',verbose=verbose)
 
     highengphot_tf_interp = dep_tf_data['highengphot']
     lowengphot_tf_interp = dep_tf_data['lowengphot']
@@ -1642,22 +1643,22 @@ def get_tf(rs, xHII, xHeII, dlnz, coarsen_factor=1):
     # )
 
 
-def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str): 
+def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir, file_name_str):
     """
-    Embarrassingly parallel scan over DM parameters and saves the output. 
+    Embarrassingly parallel scan over DM parameters and saves the output.
 
     Parameters
     ----------
     DM_params : list of dict
         Dark matter parameters, listed as {'pri':'elec' or 'phot', 'DM_process':'swave' or 'decay', 'mDM':mDM, 'inj_param':sigmav or tau}
     ind : int
-        Index of `DM_params` to run for this job. 
+        Index of `DM_params` to run for this job.
     evolve_options_dict : dict
-        Options to be passed to :func:`main.evolve`. Options that are not specified are set to `None`.  
+        Options to be passed to :func:`main.evolve`. Options that are not specified are set to `None`.
     save_dir : string
-        Directory to save the output in. 
+        Directory to save the output in.
     file_name_str : string
-        Additional descriptive string for file. 
+        Additional descriptive string for file.
 
     Returns
     -------
@@ -1668,9 +1669,9 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
     params = DM_params[ind]
 
     data = evolve(
-            DM_process=params['DM_process'], mDM=params['mDM'], 
+            DM_process=params['DM_process'], mDM=params['mDM'],
             lifetime=params['inj_param'], sigmav=params['inj_param'],
-            primary=params['pri']+'_delta', **evolve_options_dict 
+            primary=params['pri']+'_delta', **evolve_options_dict
     )
 
 
@@ -1690,9 +1691,124 @@ def embarrassingly_parallel_evolve(DM_params, ind, evolve_options_dict, save_dir
 
 
 
+def evolve_for_CLASS(
+    save_dir, file_name_str, save_DH=False,
+    in_spec_elec=None, in_spec_phot=None,
+    rate_func_N=None, rate_func_eng=None,
+    DM_process=None, primary=None, mDM=None,
+    sigmav=None, lifetime=None,
+    struct_boost=None,
+    start_rs=None, high_rs=np.inf, end_rs=4,
+    helium_TLA=False, reion_switch=False,
+    reion_rs=None, reion_method='Puchwein',
+    heat_switch=True, photoion_rate_func=None, photoheat_rate_func=None,
+    xe_reion_func=None, DeltaT=None, alpha_bk=None,
+    init_cond=None, coarsen_factor=1, backreaction=True,
+    compute_fs_method='no_He', elec_method='new',
+    distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, first_iter=True,
+    prev_output=None, use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose =0
+):
+    """
+    Run evolve() and save output in format easily readable for use with CLASS.
 
+    Parameters
+    ----------
+    save_dir : string
+        Directory to save the output in.
+    file_name_str : string
+        Additional descriptive string for file.
+    save_DH : bool
+        If true, save DarkHistory output.
+    See documentation for evolve() for other options.
 
+    Returns
+    -------
+    None
 
+    """
+    # Make a copy of all the function arguments
+    params = locals().copy()
+    pars_save = params.copy() # because you can't pickle functions like struct_boost_func, which get passed to evolve
 
+    # Variable for naming files later
+    if params['DM_process'] == 'decay':
+        inj_param = params['lifetime']
+    else:
+        inj_param = params['sigmav']
 
+    # If structure boost is specified, give evolve() the right function
+    if params['struct_boost'] is not None:
+        params['struct_boost'] = phys.struct_boost_func(params['struct_boost']) # WQ: not the most flexible way to do this, but okay
 
+    # Pop the arguments that are not taken by evolve()
+    save_dir = params.pop('save_dir')
+    file_name_str = params.pop('file_name_str')
+    save_DH = params.pop('save_DH')
+
+    # Run evolve() and save DH data if option is set
+    DH_data = evolve(**params)
+    if save_DH:
+        fn = (
+            save_dir+'/'
+            +params['primary']+'_'+params['DM_process']
+            +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
+            +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
+            +'_'+file_name_str+'_DHdata.p'
+        )
+        pickle.dump({'DM_params':pars_save, 'data':DH_data}, open(fn, 'wb'))
+        print('Successfully produced DH file: ', fn)
+
+    # Keep only last iteration
+    if iterations > 1:
+        DH_data = DH_data[-1]
+
+    # Repackage output in nice to read format
+    # define redshift and data arrays
+    dz = 0.5
+    z_list = np.arange(0,10000+2*dz,dz)
+
+    early_inds = np.argwhere(1+z_list > start_rs)
+    late_inds = np.argwhere(1+z_list <= end_rs)
+    DH_inds = np.argwhere((1+z_list <= start_rs)*(1+z_list > end_rs))
+
+    repackaged = np.zeros((len(z_list),4))
+    repackaged[:,0] = z_list
+
+    # Fill in x_e and T_m
+    repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
+    repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
+
+    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
+    repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
+
+    repackaged[late_inds,1] = 10**interp1d(
+        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),1]),
+        fill_value="extrapolate", bounds_error=False
+        )(np.log10(1+repackaged[late_inds,0]))
+    repackaged[late_inds,2] = 10**interp1d(
+        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),2]),
+        fill_value="extrapolate", bounds_error=False
+        )(np.log10(1+repackaged[late_inds,0]))
+
+    repackaged[:,2] /= phys.kB # convert temperature to K
+
+    # Redshift derivative of matter temp
+    repackaged[:,3] = np.gradient(repackaged[:,2], 0.5)
+
+    # Save data as text file
+#    fn = (
+#        save_dir+'/'
+#        +params['primary']+'_'+params['DM_process']
+#        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
+#        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
+#        +'_'+file_name_str+'_CLASSformat.txt'
+#    )
+#    np.savetxt(
+#        fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
+#    )
+
+    print(f"{repackaged.shape[0]:.0f}\n")
+    for i in range(int(repackaged.shape[0])):
+        print("%f %f %f %f "%(repackaged[i,0],repackaged[i,1],repackaged[i,2],repackaged[i,3]))
+    return

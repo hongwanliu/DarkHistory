@@ -29,7 +29,7 @@ glob_exc_data       = None
 glob_reion_data     = None
 glob_bnd_free_data  = None
 
-class PchipInterpolator2D: 
+class PchipInterpolator2D:
 
     """ 2D interpolation over PPPC4DMID raw data, using the PCHIP method.
 
@@ -37,7 +37,7 @@ class PchipInterpolator2D:
     -----------
     coords_data : ndarray, size (M,N)
 
-        
+
     values_data : ndarray
     pri : string
         Specifies primary annihilation channel. See :func:`.get_pppc_spec` for the full list.
@@ -51,14 +51,14 @@ class PchipInterpolator2D:
     sec : {'elec', 'phot'}
         Specifies which secondary spectrum to obtain (electrons/positrons or photons).
     get_val : function
-        Returns the interpolation value at (coord, value) based 
+        Returns the interpolation value at (coord, value) based
 
     Notes
     -------
-    PCHIP stands for piecewise cubic hermite interpolating polynomial. This class was built to mimic the Mathematica interpolation of the PPPC4DMID data. 
+    PCHIP stands for piecewise cubic hermite interpolating polynomial. This class was built to mimic the Mathematica interpolation of the PPPC4DMID data.
 
     """
-    
+
     def __init__(self, coords_data, values_data, pri, sec):
         if sec == 'elec':
             i = 0
@@ -70,7 +70,7 @@ class PchipInterpolator2D:
             fac = 1.
         else:
             raise TypeError('invalid final state.')
-            
+
         self.pri = pri
         self.sec = sec
 
@@ -78,7 +78,7 @@ class PchipInterpolator2D:
         # We do the same thing for 'mu', 'tau', 'W' and 'Z'.
         # To avoid thinking too much, all spectra are split into two parts.
         # self._weight gives the weight of each half.
-            
+
         if pri == 'e' or pri == 'mu' or pri == 'tau':
             pri_1 = pri + '_L'
             pri_2 = pri + '_R'
@@ -96,12 +96,12 @@ class PchipInterpolator2D:
         idx_list_data = {
             'e_L': 0, 'e_R': 1, 'mu_L': 2, 'mu_R': 3, 'tau_L': 4, 'tau_R': 5,
             'q': 6, 'c': 7, 'b': 8, 't': 9,
-            'W_L': 10, 'W_T': 11, 'Z_L': 12, 'Z_T': 13, 
+            'W_L': 10, 'W_T': 11, 'Z_L': 12, 'Z_T': 13,
             'g': 14, 'gamma': 15, 'h': 16,
             'nu_e': 17, 'nu_mu': 18, 'nu_tau': 19,
             'VV_to_4e': 20, 'VV_to_4mu': 21, 'VV_to_4tau': 22
-        } 
-        
+        }
+
         # Compile the raw data.
         mDM_in_GeV_arr_1 = np.array(
             coords_data[i, idx_list_data[pri_1], 0]
@@ -119,14 +119,14 @@ class PchipInterpolator2D:
         )
         values_arr_2     = np.array(values_data[i, idx_list_data[pri_2]])
 
-        self._mDM_in_GeV_arrs = [mDM_in_GeV_arr_1, mDM_in_GeV_arr_2] 
+        self._mDM_in_GeV_arrs = [mDM_in_GeV_arr_1, mDM_in_GeV_arr_2]
         self._log10x_arrs     = [log10x_arr_1,     log10x_arr_2]
 
-        # Save the 1D PCHIP interpolator over mDM_in_GeV. Multiply the 
-        # electron spectrum by 2 by adding np.log10(2).  
+        # Save the 1D PCHIP interpolator over mDM_in_GeV. Multiply the
+        # electron spectrum by 2 by adding np.log10(2).
         self._interpolators = [
             PchipInterpolator(
-                mDM_in_GeV_arr_1, values_arr_1 + np.log10(fac), 
+                mDM_in_GeV_arr_1, values_arr_1 + np.log10(fac),
                 extrapolate=False
             ),
             PchipInterpolator(
@@ -134,34 +134,34 @@ class PchipInterpolator2D:
                 extrapolate=False
             )
         ]
-    
+
     def get_val(self, mDM_in_GeV, log10x):
-        
+
         if (
-            mDM_in_GeV < self._mDM_in_GeV_arrs[0][0] 
+            mDM_in_GeV < self._mDM_in_GeV_arrs[0][0]
             or mDM_in_GeV < self._mDM_in_GeV_arrs[1][0]
             or mDM_in_GeV > self._mDM_in_GeV_arrs[0][-1]
             or mDM_in_GeV > self._mDM_in_GeV_arrs[1][-1]
         ):
             raise TypeError('mDM lies outside of the interpolation range.')
-        
-        # Call the saved interpolator at mDM_in_GeV, 
-        # then use PCHIP 1D interpolation at log10x. 
+
+        # Call the saved interpolator at mDM_in_GeV,
+        # then use PCHIP 1D interpolation at log10x.
         result1 = pchip_interpolate(
             self._log10x_arrs[0], self._interpolators[0](mDM_in_GeV), log10x
         )
-        # Set all values outside of the log10x interpolation range to 
-        # (effectively) zero. 
+        # Set all values outside of the log10x interpolation range to
+        # (effectively) zero.
         result1[log10x >= self._log10x_arrs[0][-1]] = -100.
         result1[log10x <= self._log10x_arrs[0][0]]  = -100.
-        
+
         result2 = pchip_interpolate(
             self._log10x_arrs[1], self._interpolators[1](mDM_in_GeV), log10x
         )
         result2[log10x >= self._log10x_arrs[1][-1]] = -100.
         result2[log10x <= self._log10x_arrs[1][0]]  = -100.
-        
-        # Combine the two spectra.  
+
+        # Combine the two spectra.
         return np.log10(
             self._weight[0]*10**result1 + self._weight[1]*10**result2
         )
@@ -177,23 +177,23 @@ def load_h5_dict(file_path):
         return data_dict
 
     with h5py.File(file_path, 'r') as h5_file:
-        return recursive_load(h5_file)    
+        return recursive_load(h5_file)
 
 def load_data(data_type, verbose=1):
-    """ Loads data from downloaded files. 
+    """ Loads data from downloaded files.
 
     Parameters
     ----------
     data_type : {'binning', 'dep_tf', 'ics_tf', 'struct', 'hist', 'f', 'pppc', 'exc'}
-        Type of data to load. The options are: 
+        Type of data to load. The options are:
 
         - *'binning'* -- Default binning for all transfer functions;
 
         - *'dep_tf'* -- Transfer functions for propagating photons and deposition into low-energy photons, low-energy electrons, high-energy deposition and upscattered CMB energy rate;
 
-        - *'ics_tf'* -- Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum; 
+        - *'ics_tf'* -- Transfer functions for ICS for scattered photons in the Thomson regime, relativistic regime, and scattered electron energy-loss spectrum;
 
-        - *'struct'* -- Structure formation boosts; 
+        - *'struct'* -- Structure formation boosts;
 
         - *'hist'* -- Baseline ionization and temperature histories;
 
@@ -209,7 +209,7 @@ def load_data(data_type, verbose=1):
     Returns
     --------
     dict
-        A dictionary of the data requested. 
+        A dictionary of the data requested.
 
     See Also
     ---------
@@ -218,14 +218,14 @@ def load_data(data_type, verbose=1):
     """
 
     global data_path
-    
+
     global glob_binning_data, glob_dep_tf_data, glob_ics_tf_data
     global glob_struct_data,  glob_hist_data, glob_f_data, glob_pppc_data, glob_exc_data, glob_reion_data
     global glob_bnd_free_data
 
     if data_path is None or not os.path.isdir(data_path):
         raise ValueError('Please set data directory in darkhistory.config or to `DH_DATA_DIR` environment variable.')
-    
+
     if data_type == 'binning':
         if glob_binning_data is None:
             try:
@@ -283,15 +283,15 @@ def load_data(data_type, verbose=1):
             ics_thomson_ref_tf = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_thomson_ref.h5'))
             if verbose >= 1:
                 print('Done!')
-                print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
+                print('    for inverse Compton (relativistic)... ')
             ics_rel_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_rel_ref.h5'))
             if verbose >= 1:
                 print('Done!')
-                print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
+                print('    for inverse Compton (energy loss)... ')
             engloss_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_engloss_ref.h5'))
             if verbose >= 1:
                 print('Done!')
-                print('****** Loading complete! ******', flush=True)
+                print('****** Loading complete! ******')
             glob_ics_tf_data = {
                 'thomson' : ics_thomson_ref_tf,
                 'rel'     : ics_rel_ref_tf,
@@ -307,7 +307,7 @@ def load_data(data_type, verbose=1):
                 'einasto_subs'    : boost_data[:,[0,1]],
                 'einasto_no_subs' : boost_data[:,[0,2]],
                 'NFW_subs'        : boost_data[:,[0,3]],
-                'NFW_no_subs'     : boost_data[:,[0,4]] 
+                'NFW_no_subs'     : boost_data[:,[0,4]]
             }
         return glob_struct_data
 
@@ -353,25 +353,25 @@ def load_data(data_type, verbose=1):
         if glob_pppc_data is None:
 
             coords_data = np.array(json.load(open(data_path+'/dlNdlxIEW_coords_table.json')), dtype=object)
-            # coords_data is a (2, 23, 2) array. 
+            # coords_data is a (2, 23, 2) array.
             # axis 0: stable SM secondaries, {'elec', 'phot'}
             # axis 1: annihilation primary channel.
-            # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of 
-            # the secondary. 
+            # axis 2: {mDM in GeV, np.log10(K/mDM)}, K is the energy of
+            # the secondary.
             # Each element is a 1D array.
 
             values_data = np.array(json.load(open(data_path+'/dlNdlxIEW_values_table.json')), dtype=object)
-            # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM). 
+            # values_data is a (2, 23) array, d log_10 N / d log_10 (K/mDM).
             # axis 0: stable SM secondaries, {'elec', 'phot'}
             # axis 1: annihilation primary channel.
             # Each element is a 2D array indexed by {mDM in GeV, np.log10(K/mDM)}
-            # as saved in coords_data. 
+            # as saved in coords_data.
 
             # Compile a dictionary of all of the interpolators.
             dlNdlxIEW_interp = {'elec':{}, 'phot':{}}
 
             chan_list = [
-                'e_L','e_R', 'e', 'mu_L', 'mu_R', 'mu', 
+                'e_L','e_R', 'e', 'mu_L', 'mu_R', 'mu',
                 'tau_L', 'tau_R', 'tau',
                 'q',  'c',  'b', 't',
                 'W_L', 'W_T', 'W', 'Z_L', 'Z_T', 'Z', 'g',  'gamma', 'h',
@@ -390,14 +390,14 @@ def load_data(data_type, verbose=1):
             glob_pppc_data = dlNdlxIEW_interp
 
         return glob_pppc_data
-    
+
     elif data_type == 'exc':
         if glob_exc_data == None:
             species_list = ['HI', 'HeI']
             state_list = [
-                '2s', '2p', 
-                '3s', '3p', '3d', 
-                '4s', '4p', '4d', '4f', 
+                '2s', '2p',
+                '3s', '3p', '3d',
+                '4s', '4p', '4d', '4f',
                 '5p', '6p', '7p', '8p', '9p', '10p'
             ]
 
@@ -426,7 +426,7 @@ def load_data(data_type, verbose=1):
                 else:
                     return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
-            glob_exc_data = {species: 
+            glob_exc_data = {species:
                 {state : make_interpolator(species, state) for state in state_list}
             for species in species_list}
 
@@ -448,7 +448,7 @@ def load_data(data_type, verbose=1):
                 else:
                     return interp1d(x,y, kind='linear', bounds_error=False, fill_value=(0,0))
 
-            glob_exc_data = {species: 
+            glob_exc_data = {species:
                 {state : make_interpolator(exc_data[species]['eng_'+state[-1]], exc_data[species][state])
                 for state in state_list}
             for species in species_list}
@@ -472,7 +472,7 @@ def load_data(data_type, verbose=1):
             glob_bnd_free_data['g_table_dict']  = load_h5_dict(data_path+'/g_table_dict.h5')['g_table_dict']
 
             # Number of log-spaced large bins for kappa^2 = E_e / R, where E_e is the electron energy and R is the
-            # ionization potential of hydrogen.            
+            # ionization potential of hydrogen.
 
             glob_bnd_free_data['n_kap'] = 50
 
@@ -502,23 +502,23 @@ def load_data(data_type, verbose=1):
                     glob_bnd_free_data['h_ary'][n, 11*i:11*(i+1)] = np.ones(11) * (abscissa[1] - abscissa[0])
 
         return glob_bnd_free_data
-    
+
     else:
         raise ValueError('invalid data_type.')
 
 
-def test(date_str=None, end_rs=4, iter=2, std_only=False): 
+def test(date_str=None, end_rs=4, iter=2, std_only=False):
     """
-    Runs a quick unit test of the code using some reference files. 
+    Runs a quick unit test of the code using some reference files.
 
     Parameters
     ----------
     date_str : string, optional
-        A string for the date of the reference file. 
+        A string for the date of the reference file.
     end_rs : float, optional
-        Redshift :math:`1+z` to end the test at. 
+        Redshift :math:`1+z` to end the test at.
     iter : int, optional
-        Number of iterations. 
+        Number of iterations.
     std_only : bool, optional
         If *True*, runs only the case with no exotic injection.
 
@@ -528,14 +528,14 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
 
     """
 
-    import darkhistory.main as main 
+    import darkhistory.main as main
 
-    if date_str is None: 
+    if date_str is None:
         std_file_str = data_path+'/reference_20220822_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
 
         DM_file_str = data_path+'/reference_20220822_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+str(iter)+'.p'
 
-    else: 
+    else:
         std_file_str = data_path+'/reference_'+date_str+'_std_result_n_10_high_rs_1555_coarsen_16_reion_False_rtol_1e-6_iter_'+str(iter)+'.p'
         DM_file_str = data_path+'/reference_'+date_str+'_mDM_1e8_elec_delta_decay_3e25_n_10_high_rs_1555_coarsen_16_reion_True_rtol_1e-6_iter_'+str(iter)+'.p'
 
@@ -546,7 +546,7 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
         'primary':'elec_delta', 'DM_process':'decay', 'mDM':1e8, 'lifetime':3e25,
         'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':end_rs,
         'reion_switch':True, 'reion_method':'Puchwein', 'heat_switch':True,
-        'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
+        'coarsen_factor':16, 'distort':True, 'fexc_switch': True,
         'MLA_funcs':None,
         'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
@@ -555,62 +555,62 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
         'primary':'elec_delta', 'DM_process':'decay', 'mDM':1e8, 'lifetime':3e40,
         'start_rs': 3000, 'high_rs': 1.555e3, 'end_rs':end_rs,
         'reion_switch':False, 'reion_method':'Puchwein', 'heat_switch':True,
-        'coarsen_factor':16, 'distort':True, 'fexc_switch': True, 
+        'coarsen_factor':16, 'distort':True, 'fexc_switch': True,
         'MLA_funcs':None,
         'reprocess_distortion':True, 'nmax':10, 'rtol':1e-6, 'use_tqdm':True, 'iterations':iter
     }
 
     print('Running main.evolve(...): ')
 
-    try: 
+    try:
 
         print('******************************************')
         print('Testing solution with no DM: ')
 
-        std_res = main.evolve(**std_options_dict) 
+        std_res = main.evolve(**std_options_dict)
 
-        def max_rel_change(new_res, ref_res): 
-            if end_rs != 4: 
+        def max_rel_change(new_res, ref_res):
+            if end_rs != 4:
                 ref_res = ref_res[:len(new_res)]
             return np.nanmax(
                 np.abs(
                     np.divide(
-                        new_res, ref_res, out=np.ones_like(new_res)*np.nan, 
+                        new_res, ref_res, out=np.ones_like(new_res)*np.nan,
                         where=(ref_res != 0)
                     ) - 1
                 )
             )
 
         print(
-            'The maximum relative change in xHI and xHeI is: ', 
+            'The maximum relative change in xHI and xHeI is: ',
             max_rel_change(std_res[-1]['x'], std_file_data[-1]['x'])
         )
         print(
-            'The maximum relative change in Tm is: ', 
+            'The maximum relative change in Tm is: ',
             max_rel_change(std_res[-1]['Tm'], std_file_data[-1]['Tm'])
         )
         print(
-            'The maximum relative change in f_(H ion) is: ', 
+            'The maximum relative change in f_(H ion) is: ',
             max_rel_change(std_res[-1]['f']['H ion'], std_file_data[-1]['f']['H ion'])
         )
         print(
-            'The maximum relative change in f_(H ion) is: ', 
+            'The maximum relative change in f_(H ion) is: ',
             max_rel_change(std_res[-1]['f']['H ion'], std_file_data[-1]['f']['H ion'])
         )
         print(
-            'The maximum relative change in f_(He ion) is: ', 
+            'The maximum relative change in f_(He ion) is: ',
             max_rel_change(std_res[-1]['f']['He ion'], std_file_data[-1]['f']['He ion'])
         )
         print(
-            'The maximum relative change in f_(Lya) is: ', 
+            'The maximum relative change in f_(Lya) is: ',
             max_rel_change(std_res[-1]['f']['Lya'], std_file_data[-1]['f']['Lya'])
         )
         print(
-            'The maximum relative change in f_(heat) is: ', 
+            'The maximum relative change in f_(heat) is: ',
             max_rel_change(std_res[-1]['f']['heat'], std_file_data[-1]['f']['heat'])
         )
         print(
-            'The maximum relative change in f_(cont) is: ', 
+            'The maximum relative change in f_(cont) is: ',
             max_rel_change(std_res[-1]['f']['cont'], std_file_data[-1]['f']['cont'])
         )
         print(
@@ -621,45 +621,45 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
 
         print('Pickled solution with no DM!')
 
-        if not std_only: 
+        if not std_only:
 
-            DM_res = main.evolve(**DM_options_dict) 
+            DM_res = main.evolve(**DM_options_dict)
 
-            
+
 
             print('******************************************')
             print('Testing solution with DM: ')
 
             print(
-                'The maximum relative change in xHI and xHeI is: ', 
+                'The maximum relative change in xHI and xHeI is: ',
                 max_rel_change(DM_res[-1]['x'], DM_file_data[-1]['x'])
             )
             print(
-                'The maximum relative change in Tm is: ', 
+                'The maximum relative change in Tm is: ',
                 max_rel_change(DM_res[-1]['Tm'], DM_file_data[-1]['Tm'])
             )
             print(
-                'The maximum relative change in f_(H ion) is: ', 
+                'The maximum relative change in f_(H ion) is: ',
                 max_rel_change(DM_res[-1]['f']['H ion'], DM_file_data[-1]['f']['H ion'])
             )
             print(
-                'The maximum relative change in f_(H ion) is: ', 
+                'The maximum relative change in f_(H ion) is: ',
                 max_rel_change(DM_res[-1]['f']['H ion'], DM_file_data[-1]['f']['H ion'])
             )
             print(
-                'The maximum relative change in f_(He ion) is: ', 
+                'The maximum relative change in f_(He ion) is: ',
                 max_rel_change(DM_res[-1]['f']['He ion'], DM_file_data[-1]['f']['He ion'])
             )
             print(
-                'The maximum relative change in f_(Lya) is: ', 
+                'The maximum relative change in f_(Lya) is: ',
                 max_rel_change(DM_res[-1]['f']['Lya'], DM_file_data[-1]['f']['Lya'])
             )
             print(
-                'The maximum relative change in f_(heat) is: ', 
+                'The maximum relative change in f_(heat) is: ',
                 max_rel_change(DM_res[-1]['f']['heat'], DM_file_data[-1]['f']['heat'])
             )
             print(
-                'The maximum relative change in f_(cont) is: ', 
+                'The maximum relative change in f_(cont) is: ',
                 max_rel_change(DM_res[-1]['f']['cont'], DM_file_data[-1]['f']['cont'])
             )
             print(
@@ -671,15 +671,9 @@ def test(date_str=None, end_rs=4, iter=2, std_only=False):
             print('Pickled solution with DM!')
 
         print('Test complete!')
-    
-    except: 
+
+    except:
 
         raise RuntimeError('main.evolve(...) failed to complete.')
 
-    return None 
-
-
-    
-
-
-
+    return None
