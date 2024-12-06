@@ -565,12 +565,17 @@ def evolve(
                                       np.log(phys.rydberg), 2000))
         #dist_eng = np.sort(np.append(dist_eng,
         #                             atomic.get_transition_energies(nmax)))
+
+        # If initial distortion is not given, initialize with zeros
         if init_distort is None:
             distortion = Spectrum(
                 dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N'
             )
+        # Otherwise, ensure the binning and redshift is correct
         else:
             distortion = init_distort
+            distortion.redshift(1)
+            distortion.rebin(dist_eng)
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
