@@ -241,7 +241,6 @@ def evolve(
     #########################################################################
     #########################################################################
 
-
     # Save the initial options for subsequent iterations.
     options = dict(
         in_spec_elec=in_spec_elec, in_spec_phot=in_spec_phot,
@@ -574,7 +573,7 @@ def evolve(
         # Otherwise, ensure the binning and redshift is correct
         else:
             distortion = init_distort
-            distortion.redshift(1)
+            distortion.redshift(start_rs)
             distortion.rebin(dist_eng)
 
         # for masking out n-1 line photons and E>rydberg photons
@@ -833,8 +832,13 @@ def evolve(
                 # resonant photons are absorbed when passed through the
                 # following function - keep a copy of the unperturbed spectrum
                 # in_distortion = distortion.copy()
-                streaming_lowengphot = lowengphot_spec_at_rs.copy()
-                streaming_lowengphot.rebin(dist_eng)
+                if rs == start_rs and init_distort is not None:
+                    streaming_lowengphot = init_distort
+                    streaming_lowengphot.redshift(rs)
+                    streaming_lowengphot.rebin(dist_eng)
+                else:
+                    streaming_lowengphot = lowengphot_spec_at_rs.copy()
+                    streaming_lowengphot.rebin(dist_eng)
 
                 # Absorb excitation photons and electron collision energy
                 if fexc_switch:
@@ -1721,7 +1725,7 @@ def evolve_for_CLASS(
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, 
     first_iter=True, init_distort=None, prev_output=None, 
-    use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose =0
+    use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
     Run evolve() and save output in format easily readable for use with CLASS.
