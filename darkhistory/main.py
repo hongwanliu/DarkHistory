@@ -242,24 +242,25 @@ def evolve(
     #########################################################################
 
     # Save the initial options for subsequent iterations.
-    options = dict(
-        in_spec_elec=in_spec_elec, in_spec_phot=in_spec_phot,
-        rate_func_N=rate_func_N, rate_func_eng=rate_func_eng,
-        DM_process=DM_process, mDM=mDM, sigmav=sigmav,
-        lifetime=lifetime, primary=primary,
-        struct_boost=struct_boost,
-        start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
-        helium_TLA=helium_TLA, reion_switch=reion_switch,
-        reion_rs=reion_rs, reion_method=reion_method,
-        heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
-        photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func, xe_reion_func=xe_reion_func,
-        init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction,
-        compute_fs_method=compute_fs_method, elec_method=elec_method, mxstep=mxstep, rtol=rtol,
-        distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
-        use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check,
-        reprocess_distortion=reprocess_distortion, simple_2s1s=simple_2s1s,
-        iterations=iterations, first_iter=first_iter, prev_output=prev_output
-    )
+    options = locals().copy()
+    # options = dict(
+    #     in_spec_elec=in_spec_elec, in_spec_phot=in_spec_phot,
+    #     rate_func_N=rate_func_N, rate_func_eng=rate_func_eng,
+    #     DM_process=DM_process, mDM=mDM, sigmav=sigmav,
+    #     lifetime=lifetime, primary=primary,
+    #     struct_boost=struct_boost,
+    #     start_rs=start_rs, high_rs=high_rs, end_rs=end_rs,
+    #     helium_TLA=helium_TLA, reion_switch=reion_switch,
+    #     reion_rs=reion_rs, reion_method=reion_method,
+    #     heat_switch=heat_switch, DeltaT=DeltaT, alpha_bk=alpha_bk,
+    #     photoion_rate_func=photoion_rate_func, photoheat_rate_func=photoheat_rate_func, xe_reion_func=xe_reion_func,
+    #     init_cond=init_cond, coarsen_factor=coarsen_factor, backreaction=backreaction,
+    #     compute_fs_method=compute_fs_method, elec_method=elec_method, mxstep=mxstep, rtol=rtol,
+    #     distort=distort, fudge=fudge, nmax=nmax, fexc_switch=fexc_switch, MLA_funcs=MLA_funcs,
+    #     use_tqdm=use_tqdm, tqdm_jupyter=tqdm_jupyter, cross_check=cross_check,
+    #     reprocess_distortion=reprocess_distortion, simple_2s1s=simple_2s1s,
+    #     iterations=iterations, first_iter=first_iter, prev_output=prev_output
+    # )
 
 
     #####################################
@@ -557,8 +558,7 @@ def evolve(
 
         # Initialize Spectrum object that stores the distortion
 
-        # The spectrum requires a lower bound lower than lowengphot, and finer
-        # binning
+        # The spectrum requires a lower bound lower than lowengphot, and finer binning
         hplanck = phys.hbar * 2*np.pi
         dist_eng = np.exp(np.linspace(np.log(hplanck*1e8),
                                       np.log(phys.rydberg), 2000))
@@ -570,11 +570,12 @@ def evolve(
             distortion = Spectrum(
                 dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N'
             )
-        # Otherwise, ensure the binning and redshift is correct
+        # Otherwise, ensure the binning, redshift, and spec_type is correct
         else:
             distortion = init_distort
-            distortion.redshift(start_rs)
             distortion.rebin(dist_eng)
+            distortion.redshift(start_rs)
+            distortion.switch_spec_type('N')
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
@@ -834,8 +835,9 @@ def evolve(
                 # in_distortion = distortion.copy()
                 if rs == start_rs and init_distort is not None:
                     streaming_lowengphot = init_distort
-                    streaming_lowengphot.redshift(rs)
                     streaming_lowengphot.rebin(dist_eng)
+                    streaming_lowengphot.redshift(rs)
+                    streaming_lowengphot.switch_spec_type('N')
                 else:
                     streaming_lowengphot = lowengphot_spec_at_rs.copy()
                     streaming_lowengphot.rebin(dist_eng)
@@ -1181,7 +1183,6 @@ def evolve(
             tmp_distortion = out_distort_specs.copy()
             tmp_distortion.redshift(rs)
             distortion = tmp_distortion.sum_specs()
-
 
 
         #####################################################################
@@ -1724,7 +1725,7 @@ def evolve_for_CLASS(
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, 
-    first_iter=True, init_distort=None, prev_output=None, 
+    first_iter=True, init_distort_file=None, prev_output=None, 
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
@@ -1758,6 +1759,31 @@ def evolve_for_CLASS(
     # If structure boost is specified, give evolve() the right function
     if params['struct_boost'] is not None:
         params['struct_boost'] = phys.struct_boost_func(params['struct_boost']) # WQ: not the most flexible way to do this, but okay
+
+    # If init_distort_file is specified, load the inital spectral distortion
+    # Assumes spectrum is given in CLASS units at z=0
+    if params['init_distort_file'] is not None:
+        filename = params.pop('init_distort_file')
+        init_dist_arr = np.loadtxt(filename)
+
+        # Convert frequency to energy
+        hplanck = phys.hbar * 2*np.pi
+        dist_eng = init_dist_arr[:,1] * 1e9 * hplanck
+
+        # Convert spectrum to dNdE
+        convert = phys.nB * dist_eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4
+        dist_dNdE = init_dist_arr[:,2] * 1e-26 / convert
+
+        # CLASS binning is relatively coarse
+        # For smooth initial distortion, interpolate so that we don't have rebinning artifacts
+        fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
+        init_dist_interp = interp1d(dist_eng, dist_dNdE, bounds_error=False, fill_value=(0,0))
+
+        params['init_distort'] = Spectrum(
+            fine_eng, # change from nu in GHz to eV
+            init_dist_interp(fine_eng), # change from 10^-26 W m^-2 Hz^-1 sr^-1 to dNdE
+            rs=1, spec_type='dNdE'
+        )
 
     # Pop the arguments that are not taken by evolve()
     save_dir = params.pop('save_dir')

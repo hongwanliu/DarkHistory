@@ -57,7 +57,7 @@ parser.add_argument("--fexc_switch", help="If True, include the source term b_DM
 parser.add_argument("--reprocess_distortion", help="If True, set Delta_f != 0, accounting for distortion photons from earlier redshifts to be absorbed or stimulate emission, i.e. be reprocessed. Default is True.", type=bool, default='True')
 parser.add_argument("--simple_2s1s", help="If set, fixes the decay rate to 8.22 s^-1.", type=bool, default=False) #action='store_true')
 parser.add_argument("--iterations", help="Number of iterations to run for the MLA iterative method.", type=int, default=1)
-
+parser.add_argument("--init_distort_file", help="File containing spectral distortion at start_rs.")
 
 # Initial conditions, precision options, misc.
 # parser.add_argument("--init_cond", help="Specifies the initial (xH, xHe, Tm).", type=)

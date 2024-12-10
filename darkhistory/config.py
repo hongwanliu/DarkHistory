@@ -283,11 +283,11 @@ def load_data(data_type, verbose=1):
             ics_thomson_ref_tf = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_thomson_ref.h5'))
             if verbose >= 1:
                 print('Done!')
-                print('    for inverse Compton (relativistic)... ')
+                print('    for inverse Compton (relativistic)... ', end=' ', flush=True)
             ics_rel_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_rel_ref.h5'))
             if verbose >= 1:
                 print('Done!')
-                print('    for inverse Compton (energy loss)... ')
+                print('    for inverse Compton (energy loss)... ', end=' ', flush=True)
             engloss_ref_tf     = TransFuncAtRedshift(load_h5_dict(data_path+'/ics_engloss_ref.h5'))
             if verbose >= 1:
                 print('Done!')
