@@ -50,7 +50,7 @@ def evolve(
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
-    first_iter=True, init_distort=None, prev_output=None, 
+    first_iter=True, init_distort=None, prev_output=None,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
 ):
     """
@@ -570,12 +570,9 @@ def evolve(
             distortion = Spectrum(
                 dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N'
             )
-        # Otherwise, ensure the binning, redshift, and spec_type is correct
+        # Otherwise, use given initial distortion
         else:
             distortion = init_distort
-            distortion.rebin(dist_eng)
-            distortion.redshift(start_rs)
-            distortion.switch_spec_type('N')
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
@@ -830,17 +827,22 @@ def evolve(
                         return 0
 
                 x_1s = 1-x_arr[-1, 0]
+
                 # resonant photons are absorbed when passed through the
                 # following function - keep a copy of the unperturbed spectrum
                 # in_distortion = distortion.copy()
                 if rs == start_rs and init_distort is not None:
                     streaming_lowengphot = init_distort
-                    streaming_lowengphot.rebin(dist_eng)
-                    streaming_lowengphot.redshift(rs)
-                    streaming_lowengphot.switch_spec_type('N')
+                    streaming_lowengphot.redshift(rs) # Redshift spectrum from 1+z=0 to rs of loop
                 else:
                     streaming_lowengphot = lowengphot_spec_at_rs.copy()
-                    streaming_lowengphot.rebin(dist_eng)
+
+                # Usually taking a smooth spectrum from coarse -> fine binning, so use discretize()
+                # Then ensure that redshift/spec_type is correct
+                dNdE_interp = interp1d(streaming_lowengphot.eng, streaming_lowengphot.dNdE, bounds_error=False, fill_value=(0,0))
+                streaming_lowengphot = discretize(dist_eng, dNdE_interp)
+                streaming_lowengphot.rs = rs
+                streaming_lowengphot.switch_spec_type('N')
 
                 # Absorb excitation photons and electron collision energy
                 if fexc_switch:
@@ -1724,8 +1726,8 @@ def evolve_for_CLASS(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, 
-    first_iter=True, init_distort_file=None, prev_output=None, 
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
+    first_iter=True, init_distort_file=None, prev_output=None,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
@@ -1779,11 +1781,13 @@ def evolve_for_CLASS(
         fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
         init_dist_interp = interp1d(dist_eng, dist_dNdE, bounds_error=False, fill_value=(0,0))
 
-        params['init_distort'] = Spectrum(
-            fine_eng, # change from nu in GHz to eV
-            init_dist_interp(fine_eng), # change from 10^-26 W m^-2 Hz^-1 sr^-1 to dNdE
-            rs=1, spec_type='dNdE'
-        )
+        params['init_distort'] = Spectrum(dist_eng, dist_dNdE, rs=1, spec_type='dNdE')
+        # discretize(fine_eng, init_dist_interp) 
+        # Spectrum(
+        #     fine_eng, # change from nu in GHz to eV
+        #     init_dist_interp(fine_eng), # change from 10^-26 W m^-2 Hz^-1 sr^-1 to dNdE
+        #     rs=1, spec_type='dNdE'
+        # )
 
     # Pop the arguments that are not taken by evolve()
     save_dir = params.pop('save_dir')
@@ -1819,12 +1823,39 @@ def evolve_for_CLASS(
     repackaged = np.zeros((len(z_list),4))
     repackaged[:,0] = z_list
 
+
+    if distort == True:
+            # Convert energies to GHz
+            eng = DH_data['distortion'].eng # eV
+            hplanck = phys.hbar * 2*np.pi
+            nu = eng/hplanck/1e9 # GHz
+
+            # Convert dNdE to spectral radiance
+            convert = phys.nB * eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4 # 1/eV to W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+            J = 1e26 * convert * DH_data['distortion'].dNdE # 10^-26 W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+
+            distortions = np.zeros((len(DH_data['distortion'].eng),2))
+            distortions[:,0] = nu
+            distortions[:,1] = J
+            fn = (
+                save_dir+file_name_str+'_distortions_CLASSformat.txt'
+            )
+            np.savetxt(
+                fn, distortions, header=f"{distortions.shape[0]:.0f}\n", comments=""
+            )
+
     # Fill in x_e and T_m
     repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
     repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
 
     repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
     repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
+
+    # for i in range(int(repackaged.shape[0])):
+    #     distortions[0,i]= print(DH_data['distortion'].eng[i],DH_data['distortion'].dNdE[i])
+    #     distortions[1,i]= print(DH_data['distortion'].eng[i],DH_data['distortion'].dNdE[i])
+    # print(DH_data['distortions'].rs,DH_data['distortion'].eng,DH_data['distortion'].dNdE)
+    # repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['distortion'].eng, DH_data['Tm'][::-1])
 
     repackaged[late_inds,1] = 10**interp1d(
         np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),1]),
