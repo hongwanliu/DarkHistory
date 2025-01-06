@@ -571,8 +571,12 @@ def evolve(
                 dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N'
             )
         # Otherwise, use given initial distortion
-        else:
-            distortion = init_distort
+        else:             
+            dNdE_interp = interp1d(init_distort.eng, init_distort.dNdE, bounds_error=False, fill_value=(0,0))
+            distortion = discretize(dist_eng, dNdE_interp)
+            distortion.rs = 1
+            distortion.switch_spec_type('N')
+
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
