@@ -314,7 +314,7 @@ def discretize(eng, func_dNdE, *args):
     # Perform an integral over the spectrum for each bin.
         N[i] = integrate.quad(func_dNdE, low, upp, args= args)[0]
     # Get the total energy stored in each bin.
-        if N[i] > 0:
+        if N[i] != 0:
             eng_mean[i] = integrate.quad(
                 func_EdNdE, low, upp, args=args
             )[0]/N[i]
