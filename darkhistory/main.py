@@ -576,7 +576,7 @@ def evolve(
             distortion = discretize(dist_eng, dNdE_interp)
             distortion.rs = 1
             distortion.switch_spec_type('N')
-
+        
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
@@ -1774,7 +1774,7 @@ def evolve_for_CLASS(
 
         # Convert frequency to energy
         hplanck = phys.hbar * 2*np.pi
-        dist_eng = init_dist_arr[:,1] * 1e9 * hplanck
+        dist_eng = init_dist_arr[:,0] * phys.TCMB(start_rs) # init_dist_arr[:,1] * 1e9 * hplanck
 
         # Convert spectrum to dNdE
         convert = phys.nB * dist_eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4
@@ -1785,7 +1785,7 @@ def evolve_for_CLASS(
         fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
         init_dist_interp = interp1d(dist_eng, dist_dNdE, bounds_error=False, fill_value=(0,0))
 
-        params['init_distort'] = Spectrum(dist_eng, dist_dNdE, rs=1, spec_type='dNdE')
+        params['init_distort'] = Spectrum(dist_eng, dist_dNdE, rs=start_rs, spec_type='dNdE')
         # discretize(fine_eng, init_dist_interp) 
         # Spectrum(
         #     fine_eng, # change from nu in GHz to eV
