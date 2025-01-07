@@ -1782,10 +1782,10 @@ def evolve_for_CLASS(
 
         # CLASS binning is relatively coarse
         # For smooth initial distortion, interpolate so that we don't have rebinning artifacts
-        fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
         init_dist_interp = interp1d(dist_eng, dist_dNdE, bounds_error=False, fill_value=(0,0))
 
         params['init_distort'] = Spectrum(dist_eng, dist_dNdE, rs=start_rs, spec_type='dNdE')
+        # fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
         # discretize(fine_eng, init_dist_interp) 
         # Spectrum(
         #     fine_eng, # change from nu in GHz to eV
@@ -1829,24 +1829,25 @@ def evolve_for_CLASS(
 
 
     if distort == True:
-            # Convert energies to GHz
-            eng = DH_data['distortion'].eng # eV
-            hplanck = phys.hbar * 2*np.pi
-            nu = eng/hplanck/1e9 # GHz
+        # Convert energies to GHz
+        eng = DH_data['distortion'].eng # eV
+        hplanck = phys.hbar * 2*np.pi
+        # nu = eng/hplanck/1e9 # GHz
+        x = eng / phys.TCMB(1)
 
-            # Convert dNdE to spectral radiance
-            convert = phys.nB * eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4 # 1/eV to W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
-            J = 1e26 * convert * DH_data['distortion'].dNdE # 10^-26 W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+        # Convert dNdE to spectral radiance
+        convert = phys.nB * eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4 # 1/eV to W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+        J = 1e26 * convert * DH_data['distortion'].dNdE # 10^-26 W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
 
-            distortions = np.zeros((len(DH_data['distortion'].eng),2))
-            distortions[:,0] = nu
-            distortions[:,1] = J
-            fn = (
-                save_dir+file_name_str+'_distortions_CLASSformat.txt'
-            )
-            np.savetxt(
-                fn, distortions, header=f"{distortions.shape[0]:.0f}\n", comments=""
-            )
+        distortions = np.zeros((len(DH_data['distortion'].eng),2))
+        distortions[:,0] = x #nu
+        distortions[:,1] = J
+        fn = (
+            save_dir+file_name_str+'_distortions_CLASSformat.txt'
+        )
+        np.savetxt(
+            fn, distortions, header=f"{distortions.shape[0]:.0f}\n", comments=""
+        )
 
     # Fill in x_e and T_m
     repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
