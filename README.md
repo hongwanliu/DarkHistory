@@ -37,7 +37,7 @@ See [CHANGELOG](CHANGELOG.md) for more detail.
 
 # Available Versions
 
-## [DarkHistory v1.1.2](https://github.com/hongwanliu/DarkHistory) for [DM21cm](https://github.com/yitiansun/DM21cm)
+## [DarkHistory v1.1.2](https://github.com/hongwanliu/DarkHistory/releases/tag/v1.1.2) for [DM21cm](https://github.com/yitiansun/DM21cm)
 
 The version of DarkHistory used in [DM21cm](https://github.com/yitiansun/DM21cm), a semi-numerical simulation of inhomogemeous dark matter energy injection based on DarkHistory and [21cmFAST](https://github.com/joshwfoster/21cmFAST). DM21cm is described in [arXiv:2312.11608](https://arxiv.org/abs/2312.11608). Branch: `master`.
 
