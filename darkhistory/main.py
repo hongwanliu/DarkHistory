@@ -302,7 +302,7 @@ def evolve(
         in_spec_elec_func = in_spec_elec
         in_spec_phot_func = in_spec_phot
 
-        initial_state = State(rs=start_rs, xHII=xH_init, xHeII=xHe_init, xHeIII=None, Tm=Tm_init, phot_spec=None)
+        initial_state = dict(rs=start_rs, Tm=Tm_init, xHII=xH_init, xHeII=xHe_init, phot_spec=None)
         # xHeIII not used. No previous photon spectrum.
         in_spec_elec = in_spec_elec_func(start_rs, state=initial_state)
         in_spec_phot = in_spec_phot_func(start_rs, state=initial_state)
@@ -473,14 +473,7 @@ def evolve(
         # Setup  #
         ##########
 
-        state = State(
-            rs=rs,
-            xHII=x_arr[-1][0],
-            xHeII=x_arr[-1][1],
-            xHeIII=None,
-            Tm=Tm_arr[-1],
-            phot_spec=highengphot_spec_at_rs
-        )
+        state = dict(rs=rs, Tm=Tm_arr[-1], xHII=x_arr[-1][0], xHeII=x_arr[-1][1], phot_spec=highengphot_spec_at_rs)
         
         if USE_IN_SPEC_FUNC and rs != start_rs:
             # Except for first step, remake in_spec_elec/phot if necessary
@@ -991,25 +984,3 @@ def get_tf(rs, xHII, xHeII, dlnz, dep_tf_data, coarsen_factor=1):
         highengphot_tf, lowengphot_tf,
         lowengelec_tf, highengdep_arr, prop_tf
     )
-
-
-class State:
-    """An object to hold information about the state of the universe and passed
-    to (custom) injection functions.
-    
-    Args:
-        rs (float): Redshift (1+z) of the universe.
-        xHII (float): Fraction of ionized hydrogen.
-        xHeII (float): Fraction of first ionized helium.
-        xHeIII (float): Fraction of second ionized helium.
-        Tm (float): Temperature of the IGM in [eV].
-        phot_spec (Spectrum): The high-energy photon spectrum [photon/baryon].
-    """
-
-    def __init__(self, rs, xHII, xHeII, xHeIII, Tm, phot_spec):
-        self.rs = rs
-        self.xHII = xHII
-        self.xHeII = xHeII
-        self.xHeIII = xHeIII
-        self.Tm = Tm
-        self.phot_spec = phot_spec
