@@ -27,6 +27,7 @@ pip install .
 DarkHistory is now ready to use. You can test your installation with the example code below. Additionally, familiarize yourself with DarkHistory by exploring the notebooks in the *examples/* directory.
 
 ### Recent updates
+- 2025/02/23: Custom injection now passes tracked state (Tm, xHII, xHeII, photon spectrum) to injection function.
 - 2024/10/14: Downgraded float128 arrays to float64 in code and dataset. This does not result in changes beyond machine precision.
 - 2024/10/13: Custom injection updated.
 - 2024/10/13: Updated scipy dependency (removed `interp2d`).
