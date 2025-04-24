@@ -4,13 +4,24 @@ import argparse
 import numpy as np
 from darkhistory.main import evolve_for_CLASS
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 ### Use argparse to read in all the parameters
 parser = argparse.ArgumentParser()
 
 # Save settings
 parser.add_argument("save_dir", help="directory where outputs are saved to")
 parser.add_argument("file_name_str", help="identifier appended to output file names")
-parser.add_argument("--save_DH", help="if set, saves output of DarkHistory", type=bool, default=False) #action='store_true')
+parser.add_argument("--save_DH", help="if set, saves output of DarkHistory", type=str2bool, default=False) #action='store_true')
 
 # Specify injections from decays/annihilations with monochromatic injection spectra
 parser.add_argument("--DM_process", help="specifies decays or annihilations. Should be one of {'decay', 'swave', 'pwave'}")
@@ -32,13 +43,13 @@ parser.add_argument("--end_rs", help="Final redshift to evolve to. Default is 4.
 
 # Cosmology choices
 parser.add_argument("--struct_boost", help="Structure formation boost factor. Currently implemented models are {'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc', 'pwave_NFW_no_subs'}, see phys.struct_boost_func for details.")
-parser.add_argument("--helium_TLA", help="If True, the TLA is solved with helium. Default is False.", type=bool, default=False) #action='store_true')
+parser.add_argument("--helium_TLA", help="If True, the TLA is solved with helium. Default is False.", type=str2bool, default=False) #action='store_true')
 
 # Reionization
-parser.add_argument("--reion_switch", help="Reionization model included if True, default is False", type=bool, default=False) #action='store_true')
+parser.add_argument("--reion_switch", help="Reionization model included if True, default is False", type=str2bool, default=False) #action='store_true')
 parser.add_argument("--reion_rs", help="Redshift at which reionization effects turn on", type=float)
 parser.add_argument("--reion_method", help="Reionization model, options are {'Puchwein', 'early', 'middle', 'late'}", default='Puchwein')
-parser.add_argument("--heat_switch", help="If True, includes photoheating during reionization.", type=bool, default=False) #ction='store_true')
+parser.add_argument("--heat_switch", help="If True, includes photoheating during reionization.", type=str2bool, default=False) #ction='store_true')
 # parser.add_argument("--photoion_rate_func", help="", type=)
 # parser.add_argument("--photoheat_rate_func", help="", type=)
 # parser.add_argument("--xe_reion_func", help="", type=)
@@ -50,23 +61,23 @@ parser.add_argument("--compute_fs_method", help="Method for evaluating helium io
 parser.add_argument("--elec_method", help="Method for evaluation electron energy deposition. Should be one of {'new', 'old', 'eff'}. See DarkHistory function main for details.", default='new')
 
 # Atomic physics and spectral distortions
-parser.add_argument("--distort", help="If True, calculate spectral distortions. Default is False.", type=bool, default=False) #action='store_true')
+parser.add_argument("--distort", help="If True, calculate spectral distortions. Default is False.", type=str2bool, default=False) #action='store_true')
 parser.add_argument("--fudge", help="Value of Recfast fudge factor. Default is 1.125.", type=float, default=1.125)
 parser.add_argument("--nmax", help="If distort is True, sets the maximum H principal quantum number that the MLA tracks. Default is 10.", type=int, default=10)
-parser.add_argument("--fexc_switch", help="If True, include the source term b_DM to the MLA steady-state equation. Default is True.", type=bool, default='True')
-parser.add_argument("--reprocess_distortion", help="If True, set Delta_f != 0, accounting for distortion photons from earlier redshifts to be absorbed or stimulate emission, i.e. be reprocessed. Default is True.", type=bool, default='True')
-parser.add_argument("--simple_2s1s", help="If set, fixes the decay rate to 8.22 s^-1.", type=bool, default=False) #action='store_true')
+parser.add_argument("--fexc_switch", help="If True, include the source term b_DM to the MLA steady-state equation. Default is True.", type=str2bool, default='True')
+parser.add_argument("--reprocess_distortion", help="If True, set Delta_f != 0, accounting for distortion photons from earlier redshifts to be absorbed or stimulate emission, i.e. be reprocessed. Default is True.", type=str2bool, default='True')
+parser.add_argument("--simple_2s1s", help="If set, fixes the decay rate to 8.22 s^-1.", type=str2bool, default=False) #action='store_true')
 parser.add_argument("--iterations", help="Number of iterations to run for the MLA iterative method.", type=int, default=1)
 parser.add_argument("--init_distort_file", help="File containing spectral distortion at start_rs.")
 
 # Initial conditions, precision options, misc.
 # parser.add_argument("--init_cond", help="Specifies the initial (xH, xHe, Tm).", type=)
 parser.add_argument("--coarsen_factor", help="Coarsening to apply to the transfer function matrix. Default is 1.", type=int, default=1)
-parser.add_argument("--backreaction", help="If False, uses the baseline TLA solution to calculate. Default is True.", type=bool, default=True)
+parser.add_argument("--backreaction", help="If False, uses the baseline TLA solution to calculate. Default is True.", type=str2bool, default=True)
 parser.add_argument("--mxstep", help="The maximum number of steps allowed for each integration point. Default is 1000.", type=int, default=1000)
 parser.add_argument("--rtol", help="The relative error of the solution. Default is 1e-4.", type=float, default=1e-4)
-parser.add_argument("--use_tqdm", help="If True, uses tqdm to track progress.", type=bool, default=False) #action='store_true')
-parser.add_argument("--tqdm_jupyter", help="Uses tqdm in Jupyter notebooks if True. Otherwise, uses tqdm for terminals. Default is False.", type=bool, default=False) #action='store_true')
+parser.add_argument("--use_tqdm", help="If True, uses tqdm to track progress.", type=str2bool, default=False) #action='store_true')
+parser.add_argument("--tqdm_jupyter", help="Uses tqdm in Jupyter notebooks if True. Otherwise, uses tqdm for terminals. Default is False.", type=str2bool, default=False) #action='store_true')
 parser.add_argument("--verbose", help="Do we need some verbose? default is none", type=int, default=False) #action='store_true')
 
 # # These do not be specified from CLASS, just internal for DarkHistory
