@@ -552,7 +552,7 @@ def evolve(
     append_distort_spec = out_distort_specs.append
 
     # Initialize arrays to store f values.
-    f_c = np.empty((0, 7))
+    f_c = np.empty((0, 8))
 
     if distort:
 
@@ -885,8 +885,8 @@ def evolve(
                 beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
                 alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
-                dxe_dt_std = -peebC * (
-                    alpha * xHII_at_rs **2 * phys.nH * rs**3
+                dxHII_dt_std = -peebC * (
+                    alpha * xHII_at_rs * (xHII_at_rs+xHeII_at_rs) * phys.nH * rs**3
                     - 4 * beta_ion * xHI_at_rs * np.exp(-phys.lya_eng/phys.TCMB(rs))
                 )
 
@@ -894,14 +894,13 @@ def evolve(
                 beta_MLA_at_rs  = MLA_step[1]
                 beta_DM_at_rs   = MLA_step[2]
 
-                dxe_dt_MLA = (
-                    - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3
+                dxHII_dt_MLA = (
+                    - alpha_MLA_at_rs * xHII_at_rs * (xHII_at_rs+xHeII_at_rs) * phys.nH * rs**3
                     + beta_MLA_at_rs * xHI_at_rs
-                    + beta_DM_at_rs
+                    # + beta_DM_at_rs
                 )
-
-                dxe_dt_exc = dxe_dt_MLA - dxe_dt_std
-
+                dxHII_dt_exc = beta_DM_at_rs
+                dxHII_dt_diff = dxHII_dt_MLA - dxHII_dt_std
 
                 MLA_data[0].append(rs)
 
@@ -1029,7 +1028,6 @@ def evolve(
             }
 
         elif elec_method == 'eff':
-
             # High-energy deposition from input electrons,
             # but Lya is calculated
             # from the impact of distortions on xe_dot.
@@ -1038,12 +1036,10 @@ def evolve(
                 'H ion': highengdep_at_rs[0] * norm,
                 'He ion': deposited_He_ion/dt * norm,
                 'Lya': highengdep_at_rs[1] * norm,
-                'exc': dxe_dt_exc * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs),
                 'heat': highengdep_at_rs[2] * norm,
                 'cont': highengdep_at_rs[3] * norm,
                 'err': deposited_err/dt * norm
             }
-
 
         else:
             input_spec = lowengelec_spec_at_rs+ionized_elec
@@ -1088,9 +1084,11 @@ def evolve(
         f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         f_Lya = f_phot['H exc'] + f_elec['Lya']
         if elec_method == 'eff':
-            f_exc = f_elec['exc']
+            f_exc = (dxHII_dt_exc * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs)) # / (1-peebC)
+            f_diff = (dxHII_dt_diff * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs)) # / (1-peebC)
         else:
             f_exc = 0.
+            f_diff = 0.
 
         f_heat = f_elec['heat']
         # Including f_elec['cont'] here would be double-counting.
@@ -1159,7 +1157,7 @@ def evolve(
         # Save the f_c(z) values.
         f_c = np.concatenate((
             f_c,
-            [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err, f_exc]]
+            [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err, f_exc, f_diff]]
         ))
 
         # Now that we have f's, calculate the distortion contribution
@@ -1366,7 +1364,8 @@ def evolve(
         'heat':   f_c[:, 3],
         'cont':   f_c[:, 4],
         'err':    f_c[:, 5],
-        'eff_exc':    f_c[:, 6]
+        'eff_exc':    f_c[:, 6],
+        'diff':    f_c[:, 7]
     }
 
     # Redshift the distortion to today

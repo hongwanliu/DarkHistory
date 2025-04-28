@@ -142,8 +142,7 @@ def Theta(l, lp, n, kappa=None):
         # Use default kappa^2 binning.
 
         kappa2 = load_data('bnd_free')['kappa2_bin_edges_ary'][n]
-
-        return (1 + n**2 * kappa2) * load_data('bnd_free')['g_table_dict'][str(n)][str(l)][str(lp)]**2
+        return (1 + n**2 * kappa2) * load_data('bnd_free')['g_table_dict'][n][l][lp]**2
 
     else:
 
