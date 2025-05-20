@@ -7,9 +7,13 @@ import gc
 import numpy as np
 from numpy.linalg import matrix_power
 
+import astropy.units as u
+import astropy.constants as c
+
 from   darkhistory.config import load_data
 import darkhistory.physics as phys
 from   darkhistory.spec import pppc
+from   darkhistory.spec.spectrum import Spectrum
 from   darkhistory.spec.spectra import Spectra
 import darkhistory.spec.transferfunction as tf
 from   darkhistory.spec.spectools import EnglossRebinData
@@ -18,6 +22,8 @@ from   darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 from   darkhistory.low_energy.lowE_deposition import compute_fs
 from   darkhistory.low_energy.lowE_electrons import make_interpolator
 from   darkhistory.history import tla
+# SOFTPHOT EDIT
+from   darkhistory.soft_photons.soft_photons import SoftPhotonSpectralDistortion, SoftPhotonHistory
 
 
 def evolve(
@@ -419,15 +425,15 @@ def evolve(
     Tm_arr = np.array([Tm_init])
 
     # Initialize Spectra objects to contain all of the output spectra.
-
     out_highengphot_specs = Spectra([], spec_type='N')
     out_lowengphot_specs  = Spectra([], spec_type='N')
     out_lowengelec_specs  = Spectra([], spec_type='N')
 
-    # Define these methods for speed.
-    append_highengphot_spec = out_highengphot_specs.append
-    append_lowengphot_spec  = out_lowengphot_specs.append
-    append_lowengelec_spec  = out_lowengelec_specs.append
+    # SOFTPHOT EDIT
+    # Initialize the soft photon history.
+    softphot_point_inj_z = 1500
+    softphot_point_inj_injected = False
+    softphot_hist = SoftPhotonHistory(init_spec=SoftPhotonSpectralDistortion(z=rs-1))
 
     # Initialize arrays to store f values.
     f_low  = np.empty((0,5))
@@ -435,7 +441,6 @@ def evolve(
 
     # Initialize array to store high-energy energy deposition rate. 
     highengdep_grid = np.empty((0,4))
-
 
     # Object to help us interpolate over MEDEA results. 
     MEDEA_interp = make_interpolator(interp_type='2D', cross_check=cross_check)
@@ -590,9 +595,9 @@ def evolve(
         
         # At this point, highengphot_at_rs, lowengphot_at_rs and 
         # lowengelec_at_rs have been computed for this redshift.
-        append_highengphot_spec(highengphot_spec_at_rs)
-        append_lowengphot_spec(lowengphot_spec_at_rs)
-        append_lowengelec_spec(lowengelec_spec_at_rs)
+        out_highengphot_specs.append(highengphot_spec_at_rs)
+        out_lowengphot_specs.append(lowengphot_spec_at_rs)
+        out_lowengelec_specs.append(lowengelec_spec_at_rs)
 
         #####################################################################
         #####################################################################
@@ -744,6 +749,19 @@ def evolve(
             lowengelec_spec_at_rs  = lee_nntf( out_highengphot_specs[-1] )
             lowengphot_spec_at_rs  = lep_tf( out_highengphot_specs[-1] )
             highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1), out_highengphot_specs[-1].N )
+
+        ################
+        # Soft photons #
+        ################
+
+        # SOFTPHOT EDIT
+        if rs < 1 + softphot_point_inj_z and not softphot_point_inj_injected:
+            print('Inject!')
+            sd_inj = SoftPhotonSpectralDistortion()
+            sd_inj.from_point_inj(x_cut=1e3, gamma=3.6, z=rs-1, rho_frac=1e-6)
+            softphot_hist.update(sd_inj)
+            softphot_point_inj_injected = True
+        softphot_hist.step(z=rs-1, dz=next_rs-rs, state=state)
         
         #############################
         # Parameters for next step  #
@@ -817,6 +835,7 @@ def evolve(
         'lowengphot': out_lowengphot_specs, 
         'lowengelec': out_lowengelec_specs,
         'f': f,
+        'softphot_hist': softphot_hist,
     }
 
     if tf_mode == 'table' and clean_up_tf:
