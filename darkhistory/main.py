@@ -431,7 +431,7 @@ def evolve(
 
     # SOFTPHOT EDIT
     # Initialize the soft photon history.
-    softphot_point_inj_z = 1500
+    softphot_point_inj_z = 3000
     softphot_point_inj_injected = False
     softphot_hist = SoftPhotonHistory(init_spec=SoftPhotonSpectralDistortion(z=rs-1))
 
@@ -761,7 +761,13 @@ def evolve(
             sd_inj.from_point_inj(x_cut=1e3, gamma=3.6, z=rs-1, rho_frac=1e-6)
             softphot_hist.update(sd_inj)
             softphot_point_inj_injected = True
+
+            dTffdz = softphot_hist.spec.dTffdz(rs-1, state=state)
+            softphot_hist.dTffdz_arr.append(dTffdz)
+
         softphot_hist.step(z=rs-1, dz=next_rs-rs, state=state)
+        dTffdz = softphot_hist.spec.dTffdz(rs-1, state=state)
+        softphot_hist.dTffdz_arr.append(dTffdz)
         
         #############################
         # Parameters for next step  #

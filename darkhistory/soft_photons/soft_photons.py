@@ -88,9 +88,9 @@ def get_S_ff_bb(z, x, T_M):
 
 #===== Classes for spectrum and history =====
 
-X_MIN_SOFTPHOT = 1e-4 # [dimensionless]
-X_MAX_SOFTPHOT = 1e-1 # [dimensionless]
-N_X_BINS = 1000
+X_MIN_SOFTPHOT = 1e-8 # [dimensionless]
+X_MAX_SOFTPHOT = 1e+2 # [dimensionless]
+N_X_BINS = 5000
 x_edges_default = np.geomspace(X_MIN_SOFTPHOT, X_MAX_SOFTPHOT, N_X_BINS+1)
 
 
@@ -165,6 +165,31 @@ class SoftPhotonSpectralDistortion:
         """Total energy density of the distortion [u.eV/u.cm^3]."""
         EdNdx = self.E(z) * self.dNdx(z)
         return np.sum(EdNdx * self.dx)
+    
+    def dTffdz(self, z, state=None):
+        """Get the free-free dT_ff/dz [eV]. Eqs (14-15) in 2404.11743.
+
+        Args:
+            z (float): Redshift.
+            state (dict, optional): State of the universe at redshift z. If None, use default state.
+        """
+        n_H = phys.nH * (1 + z)**3 * (1/u.cm**3)
+        n_He = phys.nHe * (1 + z)**3 * (1/u.cm**3)
+        n_e = n_H * (state['xHII'] + state['xHeII'])
+        prefactorEq14 = - 1 / (3/2 * (n_H + n_He + n_e))
+
+        T_CMB = phys.TCMB(1 + z) * u.eV
+        rho_CMB = (np.pi**2 / 15 * (T_CMB)**4 / (c.hbar**3 * c.c**3)).to(u.eV / u.cm**3)
+        T_M = state['Tm'] * u.eV
+        H = phys.hubble(z) * u.s**-1
+        prefactorEq15 = - rho_CMB / (np.pi**4/15) * (T_M/T_CMB)**3 * c.sigma_T * n_e * c.c / (H * (1 + z))
+
+        Lambda_BR = get_Lambda_BR(z, self.x, T_M.value)
+        xT_e = get_xT_e(z, self.x, T_M.value)
+        integrand = Lambda_BR * (1 - np.exp(-xT_e)) * (1/(np.exp(xT_e) - 1) - 1/(np.exp(self.x) - 1) - self.n)
+        integral = np.trapz(integrand, self.x)
+
+        return (prefactorEq14 * prefactorEq15).to(u.eV).value * integral
         
 
 class SoftPhotonHistory:
@@ -178,6 +203,7 @@ class SoftPhotonHistory:
         """
         self.history = [init_spec]
         self.spec = init_spec
+        self.dTffdz_arr = [0.] # tmp recorder
 
     def update(self, spec):
         self.history.append(spec)
@@ -209,7 +235,7 @@ class SoftPhotonHistory:
         H_z = phys.hubble(z) * u.s**-1
         dtau = (c.sigma_T * c.c * np.abs(dz) * n_e / ((1+z) * H_z)).to(1).value
 
-        print(f"z={z:.3f} dz={dz:.6f}, dtau={dtau:.6e}, x_e={(state['xHII'] + state['xHeII']):.6f}")
+        # print(f"z={z:.3f} dz={dz:.6f}, dtau={dtau:.6e}, x_e={(state['xHII'] + state['xHeII']):.6f}")
         dn = self.get_dndtau(z, state['Tm']) * dtau
 
         new_spec = self.spec.copy()
