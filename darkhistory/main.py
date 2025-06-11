@@ -434,6 +434,7 @@ def evolve(
     softphot_point_inj_z = 3000
     softphot_point_inj_injected = False
     softphot_hist = SoftPhotonHistory(init_spec=SoftPhotonSpectralDistortion(z=rs-1))
+    photoheat_rate_func = [lambda rs: 0., lambda rs: 0., lambda rs: 0.]
 
     # Initialize arrays to store f values.
     f_low  = np.empty((0,5))
@@ -768,6 +769,26 @@ def evolve(
         softphot_hist.step(z=rs-1, dz=next_rs-rs, state=state)
         dTffdz = softphot_hist.spec.dTffdz(rs-1, state=state)
         softphot_hist.dTffdz_arr.append(dTffdz)
+
+        def photoheat_rate_func0(rs):
+            n_H = phys.nH * rs**3 # [1/cm^3]
+            n_He = phys.nHe * rs**3 # [1/cm^3]
+            n_e = n_H * (state['xHII'] + state['xHeII'])
+            return dTffdz * (3/2) / phys.dtdz(rs) * n_H / (n_H + n_He + n_e) # FIX
+        
+        def photoheat_rate_func1(rs):
+            n_H = phys.nH * rs**3 # [1/cm^3]
+            n_He = phys.nHe * rs**3 # [1/cm^3]
+            n_e = n_H * (state['xHII'] + state['xHeII'])
+            return dTffdz * (3/2) / phys.dtdz(rs) * n_H / (n_H + n_He + n_e) # FIX
+
+        def photoheat_rate_func2(rs):
+            n_H = phys.nH * rs**3 # [1/cm^3]
+            n_He = phys.nHe * rs**3 # [1/cm^3]
+            n_e = n_H * (state['xHII'] + state['xHeII'])
+            return dTffdz * (3/2) / phys.dtdz(rs) * 0 / (n_H + n_He + n_e) # FIX
+        
+        photoheat_rate_func = [photoheat_rate_func0, photoheat_rate_func1, photoheat_rate_func2]
         
         #############################
         # Parameters for next step  #
