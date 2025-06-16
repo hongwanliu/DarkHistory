@@ -1,0 +1,12 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+
+include main_CLASS.py
+include plotting_utils.py
+
+recursive-include examples *
+recursive-include darkhistory *.csv *.dat *.txt
+
+prune docs
+prune sphinx

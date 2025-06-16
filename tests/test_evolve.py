@@ -2,7 +2,7 @@ import os
 import sys
 import h5py
 from pytest import approx
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 
 
