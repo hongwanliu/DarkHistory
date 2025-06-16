@@ -7,7 +7,7 @@
 DarkHistory is a Python code package that calculates the global temperature and ionization history of the universe given an exotic source of energy injection, such as dark matter annihilation or decay. DarkHistory is described in a paper available at [arXiv:1904.09296](https://arxiv.org/abs/1904.09296). Please cite this paper if you use DarkHistory in a scientific publication. For detailed information, please visit our readthedocs webpage [here](https://darkhistory.readthedocs.io).
 
 # Installation
-*Updated 2024/10/14*
+*Updated 2025/06/16*
 
 - Clone this repository and checkout the branch you wish to use. The currently active branches are: `master`, `lowengelec_upgrade`, and `early_halo_cooling`.
 - Create a new virtual environment for DarkHistory (recommended). For example, using `conda`:
@@ -27,6 +27,7 @@ pip install .
 DarkHistory is now ready to use. You can test your installation with the example code below. Additionally, familiarize yourself with DarkHistory by exploring the notebooks in the *examples/* directory.
 
 ### Recent updates
+- 2025/06/16: Fixed installation. Update scipy compatibility (1.15.3).
 - 2025/02/23: Custom injection now passes tracked state (Tm, xHII, xHeII, photon spectrum) to injection function.
 - 2024/10/14: Downgraded float128 arrays to float64 in code and dataset. This does not result in changes beyond machine precision.
 - 2024/10/13: Custom injection updated.

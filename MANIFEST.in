@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+
+recursive-include examples *
+recursive-include darkhistory *.csv *.dat *.txt
+
+prune docs
+prune sphinx

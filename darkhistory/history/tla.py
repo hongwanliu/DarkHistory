@@ -7,7 +7,7 @@ import darkhistory.physics as phys
 import darkhistory.history.reionization as reion
 from scipy.integrate import odeint
 from scipy.integrate import solve_ivp
-from scipy.misc import derivative
+from scipy.differentiate import derivative
 
 def compton_cooling_rate(xHII, xHeII, xHeIII, T_m, rs):
     """Returns the Compton cooling rate.
@@ -580,7 +580,7 @@ def get_history(
         # var is the [temperature, xHII] input.
 
         def dxe_dz(rs):
-            return derivative(xe_reion_func, rs)
+            return derivative(xe_reion_func, rs).df
 
         def dlogT_dz(log_T_m, rs):
 
