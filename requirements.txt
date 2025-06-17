@@ -1,7 +1,7 @@
-numpy==1.16.2
-scipy==1.2.1
-matplotlib==3.0.3
-tqdm==4.31.1
-jupyter==1.0.0
-jupyter_contrib_nbextensions==0.5.0
-numpydoc==0.8.0
+astropy>=5.3
+h5py
+matplotlib
+numpy>=1.25.2
+numpydoc
+scipy>=1.11.2
+tqdm
