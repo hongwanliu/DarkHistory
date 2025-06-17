@@ -21,6 +21,7 @@ hplanck = hbar * 2*np.pi
 c = phys.c
 m_e = phys.me
 nH = phys.nH
+g_per_eV = phys.ele * 1e3 / (phys.c / 100)**2
 g_per_Msun = 1.989e33
 cm_per_kpc = 3.086e21  
 
@@ -133,7 +134,7 @@ def dxH2_dt_IGM(xHII, xHeII, xHeIII, T_m, rs, dists=0): # s^-1
 
     kn1_IGM = kn1_th(phys.TCMB(rs)) + kn1_nt_alt(dists, rs)
     
-    rate_form = k1(T_m) * k2(T_m) * xe * xHI**2 * n**2 / (k2(T_m)*xHI*n + kn1_IGM + k3(T_m)*xHeII*n)
+    rate_form = k1(T_m) * k2(T_m) * xe * xHI**2 * n**2 / (k2(T_m)*xHI*n + kn1_IGM + k3(T_m)*xHII*n)
     rate_dest = 0
     return rate_form + rate_dest
 
@@ -162,9 +163,10 @@ def dxH2_dz(xe, xH2, Tm, n, rs, dists=0, LW=False): # s^-1
         H2 formation rate in s\ :sup:`-1`\
     """
     xHI = 1-xe
-    xHeII = 0
+    xHII = xe
     TCMB = phys.TCMB(rs)
-    rate_form = k1(Tm) * k2(Tm) * xe * xHI**2 * n**2 / (k2(Tm)*xHI*n + kn1(TCMB, dists, rs) + k3(Tm)*xHeII*n)
+
+    rate_form = k1(Tm) * k2(Tm) * xe * xHI**2 * n**2 / (k2(Tm)*xHI*n + kn1(TCMB, dists, rs) + k3(Tm)*xHII*n)
     if LW:
         rate_dest = kH2(dists, rs) * xH2
     else:
@@ -489,6 +491,16 @@ def evol_eqns(rs, var, rs_vir, M, early=False, vir_switch=False, nvir=None, dist
     
     # After virizialization. Must provide virialized density, nvir.
     else:
+        # xe, xH2, Tm, n = var
+        # tff = np.sqrt(3 * np.pi / 32 / phys.G / (n*phys.mp*g_per_eV))
+        # dndt = n / tff
+        # return np.array([
+        #     dxe_dz(xe, Tm, n, rs, DM_switch=DM_switch, DM_args=DM_args, f_suppress=f_suppress),
+        #     dxH2_dz_at_rs(xe, xH2, Tm, n),
+        #     dTm_dz(xe, xH2, Tm, n, dndt, rs, H2_cool_rate=H2_cool_rate, 
+        #            DM_switch=DM_switch, DM_args=DM_args, f_suppress=f_suppress),
+        #     dndt * phys.dtdz(rs)
+        # ])
         xe, xH2, Tm = var
         if nvir==None:
             raise ValueError(
@@ -592,8 +604,8 @@ def halo_integrate(rs_vir, M_halo, init_H2, start_rs=3000., end_rs=5., early_rs=
         T_next = T_vir(rs_vir, M_halo)
     else:
         T_next = halo_soln['y'][2,-1]
-    init_cond_vir = [halo_soln['y'][0,-1], halo_soln['y'][1,-1], T_next]
     nvir = n_TH(halo_soln['t_events'][0][0], rs_vir)
+    init_cond_vir = [halo_soln['y'][0,-1], halo_soln['y'][1,-1], T_next] #, nvir]
     halo_eqns_vir = lambda rs, var: evol_eqns(rs, var, rs_vir, M_halo, vir_switch=True, nvir=nvir, 
                                               dists=dists, H2_form_rate=H2_form_rate, H2_cool_rate=H2_cool_rate, 
                                               DM_switch=DM_switch, DM_args=DM_args, f_suppress=f_suppress, LW=LW)
@@ -608,6 +620,7 @@ def halo_integrate(rs_vir, M_halo, init_H2, start_rs=3000., end_rs=5., early_rs=
     y_full = np.hstack((y_early, halo_soln['y'], halo_soln_vir['y']))
     n_full = np.hstack((n_TH(early_soln['t'], rs_vir), 
                         n_TH(halo_soln['t'], rs_vir), 
+                        # halo_soln_vir['y'][-1]))
                         np.ones_like(rs_list_vir)*nvir))
     y_full = np.vstack((y_full, n_full))
     result = {
