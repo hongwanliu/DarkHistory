@@ -51,8 +51,9 @@ def get_history(
     struct_boost=None, injection_rate=None, 
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
-    xe_reion_func=None, helium_TLA=False, f_He_ion=None, 
-    mxstep=1000, rtol=1e-4
+    xe_reion_func=None, helium_TLA=False, f_He_ion=None,
+    softphotheat_rate_func=None,
+    mxstep=1000, rtol=1e-4,
 ):
     """Returns the ionization and thermal history of the IGM.
 
@@ -90,6 +91,8 @@ def get_history(
         Functions take redshift 1+z as input, return the photoionization rate in s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoion_rate`. 
     photoheat_rate_func : tuple of functions, optional
         Functions take redshift 1+z as input, return the photoheating rate in eV s^-1 of HI, HeI and HeII respectively. If not specified, defaults to `darkhistory.history.reionization.photoheat_rate`. 
+    softphotheat_rate_func : function, optional
+        Function take redshift 1+z as input, return the soft photon heating rate in eV pcm^-3 s^-1.
     xe_reion_func : function, optional
         Specifies a fixed ionization history after reion_rs.  
     helium_TLA : bool, optional
@@ -261,6 +264,7 @@ def get_history(
                         xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
                     )
                     + _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
+                    + softphotheat_rate_func(rs)
                 )
             )/ (3/2 * nH * (1 + chi + xe))
 
@@ -560,9 +564,13 @@ def get_history(
                 )
             ) / (3/2 * nH * (1 + chi + xe))
 
+            softphot_rate = phys.dtdz(rs) * (
+                softphot_cooling_rate(rs)
+            ) / (3/2 * nH * (1 + chi + xe))
+
             return 1 / T_m * (
                 adiabatic_cooling_rate + compton_rate 
-                + dm_heating_rate + reion_rate + species_change_rate
+                + dm_heating_rate + reion_rate + species_change_rate + softphot_rate
             )
 
         log_T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
@@ -597,8 +605,9 @@ def get_history(
             compton_rate     = phys.dtdz(rs) * compton_cooling_rate(xHII, xHeII, 0, T_m, rs) / (3/2 * nH * (1+chi+xe))
             dm_heating_rate  = phys.dtdz(rs) * _f_heating(rs, xHI, xHeI, 0) * _injection_rate(rs) / (3/2 * nH * (1+chi+xe))
             species_change_rate = - T_m / (1+chi+xe) * dxe_dz(rs)
+            softphot_rate = phys.dtdz(rs) * softphot_cooling_rate(rs) / (3/2 * nH * (1+chi+xe))
 
-            return 1 / T_m * (adiabatic_cooling_rate + compton_rate + dm_heating_rate + species_change_rate)
+            return 1 / T_m * (adiabatic_cooling_rate + compton_rate + dm_heating_rate + species_change_rate + softphot_rate)
 
         log_T_m = var
 
