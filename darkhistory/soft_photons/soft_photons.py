@@ -176,7 +176,7 @@ class SoftPhotonSpectralDistortion:
         n_H = phys.nH * (1 + z)**3 * (1/u.cm**3)
         n_He = phys.nHe * (1 + z)**3 * (1/u.cm**3)
         n_e = n_H * (state['xHII'] + state['xHeII'])
-        prefactorEq14 = - 1 / (3/2 * (n_H + n_He + n_e))
+        prefactorEq14 = (- 1 / (3/2 * (n_H + n_He + n_e))).to(u.eV).value
 
         T_CMB = phys.TCMB(1 + z) * u.eV
         rho_CMB = (np.pi**2 / 15 * (T_CMB)**4 / (c.hbar**3 * c.c**3)).to(u.eV / u.cm**3)
@@ -189,7 +189,10 @@ class SoftPhotonSpectralDistortion:
         integrand = Lambda_BR * (1 - np.exp(-xT_e)) * (1/(np.exp(xT_e) - 1) - 1/(np.exp(self.x) - 1) - self.n)
         integral = np.trapz(integrand, self.x)
 
-        return (prefactorEq14 * prefactorEq15).to(u.eV).value * integral
+        drhoffdz = prefactorEq15.to(u.eV).value * integral
+
+        return prefactorEq14 * drhoffdz
+
         
 
 class SoftPhotonHistory:
