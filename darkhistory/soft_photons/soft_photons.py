@@ -189,7 +189,7 @@ class SoftPhotonSpectralDistortion:
         integrand = Lambda_BR * (1 - np.exp(-xT_e)) * (1/(np.exp(xT_e) - 1) - 1/(np.exp(self.x) - 1) - self.n)
         integral = np.trapz(integrand, self.x)
 
-        drhoffdz = prefactorEq15.to(u.eV).value * integral
+        drhoffdz = - prefactorEq15.to(u.eV / u.cm**3).value * integral
 
         return drhoffdz
 
@@ -201,12 +201,12 @@ class SoftPhotonHistory:
         """
         Soft photon history class.
         
-        Args:
+        Args:s
             init_spec (SoftPhotonSpectralDistortion): Initial soft photon distortion.
         """
         self.history = [init_spec]
         self.spec = init_spec
-        self.dTffdz_arr = [0.] # tmp recorder
+        self.drhoffdz_arr = [0.] # tmp recorder
 
     def update(self, spec):
         self.history.append(spec)

@@ -389,7 +389,8 @@ def evolve(
             photoion_rate_func=photoion_rate_func,
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
-            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol
+            f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
+            softphotheat_rate_func=lambda z: drhoffdz
         )
 
         #=== Photon Cooling Transfer Functions ===
@@ -453,32 +454,32 @@ def evolve(
             softphot_hist.update(sd_inj)
             softphot_point_inj_injected = True
 
-            dTffdz = softphot_hist.spec.dTffdz(rs-1, state=state)
-            softphot_hist.dTffdz_arr.append(dTffdz)
+            drhoffdz = softphot_hist.spec.drhoffdz(rs-1, state=state)
+            softphot_hist.drhoffdz_arr.append(drhoffdz)
 
         softphot_hist.step(z=rs-1, dz=next_rs-rs, state=state)
-        dTffdz = softphot_hist.spec.dTffdz(rs-1, state=state)
-        softphot_hist.dTffdz_arr.append(dTffdz)
+        drhoffdz = softphot_hist.spec.drhoffdz(rs-1, state=state)
+        softphot_hist.drhoffdz_arr.append(drhoffdz)
 
-        def photoheat_rate_func0(rs):
-            n_H = phys.nH * rs**3 # [1/cm^3]
-            n_He = phys.nHe * rs**3 # [1/cm^3]
-            n_e = n_H * (state['xHII'] + state['xHeII'])
-            return dTffdz * (3/2) / phys.dtdz(rs) * n_H / (n_H + n_He + n_e) # FIX
+        # def photoheat_rate_func0(rs):
+        #     n_H = phys.nH * rs**3 # [1/cm^3]
+        #     n_He = phys.nHe * rs**3 # [1/cm^3]
+        #     n_e = n_H * (state['xHII'] + state['xHeII'])
+        #     return drhoffdz * (3/2) / phys.dtdz(rs) * n_H / (n_H + n_He + n_e) # FIX
+        #
+        # def photoheat_rate_func1(rs):
+        #     n_H = phys.nH * rs**3 # [1/cm^3]
+        #     n_He = phys.nHe * rs**3 # [1/cm^3]
+        #     n_e = n_H * (state['xHII'] + state['xHeII'])
+        #     return drhoffdz * (3/2) / phys.dtdz(rs) * n_H / (n_H + n_He + n_e) # FIX
+        #
+        # def photoheat_rate_func2(rs):
+        #     n_H = phys.nH * rs**3 # [1/cm^3]
+        #     n_He = phys.nHe * rs**3 # [1/cm^3]
+        #     n_e = n_H * (state['xHII'] + state['xHeII'])
+        #     return drhoffdz * (3/2) / phys.dtdz(rs) * 0 / (n_H + n_He + n_e) # FIX
         
-        def photoheat_rate_func1(rs):
-            n_H = phys.nH * rs**3 # [1/cm^3]
-            n_He = phys.nHe * rs**3 # [1/cm^3]
-            n_e = n_H * (state['xHII'] + state['xHeII'])
-            return dTffdz * (3/2) / phys.dtdz(rs) * n_H / (n_H + n_He + n_e) # FIX
-
-        def photoheat_rate_func2(rs):
-            n_H = phys.nH * rs**3 # [1/cm^3]
-            n_He = phys.nHe * rs**3 # [1/cm^3]
-            n_e = n_H * (state['xHII'] + state['xHeII'])
-            return dTffdz * (3/2) / phys.dtdz(rs) * 0 / (n_H + n_He + n_e) # FIX
-        
-        photoheat_rate_func = [photoheat_rate_func0, photoheat_rate_func1, photoheat_rate_func2]
+        #photoheat_rate_func = [photoheat_rate_func0, photoheat_rate_func1, photoheat_rate_func2]
         
         #=== Parameters for next step ===
         highengphot_spec_at_rs.rs = next_rs

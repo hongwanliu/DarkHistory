@@ -565,7 +565,7 @@ def get_history(
             ) / (3/2 * nH * (1 + chi + xe))
 
             softphot_rate = phys.dtdz(rs) * (
-                softphot_cooling_rate(rs)
+                softphotheat_rate_func(rs)
             ) / (3/2 * nH * (1 + chi + xe))
 
             return 1 / T_m * (
@@ -605,7 +605,7 @@ def get_history(
             compton_rate     = phys.dtdz(rs) * compton_cooling_rate(xHII, xHeII, 0, T_m, rs) / (3/2 * nH * (1+chi+xe))
             dm_heating_rate  = phys.dtdz(rs) * _f_heating(rs, xHI, xHeI, 0) * _injection_rate(rs) / (3/2 * nH * (1+chi+xe))
             species_change_rate = - T_m / (1+chi+xe) * dxe_dz(rs)
-            softphot_rate = phys.dtdz(rs) * softphot_cooling_rate(rs) / (3/2 * nH * (1+chi+xe))
+            softphot_rate = phys.dtdz(rs) * softphotheat_rate_func(rs) / (3/2 * nH * (1+chi+xe))
 
             return 1 / T_m * (adiabatic_cooling_rate + compton_rate + dm_heating_rate + species_change_rate + softphot_rate)
 
