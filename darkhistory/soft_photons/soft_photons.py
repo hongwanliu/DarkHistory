@@ -166,17 +166,17 @@ class SoftPhotonSpectralDistortion:
         EdNdx = self.E(z) * self.dNdx(z)
         return np.sum(EdNdx * self.dx)
     
-    def dTffdz(self, z, state=None):
-        """Get the free-free dT_ff/dz [eV]. Eqs (14-15) in 2404.11743.
+    def drhoffdz(self, z, state=None):
+        """Get the free-free a^-4 d(a^4 rho_ff)/dz [eV/pcm^3]. Eqs (14-15) in 2404.11743.
 
         Args:
             z (float): Redshift.
             state (dict, optional): State of the universe at redshift z. If None, use default state.
         """
         n_H = phys.nH * (1 + z)**3 * (1/u.cm**3)
-        n_He = phys.nHe * (1 + z)**3 * (1/u.cm**3)
+        #n_He = phys.nHe * (1 + z)**3 * (1/u.cm**3)
         n_e = n_H * (state['xHII'] + state['xHeII'])
-        prefactorEq14 = (- 1 / (3/2 * (n_H + n_He + n_e))).to(u.eV).value
+        #prefactorEq14 = (- 1 / (3/2 * (n_H + n_He + n_e))).to(u.eV).value
 
         T_CMB = phys.TCMB(1 + z) * u.eV
         rho_CMB = (np.pi**2 / 15 * (T_CMB)**4 / (c.hbar**3 * c.c**3)).to(u.eV / u.cm**3)
@@ -191,7 +191,7 @@ class SoftPhotonSpectralDistortion:
 
         drhoffdz = prefactorEq15.to(u.eV).value * integral
 
-        return prefactorEq14 * drhoffdz
+        return drhoffdz
 
         
 
