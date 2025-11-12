@@ -167,7 +167,7 @@ class SoftPhotonSpectralDistortion:
         return np.sum(EdNdx * self.dx)
     
     def drhoffdz(self, z, state=None):
-        """Get the free-free a^-4 d(a^4 rho_ff)/dz [eV/pcm^3]. Eqs (14-15) in 2404.11743.
+        """Get the free-free a^-4 d(a^4 rho_ff)/dz [eV/pcm^3]. Eqs (14-15) in 2404.11743
 
         Args:
             z (float): Redshift.

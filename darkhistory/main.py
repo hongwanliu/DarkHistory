@@ -446,7 +446,7 @@ def evolve(
             highengdep_at_rs = np.dot( np.swapaxes(hed_arr, 0, 1), out_highengphot_specs[-1].N )
 
         #=== Soft photons ===
-        # SOFTPHOT EDIT
+        # SOFTPHOT EDIT.
         if rs < 1 + softphot_point_inj_z and not softphot_point_inj_injected:
             print('Inject!')
             sd_inj = SoftPhotonSpectralDistortion()

@@ -52,7 +52,7 @@ def get_history(
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
-    softphotheat_rate_func=None,
+    """SOFTPHOT EDIT.""" softphotheat_rate_func=None,
     mxstep=1000, rtol=1e-4,
 ):
     """Returns the ionization and thermal history of the IGM.
