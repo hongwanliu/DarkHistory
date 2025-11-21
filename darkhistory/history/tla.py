@@ -52,7 +52,7 @@ def get_history(
     reion_switch=False, reion_rs=None,
     photoion_rate_func=None, photoheat_rate_func=None,
     xe_reion_func=None, helium_TLA=False, f_He_ion=None,
-    """SOFTPHOT EDIT.""" softphotheat_rate_func=None,
+    softphotheat_rate_func=None,
     mxstep=1000, rtol=1e-4,
 ):
     """Returns the ionization and thermal history of the IGM.
@@ -246,7 +246,7 @@ def get_history(
 
         inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
-
+        """
         def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
 
             T_m = np.exp(log_T_m)
@@ -267,6 +267,7 @@ def get_history(
                     + softphotheat_rate_func(rs)
                 )
             )/ (3/2 * nH * (1 + chi + xe))
+        """
 
 
         def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
@@ -386,6 +387,8 @@ def get_history(
 
             return 0
 
+        #SOFTPHOT_EDIT
+        """
         def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
 
             T_m = np.exp(log_T_m)
@@ -407,6 +410,49 @@ def get_history(
             species_change_rate = 0
 
             return 1 / T_m * (adiabatic_cooling_rate + compton_rate + dm_heating_rate + species_change_rate)
+        """
+
+        def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+
+            T_m = np.exp(log_T_m)
+
+            xe   = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
+            xHI  = 1 - xHII(yHII)
+            xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
+
+            adiabatic_cooling_rate = 2 * T_m/rs
+
+            compton_rate = phys.dtdz(rs) * compton_cooling_rate(
+                xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
+            ) / (3/2 * nH * (1 + chi + xe))
+
+            dm_heating_rate = phys.dtdz(rs) * _f_heating(
+                rs, xHI, xHeI, xHeII(yHeII)
+            ) * inj_rate / (3/2 * nH * (1 + chi + xe))
+
+            dxe_dz = (
+                dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs) / (2 * np.cosh(yHII)**2)
+                + dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs) / (2 * np.cosh(yHeII)**2)
+                + 2 * dyHeIII_dz(yHII, yHeII, yHeIII, log_T_m, rs) / (2 * np.cosh(yHeIII)**2)
+            )
+            species_change_rate = 0.0
+
+            #soft photon heating term
+            if softphotheat_rate_func is None:
+                softphot_rate = 0.0
+            else:
+                softphot_rate = phys.dtdz(rs) * softphotheat_rate_func(rs) / (
+                    3/2 * nH * (1 + chi + xe)
+                )
+
+            return 1 / T_m * (
+                adiabatic_cooling_rate
+                + compton_rate
+                + dm_heating_rate
+                + species_change_rate
+                + softphot_rate
+            )
+
 
         log_T_m, yHII, yHeII, yHeIII = var[0], var[1], var[2], var[3]
 
@@ -661,7 +707,7 @@ def get_history(
         # No reionization model implemented.
         soln = odeint(
                 tla_before_reion, _init_cond, rs_vec, 
-                mxstep = mxstep, tfirst=True, rtol=rtol
+                mxstep = mxstep, tfirst=True, rtol=rtol #SOFTPHOT_EDIT
             )
         # print(init_cond)
         # print(rs_vec)

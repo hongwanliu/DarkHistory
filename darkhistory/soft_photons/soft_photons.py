@@ -7,6 +7,26 @@ from astropy.cosmology import Planck18 as cosmo
 
 import darkhistory.physics as phys
 
+#SOFTPHOT_EDIT
+
+def ff_kernel(xT_e):
+    """
+    Safe evaluation of (1 - exp(-xT_e)) / xT_e^3,
+    using a series expansion for small xT_e.
+    """
+    xT_e = np.asarray(xT_e)
+    out = np.empty_like(xT_e)
+
+    mask = (xT_e > 1e-3)
+    out[mask] = (1.0 - np.exp(-xT_e[mask])) / xT_e[mask]**3
+
+    # Small-argument use Taylor expansion
+    y = xT_e[~mask]
+    # (1 - e^{-y})/y^3 = 1/y^2 - 1/(2y) + 1/6 + O(y)
+    out[~mask] = 1.0/y**2 - 0.5/y + 1.0/6.0
+
+    return out
+
 
 #===== Constants =====
 m_e = (c.m_e * c.c**2).to(u.eV).value # [eV] | astropy
@@ -47,7 +67,7 @@ def get_Lambda_BR(z, x, T_M):
         xT_e (float or array): x * T_CMB/T_M.
         T_M (float): Matter temperature at z in [eV].
     """
-    lambda_Compton_e = c.h / (c.m_e * c.c)
+    lambda_Compton_e = c.hbar / (c.m_e * c.c)
     Np = phys.nH * (1 + z)**3 * (1/u.cm**3)
     xT_e = get_xT_e(z, x, T_M)
     theta_e = T_M / m_e
@@ -80,15 +100,22 @@ def get_S_ff_bb(z, x, T_M):
         z (float): Redshift.
         x (float or array): x = E/T_CMB.
         T_M (float): Matter temperature at z in [eV].
-    """
+
     Lambda_BR = get_Lambda_BR(z, x, T_M)
     xT_e = get_xT_e(z, x, T_M)
     return Lambda_BR * (1-np.exp(-xT_e)) / xT_e**3 * (1/(np.exp(xT_e)-1) - 1/(np.exp(x)-1))
+    """
+    Lambda_BR = get_Lambda_BR(z, x, T_M)
+    xT_e = get_xT_e(z, x, T_M)
+    kernel = ff_kernel(xT_e)
+    return Lambda_BR * kernel * (1 / (np.exp(xT_e) - 1.) - 1. / (np.exp(x) - 1.))
 
 
 #===== Classes for spectrum and history =====
 
-X_MIN_SOFTPHOT = 1e-8 # [dimensionless]
+#SOFTPHOT_EDIT
+
+X_MIN_SOFTPHOT = 1e-4 # [dimensionless] USED TO BE 1e-8
 X_MAX_SOFTPHOT = 1e+2 # [dimensionless]
 N_X_BINS = 5000
 x_edges_default = np.geomspace(X_MIN_SOFTPHOT, X_MAX_SOFTPHOT, N_X_BINS+1)
@@ -181,7 +208,7 @@ class SoftPhotonSpectralDistortion:
         T_CMB = phys.TCMB(1 + z) * u.eV
         rho_CMB = (np.pi**2 / 15 * (T_CMB)**4 / (c.hbar**3 * c.c**3)).to(u.eV / u.cm**3)
         T_M = state['Tm'] * u.eV
-        H = phys.hubble(z) * u.s**-1
+        H = phys.hubble(1 + z) * u.s**-1
         prefactorEq15 = - rho_CMB / (np.pi**4/15) * (T_M/T_CMB)**3 * c.sigma_T * n_e * c.c / (H * (1 + z))
 
         Lambda_BR = get_Lambda_BR(z, self.x, T_M.value)
@@ -189,7 +216,7 @@ class SoftPhotonSpectralDistortion:
         integrand = Lambda_BR * (1 - np.exp(-xT_e)) * (1/(np.exp(xT_e) - 1) - 1/(np.exp(self.x) - 1) - self.n)
         integral = np.trapz(integrand, self.x)
 
-        drhoffdz = - prefactorEq15.to(u.eV / u.cm**3).value * integral
+        drhoffdz = prefactorEq15.to(u.eV / u.cm**3).value * integral
 
         return drhoffdz
 
@@ -206,7 +233,7 @@ class SoftPhotonHistory:
         """
         self.history = [init_spec]
         self.spec = init_spec
-        self.drhoffdz_arr = [0.] # tmp recorder
+        self.drhoffdz_arr = [] # tmp recorder
 
     def update(self, spec):
         self.history.append(spec)
@@ -218,12 +245,19 @@ class SoftPhotonHistory:
         Args:
             z (float): Redshift.
             T_M (float): Matter temperature at z in [eV].
+
+
+        xT_e = get_xT_e(z, x, T_M)
+        Lambda_BR = get_Lambda_BR(z, x, T_M)
+        return - Lambda_BR * (1-np.exp(-xT_e)) / xT_e**3 * self.spec.n + get_S_Y(z, x, T_M) + get_S_ff_bb(z, x, T_M)
         """
         x = self.spec.x
         xT_e = get_xT_e(z, x, T_M)
         Lambda_BR = get_Lambda_BR(z, x, T_M)
-        return - Lambda_BR * (1-np.exp(-xT_e)) / xT_e**3 * self.spec.n + get_S_Y(z, x, T_M) + get_S_ff_bb(z, x, T_M)
-    
+        kernel = ff_kernel(xT_e)
+
+        return - Lambda_BR * kernel * self.spec.n + get_S_Y(z, x, T_M) + get_S_ff_bb(z, x, T_M)
+
     def step(self, z, dz, state):
         """Step the soft photon spectrum forward in time.
         
@@ -235,7 +269,9 @@ class SoftPhotonHistory:
         
         n_H = phys.nH * (1 + z)**3 * (1/u.cm**3)
         n_e = n_H * (state['xHII'] + state['xHeII'])
-        H_z = phys.hubble(z) * u.s**-1
+        H_z = phys.hubble(1+z) * u.s**-1
+
+        """
         dtau = (c.sigma_T * c.c * np.abs(dz) * n_e / ((1+z) * H_z)).to(1).value
 
         # print(f"z={z:.3f} dz={dz:.6f}, dtau={dtau:.6e}, x_e={(state['xHII'] + state['xHeII']):.6f}")
@@ -246,3 +282,41 @@ class SoftPhotonHistory:
         new_spec.z = z
         new_spec.tau += dtau
         self.update(new_spec)
+        """
+
+        """
+        dtau_tot = (c.sigma_T * c.c * np.abs(dz) * n_e / ((1 + z) * H_z)).to(1).value
+
+        # Substep so dtau per substep is ≤ 0.1
+        N_sub = max(1, int(np.ceil(dtau_tot / 0.1)))
+        dtau = dtau_tot / N_sub
+
+        new_spec = self.spec.copy()
+        for _ in range(N_sub):
+            dn = self.get_dndtau(z, state['Tm']) * dtau
+            new_spec.n += dn
+            new_spec.tau += dtau
+
+        new_spec.z = z
+        self.update(new_spec)
+        """
+        dtau_tot = (c.sigma_T * c.c * np.abs(dz) * n_e /
+                    ((1 + z) * H_z)).to(1).value
+
+        # Internal Sub-steps to make drhoffdz smoother
+        N_sub = max(10, int(np.ceil(dtau_tot / 0.1)))
+        dz_sub = dz / N_sub
+        dtau_sub = dtau_tot / N_sub
+
+        new_spec = self.spec.copy()
+
+        for i in range(N_sub):
+            z_sub = z + (i / N_sub) * dz  # linear interpolation in z
+
+            dn = self.get_dndtau(z_sub, state['Tm']) * dtau_sub
+            new_spec.n += dn
+            new_spec.tau += dtau_sub
+
+        new_spec.z = z
+        self.update(new_spec)
+
