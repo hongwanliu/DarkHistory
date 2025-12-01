@@ -35,7 +35,6 @@ def evolve(
     photoion_rate_func=None, photoheat_rate_func=None, xe_reion_func=None,
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', mxstep=1000000, rtol=1e-8, #SOFTPHOT_EDIT previously 1000 and 1e-4 (500000, 1e-7) helps smoothness but 2:30 run-time locally
-    softphot_point_inj_z = 500, dz_inj_width = 1.0,
     tf_mode='table', clean_up_tf=True,
     cross_check=False, verbose=0,
 ):
@@ -222,9 +221,24 @@ def evolve(
         ) = get_elec_cooling_data(eleceng, photeng)
 
     # SOFTPHOT EDIT
-    #softphot_point_inj_z = softphot_point_inj_z
-    softphot_point_inj_injected = False
-    softphot_hist = SoftPhotonHistory(init_spec=SoftPhotonSpectralDistortion(z=rs-1))
+    #INJECTION EDIT
+    E_cut = 0.235 * u.eV
+    z_inj = 1000
+    dz_inj_width = 2
+
+    T_cmb_inj = phys.TCMB(1 + z_inj) * u.eV
+    x_cut_inj = (E_cut / T_cmb_inj).to(1).value
+
+    injection_params = {
+        "z_inj": z_inj,
+        "dz_win": dz_inj_width,
+        "rho_frac": 1e-6,
+        "x_cut": x_cut_inj,
+        "gamma": 3.6,
+    }
+
+
+    softphot_hist = SoftPhotonHistory(init_spec=SoftPhotonSpectralDistortion(z=rs-1), injection=injection_params)
     photoheat_rate_func = [lambda rs: 0., lambda rs: 0., lambda rs: 0.]
     
     #===== initialize trackers =====
@@ -383,16 +397,7 @@ def evolve(
 
         # Solve the TLA for x, Tm for the *next* step.
         # SOFTPHOT EDIT.
-
         """
-        if rs < 1 + softphot_point_inj_z and not softphot_point_inj_injected:
-            print('Inject!')
-            sd_inj = SoftPhotonSpectralDistortion()
-            sd_inj.from_point_inj(x_cut=1e3, gamma=3.6, z=rs - 1, rho_frac=1e-6) #previously z = rs - 1
-            softphot_hist.update(sd_inj)
-            softphot_point_inj_injected = True
-        """
-
         z_inj = softphot_point_inj_z
         rs_inj = 1 + z_inj
 
@@ -411,31 +416,33 @@ def evolve(
         # Convert to heating rate dρ/dt
         def softphoton_injection_heating(rs):
             return injection_energy_density(rs) * phys.hubble(rs) * rs  # eV/cm^3/s
+        """
 
-        z_now = rs - 1
-        E_cut = 0.235 * u.eV
-        if (abs(z_now - softphot_point_inj_z) < dz_inj_width and not softphot_point_inj_injected):
-            print(f"Injecting at z ~ {z_now:.2f}")
-
-            T_cmb_inj = phys.TCMB(1 + softphot_point_inj_z) * u.eV
-            x_cut_inj = (E_cut / T_cmb_inj).to(1).value
-
-            sd_inj = SoftPhotonSpectralDistortion()
-            sd_inj.from_point_inj(
-                x_cut=x_cut_inj, #previously 1e3
-                gamma=3.6,
-                z=z_now,
-                rho_frac=1e-6
-            )
-
-            softphot_hist.update(sd_inj)
-            softphot_point_inj_injected = True
+        #INJECTION EDIT
+        # z_now = rs - 1
+        # E_cut = 0.235 * u.eV
+        # if (abs(z_now - softphot_point_inj_z) < dz_inj_width and not softphot_point_inj_injected):
+        #     print(f"Injecting at z ~ {z_now:.2f}")
+        #
+        #     T_cmb_inj = phys.TCMB(1 + softphot_point_inj_z) * u.eV
+        #     x_cut_inj = (E_cut / T_cmb_inj).to(1).value
+        #
+        #     sd_inj = SoftPhotonSpectralDistortion()
+        #     sd_inj.from_point_inj(
+        #         x_cut=x_cut_inj, #previously 1e3
+        #         gamma=3.6,
+        #         z=z_now,
+        #         rho_frac=1e-6
+        #     )
+        #
+        #     softphot_hist.update(sd_inj)
+        #     softphot_point_inj_injected = True
 
         softphot_hist.step(z=rs - 1, dz=next_rs - rs, state=state)
         drhoffdz = softphot_hist.spec.drhoffdz(rs - 1, state=state)
 
-        if len(softphot_hist.drhoffdz_arr) > 5:
-            drhoffdz = 0.5 * drhoffdz + 0.5 * np.mean(softphot_hist.drhoffdz_arr[-5:]) #SOFTPHOT_EDIT - smoothing to deal with large steps
+        #if len(softphot_hist.drhoffdz_arr) > 5:
+        #    drhoffdz = 0.5 * drhoffdz + 0.5 * np.mean(softphot_hist.drhoffdz_arr[-5:]) #SOFTPHOT_EDIT - smoothing to deal with large steps
 
         softphot_hist.drhoffdz_arr.append(drhoffdz)
 
@@ -448,7 +455,7 @@ def evolve(
             photoheat_rate_func=photoheat_rate_func,
             xe_reion_func=xe_reion_func, helium_TLA=helium_TLA,
             f_He_ion=f_He_ion, mxstep=mxstep, rtol=rtol,
-            softphotheat_rate_func=lambda rs: drhoffdz * phys.hubble(rs) * rs  #free-free correction + softphoton_injection_heating(rs)  injection heating (?)
+            softphotheat_rate_func=lambda rs:  -drhoffdz #free-free correction + softphoton_injection_heating(rs)  injection heating (?)
         )
 
         #=== Photon Cooling Transfer Functions ===

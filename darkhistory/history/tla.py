@@ -246,28 +246,7 @@ def get_history(
 
         inj_rate = _injection_rate(rs)
         nH = phys.nH*rs**3
-        """
-        def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
 
-            T_m = np.exp(log_T_m)
-
-            xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
-            xHI = 1 - xHII(yHII)
-            xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
-
-            # This rate is temperature loss per redshift.
-            adiabatic_cooling_rate = 2 * T_m/rs
-
-            return 1 / T_m * adiabatic_cooling_rate + 1 / T_m * (
-                phys.dtdz(rs)*(
-                    compton_cooling_rate(
-                        xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs
-                    )
-                    + _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate
-                    + softphotheat_rate_func(rs)
-                )
-            )/ (3/2 * nH * (1 + chi + xe))
-        """
 
 
         def dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
@@ -388,33 +367,14 @@ def get_history(
             return 0
 
         #SOFTPHOT_EDIT
-        """
+
         def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
+            T_floor = 1e-5
 
             T_m = np.exp(log_T_m)
 
-            xe = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
-            xHI = 1 - xHII(yHII)
-            xHeI = chi - xHeII(yHeII) - xHeIII(yHeIII)
-
-            adiabatic_cooling_rate = 2 * T_m/rs # This rate is temperature loss per redshift.
-            compton_rate     = phys.dtdz(rs) * compton_cooling_rate(xHII(yHII), xHeII(yHeII), xHeIII(yHeIII), T_m, rs) / (3/2 * nH * (1+chi+xe))
-            dm_heating_rate  = phys.dtdz(rs) * _f_heating(rs, xHI, xHeI, xHeII(yHeII)) * inj_rate / (3/2 * nH * (1+chi+xe))
-
-            dxe_dz = (
-                dyHII_dz(yHII, yHeII, yHeIII, log_T_m, rs) / (2 * np.cosh(yHII)**2)
-                + dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs) / (2 * np.cosh(yHeII)**2)
-                + 2 * dyHeIII_dz(yHII, yHeII, yHeIII, log_T_m, rs) / (2 * np.cosh(yHeIII)**2)
-            )
-            species_change_rate = - T_m / (1+chi+xe) * dxe_dz
-            species_change_rate = 0
-
-            return 1 / T_m * (adiabatic_cooling_rate + compton_rate + dm_heating_rate + species_change_rate)
-        """
-
-        def dlogT_dz(yHII, yHeII, yHeIII, log_T_m, rs):
-
-            T_m = np.exp(log_T_m)
+            if T_m < T_floor:
+                T_m = T_floor
 
             xe   = xHII(yHII) + xHeII(yHeII) + 2*xHeIII(yHeIII)
             xHI  = 1 - xHII(yHII)
@@ -441,7 +401,7 @@ def get_history(
             if softphotheat_rate_func is None:
                 softphot_rate = 0.0
             else:
-                softphot_rate = phys.dtdz(rs) * softphotheat_rate_func(rs) / (
+                softphot_rate = softphotheat_rate_func(rs) / (
                     3/2 * nH * (1 + chi + xe)
                 )
 
@@ -610,9 +570,7 @@ def get_history(
                 )
             ) / (3/2 * nH * (1 + chi + xe))
 
-            softphot_rate = phys.dtdz(rs) * (
-                softphotheat_rate_func(rs)
-            ) / (3/2 * nH * (1 + chi + xe))
+            softphot_rate = softphotheat_rate_func(rs) / (3/2 * nH * (1 + chi + xe))
 
             return 1 / T_m * (
                 adiabatic_cooling_rate + compton_rate 
@@ -651,7 +609,7 @@ def get_history(
             compton_rate     = phys.dtdz(rs) * compton_cooling_rate(xHII, xHeII, 0, T_m, rs) / (3/2 * nH * (1+chi+xe))
             dm_heating_rate  = phys.dtdz(rs) * _f_heating(rs, xHI, xHeI, 0) * _injection_rate(rs) / (3/2 * nH * (1+chi+xe))
             species_change_rate = - T_m / (1+chi+xe) * dxe_dz(rs)
-            softphot_rate = phys.dtdz(rs) * softphotheat_rate_func(rs) / (3/2 * nH * (1+chi+xe))
+            softphot_rate =  softphotheat_rate_func(rs) / (3/2 * nH * (1+chi+xe))
 
             return 1 / T_m * (adiabatic_cooling_rate + compton_rate + dm_heating_rate + species_change_rate + softphot_rate)
 
