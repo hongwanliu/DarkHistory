@@ -430,7 +430,8 @@ def evolve(
 
         # Default to baseline
         xH_init = phys.x_std(start_rs)
-        xHe_init = phys.x_std(start_rs, 'HeII')
+        xHeII_init = phys.x_std(start_rs, 'HeII')
+        xHeIII_init = 1e-12
 
         #xHeIII_init = phys.xHeII_std(start_rs)
         Tm_init = phys.Tm_std(start_rs)
@@ -439,7 +440,8 @@ def evolve(
 
         # User-specified.
         xH_init = init_cond[0]
-        xHe_init = init_cond[1]
+        xHeII_init = init_cond[1]
+        xHeIII_init = 1e-12
         Tm_init = init_cond[2]
 
     # Initialize redshift/timestep related quantities.
@@ -535,7 +537,7 @@ def evolve(
     #########################################################################
 
     # Initialize the arrays that will contain x and Tm results.
-    x_arr = np.array([[xH_init, xHe_init]])
+    x_arr = np.array([[xH_init, xHeII_init, xHeIII_init]])
     Tm_arr = np.array([Tm_init])
 
     # Initialize Spectra objects to contain all of the output spectra.
@@ -656,6 +658,8 @@ def evolve(
                 x_arr[-1, 0] = 1-10**(-4.4)
             if x_arr[-1, 1] == phys.chi:
                 x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
+            if x_arr[-1, 2] == phys.chi:
+                x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
         else:
             # If the universe becomes fully ionized, offset slightly
             # to prevent numerical issues.
@@ -663,10 +667,12 @@ def evolve(
                 x_arr[-1, 0] = 1-10**(-12.)
             if x_arr[-1, 1] == phys.chi:
                 x_arr[-1, 1] = phys.chi*(1 - 10**(-12.))
+            if x_arr[-1, 2] == phys.chi:
+                x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
 
         # Ionized Fractions
         x_at_rs = np.array([1. - x_arr[-1, 0],
-                            phys.chi - x_arr[-1, 1],
+                            phys.chi - x_arr[-1, 1] - x_arr[-1, 2],
                             x_arr[-1, 1]])
 
         # Electrons in this step, which are comprised of those:
@@ -877,7 +883,7 @@ def evolve(
                 # Find the effective contribution dxe/dz from 1) distortions
                 # affecting the recombination/photoionization and 2) DM excitations.
 
-                xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1])
+                xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1] - x_arr[-1, 2], x_arr[-1, 1])
                 xHII_at_rs = 1. - xHI_at_rs
                 T_m = Tm_arr[-1]
 
@@ -980,7 +986,7 @@ def evolve(
             # Use the previous values with backreaction, or if we are using
             # the HeII method after the reionization redshift.
             x_vec_for_f = np.array(
-                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
+                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1] - x_arr[-1, 2], x_arr[-1, 1]]
             )
         else:
             # Use baseline values if no backreaction.
@@ -1166,7 +1172,7 @@ def evolve(
             streaming_lowengphot.N += atomic_dist_spec.N
 
             # Add heating contribution to the distortion from this step
-            xe = x_arr[-1, 0] + x_arr[-1, 1] # not including HeIII
+            xe = x_arr[-1, 0] + x_arr[-1, 1] + 2 * x_arr[-1, 2] # not including HeIII
             J = 8 * phys.thomson_xsec * (4 * phys.stefboltz / phys.c) * phys.TCMB(rs)**4 * xe * phys.c / 3 / (1 + phys.chi + xe) / phys.me / phys.hubble(rs)
             J_cond = 100
             if J < J_cond:
@@ -1207,7 +1213,7 @@ def evolve(
         # Initial conditions for the TLA, (Tm, xHII, xHeII, xHeIII).
         # This is simply the last set of these variables.
         init_cond_TLA = np.array(
-            [Tm_arr[-1], x_arr[-1, 0], x_arr[-1, 1], 0]
+            [Tm_arr[-1], x_arr[-1, 0], x_arr[-1, 1], x_arr[-1, 2]]
         )
 
         if(np.any(np.isnan(init_cond_TLA))):
@@ -1334,12 +1340,12 @@ def evolve(
             if helium_TLA:
                 # Append the calculated xHe to x_arr.
                 x_arr = np.append(
-                        x_arr,  [[new_vals[-1, 1], new_vals[-1, 2]]], axis=0
+                        x_arr,  [[new_vals[-1, 1], new_vals[-1, 2], new_vals[-1, 3]]], axis=0
                     )
             else:
                 # Append the baseline solution value.
                 x_arr = np.append(
-                    x_arr, [[new_vals[-1, 1], phys.x_std(next_rs, 'HeII')]], axis=0
+                    x_arr, [[new_vals[-1, 1], phys.x_std(next_rs, 'HeII'), 1e-12]], axis=0
                 )
 
         # Re-define existing variables.
