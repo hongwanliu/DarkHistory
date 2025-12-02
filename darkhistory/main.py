@@ -223,8 +223,8 @@ def evolve(
     # SOFTPHOT EDIT
     #INJECTION EDIT
     E_cut = 0.235 * u.eV
-    z_inj = 1000
-    dz_inj_width = 2
+    z_inj = 500
+    dz_inj_width = 0.5
 
     T_cmb_inj = phys.TCMB(1 + z_inj) * u.eV
     x_cut_inj = (E_cut / T_cmb_inj).to(1).value

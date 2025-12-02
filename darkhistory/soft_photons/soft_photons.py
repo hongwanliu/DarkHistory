@@ -3,6 +3,7 @@
 import numpy as np
 import astropy.units as u
 import astropy.constants as c
+import math
 from astropy.cosmology import Planck18 as cosmo
 
 import darkhistory.physics as phys
@@ -48,19 +49,20 @@ def get_g_ff(xT_e, theta_e):
     return 1.0 + np.log1p(np.exp(arg))
 
 
-def get_Lambda_BR(z, x, T_M, xHII):
+def get_Lambda_BR(z, x, T_M, xe):
     """Bremsstrahlung emissivity coefficient [dimensionless]."""
 
     lambda_Compton_e = (c.h / (c.m_e * c.c)).to(u.cm)
 
     n_H = phys.nH * (1 + z) ** 3 * (1 / u.cm ** 3)
-    n_p = n_H * xHII
+    #n_p = n_H * xHII
+    n_e = n_H * xe
 
     xT_e = get_xT_e(z, x, T_M)
     theta_e = T_M / m_e
 
     prefactor = (
-            c.alpha * lambda_Compton_e ** 3 * n_p
+            c.alpha * lambda_Compton_e ** 3 * n_e
             / (2 * np.pi * np.sqrt(6 * np.pi))
     ).to(1).value
 
@@ -88,7 +90,7 @@ def get_S_Y(z, x, T_M):
     return (T_M - T_CMB) / m_e * get_Y(x)
 
 
-def get_S_ff_bb(z, x, T_M,xHII):
+def get_S_ff_bb(z, x, T_M,xe):
     """Free-free emission and absorption off blackbody photons [dimensionless].
 
     Args:
@@ -96,7 +98,7 @@ def get_S_ff_bb(z, x, T_M,xHII):
         x (float or array): x = E/T_CMB.
         T_M (float): Matter temperature at z in [eV].
     """
-    Lambda_BR = get_Lambda_BR(z, x, T_M, xHII)
+    Lambda_BR = get_Lambda_BR(z, x, T_M, xe)
     xT_e = get_xT_e(z, x, T_M)
     return Lambda_BR * (1 - np.exp(-xT_e)) / xT_e ** 3 * (1 / (np.exp(xT_e) - 1) - 1 / (np.exp(x) - 1))
 
@@ -191,18 +193,21 @@ class SoftPhotonSpectralDistortion:
             state (dict, optional): State of the universe at redshift z. If None, use default state.
         """
         xHII = state['xHII']
+        xHeII = state['xHeII']
+        xHeIII = state.get('xHeIII', 0.0)
+
+        xe = xHII + xHeII + 2*xHeIII
         n_H = phys.nH * (1 + z)**3 * (1/u.cm**3)
-        #n_He = phys.nHe * (1 + z)**3 * (1/u.cm**3)
-        n_e = n_H * (state['xHII'] + state['xHeII'])
+        n_e = n_H * xe
         #prefactorEq14 = (- 1 / (3/2 * (n_H + n_He + n_e))).to(u.eV).value
 
         T_CMB = phys.TCMB(1 + z) * u.eV
         rho_CMB = (np.pi**2 / 15 * (T_CMB)**4 / (c.hbar**3 * c.c**3)).to(u.eV / u.cm**3)
         T_M = state['Tm'] * u.eV
         H = phys.hubble(1 + z) * u.s**-1
-        prefactorEq15 = - rho_CMB / (np.pi**4/15) * (T_M/T_CMB)**3 * c.sigma_T * n_e * c.c / (H * (1 + z))
+        prefactorEq15 = - rho_CMB / (np.pi**4/15) * (T_M/T_CMB)**3 * c.sigma_T.to(u.cm**2) * n_e * c.c.to(u.cm / u.s) / (H * (1 + z))
 
-        Lambda_BR = get_Lambda_BR(z, self.x, T_M.value,xHII)
+        Lambda_BR = get_Lambda_BR(z, self.x, T_M.value,xe)
         xT_e = get_xT_e(z, self.x, T_M.value)
         integrand = Lambda_BR * (1 - np.exp(-xT_e)) * (1/(np.exp(xT_e) - 1) - 1/(np.exp(self.x) - 1) - self.n)
         integral = np.trapz(integrand, self.x)
@@ -234,7 +239,7 @@ class SoftPhotonHistory:
         self.history.append(spec)
         self.spec = spec
 
-    def get_dndtau(self, z, T_M,xHII):
+    def get_dndtau(self, z, T_M,xe):
         """Get the dN/dtau for the soft photon spectrum. Eq (7) in 2404.11743.
 
         Args:
@@ -243,79 +248,95 @@ class SoftPhotonHistory:
         """
         x = self.spec.x
         xT_e = get_xT_e(z, x, T_M)
-        Lambda_BR = get_Lambda_BR(z, x, T_M, xHII)
-        return - Lambda_BR * (1-np.exp(-xT_e)) / xT_e**3 * self.spec.n + get_S_Y(z, x, T_M) + get_S_ff_bb(z, x, T_M,xHII)
+        Lambda_BR = get_Lambda_BR(z, x, T_M, xe)
+        return - Lambda_BR * (1-np.exp(-xT_e)) / xT_e**3 * self.spec.n + get_S_Y(z, x, T_M) + get_S_ff_bb(z, x, T_M,xe)
 
     def S_inj(self, z, x, T_M, state):
         """
-        Injection source term S_inj(x, tau) [dimensionless], i.e. dn/dtau.
-        Implement Eq. (3) in the note as a narrow top-hat around z_inj.
+        Injection source term S_inj(x, τ) [dimensionless], dn/dτ.
 
-        Args:
-            z (float): redshift at this step
-            x (array): x = E/T_CMB grid
-            T_M (float): matter temperature [eV]
-            state (dict): current TLA state (contains xHII, xHeII, etc.)
+        Implements eqs. (21–22) of Cyr 2404.11743 as a narrow top–hat in
+        Thomson optical depth around z_inj, with total photon energy
+        injection Δρ/ρ = rho_frac at z_inj.
+
+        Args
+        ----
+        z (float): Redshift.
+        x (ndarray): x = E / T_CMB grid.
+        T_M (float): Matter temperature [eV]
+        state (dict): Current TLA state.
         """
+
         if self.injection is None:
             return np.zeros_like(x)
 
         z_inj = self.injection['z_inj']
         dz_win = self.injection['dz_win']
-        rho_frac = self.injection['rho_frac']
-        x_cut = self.injection['x_cut']
-        gamma = self.injection['gamma']
 
         if abs(z - z_inj) > dz_win:
             return np.zeros_like(x)
 
+        rho_frac = self.injection['rho_frac']
+        x_cut = self.injection['x_cut']
+        gamma = self.injection['gamma']
+
         if not self._inj_cached:
+
+            # ----- eq. (21) -----
             shape = (x / x_cut) ** (-gamma) * np.exp(-x / x_cut)
 
+            nz_win = 200
+            zL, zR = z_inj - dz_win, z_inj + dz_win
+            zs = np.linspace(zL, zR, nz_win)
 
-            T_CMB = phys.TCMB(1 + z_inj) * u.eV
-            rho_CMB = (np.pi ** 2 / 15 * T_CMB ** 4 / (c.hbar ** 3 * c.c ** 3)).to(u.eV / u.cm ** 3)
+            dtau_list = []
+            for i in range(len(zs) - 1):
+                z_mid = 0.5 * (zs[i] + zs[i + 1])
+                rs_mid = 1.0 + z_mid
 
-            x_edges = self.spec.x_edges
-            dx = self.spec.dx
+                xHII_mid = phys.xHII_std(rs_mid)
+                xHeII_mid = phys.xHeII_std(rs_mid)
+                xHeIII_mid = state.get('xHeIII', 0.0)
 
-            E = x * T_CMB  # [eV]
-            dNdx = (1 / np.pi ** 2 * (T_CMB / (c.hbar * c.c)) ** 3).to(1 / u.cm ** 3) * x ** 2 * shape
-            rho_unnorm = np.sum(E * dNdx * dx)  # [eV/cm^3]
+                xe_mid = xHII_mid + xHeII_mid + 2.0 * xHeIII_mid
 
-            rs_inj = 1 + z_inj
-            n_H0 = phys.nH
-            nH_inj = n_H0 * rs_inj ** 3  # [1/cm^3]
+                nH_mid = phys.nH * rs_mid ** 3 * (1.0 / u.cm ** 3)
+                ne_mid = nH_mid * xe_mid
 
-            xHII = state.get('xHII', 1.0)
-            xHeII = state.get('xHeII', 0.0)
-            xHeIII = state.get('xHeIII', 0.0)
-            xe_inj = xHII + xHeII + 2 * xHeIII
+                dz_step = zs[i + 1] - zs[i]
+                dt_mid = abs(phys.dtdz(rs_mid) * dz_step) * u.s
 
-            ne_inj = ne_inj = (nH_inj * xe_inj) * (1/u.cm**3)
-            H_inj = phys.hubble(rs_inj) * u.s ** -1
+                dtau_mid = (
+                        c.sigma_T.to(u.cm ** 2)
+                        * ne_mid
+                        * c.c.to(u.cm / u.s)
+                        * dt_mid
+                ).to(1).value
 
-            # dτ/dz at z_inj and total Δτ across the top-hat window
-            dtau_dz = (c.sigma_T * ne_inj * c.c / (H_inj * rs_inj)).to(1).value
-            Delta_tau_window = dtau_dz * (2.0 * dz_win)
+                dtau_list.append(dtau_mid)
 
-            A = (rho_frac * rho_CMB / (Delta_tau_window * rho_unnorm)).to(1).value
+            Delta_tau_window = np.sum(dtau_list)
+
+            # ----- eq. (22) -----
+            A_delta = ( rho_frac * (np.pi ** 4 / 15.0) / (x_cut ** 4 * math.gamma(4.0 - gamma)) )
 
             self._inj_shape = shape
-            self._inj_A = A
+            self._inj_A = A_delta / Delta_tau_window
             self._inj_cached = True
 
-        return self._inj_A * self._inj_shape
+            print("Injecting at z = ", z_inj)
 
+        return self._inj_A * self._inj_shape
 
     def step(self, z, dz, state):
         rs = state['rs']
         Tm = state['Tm']
         xHII = state['xHII']
         xHeII = state['xHeII']
+        xHeIII = state.get('xHeIII', 0.0)
 
-        nH = phys.nH * rs ** 3
-        xe = xHII + xHeII
+        nH = phys.nH * rs ** 3 * 1 / u.cm**3
+        xe = xHII + xHeII + 2*xHeIII
         ne = xe * nH
 
         TCMB = phys.TCMB(rs)
@@ -324,17 +345,17 @@ class SoftPhotonHistory:
 
         xe_photon = x * (TCMB / Tm)
 
-        dt = phys.dtdz(rs) * dz
-        dtau = (c.sigma_T * ne * c.c * abs(dt)).value
+        dt = phys.dtdz(rs) * np.abs(dz) * u.s
+        dtau = (c.sigma_T.to(u.cm**2) * ne * c.c.to(u.cm / u.s) * abs(dt)).to(1).value
 
-        Lambda = get_Lambda_BR(z, x, Tm, xHII)
+        Lambda = get_Lambda_BR(z, x, Tm, xe)
 
         # Cheatsheet Eq. (7)
         Delta_tau_ff = Lambda * (1 - np.exp(-xe_photon)) / xe_photon ** 3 * dtau
 
         # --- Source term: S_ff + S_Y + S_inj, Eq. (4) ---
         DeltaS = (
-                get_S_ff_bb(z, x, Tm, xHII)
+                get_S_ff_bb(z, x, Tm, xe)
                 + get_S_Y(z, x, Tm)
                 + self.S_inj(z, x, Tm, state)  # <--- NEW
         )
