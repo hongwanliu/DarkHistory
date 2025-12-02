@@ -218,11 +218,14 @@ def dxe_dz(xe, T, n, rs, DM_switch=False, DM_args=None, f_suppress=False):
         dm_term = 0
     
     return (
-     - peebC * (
-         alpha * xe*xe*n
-         - 4 * beta_ion * (1-xe)
-         * np.exp(-phys.lya_eng/phys.TCMB(rs))
-     ) + dm_term
+        - peebC * (
+            alpha * xe*xe*n
+            - 4 * beta_ion * (1-xe)
+            * np.exp(-phys.lya_eng/phys.TCMB(rs))
+        ) + dm_term
+
+        # Collisional ionizations at high temperatures
+        # + (1-xe) * xe * n * phys.coll_ion_thermal_xsec(T)
     ) * phys.dtdz(rs)
 
 def dTm_dz(xe, xH2, T, n, dndt, rs, vir_switch=False, H2_cool_rate='new', DM_switch=False, DM_args=None, f_suppress=False):

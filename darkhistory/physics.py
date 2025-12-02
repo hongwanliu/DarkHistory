@@ -2089,6 +2089,28 @@ def coll_ion_sec_elec_spec(in_eng, eng, species=None, method='old'):
 
             # return low_eng_elec_N + high_eng_elec_N
 
+def coll_ion_thermal_xsec(Tm):
+    """ e- + H -> 2 e- + H+ collisional ionization cross section. 
+    Only significant when Tm >~ 13.6 eV.
+    Secondary electron spectrum is not implemented.
+
+    Parameters
+    ----------
+    Tm : float or ndarray
+        Electron temperature [eV]
+
+    Returns
+    -------
+    float or ndarray
+        collisional ionization cross section [cm^3/s]
+
+    Notes
+    -----
+    Expression from Bryce Cyr, closest reference we could find was 1503.04827.
+
+    """
+    Tm_K = Tm / kB
+    return 5.85e-11 * Tm_K**0.5 * np.exp(-rydberg/Tm) / (1 + (Tm_K**0.5/1e5))
 
 def elec_heating_engloss_rate(eng, xe, rs, method='old', Te = 0):
     r"""Electron energy loss rate of electrons due to Coulomb heating in eV s\ :sup:`-1`\ .

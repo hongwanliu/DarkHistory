@@ -410,6 +410,9 @@ def get_history(
 
                     # + (1 - 1.14*phys.peebles_C(xHII(yHII), rs)) * (
                     + f_exc_contribution
+
+                    # Collisional ionizations at high temperatures
+                    # + (1-xe) * xe * nH * phys.coll_ion_thermal_xsec(T_m) * phys.dtdz(rs)
                 )
             else:
                 peebC = phys.peebles_C(xHII(yHII), rs, fudge, gauss_fudge)
@@ -628,6 +631,9 @@ def get_history(
                     # Recombination.
                     - xHII(yHII) * ne * reion.alphaA_recomb('HII', T_m)
                 )
+
+                # Collisional ionizations at high temperatures
+                # + (1-xe) * xe * nH * phys.coll_ion_thermal_xsec(T_m) * phys.dtdz(rs)
             )
 
         def dyHeII_dz(yHII, yHeII, yHeIII, log_T_m, rs):
