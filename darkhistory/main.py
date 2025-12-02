@@ -1858,7 +1858,7 @@ def evolve_for_CLASS(
     repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
     repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
 
-    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
+    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1] + 2 * DH_data['x'][:,2])[::-1])
     repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
 
     # for i in range(int(repackaged.shape[0])):
