@@ -50,7 +50,7 @@ def evolve(
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
-    first_iter=True, init_distort=None, prev_output=None, 
+    first_iter=True, init_distort=None, prev_output=None,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
 ):
     """
@@ -266,7 +266,7 @@ def evolve(
     #####################################
     # Initialization for DM_process     #
     #####################################
-
+    #print(backreaction)
     # Load data.
     binning = load_data('binning',verbose=verbose)
     photeng = binning['phot']
@@ -1724,8 +1724,8 @@ def evolve_for_CLASS(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
-    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1, 
-    first_iter=True, init_distort_file=None, prev_output=None, 
+    cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
+    first_iter=True, init_distort_file=None, prev_output=None,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
@@ -1749,7 +1749,7 @@ def evolve_for_CLASS(
     # Make a copy of all the function arguments
     params = locals().copy()
     pars_save = params.copy() # because you can't pickle functions like struct_boost_func, which get passed to evolve
-
+    #print(reion_switch,backreaction)
     # Variable for naming files later
     if params['DM_process'] == 'decay':
         inj_param = params['lifetime']
@@ -1818,13 +1818,40 @@ def evolve_for_CLASS(
 
     repackaged = np.zeros((len(z_list),4))
     repackaged[:,0] = z_list
+    
+
+    if distort == True:
+            # Convert energies to GHz
+            eng = DH_data['distortion'].eng # eV
+            hplanck = phys.hbar * 2*np.pi
+            nu = eng/hplanck/1e9 # GHz
+
+            # Convert dNdE to spectral radiance
+            convert = phys.nB * eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4 # 1/eV to W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+            J = 1e26 * convert * DH_data['distortion'].dNdE # 10^-26 W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+
+            distortions = np.zeros((len(DH_data['distortion'].eng),2))
+            distortions[:,0] = nu
+            distortions[:,1] = J
+            fn = (
+                save_dir+file_name_str+'_distortions_CLASSformat.txt'
+            )
+            np.savetxt(
+                fn, distortions, header=f"{distortions.shape[0]:.0f}\n", comments=""
+            )
 
     # Fill in x_e and T_m
     repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
     repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
-
+    print( DH_data['rs'][::-1]-1,DH_data['x'][:,0][::-1],DH_data['x'][:,1][::-1])
     repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
     repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
+
+    # for i in range(int(repackaged.shape[0])):
+    #     distortions[0,i]= print(DH_data['distortion'].eng[i],DH_data['distortion'].dNdE[i])
+    #     distortions[1,i]= print(DH_data['distortion'].eng[i],DH_data['distortion'].dNdE[i])
+    # print(DH_data['distortions'].rs,DH_data['distortion'].eng,DH_data['distortion'].dNdE)
+    # repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['distortion'].eng, DH_data['Tm'][::-1])
 
     repackaged[late_inds,1] = 10**interp1d(
         np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),1]),
@@ -1841,18 +1868,19 @@ def evolve_for_CLASS(
     repackaged[:,3] = np.gradient(repackaged[:,2], 0.5)
 
     # Save data as text file
-#    fn = (
-#        save_dir+'/'
+    fn = (
+        save_dir+'/'
 #        +params['primary']+'_'+params['DM_process']
 #        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
 #        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
 #        +'_'+file_name_str+'_CLASSformat.txt'
-#    )
-#    np.savetxt(
-#        fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
-#    )
+        +file_name_str+'_CLASSformat.txt'
+    )
+    np.savetxt(
+        fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
+    )
 
-    print(f"{repackaged.shape[0]:.0f}\n")
-    for i in range(int(repackaged.shape[0])):
-        print("%f %f %f %f "%(repackaged[i,0],repackaged[i,1],repackaged[i,2],repackaged[i,3]))
-    return
+#    print(f"{repackaged.shape[0]:.0f}\n")
+#    for i in range(int(repackaged.shape[0])):
+#        print("%f %f %f %f "%(repackaged[i,0],repackaged[i,1],repackaged[i,2],repackaged[i,3]))
+#    return
