@@ -1876,24 +1876,28 @@ def evolve_for_CLASS(
         fill_value="extrapolate", bounds_error=False
         )(np.log10(1+repackaged[late_inds,0]))
 
+    # Do not allow extrapolated values to go above physical values
+    inds_to_fix = (repackaged[:,1] > 1 + 2*phys.chi)
+    repackaged[inds_to_fix,1] = 1 + 2*phys.chi
+
     repackaged[:,2] /= phys.kB # convert temperature to K
 
     # Redshift derivative of matter temp
     repackaged[:,3] = np.gradient(repackaged[:,2], 0.5)
 
     # Save data as text file
-#    fn = (
-#        save_dir+'/'
-#        +params['primary']+'_'+params['DM_process']
-#        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
-#        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
-#        +'_'+file_name_str+'_CLASSformat.txt'
-#    )
-#    np.savetxt(
-#        fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
-#    )
+    fn = (
+        save_dir+'/'
+        +params['primary']+'_'+params['DM_process']
+        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
+        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
+        +'_'+file_name_str+'_CLASSformat.txt'
+    )
+    np.savetxt(
+        fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
+    )
 
-    print(f"{repackaged.shape[0]:.0f}\n")
-    for i in range(int(repackaged.shape[0])):
-        print("%f %f %f %f "%(repackaged[i,0],repackaged[i,1],repackaged[i,2],repackaged[i,3]))
+#    print(f"{repackaged.shape[0]:.0f}\n")
+#    for i in range(int(repackaged.shape[0])):
+#        print("%f %f %f %f "%(repackaged[i,0],repackaged[i,1],repackaged[i,2],repackaged[i,3]))
     return
