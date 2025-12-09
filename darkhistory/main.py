@@ -1823,11 +1823,13 @@ def evolve_for_CLASS(
     # Repackage output in nice to read format
     # define redshift and data arrays
     dz = 0.5
-    z_list = np.arange(0,10000+2*dz,dz)
+    z_list = np.arange(0,start_rs)
+    # z_list = np.arange(0,10000+2*dz,dz)
 
-    early_inds = np.argwhere(1+z_list > start_rs)
+    # early_inds = np.argwhere(1+z_list > start_rs)
     late_inds = np.argwhere(1+z_list <= end_rs)
-    DH_inds = np.argwhere((1+z_list <= start_rs)*(1+z_list > end_rs))
+    DH_inds = np.argwhere(1+z_list > end_rs)
+    # DH_inds = np.argwhere((1+z_list <= start_rs)*(1+z_list > end_rs))
 
     repackaged = np.zeros((len(z_list),4))
     repackaged[:,0] = z_list
@@ -1855,8 +1857,8 @@ def evolve_for_CLASS(
         )
 
     # Fill in x_e and T_m
-    repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
-    repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
+    # repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
+    # repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
 
     repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1] + 2 * DH_data['x'][:,2])[::-1])
     repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
@@ -1888,10 +1890,11 @@ def evolve_for_CLASS(
     # Save data as text file
     fn = (
         save_dir+'/'
-        +params['primary']+'_'+params['DM_process']
-        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
-        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
-        +'_'+file_name_str+'_CLASSformat.txt'
+        # +params['primary']+'_'+params['DM_process']
+        # +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
+        # +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
+        # +'_'
+        +file_name_str+'_CLASSformat.txt'
     )
     np.savetxt(
         fn, repackaged, header=f"{repackaged.shape[0]:.0f}\n", comments=""
