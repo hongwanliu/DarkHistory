@@ -38,7 +38,7 @@ parser.add_argument("--helium_TLA", help="If True, the TLA is solved with helium
 parser.add_argument("--reion_switch", help="Reionization model included if True, default is False", type=bool, default=False) #action='store_true')
 parser.add_argument("--reion_rs", help="Redshift at which reionization effects turn on", type=float)
 parser.add_argument("--reion_method", help="Reionization model, options are {'Puchwein', 'early', 'middle', 'late'}", default='Puchwein')
-parser.add_argument("--heat_switch", help="If True, includes photoheating during reionization.", type=bool, default=False) #ction='store_true')
+parser.add_argument("--heat_switch", help="If True, includes photoheating during reionization.", type=bool, default=True) #ction='store_true')
 # parser.add_argument("--photoion_rate_func", help="", type=)
 # parser.add_argument("--photoheat_rate_func", help="", type=)
 # parser.add_argument("--xe_reion_func", help="", type=)
