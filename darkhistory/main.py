@@ -430,7 +430,8 @@ def evolve(
 
         # Default to baseline
         xH_init = phys.x_std(start_rs)
-        xHe_init = phys.x_std(start_rs, 'HeII')
+        xHeII_init = phys.x_std(start_rs, 'HeII')
+        xHeIII_init = 1e-12
 
         #xHeIII_init = phys.xHeII_std(start_rs)
         Tm_init = phys.Tm_std(start_rs)
@@ -439,7 +440,8 @@ def evolve(
 
         # User-specified.
         xH_init = init_cond[0]
-        xHe_init = init_cond[1]
+        xHeII_init = init_cond[1]
+        xHeIII_init = 1e-12
         Tm_init = init_cond[2]
 
     # Initialize redshift/timestep related quantities.
@@ -535,7 +537,7 @@ def evolve(
     #########################################################################
 
     # Initialize the arrays that will contain x and Tm results.
-    x_arr = np.array([[xH_init, xHe_init]])
+    x_arr = np.array([[xH_init, xHeII_init, xHeIII_init]])
     Tm_arr = np.array([Tm_init])
 
     # Initialize Spectra objects to contain all of the output spectra.
@@ -552,7 +554,7 @@ def evolve(
     append_distort_spec = out_distort_specs.append
 
     # Initialize arrays to store f values.
-    f_c = np.empty((0, 7))
+    f_c = np.empty((0, 8))
 
     if distort:
 
@@ -570,12 +572,13 @@ def evolve(
             distortion = Spectrum(
                 dist_eng, np.zeros_like(dist_eng), rs=1, spec_type='N'
             )
-        # Otherwise, ensure the binning, redshift, and spec_type is correct
+        # Otherwise, use given initial distortion
         else:
-            distortion = init_distort
-            distortion.rebin(dist_eng)
-            distortion.redshift(start_rs)
+            dNdE_interp = interp1d(init_distort.eng, init_distort.dNdE, bounds_error=False, fill_value=(0,0))
+            distortion = discretize(dist_eng, dNdE_interp)
+            distortion.rs = 1
             distortion.switch_spec_type('N')
+
 
         # for masking out n-1 line photons and E>rydberg photons
         dist_mask = np.ones_like(dist_eng)
@@ -655,6 +658,8 @@ def evolve(
                 x_arr[-1, 0] = 1-10**(-4.4)
             if x_arr[-1, 1] == phys.chi:
                 x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
+            if x_arr[-1, 2] == phys.chi:
+                x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
         else:
             # If the universe becomes fully ionized, offset slightly
             # to prevent numerical issues.
@@ -662,10 +667,12 @@ def evolve(
                 x_arr[-1, 0] = 1-10**(-12.)
             if x_arr[-1, 1] == phys.chi:
                 x_arr[-1, 1] = phys.chi*(1 - 10**(-12.))
+            if x_arr[-1, 2] == phys.chi:
+                x_arr[-1, 1] = phys.chi*(1 - 10**(-4.4))
 
         # Ionized Fractions
         x_at_rs = np.array([1. - x_arr[-1, 0],
-                            phys.chi - x_arr[-1, 1],
+                            phys.chi - x_arr[-1, 1] - x_arr[-1, 2],
                             x_arr[-1, 1]])
 
         # Electrons in this step, which are comprised of those:
@@ -830,17 +837,22 @@ def evolve(
                         return 0
 
                 x_1s = 1-x_arr[-1, 0]
+
                 # resonant photons are absorbed when passed through the
                 # following function - keep a copy of the unperturbed spectrum
                 # in_distortion = distortion.copy()
                 if rs == start_rs and init_distort is not None:
                     streaming_lowengphot = init_distort
-                    streaming_lowengphot.rebin(dist_eng)
-                    streaming_lowengphot.redshift(rs)
-                    streaming_lowengphot.switch_spec_type('N')
+                    streaming_lowengphot.redshift(rs) # Redshift spectrum from 1+z=0 to rs of loop
                 else:
                     streaming_lowengphot = lowengphot_spec_at_rs.copy()
-                    streaming_lowengphot.rebin(dist_eng)
+
+                # Usually taking a smooth spectrum from coarse -> fine binning, so use discretize()
+                # Then ensure that redshift/spec_type is correct
+                dNdE_interp = interp1d(streaming_lowengphot.eng, streaming_lowengphot.dNdE, bounds_error=False, fill_value=(0,0))
+                streaming_lowengphot = discretize(dist_eng, dNdE_interp)
+                streaming_lowengphot.rs = rs
+                streaming_lowengphot.switch_spec_type('N')
 
                 # Absorb excitation photons and electron collision energy
                 if fexc_switch:
@@ -871,7 +883,7 @@ def evolve(
                 # Find the effective contribution dxe/dz from 1) distortions
                 # affecting the recombination/photoionization and 2) DM excitations.
 
-                xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1])
+                xHI_at_rs, xHeI_at_rs, xHeII_at_rs = (1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1] - x_arr[-1, 2], x_arr[-1, 1])
                 xHII_at_rs = 1. - xHI_at_rs
                 T_m = Tm_arr[-1]
 
@@ -879,8 +891,8 @@ def evolve(
                 beta_ion = phys.beta_ion(phys.TCMB(rs), 'HI', fudge)
                 alpha = phys.alpha_recomb(T_m, 'HI', fudge)
 
-                dxe_dt_std = -peebC * (
-                    alpha * xHII_at_rs **2 * phys.nH * rs**3
+                dxHII_dt_std = -peebC * (
+                    alpha * xHII_at_rs * (xHII_at_rs+xHeII_at_rs) * phys.nH * rs**3
                     - 4 * beta_ion * xHI_at_rs * np.exp(-phys.lya_eng/phys.TCMB(rs))
                 )
 
@@ -888,14 +900,13 @@ def evolve(
                 beta_MLA_at_rs  = MLA_step[1]
                 beta_DM_at_rs   = MLA_step[2]
 
-                dxe_dt_MLA = (
-                    - alpha_MLA_at_rs * xHII_at_rs**2 * phys.nH * rs **3
+                dxHII_dt_MLA = (
+                    - alpha_MLA_at_rs * xHII_at_rs * (xHII_at_rs+xHeII_at_rs) * phys.nH * rs**3
                     + beta_MLA_at_rs * xHI_at_rs
-                    + beta_DM_at_rs
+                    # + beta_DM_at_rs
                 )
-
-                dxe_dt_exc = dxe_dt_MLA - dxe_dt_std
-
+                dxHII_dt_exc = beta_DM_at_rs
+                dxHII_dt_diff = dxHII_dt_MLA - dxHII_dt_std
 
                 MLA_data[0].append(rs)
 
@@ -975,7 +986,7 @@ def evolve(
             # Use the previous values with backreaction, or if we are using
             # the HeII method after the reionization redshift.
             x_vec_for_f = np.array(
-                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1], x_arr[-1, 1]]
+                [1. - x_arr[-1, 0], phys.chi - x_arr[-1, 1] - x_arr[-1, 2], x_arr[-1, 1]]
             )
         else:
             # Use baseline values if no backreaction.
@@ -1023,7 +1034,6 @@ def evolve(
             }
 
         elif elec_method == 'eff':
-
             # High-energy deposition from input electrons,
             # but Lya is calculated
             # from the impact of distortions on xe_dot.
@@ -1032,12 +1042,10 @@ def evolve(
                 'H ion': highengdep_at_rs[0] * norm,
                 'He ion': deposited_He_ion/dt * norm,
                 'Lya': highengdep_at_rs[1] * norm,
-                'exc': dxe_dt_exc * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs),
                 'heat': highengdep_at_rs[2] * norm,
                 'cont': highengdep_at_rs[3] * norm,
                 'err': deposited_err/dt * norm
             }
-
 
         else:
             input_spec = lowengelec_spec_at_rs+ionized_elec
@@ -1082,9 +1090,11 @@ def evolve(
         f_He_ion = f_phot['HeI ion'] + f_phot['HeII ion'] + f_elec['He ion']
         f_Lya = f_phot['H exc'] + f_elec['Lya']
         if elec_method == 'eff':
-            f_exc = f_elec['exc']
+            f_exc = (dxHII_dt_exc * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs)) # / (1-peebC)
+            f_diff = (dxHII_dt_diff * phys.lya_eng * phys.nH * rs**3 / rate_func_eng(rs)) # / (1-peebC)
         else:
             f_exc = 0.
+            f_diff = 0.
 
         f_heat = f_elec['heat']
         # Including f_elec['cont'] here would be double-counting.
@@ -1153,7 +1163,7 @@ def evolve(
         # Save the f_c(z) values.
         f_c = np.concatenate((
             f_c,
-            [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err, f_exc]]
+            [[f_H_ion, f_He_ion, f_Lya, f_heat, f_cont, f_err, f_exc, f_diff]]
         ))
 
         # Now that we have f's, calculate the distortion contribution
@@ -1162,7 +1172,7 @@ def evolve(
             streaming_lowengphot.N += atomic_dist_spec.N
 
             # Add heating contribution to the distortion from this step
-            xe = x_arr[-1, 0] + x_arr[-1, 1] # not including HeIII
+            xe = x_arr[-1, 0] + x_arr[-1, 1] + 2 * x_arr[-1, 2] # not including HeIII
             J = 8 * phys.thomson_xsec * (4 * phys.stefboltz / phys.c) * phys.TCMB(rs)**4 * xe * phys.c / 3 / (1 + phys.chi + xe) / phys.me / phys.hubble(rs)
             J_cond = 100
             if J < J_cond:
@@ -1203,7 +1213,7 @@ def evolve(
         # Initial conditions for the TLA, (Tm, xHII, xHeII, xHeIII).
         # This is simply the last set of these variables.
         init_cond_TLA = np.array(
-            [Tm_arr[-1], x_arr[-1, 0], x_arr[-1, 1], 0]
+            [Tm_arr[-1], x_arr[-1, 0], x_arr[-1, 1], x_arr[-1, 2]]
         )
 
         if(np.any(np.isnan(init_cond_TLA))):
@@ -1330,12 +1340,12 @@ def evolve(
             if helium_TLA:
                 # Append the calculated xHe to x_arr.
                 x_arr = np.append(
-                        x_arr,  [[new_vals[-1, 1], new_vals[-1, 2]]], axis=0
+                        x_arr,  [[new_vals[-1, 1], new_vals[-1, 2], new_vals[-1, 3]]], axis=0
                     )
             else:
                 # Append the baseline solution value.
                 x_arr = np.append(
-                    x_arr, [[new_vals[-1, 1], phys.x_std(next_rs, 'HeII')]], axis=0
+                    x_arr, [[new_vals[-1, 1], phys.x_std(next_rs, 'HeII'), 1e-12]], axis=0
                 )
 
         # Re-define existing variables.
@@ -1360,7 +1370,8 @@ def evolve(
         'heat':   f_c[:, 3],
         'cont':   f_c[:, 4],
         'err':    f_c[:, 5],
-        'eff_exc':    f_c[:, 6]
+        'eff_exc':    f_c[:, 6],
+        'diff':    f_c[:, 7]
     }
 
     # Redshift the distortion to today
@@ -1768,7 +1779,7 @@ def evolve_for_CLASS(
 
         # Convert frequency to energy
         hplanck = phys.hbar * 2*np.pi
-        dist_eng = init_dist_arr[:,1] * 1e9 * hplanck
+        dist_eng = init_dist_arr[:,0] * phys.TCMB(start_rs) # init_dist_arr[:,1] * 1e9 * hplanck
 
         # Convert spectrum to dNdE
         convert = phys.nB * dist_eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4
@@ -1776,14 +1787,16 @@ def evolve_for_CLASS(
 
         # CLASS binning is relatively coarse
         # For smooth initial distortion, interpolate so that we don't have rebinning artifacts
-        fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
         init_dist_interp = interp1d(dist_eng, dist_dNdE, bounds_error=False, fill_value=(0,0))
 
-        params['init_distort'] = Spectrum(
-            fine_eng, # change from nu in GHz to eV
-            init_dist_interp(fine_eng), # change from 10^-26 W m^-2 Hz^-1 sr^-1 to dNdE
-            rs=1, spec_type='dNdE'
-        )
+        params['init_distort'] = Spectrum(dist_eng, dist_dNdE, rs=start_rs, spec_type='dNdE')
+        # fine_eng = np.exp(np.linspace(np.log(hplanck*1e8), np.log(phys.rydberg), 2000))
+        # discretize(fine_eng, init_dist_interp)
+        # Spectrum(
+        #     fine_eng, # change from nu in GHz to eV
+        #     init_dist_interp(fine_eng), # change from 10^-26 W m^-2 Hz^-1 sr^-1 to dNdE
+        #     rs=1, spec_type='dNdE'
+        # )
 
     # Pop the arguments that are not taken by evolve()
     save_dir = params.pop('save_dir')
@@ -1818,7 +1831,7 @@ def evolve_for_CLASS(
 
     repackaged = np.zeros((len(z_list),4))
     repackaged[:,0] = z_list
-    
+
 
     if distort == True:
             # Convert energies to GHz
@@ -1840,11 +1853,33 @@ def evolve_for_CLASS(
                 fn, distortions, header=f"{distortions.shape[0]:.0f}\n", comments=""
             )
 
+    #
+    # if distort == True:
+    #     # Convert energies to GHz
+    #     eng = DH_data['distortion'].eng # eV
+    #     hplanck = phys.hbar * 2*np.pi
+    #     # nu = eng/hplanck/1e9 # GHz
+    #     x = eng / phys.TCMB(1)
+    #
+    #     # Convert dNdE to spectral radiance
+    #     convert = phys.nB * eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4 # 1/eV to W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+    #     J = 1e26 * convert * DH_data['distortion'].dNdE # 10^-26 W m$^{-2}$ Hz$^{-1}$ sr$^{-1}$
+    #
+    #     distortions = np.zeros((len(DH_data['distortion'].eng),2))
+    #     distortions[:,0] = x #nu
+    #     distortions[:,1] = J
+    #     fn = (
+    #         save_dir+file_name_str+'_distortions_CLASSformat.txt'
+    #     )
+    #     np.savetxt(
+    #         fn, distortions, header=f"{distortions.shape[0]:.0f}\n", comments=""
+    #     )
+
     # Fill in x_e and T_m
     repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
     repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
-    print( DH_data['rs'][::-1]-1,DH_data['x'][:,0][::-1],DH_data['x'][:,1][::-1])
-    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1])[::-1])
+
+    repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1] + 2 * DH_data['x'][:,2])[::-1])
     repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
 
     # for i in range(int(repackaged.shape[0])):
