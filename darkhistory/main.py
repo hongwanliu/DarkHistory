@@ -1823,11 +1823,10 @@ def evolve_for_CLASS(
     # Repackage output in nice to read format
     # define redshift and data arrays
     dz = 0.5
-    z_list = np.arange(0,10000+2*dz,dz)
+    z_list = np.arange(0,start_rs)
 
-    early_inds = np.argwhere(1+z_list > start_rs)
-    late_inds = np.argwhere(1+z_list <= end_rs)
-    DH_inds = np.argwhere((1+z_list <= start_rs)*(1+z_list > end_rs))
+    late_inds = np.argwhere(1+z_list < end_rs)
+    DH_inds = np.argwhere(1+z_list >= end_rs)
 
     repackaged = np.zeros((len(z_list),4))
     repackaged[:,0] = z_list
@@ -1876,9 +1875,6 @@ def evolve_for_CLASS(
     #     )
 
     # Fill in x_e and T_m
-    repackaged[early_inds,1] = phys.x_std(1+repackaged[early_inds,0]) + phys.x_std(1+repackaged[early_inds,0], species='HeII')
-    repackaged[early_inds,2] = phys.Tm_std(1+repackaged[early_inds,0])
-
     repackaged[DH_inds,1] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, (DH_data['x'][:,0] + DH_data['x'][:,1] + 2 * DH_data['x'][:,2])[::-1])
     repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['rs'][::-1]-1, DH_data['Tm'][::-1])
 
@@ -1889,13 +1885,17 @@ def evolve_for_CLASS(
     # repackaged[DH_inds,2] = np.interp(repackaged[DH_inds,0], DH_data['distortion'].eng, DH_data['Tm'][::-1])
 
     repackaged[late_inds,1] = 10**interp1d(
-        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),1]),
+        np.log10(1+repackaged[DH_inds.flatten(),0]), np.log10(repackaged[DH_inds.flatten(),1]),
         fill_value="extrapolate", bounds_error=False
         )(np.log10(1+repackaged[late_inds,0]))
     repackaged[late_inds,2] = 10**interp1d(
-        np.log10(1+repackaged[DH_inds[:2].flatten(),0]), np.log10(repackaged[DH_inds[:2].flatten(),2]),
+        np.log10(1+repackaged[DH_inds.flatten(),0]), np.log10(repackaged[DH_inds.flatten(),2]),
         fill_value="extrapolate", bounds_error=False
         )(np.log10(1+repackaged[late_inds,0]))
+
+    # Do not allow extrapolated values to go above physical values
+    inds_to_fix = (repackaged[:,1] > 1 + 2*phys.chi)
+    repackaged[inds_to_fix,1] = 1 + 2*phys.chi
 
     repackaged[:,2] /= phys.kB # convert temperature to K
 
@@ -1905,10 +1905,10 @@ def evolve_for_CLASS(
     # Save data as text file
     fn = (
         save_dir+'/'
-#        +params['primary']+'_'+params['DM_process']
-#        +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
-#        +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
-#        +'_'+file_name_str+'_CLASSformat.txt'
+        # +params['primary']+'_'+params['DM_process']
+        # +'_'+'log10mDM_'+'{0:2.4f}'.format(np.log10(params['mDM']))
+        # +'_'+'log10param_'+'{0:2.4f}'.format(np.log10(inj_param))
+        # +'_'
         +file_name_str+'_CLASSformat.txt'
     )
     np.savetxt(
@@ -1918,4 +1918,4 @@ def evolve_for_CLASS(
 #    print(f"{repackaged.shape[0]:.0f}\n")
 #    for i in range(int(repackaged.shape[0])):
 #        print("%f %f %f %f "%(repackaged[i,0],repackaged[i,1],repackaged[i,2],repackaged[i,3]))
-#    return
+    return

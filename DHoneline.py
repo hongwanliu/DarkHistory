@@ -43,13 +43,13 @@ parser.add_argument("--end_rs", help="Final redshift to evolve to. Default is 4.
 
 # Cosmology choices
 parser.add_argument("--struct_boost", help="Structure formation boost factor. Currently implemented models are {'einasto_subs', 'einasto_no_subs', 'NFW_subs', 'NFW_no_subs', 'erfc', 'pwave_NFW_no_subs'}, see phys.struct_boost_func for details.")
-parser.add_argument("--helium_TLA", help="If True, the TLA is solved with helium. Default is False.", type=str2bool, default=False) #action='store_true')
+parser.add_argument("--helium_TLA", help="If True, the TLA is solved with helium. Default is True.", type=bool, default=True) #action='store_true')
 
 # Reionization
 parser.add_argument("--reion_switch", help="Reionization model included if True, default is False", type=str2bool, default=False) #action='store_true')
 parser.add_argument("--reion_rs", help="Redshift at which reionization effects turn on", type=float)
 parser.add_argument("--reion_method", help="Reionization model, options are {'Puchwein', 'early', 'middle', 'late'}", default='Puchwein')
-parser.add_argument("--heat_switch", help="If True, includes photoheating during reionization.", type=str2bool, default=False) #ction='store_true')
+parser.add_argument("--heat_switch", help="If True, includes photoheating during reionization.", type=bool, default=True) #ction='store_true')
 # parser.add_argument("--photoion_rate_func", help="", type=)
 # parser.add_argument("--photoheat_rate_func", help="", type=)
 # parser.add_argument("--xe_reion_func", help="", type=)
