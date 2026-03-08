@@ -547,6 +547,7 @@ def evolve(
     out_lowengelec_specs = Spectra([], spec_type='N')
     out_distort_specs = Spectra([], spec_type='N')
     out_distort_y_specs = Spectra([], spec_type='N')
+    out_distort_nony_specs = Spectra([], spec_type='N')
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
@@ -554,6 +555,7 @@ def evolve(
     append_lowengelec_spec = out_lowengelec_specs.append
     append_distort_spec = out_distort_specs.append
     append_distort_y_spec = out_distort_y_specs.append
+    append_distort_nony_spec = out_distort_nony_specs.append
 
     # Initialize arrays to store f values.
     f_c = np.empty((0, 8))
@@ -849,6 +851,7 @@ def evolve(
                 else:
                     streaming_lowengphot = lowengphot_spec_at_rs.copy()
                 distortion_y_at_rs = Spectrum(dist_eng, np.zeros_like(dist_eng), rs=rs, spec_type='N')
+                distortion_nony_at_rs = Spectrum(dist_eng, np.zeros_like(dist_eng), rs=rs, spec_type='N')
 
                 # Usually taking a smooth spectrum from coarse -> fine binning, so use discretize()
                 # Then ensure that redshift/spec_type is correct
@@ -1188,11 +1191,14 @@ def evolve(
             dydz = TmTr * phys.thomson_xsec * xe * phys.nH * rs**3 * phys.c / phys.me / rs / phys.hubble(rs)
             y = dydz * (rs * (1 - np.exp(-dlnz * coarsen_factor)))
             y_heat_spec = phys.ymu_distortion(dist_eng, y, rs, 'y')
+
+            distortion_nony_at_rs.N += streaming_lowengphot.N # save non-y contributions before modifying streaming_lowengphot
             streaming_lowengphot.N += y_heat_spec.N
             distortion_y_at_rs.N += y_heat_spec.N
 
             append_distort_spec(streaming_lowengphot)
             append_distort_y_spec(distortion_y_at_rs)
+            append_distort_nony_spec(distortion_nony_at_rs)
 
             # Total distortion at this step
             tmp_distortion = out_distort_specs.copy()
@@ -1203,6 +1209,9 @@ def evolve(
             tmp_distortion.redshift(rs)
             distortion_y = tmp_distortion.sum_specs()
 
+            tmp_distortion = out_distort_nony_specs.copy()
+            tmp_distortion.redshift(rs)
+            distortion_nony = tmp_distortion.sum_specs()
 
         #####################################################################
         #####################################################################
@@ -1386,6 +1395,8 @@ def evolve(
     # Redshift the distortion to today
     if distort:
         distortion.redshift(1)
+        distortion_y.redshift(1)
+        distortion_nony.redshift(1)
 
     data = {
         'rs': out_highengphot_specs.rs,
@@ -1397,6 +1408,7 @@ def evolve(
         'distortion': distortion,
         'distortions_y': out_distort_y_specs,
         'distortion_y': distortion_y,
+        'distortion_nony': distortion_nony,
         'f': f
     }
 
