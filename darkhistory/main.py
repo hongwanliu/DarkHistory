@@ -546,12 +546,14 @@ def evolve(
     out_lowengphot_specs = Spectra([], spec_type='N')
     out_lowengelec_specs = Spectra([], spec_type='N')
     out_distort_specs = Spectra([], spec_type='N')
+    out_distort_y_specs = Spectra([], spec_type='N')
 
     # Define these methods for speed.
     append_highengphot_spec = out_highengphot_specs.append
     append_lowengphot_spec = out_lowengphot_specs.append
     append_lowengelec_spec = out_lowengelec_specs.append
     append_distort_spec = out_distort_specs.append
+    append_distort_y_spec = out_distort_y_specs.append
 
     # Initialize arrays to store f values.
     f_c = np.empty((0, 8))
@@ -846,6 +848,7 @@ def evolve(
                     streaming_lowengphot.redshift(rs) # Redshift spectrum from 1+z=0 to rs of loop
                 else:
                     streaming_lowengphot = lowengphot_spec_at_rs.copy()
+                distortion_y_at_rs = Spectrum(dist_eng, np.zeros_like(dist_eng), rs=rs, spec_type='N')
 
                 # Usually taking a smooth spectrum from coarse -> fine binning, so use discretize()
                 # Then ensure that redshift/spec_type is correct
@@ -1186,13 +1189,19 @@ def evolve(
             y = dydz * (rs * (1 - np.exp(-dlnz * coarsen_factor)))
             y_heat_spec = phys.ymu_distortion(dist_eng, y, rs, 'y')
             streaming_lowengphot.N += y_heat_spec.N
+            distortion_y_at_rs.N += y_heat_spec.N
 
             append_distort_spec(streaming_lowengphot)
+            append_distort_y_spec(distortion_y_at_rs)
 
             # Total distortion at this step
             tmp_distortion = out_distort_specs.copy()
             tmp_distortion.redshift(rs)
             distortion = tmp_distortion.sum_specs()
+
+            tmp_distortion = out_distort_y_specs.copy()
+            tmp_distortion.redshift(rs)
+            distortion_y = tmp_distortion.sum_specs()
 
 
         #####################################################################
@@ -1386,6 +1395,8 @@ def evolve(
         'lowengelec': out_lowengelec_specs,
         'distortions': out_distort_specs,
         'distortion': distortion,
+        'distortions_y': out_distort_y_specs,
+        'distortion_y': distortion_y,
         'f': f
     }
 
