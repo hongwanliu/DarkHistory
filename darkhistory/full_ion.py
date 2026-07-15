@@ -5,6 +5,7 @@ from copy import copy, deepcopy
 from tqdm import tqdm_notebook as tqdm
 
 import h5py
+import darkhistory.main as main
 import darkhistory.config as config
 import darkhistory.physics as phys
 from darkhistory.physics import ymu_distortion
@@ -12,7 +13,7 @@ from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
 from darkhistory.spec.spectools import rebin_N_arr, get_log_bin_width
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
-import wq_ih_comptonscattering as CS
+from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
 import matplotlib.pyplot as plt
 
@@ -26,10 +27,13 @@ def save_h5_dict(fn, d):
             hf.create_dataset(key, data=item)
 
 ### FOR OBTAINING THE LOW REDSHIFT EVOLUTION OF A GIVEN ENERGY INJECTION MODEL
-def evolve_elecdecay_at_lowz(
-    mDM, lifetime=None, sigmav=None, start_rs=4.0, end_rs=1.0, dlnz=0.008,
-    save_dir=None, verbose=True, include_heating=True, tworegime=True,
-    include_photoion=False, include_PP=False, include_positrons=False
+def evolve_elec_at_lowz(
+    mDM, DM_process='decay', lifetime=None, sigmav=None, 
+    start_rs=4.0, end_rs=1.0, dlnz=0.008,
+    save_dir=None, verbose=True, tworegime=True,
+    include_heating=True, single_step_inj=False,
+    include_photoion=False, include_PP=False, include_positrons=False,
+    fine_tf=False
 ):
     """
     Main function computing spectra due to injection of e+e- pairs from decaying dark matter.
@@ -71,8 +75,8 @@ def evolve_elecdecay_at_lowz(
     except:
         if verbose:
             print("Compton scattering tables not found. Building them now...")
-        eng_phot = 10**(np.linspace(-8, 12, 500))
-        eng_elec = np.logspace(3, 12, num=100)
+        eng_phot = np.logspace(np.log10(phys.hbar*2*np.pi*1e8), 12, 500)
+        eng_elec = np.logspace(0, 12, num=150)
         cs_phot_matrix, cs_elec_matrix = build_CS_tables(eng_phot, eng_elec)
         if verbose:
             print("...done!")
@@ -96,9 +100,14 @@ def evolve_elecdecay_at_lowz(
 
     # Electron kinetic energy transfer function
     try:
+        if fine_tf:
+            tf_extension='_superfine'
+        else:
+            tf_extension=''
+
         transfer_Ee = get_electron_tf(
             regenerate=False, save_dir=save_dir, file_name='eng_elec_tf', 
-            interpolated=True, tworegime=tworegime
+            interpolated=True, tworegime=tworegime, tf_extension=tf_extension
         )
     except:
         if verbose:
@@ -108,9 +117,13 @@ def evolve_elecdecay_at_lowz(
             regenerate=True, interpolated=True, tworegime=tworegime,
             save_dir=save_dir, file_name='eng_elec_tf', save_file=True,
             rs_high=10, rs_low=1, rs_steps=50,
-            logE_low=3, logE_fast=8, logE_high=12, 
+            logE_low=0, logE_fast=8, logE_high=12, 
             logE_steps=25, logE_steps_slow=25, logE_steps_fast=25, 
-            dlnz_steps=int(3e4), dlnz_steps_slow=int(1000), dlnz_steps_fast=int(3e4)
+            dlnz_steps=int(3e4), dlnz_steps_slow=int(1000), dlnz_steps_fast=int(6e4)
+            ### WQ: DIFFERENT PARAMETERS TO CHECK AGREEMENT AT 9 < 1+z < 10
+            # logE_low=0, logE_fast=6, logE_high=12, 
+            # logE_steps_slow=20, logE_steps_fast=30, 
+            # dlnz_steps_slow=int(1000), dlnz_steps_fast=int(1e6)
         )
         if verbose:
             print("...done!")
@@ -125,9 +138,15 @@ def evolve_elecdecay_at_lowz(
     # First loop is over each electron injection
     if verbose:
         print("Starting main calculation...")
-    for ind_inj, rs_inj in enumerate(tqdm(rs_list)):
+
+    if single_step_inj:
+        inj_rs_list = np.array([start_rs])
+    else:
+        inj_rs_list = rs_list
+
+    for ind_inj, rs_inj in enumerate(tqdm(inj_rs_list)):
         # Deposition only happens at subsequent redshifts
-        dep_rs_list = rs_list[rs_list <= rs_inj]
+        dep_rs_list = rs_list[ind_inj:] # [rs_list <= rs_inj]
 
         # Create spectra for tracking deposition due to cascade of this injection step
         sec_phot_spec = Spectrum(eng_phot, np.zeros(len(eng_phot)), rs=rs_inj, spec_type='N')
@@ -135,11 +154,18 @@ def evolve_elecdecay_at_lowz(
 
         # Calculate the electrons injected per baryon at this step
         dt_inj = dlnz / phys.hubble(rs_inj)
-        ne_inj = (
-            2 * dt_inj / mDM * phys.inj_rate(
-                'decay', rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
-            ) 
-        ) / (phys.nB * rs_inj**3)
+        if DM_process == 'decay':
+            ne_inj = (
+                2 * dt_inj / mDM * phys.inj_rate(
+                    DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
+                ) 
+            ) / (phys.nB * rs_inj**3)
+        else:
+            ne_inj = (
+                dt_inj / mDM * phys.inj_rate(
+                    DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
+                ) 
+            ) / (phys.nB * rs_inj**3)
 
         # Use transfer function to get evolution of electron energy
         pts_grid = np.meshgrid([rs_inj], [Ee_init], dep_rs_list, indexing='ij')
@@ -148,12 +174,25 @@ def evolve_elecdecay_at_lowz(
 
         # Add heating (per baryon) from these electrons
         if include_heating:
-            heat_rate_list[ind_inj:] += ne_inj * phys.elec_heating_engloss_rate(Ee_history, 1, dep_rs_list) # [eV/s]
+            dt_dep_arr = dlnz / phys.hubble(dep_rs_list)
+            Ee_prev_history = np.concatenate([[Ee_init], Ee_history[:-1]])
+            zero_mask_hist = (Ee_history == 0)
+            heat_rates_hist = np.where(
+                zero_mask_hist,
+                np.where(Ee_prev_history > 0, Ee_prev_history / dt_dep_arr, 0.0),
+                np.nan_to_num(
+                    phys.elec_heating_engloss_rate(Ee_history, 1+2*phys.chi, dep_rs_list),
+                    nan=0.0, posinf=0.0, neginf=0.0
+                )
+            )
+            heat_rate_list[ind_inj:] += ne_inj * heat_rates_hist  # [eV/s]
 
         # Find indices of electron spectrum corresponding to Ee_history
         # Add ne_inj to corresponding bins
         inds_rs = np.arange(ind_inj, ind_inj+len(dep_rs_list))
-        inds_Ee = np.digitize(Ee_history, eng_elec)
+        # inds_Ee = np.digitize(Ee_history, eng_elec)
+        inds_Ee = np.clip(np.digitize(Ee_history, eng_elec), 0, len(eng_elec) - 1)
+
         if rs_inj > end_rs:
             elec_spec_at_rs[inds_rs,inds_Ee] += ne_inj
             sec_elec_spec[range(len(dep_rs_list)), inds_Ee] += ne_inj
@@ -210,7 +249,7 @@ def evolve_elecdecay_at_lowz(
                     # Use fast relativistic ICS secondary expression
                     # and sum over finer transfer function/time steps
                     for rf, rsf in enumerate(rs_fine):
-                        temp_N = CS.ICS_spectrum_scaled(
+                        temp_N = ICS_spectrum_scaled(
                             rsf, 1 + Ee_fine[rf] / phys.me, eng_phot
                         ) * ne_bins_sub[nonzero_ee_high[ef]] * dt_fine[rf] * bw_phot
                         N_phot_new[nonzero_ee_high[ef]] += temp_N
@@ -243,6 +282,7 @@ def evolve_elecdecay_at_lowz(
                         nonzero_PP = np.where(valid_PP)[0]
                         Ee_PP_vals = eng_elec[nonzero_PP]   # energies on photon grid, shifted by rydberg
                         Ne_PP_vals = Ne_PP_total[nonzero_PP]   # counts per baryon
+                        Ee_prev_PP = Ee_PP_vals.copy()
 
                         for ff, rs_fut in enumerate(dep_rs_future):
                             abs_idx =ind_inj + ind_dep + 1 + ff
@@ -255,7 +295,18 @@ def evolve_elecdecay_at_lowz(
                             Ee_PP_future = transfer_Ee(pts_PP)
 
                             if include_heating:
-                                heat_rate_list[abs_idx] += np.sum(Ne_PP_vals * phys.elec_heating_engloss_rate(Ee_PP_future, 1, rs_fut))
+                                dt_fut = dlnz / phys.hubble(rs_fut)
+                                zero_mask_PP = (Ee_PP_future == 0)
+                                heat_rates_PP = np.where(
+                                    zero_mask_PP,
+                                    np.where(Ee_prev_PP > 0, Ee_prev_PP / dt_fut, 0.0),
+                                    np.nan_to_num(
+                                        phys.elec_heating_engloss_rate(Ee_PP_future, 1+2*phys.chi, rs_fut),
+                                        nan=0.0, posinf=0.0, neginf=0.0
+                                    )
+                                )
+                                heat_rate_list[abs_idx] += np.sum(Ne_PP_vals * heat_rates_PP)
+                            Ee_prev_PP = Ee_PP_future.copy()
 
                             inds_PP_ff = np.digitize(Ee_PP_future, eng_elec)
                             inds_PP_ff[inds_PP_ff == len(eng_elec)] = 0
@@ -277,6 +328,7 @@ def evolve_elecdecay_at_lowz(
                         nonzero_photo = np.where(valid_photo)[0]
                         Ee_photo_vals = Ee_photoion[nonzero_photo]   # energies on photon grid, shifted by rydberg
                         Ne_photo_vals = Ne_photoion[nonzero_photo]   # counts per baryon
+                        Ee_prev_photo = Ee_photo_vals.copy()
 
                         for ff, rs_fut in enumerate(dep_rs_future):
                             abs_idx =ind_inj + ind_dep + 1 + ff
@@ -289,7 +341,18 @@ def evolve_elecdecay_at_lowz(
                             Ee_photo_future = transfer_Ee(pts_photo)
 
                             if include_heating:
-                                heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * phys.elec_heating_engloss_rate(Ee_photo_future, 1, rs_fut))
+                                dt_fut = dlnz / phys.hubble(rs_fut)
+                                zero_mask_photo = (Ee_photo_future == 0)
+                                heat_rates_photo = np.where(
+                                    zero_mask_photo,
+                                    np.where(Ee_prev_photo > 0, Ee_prev_photo / dt_fut, 0.0),
+                                    np.nan_to_num(
+                                        phys.elec_heating_engloss_rate(Ee_photo_future, 1+2*phys.chi, rs_fut),
+                                        nan=0.0, posinf=0.0, neginf=0.0
+                                    )
+                                )
+                                heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * heat_rates_photo)
+                            Ee_prev_photo = Ee_photo_future.copy()
 
                             inds_photo_ff = np.digitize(Ee_photo_future, eng_elec)
                             inds_photo_ff[inds_photo_ff == len(eng_elec)] = 0
@@ -310,6 +373,7 @@ def evolve_elecdecay_at_lowz(
                 if len(dep_rs_future) > 0 and np.any(sec_elec_ICS > 0):
                     nonzero_sec  = np.where(sec_elec_ICS > 1e-40)[0]
                     Ee_secondary = eng_elec[nonzero_sec]
+                    Ee_prev_sec = Ee_secondary.copy()
 
                     for ind_fut, rs_fut in enumerate(dep_rs_future):
                         abs_idx =ind_inj + ind_dep + 1 + ind_fut
@@ -320,14 +384,23 @@ def evolve_elecdecay_at_lowz(
                             np.full(len(nonzero_sec), rs_fut)
                         ])
                         Ee_future = transfer_Ee(pts)
-                        finite_mask = Ee_future > 1e-6
 
                         # Add heat from secondary electrons
                         if include_heating:
-                            heat_rate_list[abs_idx] += np.sum(
-                                sec_elec_ICS[nonzero_sec][finite_mask]
-                                * phys.elec_heating_engloss_rate(Ee_future[finite_mask], 1, rs_fut)
+                            dt_fut = dlnz / phys.hubble(rs_fut)
+                            zero_mask_sec = (Ee_future == 0)
+                            heat_rates_sec = np.where(
+                                zero_mask_sec,
+                                np.where(Ee_prev_sec > 0, Ee_prev_sec / dt_fut, 0.0),
+                                np.nan_to_num(
+                                    phys.elec_heating_engloss_rate(Ee_future, 1+2*phys.chi, rs_fut),
+                                    nan=0.0, posinf=0.0, neginf=0.0
+                                )
                             )
+                            heat_rate_list[abs_idx] += np.sum(
+                                sec_elec_ICS[nonzero_sec] * heat_rates_sec
+                            )
+                        Ee_prev_sec = Ee_future.copy()
 
                         # Add electrons to spectrum
                         inds_Ee_fut = np.digitize(Ee_future, eng_elec)
@@ -346,21 +419,23 @@ def evolve_elecdecay_at_lowz(
         if verbose:
             print("getting y-distortion...")
 
-        # Calculate change to temperature
-        heat_rate_interp = interp1d(rs_list, heat_rate_list, bounds_error=False, fill_value=0)
+        # Calculate change to temperature, setting problematic heating rates to 0
+        heat_rate_interp = interp1d(rs_list, np.nan_to_num(heat_rate_list, nan=0.0, posinf=0.0, neginf=0.0), bounds_error=False, fill_value=0)
 
         def dTdz(rs, T): # in eV
             return - heat_rate_interp(rs) * 2 / 3 / (2 + phys.chi) / phys.hubble(rs) / rs # 2 + 3*phys.chi?
         delTsol = solve_ivp(dTdz, [start_rs, end_rs], [0.0], dense_output=True)
+        # print(f"DEBUG solve_ivp: start_rs={start_rs}, end_rs={end_rs}, success={delTsol.success}, n_segments={len(delTsol.sol.interpolants)}, message='{delTsol.message}'")
 
         # Calculate y-parameter
         def heat_integrand(rs):
-            delT = delTsol.sol(rs)
+            rs_safe = np.clip(rs, min(start_rs, end_rs), max(start_rs, end_rs))
+            delT = delTsol.sol(rs_safe)
             return - (
-                delT * phys.thomson_xsec * phys.c * (phys.nH * rs**3) / phys.me # s^-1
-                / phys.hubble(rs) / rs # s
+                delT * phys.thomson_xsec * phys.c * (phys.nH * rs_safe**3) / phys.me # s^-1
+                / phys.hubble(rs_safe) / rs_safe # s
             )
-        
+
         ypar = quad(heat_integrand, start_rs, end_rs)[0]
 
         # Get y-type distortion
@@ -369,7 +444,7 @@ def evolve_elecdecay_at_lowz(
 
         f_heat = heat_rate_list / (
             phys.inj_rate(
-                'decay', rs_list, mDM=mDM, lifetime=lifetime, sigmav=sigmav
+                DM_process, rs_list, mDM=mDM, lifetime=lifetime, sigmav=sigmav
             ) / (phys.nB * rs_list**3)
         )
 
@@ -425,7 +500,7 @@ def electron_energy_loss_rate(rs, Ee, xe):
 
 def generate_lowz_electron_energy_tf(
     rs_high=10, rs_low=1, rs_steps=50,
-    logE_low=3, logE_high=12, logE_steps=25, dlnz_steps=int(3e4), 
+    logE_low=0, logE_high=12, logE_steps=25, dlnz_steps=int(6e4), 
     save_file=False, save_dir=None, file_name=None, return_tf=False
 ):
     """
@@ -528,9 +603,9 @@ def generate_lowz_electron_energy_tf(
 
 def generate_lowz_electron_tf_tworegime(
     rs_high=10, rs_low=1, rs_steps=50,
-    logE_low=3, logE_fast=8, logE_high=12, 
+    logE_low=0, logE_fast=8, logE_high=12, 
     logE_steps_slow=25, logE_steps_fast=25, 
-    dlnz_steps_slow=int(1000), dlnz_steps_fast=int(3e4), 
+    dlnz_steps_slow=int(1000), dlnz_steps_fast=int(6e4), 
     save_file=False, save_dir=None, file_name=None, return_tf=False
 ):
     """
@@ -622,7 +697,9 @@ def make_electron_tf_interpolator(elec_tf):
     logz_inj_list = np.log10(elec_tf['rs_inj'])
     log_Ee_list = np.log10(elec_tf['eng_elec'])
     log_transfer_Ee_interp = RegularGridInterpolator(
-        (logz_inj_list, log_Ee_list, elec_tf['dlnz']), np.log10(elec_tf['tf']),
+        (logz_inj_list, log_Ee_list, elec_tf['dlnz']),
+        np.log10(elec_tf['tf']),
+        # np.log10(np.maximum(elec_tf['tf'], 1e-100)), # Cap lowest energy at tiny value to avoid log(0) issues
         fill_value=None, bounds_error=False
     )
     # Define a function that will map from quantities to their log
@@ -634,16 +711,17 @@ def make_electron_tf_interpolator(elec_tf):
         lnz_dep  = np.log(pars_in[:, 2])
         dlnz     = lnz_dep - np.log(10**logz_inj)
         pars_out = np.stack([logz_inj, log_Ee, dlnz], axis=-1)
-        return 10**log_transfer_Ee_interp(pars_out)
+        return np.nan_to_num(10**log_transfer_Ee_interp(pars_out), nan=0.0, posinf=0.0, neginf=0.0)
     return transfer_Ee_log
 
 def get_electron_tf(
     regenerate=False, save_dir=None, file_name=None, save_file=False,
     interpolated=True, tworegime=True,
     rs_high=10, rs_low=1, rs_steps=50,
-    logE_low=3, logE_fast=8, logE_high=12, 
+    logE_low=0, logE_fast=8, logE_high=12, 
     logE_steps=25, logE_steps_slow=25, logE_steps_fast=25, 
-    dlnz_steps=int(3e4), dlnz_steps_slow=int(1000), dlnz_steps_fast=int(3e4)
+    dlnz_steps=int(3e4), dlnz_steps_slow=int(1000), dlnz_steps_fast=int(6e4),
+    tf_extension=''
 ):
     """
     Obtains 
@@ -697,8 +775,8 @@ def get_electron_tf(
         else:
             if tworegime:
                 elec_tf = {
-                    'slow' : config.load_h5_dict(save_dir+file_name+"_slow.hdf5"),
-                    'fast' : config.load_h5_dict(save_dir+file_name+"_fast.hdf5")
+                    'slow' : config.load_h5_dict(save_dir+file_name+"_slow.hdf5"+tf_extension),
+                    'fast' : config.load_h5_dict(save_dir+file_name+"_fast.hdf5"+tf_extension)
                 }
             else:
                 elec_tf = config.load_h5_dict(save_dir+file_name+".hdf5")
@@ -706,10 +784,18 @@ def get_electron_tf(
     # Choose whether to return transfer function as interpolated function or dictionary
     if interpolated:
         if tworegime:
-            tf_interp = {
-                'fast' : make_electron_tf_interpolator(elec_tf['fast']),
-                'slow' : make_electron_tf_interpolator(elec_tf['slow'])
-            }
+            slow_interp = make_electron_tf_interpolator(elec_tf['slow'])
+            fast_interp = make_electron_tf_interpolator(elec_tf['fast'])
+            E_split = 10**logE_fast
+
+            def tf_interp(pars_in):
+                pars_in = np.atleast_2d(pars_in)
+                E_elec = pars_in[:, 1]
+                result = np.empty(len(pars_in))
+                slow_mask = E_elec < E_split
+                result[slow_mask]  = slow_interp(pars_in[slow_mask])
+                result[~slow_mask] = fast_interp(pars_in[~slow_mask])
+                return result
         else:
             tf_interp = make_electron_tf_interpolator(elec_tf)
         return tf_interp
@@ -718,280 +804,280 @@ def get_electron_tf(
 
 ### COMPTON AND INVERSE COMPTON SCATTERING (some translated from Tracy's IDL code)
 
-# ### ICS
+### ICS
 
-# # Distribution function of ICS photons
-# # in terms of normalized final energy, E_f = E_final / (4 E_init gamma^2)
-# def f_ICS(E_f):
-#     lnE = np.log(E_f)
-#     if np.isscalar(E_f):
-#         if E_f == 0:
-#             lnE = 0
-#     else:
-#         lnE[E_f == 0] = 0
-#     return 2 * E_f * lnE + E_f + 1 - 2 * E_f**2
+# Distribution function of ICS photons
+# in terms of normalized final energy, E_f = E_final / (4 E_init gamma^2)
+def f_ICS(E_f):
+    lnE = np.log(E_f)
+    if np.isscalar(E_f):
+        if E_f == 0:
+            lnE = 0
+    else:
+        lnE[E_f == 0] = 0
+    return 2 * E_f * lnE + E_f + 1 - 2 * E_f**2
 
-# # Spectrum per time of photons from ICS of CMB,
-# # in terms of dN / dt / dE_final
-# def ICS_spectrum(rs, gamma, E_final):
-#     ECMB_list = np.linspace(1e-3*phys.TCMB(rs), 10*phys.TCMB(rs), num=500)
-#     dE = ECMB_list[1] - ECMB_list[0]
-#     E_f = E_final / (4 * ECMB_list * gamma**2)
-#     mask = (E_f >= 0) & (E_f <= 1)
+# Spectrum per time of photons from ICS of CMB,
+# in terms of dN / dt / dE_final
+def ICS_spectrum(rs, gamma, E_final):
+    ECMB_list = np.linspace(1e-3*phys.TCMB(rs), 10*phys.TCMB(rs), num=500)
+    dE = ECMB_list[1] - ECMB_list[0]
+    E_f = E_final / (4 * ECMB_list * gamma**2)
+    mask = (E_f >= 0) & (E_f <= 1)
 
-#     CMB_integral = np.sum(phys.CMB_spec(ECMB_list[mask], phys.TCMB(rs)) / ECMB_list[mask] * f_ICS(E_f[mask]) * dE) # [1 / eV / cm^3]
-#     return(
-#         2 * np.pi * phys.ele_rad**2 * phys.c / gamma**2 # [cm^3 / s]
-#         *  CMB_integral # [1 / eV / cm^3]
-#     ) # final units [ 1 / s / eV]
+    CMB_integral = np.sum(phys.CMB_spec(ECMB_list[mask], phys.TCMB(rs)) / ECMB_list[mask] * f_ICS(E_f[mask]) * dE) # [1 / eV / cm^3]
+    return(
+        2 * np.pi * phys.ele_rad**2 * phys.c / gamma**2 # [cm^3 / s]
+        *  CMB_integral # [1 / eV / cm^3]
+    ) # final units [ 1 / s / eV]
 
-# # Calculate ICS spectrum across huge range of energies to use scaling relations
-# eng_list = 10**(np.linspace(-8, 10, 300))
-# gamma_ref = 1e3
-# rs_ref = 4
-# compspec_ref = np.zeros_like(eng_list)
+# Calculate ICS spectrum across huge range of energies to use scaling relations
+CS_eng_list = 10**(np.linspace(-8, 10, 300))
+gamma_ref = 1e3
+rs_ref = 4
+compspec_ref = np.zeros_like(CS_eng_list)
 
-# for jj, eng in enumerate(eng_list):
-#     compspec_ref[jj] = ICS_spectrum(rs_ref, gamma_ref, eng)
-# compspec_ref = interp1d(eng_list, compspec_ref, bounds_error=False, fill_value=(compspec_ref[0], 0))
+for jj, eng in enumerate(CS_eng_list):
+    compspec_ref[jj] = ICS_spectrum(rs_ref, gamma_ref, eng)
+compspec_ref = interp1d(CS_eng_list, compspec_ref, bounds_error=False, fill_value=(compspec_ref[0], 0))
 
-# # Define function to take advantage of scaling relation
-# def ICS_spectrum_scaled(
-#     rs, gamma, E_final, 
-#     spec_ref=compspec_ref, rs_ref=rs_ref, gamma_ref=gamma_ref
-# ):
-#     rs_fac = rs / rs_ref
-#     g_fac = rs_fac * gamma / gamma_ref
-#     return rs_fac**4 / g_fac**2 * spec_ref(E_final * rs_fac / g_fac**2)
+# Define function to take advantage of scaling relation
+def ICS_spectrum_scaled(
+    rs, gamma, E_final, 
+    spec_ref=compspec_ref, rs_ref=rs_ref, gamma_ref=gamma_ref
+):
+    rs_fac = rs / rs_ref
+    g_fac = rs_fac * gamma / gamma_ref
+    return rs_fac**4 / g_fac**2 * spec_ref(E_final * rs_fac / g_fac**2)
 
-# ### Compton scattering
-# ### Translated from Tracy Slatyer's old IDL code
+### Compton scattering
+### Translated from Tracy Slatyer's old IDL code
 
-# def secondaryspec(spec, inbins, outbins, secbins):
-#     """
-#     Python/Numpy translation of IDL secondaryspec.pro
+def secondaryspec(spec, inbins, outbins, secbins):
+    """
+    Python/Numpy translation of IDL secondaryspec.pro
 
-#     Parameters
-#     ----------
-#     spec : array_like
-#         Spectrum describing dN in `outbins` from a unit in `inbins`.
-#         In IDL this is (n_inbins x n_outbins). It may also be 1D
-#         (length n_outbins); in that case it is reshaped to (n_inbins, n_outbins).
-#     inbins : array_like
-#         Incoming energies (same units as outbins).
-#         Length n_inbins. Scalars are allowed (treated as length-1).
-#     outbins : array_like
-#         Outgoing photon energies, length n_outbins.
-#     secbins : array_like
-#         Secondary (electron) energy binning (kinetic), length n_secbins.
+    Parameters
+    ----------
+    spec : array_like
+        Spectrum describing dN in `outbins` from a unit in `inbins`.
+        In IDL this is (n_inbins x n_outbins). It may also be 1D
+        (length n_outbins); in that case it is reshaped to (n_inbins, n_outbins).
+    inbins : array_like
+        Incoming energies (same units as outbins).
+        Length n_inbins. Scalars are allowed (treated as length-1).
+    outbins : array_like
+        Outgoing photon energies, length n_outbins.
+    secbins : array_like
+        Secondary (electron) energy binning (kinetic), length n_secbins.
 
-#     Returns
-#     -------
-#     secspec : ndarray, shape (n_inbins, n_secbins)
-#         Secondary spectrum in secbins for each inbin.
-#     """
-#     inbins = np.atleast_1d(np.asarray(inbins, dtype=float))
-#     outbins = np.asarray(outbins, dtype=float)
-#     secbins = np.asarray(secbins, dtype=float)
+    Returns
+    -------
+    secspec : ndarray, shape (n_inbins, n_secbins)
+        Secondary spectrum in secbins for each inbin.
+    """
+    inbins = np.atleast_1d(np.asarray(inbins, dtype=float))
+    outbins = np.asarray(outbins, dtype=float)
+    secbins = np.asarray(secbins, dtype=float)
 
-#     n_in = inbins.size
-#     n_out = outbins.size
-#     n_sec = secbins.size
+    n_in = inbins.size
+    n_out = outbins.size
+    n_sec = secbins.size
 
-#     spec = np.asarray(spec, dtype=float)
-#     if spec.ndim < 2:
-#         spec = spec.reshape(n_in, n_out)
+    spec = np.asarray(spec, dtype=float)
+    if spec.ndim < 2:
+        spec = spec.reshape(n_in, n_out)
 
-#     secspec = np.zeros((n_in, n_sec), dtype=float)
+    secspec = np.zeros((n_in, n_sec), dtype=float)
 
-#     conversion = inbins[:, None] - outbins[None, :]
+    conversion = inbins[:, None] - outbins[None, :]
 
-#     # -------------------------------------------------
-#     # newindices = interpol([-2, -1, 0..n_sec-1], [-max(outbins), 0, secbins], conversion)
-#     # -------------------------------------------------
-#     # Map energies -> "index-like" positions in secbins.
-#     # Use np.interp to mimic IDL INTERPOL behavior.
-#     x_table = np.concatenate(([-np.max(outbins)], [0.0], secbins))
-#     y_table = np.concatenate(([-2.0, -1.0], np.arange(n_sec, dtype=float)))
+    # -------------------------------------------------
+    # newindices = interpol([-2, -1, 0..n_sec-1], [-max(outbins), 0, secbins], conversion)
+    # -------------------------------------------------
+    # Map energies -> "index-like" positions in secbins.
+    # Use np.interp to mimic IDL INTERPOL behavior.
+    x_table = np.concatenate(([-np.max(outbins)], [0.0], secbins))
+    y_table = np.concatenate(([-2.0, -1.0], np.arange(n_sec, dtype=float)))
 
-#     # Flatten -> interp -> reshape back
-#     flat_conv = conversion.ravel()
-#     flat_newidx = np.interp(flat_conv, x_table, y_table, left=-2.0, right=float(n_sec - 1))
-#     newindices = flat_newidx.reshape(conversion.shape)
+    # Flatten -> interp -> reshape back
+    flat_conv = conversion.ravel()
+    flat_newidx = np.interp(flat_conv, x_table, y_table, left=-2.0, right=float(n_sec - 1))
+    newindices = flat_newidx.reshape(conversion.shape)
 
-#     # -------------------------------------------------
-#     # Loop over outgoing bins, distribute into secbins
-#     # -------------------------------------------------
-#     for j in range(n_out):
-#         col = newindices[:, j]
+    # -------------------------------------------------
+    # Loop over outgoing bins, distribute into secbins
+    # -------------------------------------------------
+    for j in range(n_out):
+        col = newindices[:, j]
 
-#         # IDL: ind = where(newindices[*,j] GT 0 and LT n_elements(secbins)-1, ngood)
-#         mask_good = (col > 0.0) & (col < (n_sec - 1))
-#         if not np.any(mask_good):
-#             continue
+        # IDL: ind = where(newindices[*,j] GT 0 and LT n_elements(secbins)-1, ngood)
+        mask_good = (col > 0.0) & (col < (n_sec - 1))
+        if not np.any(mask_good):
+            continue
 
-#         ind = np.where(mask_good)[0]
-#         x = col[ind]  # fractional indices into secbins
+        ind = np.where(mask_good)[0]
+        x = col[ind]  # fractional indices into secbins
 
-#         # Linear split between floor(x) and ceil(x)
-#         floor_x = np.floor(x).astype(int)
-#         ceil_x = np.ceil(x).astype(int)
+        # Linear split between floor(x) and ceil(x)
+        floor_x = np.floor(x).astype(int)
+        ceil_x = np.ceil(x).astype(int)
 
-#         w_low = (ceil_x - x) * spec[ind, j]
-#         w_high = (x - floor_x) * spec[ind, j]
+        w_low = (ceil_x - x) * spec[ind, j]
+        w_high = (x - floor_x) * spec[ind, j]
 
-#         secspec[ind, floor_x] += w_low
-#         secspec[ind, ceil_x] += w_high
+        secspec[ind, floor_x] += w_low
+        secspec[ind, ceil_x] += w_high
 
-#         # IDL: whole = where(x EQ round(x), nwhole)
-#         # Handle exactly integer indices (deposit full spec once)
-#         whole_mask = (x == np.round(x))
-#         if np.any(whole_mask):
-#             x_int = np.round(x[whole_mask]).astype(int)
-#             ind_whole = ind[whole_mask]
-#             secspec[ind_whole, x_int] += spec[ind_whole, j]
+        # IDL: whole = where(x EQ round(x), nwhole)
+        # Handle exactly integer indices (deposit full spec once)
+        whole_mask = (x == np.round(x))
+        if np.any(whole_mask):
+            x_int = np.round(x[whole_mask]).astype(int)
+            ind_whole = ind[whole_mask]
+            secspec[ind_whole, x_int] += spec[ind_whole, j]
 
-#     return secspec
+    return secspec
 
-# def ih_comptonscattering(photengbins=None,
-#                          elecengbins=None,
-#                          calcsec=False):
-#     """
-#     Python/Numpy translation of IDL ih_comptonscattering.
+def ih_comptonscattering(photengbins=None,
+                         elecengbins=None,
+                         calcsec=False):
+    """
+    Python/Numpy translation of IDL ih_comptonscattering.
 
-#     Parameters
-#     ----------
-#     photengbins : dict or None
-#         If None, construct a default logarithmic photon grid.
-#         If provided, expected keys:
-#             - 'nbins'     : int, number of photon energy bins
-#             - 'bins'      : 1D array of bin edges, length nbins+1
-#             - 'photoneng' : 1D array of bin-centered energies, length nbins
-#     elecengbins : dict or None
-#         If None, construct default logarithmic electron energy bins.
-#         If provided, expected keys:
-#             - 'nbins'  : int, number of electron energy bins
-#             - 'dlneng' : float, log spacing
-#             - 'bins'   : 1D array of bin edges, length nbins+1
-#     calcsec : bool
-#         If True, also compute the secondary electron rate table.
+    Parameters
+    ----------
+    photengbins : dict or None
+        If None, construct a default logarithmic photon grid.
+        If provided, expected keys:
+            - 'nbins'     : int, number of photon energy bins
+            - 'bins'      : 1D array of bin edges, length nbins+1
+            - 'photoneng' : 1D array of bin-centered energies, length nbins
+    elecengbins : dict or None
+        If None, construct default logarithmic electron energy bins.
+        If provided, expected keys:
+            - 'nbins'  : int, number of electron energy bins
+            - 'dlneng' : float, log spacing
+            - 'bins'   : 1D array of bin edges, length nbins+1
+    calcsec : bool
+        If True, also compute the secondary electron rate table.
 
-#     Returns
-#     -------
-#     integratedrate0 : ndarray, shape (nphoteng, nphoteng)
-#         Integrated Compton scattering rate between photon bins.
-#         Axis 0: incoming photon bin index i1
-#         Axis 1: outgoing photon bin index.
-#     secondaryrate0 : ndarray or None, shape (nphoteng, neng)
-#         If calcsec=True, the secondary electron rate table.
-#         Otherwise, None.
-#     """
-#     # --------------------------------------------
-#     # Photon energy bins
-#     # --------------------------------------------
-#     if photengbins is None:
-#         nphoteng = 500
-#         dlnphoteng = np.log(1e13 / 1e-2) / nphoteng
+    Returns
+    -------
+    integratedrate0 : ndarray, shape (nphoteng, nphoteng)
+        Integrated Compton scattering rate between photon bins.
+        Axis 0: incoming photon bin index i1
+        Axis 1: outgoing photon bin index.
+    secondaryrate0 : ndarray or None, shape (nphoteng, neng)
+        If calcsec=True, the secondary electron rate table.
+        Otherwise, None.
+    """
+    # --------------------------------------------
+    # Photon energy bins
+    # --------------------------------------------
+    if photengbins is None:
+        nphoteng = 500
+        dlnphoteng = np.log(1e13 / 1e-2) / nphoteng
 
-#         idx = np.arange(nphoteng, dtype=float)
-#         photenglow = 1e-2 * np.exp(idx * dlnphoteng)
-#         photenghigh = 1e-2 * np.exp((idx + 1.0) * dlnphoteng)
+        idx = np.arange(nphoteng, dtype=float)
+        photenglow = 1e-2 * np.exp(idx * dlnphoteng)
+        photenghigh = 1e-2 * np.exp((idx + 1.0) * dlnphoteng)
 
-#         photeng = np.sqrt(photenglow * photenghigh)  # geometric mean
-#         photbinwidth = photenghigh - photenglow
-#     else:
-#         nphoteng = int(photengbins["nbins"])
-#         photbins = np.asarray(photengbins["bins"], dtype=float)
+        photeng = np.sqrt(photenglow * photenghigh)  # geometric mean
+        photbinwidth = photenghigh - photenglow
+    else:
+        nphoteng = int(photengbins["nbins"])
+        photbins = np.asarray(photengbins["bins"], dtype=float)
 
-#         photenglow = photbins[:-1]
-#         photenghigh = photbins[1:]
-#         photeng = np.asarray(photengbins["photoneng"], dtype=float)
+        photenglow = photbins[:-1]
+        photenghigh = photbins[1:]
+        photeng = np.asarray(photengbins["photoneng"], dtype=float)
 
-#         dlnphoteng = np.log(photbins[1] / photbins[0])
-#         photbinwidth = photenghigh - photenglow
+        dlnphoteng = np.log(photbins[1] / photbins[0])
+        photbinwidth = photenghigh - photenglow
 
-#     # --------------------------------------------
-#     # Electron energy bins
-#     # --------------------------------------------
-#     if elecengbins is None:
-#         neng = 500
-#         dlneng = np.log(1e13) / neng
+    # --------------------------------------------
+    # Electron energy bins
+    # --------------------------------------------
+    if elecengbins is None:
+        neng = 500
+        dlneng = np.log(1e13) / neng
 
-#         idx = np.arange(neng + 1, dtype=float)
-#         elecbins = phys.me + np.exp(idx * dlneng)
+        idx = np.arange(neng + 1, dtype=float)
+        elecbins = phys.me + np.exp(idx * dlneng)
 
-#         englow = elecbins[:-1]
-#         enghigh = elecbins[1:]
-#         eng = phys.me + np.sqrt((englow - phys.me) * (enghigh - phys.me))
-#         elecbinwidth = enghigh - englow
-#     else:
-#         neng = int(elecengbins["nbins"])
-#         dlneng = float(elecengbins["dlneng"])
-#         elecbins = np.asarray(elecengbins["bins"], dtype=float)
+        englow = elecbins[:-1]
+        enghigh = elecbins[1:]
+        eng = phys.me + np.sqrt((englow - phys.me) * (enghigh - phys.me))
+        elecbinwidth = enghigh - englow
+    else:
+        neng = int(elecengbins["nbins"])
+        dlneng = float(elecengbins["dlneng"])
+        elecbins = np.asarray(elecengbins["bins"], dtype=float)
 
-#         englow = elecbins[:-1]
-#         enghigh = elecbins[1:]
-#         eng = phys.me + np.sqrt((englow - phys.me) * (enghigh - phys.me))
-#         elecbinwidth = enghigh - englow
+        englow = elecbins[:-1]
+        enghigh = elecbins[1:]
+        eng = phys.me + np.sqrt((englow - phys.me) * (enghigh - phys.me))
+        elecbinwidth = enghigh - englow
 
-#     # print("building integrated rate table for Compton scattering")
+    # print("building integrated rate table for Compton scattering")
 
-#     integratedrate0 = np.zeros((nphoteng, nphoteng), dtype=float)
-#     secondaryrate0 = np.zeros((nphoteng, neng), dtype=float) if calcsec else None
+    integratedrate0 = np.zeros((nphoteng, nphoteng), dtype=float)
+    secondaryrate0 = np.zeros((nphoteng, neng), dtype=float) if calcsec else None
 
-#     # Sub-bin sampling
-#     nsub = 200
-#     dsub = 1.0 / nsub
-#     subshift = (np.arange(nsub, dtype=float) + 0.5) * dsub
+    # Sub-bin sampling
+    nsub = 200
+    dsub = 1.0 / nsub
+    subshift = (np.arange(nsub, dtype=float) + 0.5) * dsub
 
-#     # --------------------------------------------
-#     # Main loops in IDL:
-#     # for i1 = 1L, nphoteng-2
-#     # --------------------------------------------
-#     for i1 in tqdm(range(1, nphoteng - 1)):  # 1 .. nphoteng-2
-#         for i2 in range(nsub):
-#             Ein = photeng[i1] * np.exp((subshift[i2] - 0.5) * dlnphoteng)
+    # --------------------------------------------
+    # Main loops in IDL:
+    # for i1 = 1L, nphoteng-2
+    # --------------------------------------------
+    for i1 in tqdm(range(1, nphoteng - 1)):  # 1 .. nphoteng-2
+        for i2 in range(nsub):
+            Ein = photeng[i1] * np.exp((subshift[i2] - 0.5) * dlnphoteng)
 
-#             lowspectrumlimit = Ein / (1.0 + 2.0 * Ein / phys.me)
+            lowspectrumlimit = Ein / (1.0 + 2.0 * Ein / phys.me)
 
-#             mask = (photenglow <= Ein) & (photenghigh > lowspectrumlimit)
-#             if not np.any(mask):
-#                 continue
+            mask = (photenglow <= Ein) & (photenghigh > lowspectrumlimit)
+            if not np.any(mask):
+                continue
 
-#             ind = np.where(mask)[0]
+            ind = np.where(mask)[0]
 
-#             Elow = photenglow[ind].copy()
-#             Ehigh = photenghigh[ind].copy()
+            Elow = photenglow[ind].copy()
+            Ehigh = photenghigh[ind].copy()
 
-#             Elow[0] = lowspectrumlimit
-#             Ehigh[-1] = Ein
+            Elow[0] = lowspectrumlimit
+            Ehigh[-1] = Ein
 
-#             term1 = (Ehigh - Elow) * (
-#                 Elow * Ehigh * (2 * phys.me + (4.0 + Elow / phys.me + Ehigh / phys.me) * Ein)
-#                 + 2.0 * phys.me * Ein**2
-#             )
-#             term2 = (
-#                 2.0
-#                 * np.log(Ehigh / Elow)
-#                 * Elow
-#                 * Ehigh
-#                 * Ein
-#                 * (-2 * phys.me + Ein * (-2.0 + Ein / phys.me))
-#             )
-#             row = (term1 + term2) / (2.0 * Elow * Ehigh * Ein**2 * Ein**2)
+            term1 = (Ehigh - Elow) * (
+                Elow * Ehigh * (2 * phys.me + (4.0 + Elow / phys.me + Ehigh / phys.me) * Ein)
+                + 2.0 * phys.me * Ein**2
+            )
+            term2 = (
+                2.0
+                * np.log(Ehigh / Elow)
+                * Elow
+                * Ehigh
+                * Ein
+                * (-2 * phys.me + Ein * (-2.0 + Ein / phys.me))
+            )
+            row = (term1 + term2) / (2.0 * Elow * Ehigh * Ein**2 * Ein**2)
 
-#             integratedrate0[i1, ind] += dsub * row
+            integratedrate0[i1, ind] += dsub * row
 
-#             if calcsec:
-#                 # secbins here are kinetic electron energies: eng - phys.me
-#                 secspec_2d = secondaryspec(dsub * row,
-#                                            inbins=Ein,
-#                                            outbins=photeng[ind],
-#                                            secbins=eng - phys.me)
-#                 # Only one incoming bin used, so take the first row
-#                 secondaryrate0[i1, :] += secspec_2d[0, :]
+            if calcsec:
+                # secbins here are kinetic electron energies: eng - phys.me
+                secspec_2d = secondaryspec(dsub * row,
+                                           inbins=Ein,
+                                           outbins=photeng[ind],
+                                           secbins=eng - phys.me)
+                # Only one incoming bin used, so take the first row
+                secondaryrate0[i1, :] += secspec_2d[0, :]
 
-#     return integratedrate0, secondaryrate0
+    return integratedrate0, secondaryrate0
 
 def build_CS_tables(
     eng_phot, eng_elec, save_dir=None
@@ -1034,7 +1120,7 @@ def build_CS_tables(
     elecengbins = {'nbins': len(eng_elec), 'bins': phys.me + KE_edges, 'dlneng': dlnE_elec}
 
     ### Use translated version of Tracy's IDL code to get CS tables
-    cs_phot_matrix, cs_elec_matrix = CS.ih_comptonscattering(
+    cs_phot_matrix, cs_elec_matrix = ih_comptonscattering(
         photengbins=photengbins, elecengbins=elecengbins, calcsec=True
     )
     # cs_phot_matrix[i, j]: rate for photons from bin i to scatter into bin j
@@ -1108,7 +1194,84 @@ def Ne_PP_single(eng_phot, eng_elec, bw_elec):
     dNdE[eng_elec < Ee_max_PP] = 2 / (Ee_max_PP) # this normalization results in 2 electrons per PP event
     return dNdE * bw_elec
                         
-### FOR CREATING LOW REDSHIFT SPECTRAL DISTORTION TRANSFER FUNCTIONS
+### FOR CROSS CHECKS
+def comparison_lowz_v_DH(
+    E_init=None, DM_process=None, sigmav=1e-40, tau=1e40, 
+    start_rs=None, end_rs=None, dlnz=0.008, fine_tf=False
+):
+    mDM = 2 * (phys.me + E_init)
 
-def generate_lowz_spectral_distortion_tf():
-    return
+    ### Run low-z method
+    result = evolve_elec_at_lowz(
+        mDM, DM_process=DM_process, lifetime=tau, sigmav=sigmav,
+        start_rs=start_rs, end_rs=end_rs, 
+        dlnz=dlnz, fine_tf=fine_tf
+    )
+
+    # Slap the last set of electrons with DH transfer functions to get their energy deposition
+    test_spec = copy(result['elec_spec'][-1])
+    
+    dep_tf_data = config.load_data('dep_tf')
+    ics_tf_data = config.load_data('ics_tf')
+    ics_thomson_ref_tf  = ics_tf_data['thomson']
+    ics_rel_ref_tf      = ics_tf_data['rel']
+    engloss_ref_tf      = ics_tf_data['engloss']
+
+    H_states = ['2s', '2p',
+                '3s', '3p', '3d',
+                '4s', '4p', '4d', '4f',
+                '5p', '6p', '7p', '8p', '9p', '10p']
+
+    (
+        ics_sec_phot_tf,
+        deposited_ion_arr, deposited_exc_arr, deposited_heat_arr,
+        deposited_ICS_arr, ICS_err_vec
+    ) = get_elec_cooling_tf(
+            result['elec_eng'], result['distortion'].eng, end_rs,
+            xHII=1, xHeII=phys.chi,
+            raw_thomson_tf=ics_thomson_ref_tf,
+            raw_rel_tf=ics_rel_ref_tf,
+            raw_engloss_tf=engloss_ref_tf,
+            coll_ion_sec_elec_specs=None,
+            coll_exc_sec_elec_specs=None,
+            # ics_engloss_data=ics_engloss_data, 
+            simple_ICS=False,
+            check_conservation_eng=False,
+            H_states=H_states
+    )
+
+    # Get ICS contribution that z=0 electrons would have deposited in DH
+    extra_ICS = ics_sec_phot_tf.sum_specs(test_spec)
+    extra_ICS.switch_spec_type()
+
+    extra_ICS.rs = end_rs
+    extra_ICS.redshift(1)
+
+    # Add missing heating
+    extra_heat = np.dot(deposited_heat_arr, test_spec)  # eV/baryon
+    extra_y = (extra_heat * phys.nB * end_rs**3
+            / (4 * phys.CMB_eng_density(phys.TCMB(end_rs))))
+    extra_y_dist = phys.ymu_distortion(result['distortion'].eng, extra_y, 1., 'y')
+
+    ### Run DarkHistory on fiducial model
+    result_near4_DHstd = main.evolve(
+        DM_process=DM_process, primary='elec_delta',
+        mDM=mDM, lifetime=tau*1e40, sigmav=sigmav*1e-40,
+        start_rs=start_rs, end_rs=end_rs,
+        init_cond = (1, phys.chi, phys.Tm_std(start_rs)),
+        coarsen_factor=8, rtol=1e-6, nmax=10, iterations=3,
+        reion_switch=False, reion_method='Puchwein', heat_switch=True,
+        distort=True, fexc_switch=True, reprocess_distortion=True
+    )
+
+    result_near4_DH = main.evolve(
+        DM_process=DM_process, primary='elec_delta',
+        mDM=mDM, lifetime=tau, sigmav=sigmav,
+        start_rs=start_rs, end_rs=end_rs,
+        init_cond = (1, phys.chi, phys.Tm_std(start_rs)),
+        coarsen_factor=8, rtol=1e-6, nmax=10, iterations=3,
+        reion_switch=False, reion_method='Puchwein', heat_switch=True,
+        distort=True, fexc_switch=True, reprocess_distortion=True
+    )
+
+    return result, extra_ICS, extra_y_dist, result_near4_DHstd, result_near4_DH
