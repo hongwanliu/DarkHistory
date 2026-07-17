@@ -27,12 +27,12 @@ def save_h5_dict(fn, d):
             hf.create_dataset(key, data=item)
 
 ### FOR OBTAINING THE LOW REDSHIFT EVOLUTION OF A GIVEN ENERGY INJECTION MODEL
-def evolve_elec_at_lowz(
-    mDM, DM_process='decay', lifetime=None, sigmav=None, 
-    start_rs=4.0, end_rs=1.0, dlnz=0.008,
+def evolve_at_lowz(
+    primary='elec', DM_process='decay', mDM=None, lifetime=None, sigmav=None, 
+    initial_spec_phot=None, start_rs=4.0, end_rs=1.0, dlnz=0.008,
     save_dir=None, verbose=True, tworegime=True,
-    include_heating=True, single_step_inj=False,
-    include_photoion=False, include_PP=False, include_positrons=False,
+    include_heating=True, include_y_in_dist=True, single_step_inj=False,
+    include_photoion=False, include_PP=True, include_positrons=False,
     fine_tf=False
 ):
     """
@@ -40,8 +40,47 @@ def evolve_elec_at_lowz(
 
     Parameters
     ----------
+    primary: string
+        Primary particles injected. Currently can only be one of {'elec', 'phot'}.
+    DM_process: string
+        Process by which DM injects energy. Currently can only be one of {'decay', 'swave'}.
+    mDM: float
+        Dark matter mass in [eV].
+    lifetime: float
+        Dark matter decay lifetime in [s].
+    sigmav: float
+        Dark matter annihlation cross-section in [cm^3/s].
+    initial_spec_phot: Spectrum
+        Option to initialize evolution with a non-zero spectral distortion.
+        Useful for e.g. continuing to process photons output by DarkHistory.
+    start_rs: float
+        Starting redshift for evolution.
+    end_rs: float
+        Ending redshift for evolution.
+    dlnz: float
+        Log redshift step for evolution.
     save_dir: string
-        Directory at which to save the file
+        Directory at which to save the file.
+    verbose: bool
+        Flag for more verbose output.
+    tworegime: bool
+        Flag to use two-regime electron energy transfer function.
+    include_heating: bool
+        Flag to include calculation of heating from electrons.
+    include_y_in_dist: bool
+        Flag to include y-type distortion as part of output spectral distortion.
+    single_step_inj: bool
+        Flag to only inject energy at the first redshift step.
+        Useful for generating injection transfer functions.
+    include_photoion: bool
+        Flag to include residual photoionizations.
+        Useful for cross-checking against DarkHistory BUT NOT YET FIXED.
+    include_PP: bool
+        Flag to include pair production.
+    include_positrons: bool
+        Flag to include positron annihilation. NOT YET FIXED.
+    fine_tf: bool
+        Flag for a cross-check that used an extra fine electron energy transfer function.
 
     Returns
     -------
@@ -52,8 +91,11 @@ def evolve_elec_at_lowz(
     # Redshift list to evolve over
     rs_list = np.exp(np.arange(np.log(start_rs), np.log(end_rs), -dlnz))
 
-    # Kinetic energy of primary electrons
-    Ee_init = mDM / 2 - phys.me
+    if primary == 'elec':
+        # Kinetic energy of primary electrons
+        Ee_init = mDM / 2 - phys.me
+    elif primary == 'phot':
+        Ep_init = mDM / 2
 
     # heating rate list
     if include_heating:
@@ -149,60 +191,97 @@ def evolve_elec_at_lowz(
         dep_rs_list = rs_list[ind_inj:] # [rs_list <= rs_inj]
 
         # Create spectra for tracking deposition due to cascade of this injection step
-        sec_phot_spec = Spectrum(eng_phot, np.zeros(len(eng_phot)), rs=rs_inj, spec_type='N')
+        # Include input photon spectrum if provided
+        if (initial_spec_phot is not None) and (ind_inj == 0):
+            sec_phot_spec = initial_spec_phot.copy()
+
+            # Check energy binning matches default. If not, then rebin
+            if not np.array_equal(sec_phot_spec.eng, eng_phot):
+                sec_phot_spec.rebin(eng_phot)
+            # Set input photon spectrum to the correct redshift.
+            if sec_phot_spec.rs >= 1:
+                sec_phot_spec.redshift(rs_inj)
+            else:
+                sec_phot_spec.rs = rs_inj
+            # Set input photon spectrum to the correct type.
+            sec_phot_spec.switch_spec_type('N')
+        else:
+            sec_phot_spec = Spectrum(eng_phot, np.zeros(len(eng_phot)), rs=rs_inj, spec_type='N')
         sec_elec_spec = np.zeros((len(dep_rs_list), len(eng_phot))) 
 
-        # Calculate the electrons injected per baryon at this step
+        # Calculate the primary particles injected per baryon at this step
         dt_inj = dlnz / phys.hubble(rs_inj)
         if DM_process == 'decay':
-            ne_inj = (
+            n_primary_inj = (
                 2 * dt_inj / mDM * phys.inj_rate(
                     DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
                 ) 
             ) / (phys.nB * rs_inj**3)
         else:
-            ne_inj = (
+            n_primary_inj = (
                 dt_inj / mDM * phys.inj_rate(
                     DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
                 ) 
             ) / (phys.nB * rs_inj**3)
 
-        # Use transfer function to get evolution of electron energy
-        pts_grid = np.meshgrid([rs_inj], [Ee_init], dep_rs_list, indexing='ij')
-        pts_list = np.reshape(pts_grid, (3, -1), order='C').T
-        Ee_history = transfer_Ee(pts_list)
+        # If electrons are being injected
+        if primary == 'elec':
+            # Use transfer function to get evolution of electron energy
+            pts_grid = np.meshgrid([rs_inj], [Ee_init], dep_rs_list, indexing='ij')
+            pts_list = np.reshape(pts_grid, (3, -1), order='C').T
+            Ee_history = transfer_Ee(pts_list)
 
-        # Add heating (per baryon) from these electrons
-        if include_heating:
-            dt_dep_arr = dlnz / phys.hubble(dep_rs_list)
-            Ee_prev_history = np.concatenate([[Ee_init], Ee_history[:-1]])
-            zero_mask_hist = (Ee_history == 0)
-            heat_rates_hist = np.where(
-                zero_mask_hist,
-                np.where(Ee_prev_history > 0, Ee_prev_history / dt_dep_arr, 0.0),
-                np.nan_to_num(
-                    phys.elec_heating_engloss_rate(Ee_history, 1+2*phys.chi, dep_rs_list),
-                    nan=0.0, posinf=0.0, neginf=0.0
+            # Add heating (per baryon) from these electrons
+            if include_heating:
+                dt_dep_arr = dlnz / phys.hubble(dep_rs_list)
+                Ee_prev_history = np.concatenate([[Ee_init], Ee_history[:-1]])
+                zero_mask_hist = (Ee_history == 0)
+                heat_rates_hist = np.where(
+                    zero_mask_hist,
+                    np.where(Ee_prev_history > 0, Ee_prev_history / dt_dep_arr, 0.0),
+                    np.nan_to_num(
+                        phys.elec_heating_engloss_rate(Ee_history, 1+2*phys.chi, dep_rs_list),
+                        nan=0.0, posinf=0.0, neginf=0.0
+                    )
                 )
-            )
-            heat_rate_list[ind_inj:] += ne_inj * heat_rates_hist  # [eV/s]
+                heat_rate_list[ind_inj:] += n_primary_inj * heat_rates_hist  # [eV/s]
 
-        # Find indices of electron spectrum corresponding to Ee_history
-        # Add ne_inj to corresponding bins
-        inds_rs = np.arange(ind_inj, ind_inj+len(dep_rs_list))
-        # inds_Ee = np.digitize(Ee_history, eng_elec)
-        inds_Ee = np.clip(np.digitize(Ee_history, eng_elec), 0, len(eng_elec) - 1)
+            # Find indices of electron spectrum corresponding to Ee_history
+            # Add n_primary_inj to corresponding bins
+            inds_rs = np.arange(ind_inj, ind_inj+len(dep_rs_list))
+            # inds_Ee = np.digitize(Ee_history, eng_elec)
+            inds_Ee = np.clip(np.digitize(Ee_history, eng_elec), 0, len(eng_elec) - 1)
 
-        if rs_inj > end_rs:
-            elec_spec_at_rs[inds_rs,inds_Ee] += ne_inj
-            sec_elec_spec[range(len(dep_rs_list)), inds_Ee] += ne_inj
+            if rs_inj > end_rs:
+                elec_spec_at_rs[inds_rs,inds_Ee] += n_primary_inj
+                sec_elec_spec[range(len(dep_rs_list)), inds_Ee] += n_primary_inj
+
+        # If photons are being injected
+        elif primary == 'phot':
+            if rs_inj > end_rs:
+                ind_Eph = np.clip(np.digitize([Ep_init], eng_phot)[0], 0, len(eng_phot) - 1)
+                N_phot_inj = np.zeros(len(eng_phot))
+                N_phot_inj[ind_Eph] = n_primary_inj
+                sec_phot_spec += N_phot_inj
+
+        # No other channels are implemented right now
+        else:
+            print("Only primary = {'elec', 'phot'} are implemented right now")
+            return
 
         ### Start cascade loop
         for ind_dep, rs_dep in enumerate(dep_rs_list):
             # Only consider steps where there is a non-negligible electron energy and number
             dep_rs_future = dep_rs_list[dep_rs_list < rs_dep]
             nonzero_ee = np.where(sec_elec_spec[ind_dep] > 0)[0]
-            if (Ee_history[ind_dep] > np.min(eng_elec)) and (len(nonzero_ee) > 0):
+            nonzero_ee = nonzero_ee[nonzero_ee > 0] # exclude lowest energy bin
+
+            # Check to see if there are particles to process. Gate on this condition.
+            elec_present = len(nonzero_ee) > 0
+            phot_present = np.any(sec_phot_spec.N > 0)
+
+            # if (Ee_history[ind_dep] > np.min(eng_elec)) and (len(nonzero_ee) > 0): # replaced
+            if elec_present or phot_present:
                 # abundance of background electrons assuming full ionization
                 dt_dep = dlnz / phys.hubble(rs_dep)
                 ne_BG = (phys.nH + 2 * phys.nHe)*rs_dep**3 
@@ -221,66 +300,69 @@ def evolve_elec_at_lowz(
 
                 # This keeps track of changes to photon spectrum at step. 
                 # Bring in last step's photons if relevant.
-                N_phot_new = np.zeros((len(nonzero_ee), len(eng_phot)))
+                n_rows = max(len(nonzero_ee), 1)
+                N_phot_new = np.zeros((n_rows, len(eng_phot)))
                 if ind_dep != 0:
                     sec_phot_spec.redshift(rs_dep)
-                    N_phot_new[0] = sec_phot_spec.N
+                N_phot_new[0] = sec_phot_spec.N
 
                 ### INVERSE COMPTON SCATTERING
-                # Deal with slow electrons
-                N_phot_new[nonzero_ee_low] += (
-                    ics_tf_cache[rs_dep][nonzero_ee[nonzero_ee_low]] 
-                    * dt_dep * ne_bins_sub[nonzero_ee_low, np.newaxis] * bw_phot
-                )
+                if elec_present:
+                    # Deal with slow electrons
+                    N_phot_new[nonzero_ee_low] += (
+                        ics_tf_cache[rs_dep][nonzero_ee[nonzero_ee_low]] 
+                        * dt_dep * ne_bins_sub[nonzero_ee_low, np.newaxis] * bw_phot
+                    )
 
-                # High energy electrons lose energy fast
-                # Divide up this time step and use faster approx for ICS at high energies
-                n_fine = 1000
-                rs_fine = np.exp(np.linspace(np.log(rs_dep), np.log(rs_dep) - dlnz, n_fine))
-                dt_fine = dlnz / n_fine / phys.hubble(rs_fine)
-                
-                # For every high energy bin
-                for ef, eng_fine in enumerate(eng_elec[nonzero_ee[nonzero_ee_high]]):
-                    # Get finer electron transfer function
-                    pts_fine = np.meshgrid([rs_dep], [eng_fine], rs_fine, indexing='ij')
-                    pts_fine = np.reshape(pts_fine, (3, -1), order='C').T
-                    Ee_fine = transfer_Ee(pts_fine)
+                    # High energy electrons lose energy fast
+                    # Divide up this time step and use faster approx for ICS at high energies
+                    n_fine = 1000
+                    rs_fine = np.exp(np.linspace(np.log(rs_dep), np.log(rs_dep) - dlnz, n_fine))
+                    dt_fine = dlnz / n_fine / phys.hubble(rs_fine)
+                    
+                    # For every high energy bin
+                    for ef, eng_fine in enumerate(eng_elec[nonzero_ee[nonzero_ee_high]]):
+                        # Get finer electron transfer function
+                        pts_fine = np.meshgrid([rs_dep], [eng_fine], rs_fine, indexing='ij')
+                        pts_fine = np.reshape(pts_fine, (3, -1), order='C').T
+                        Ee_fine = transfer_Ee(pts_fine)
 
-                    # Use fast relativistic ICS secondary expression
-                    # and sum over finer transfer function/time steps
-                    for rf, rsf in enumerate(rs_fine):
-                        temp_N = ICS_spectrum_scaled(
-                            rsf, 1 + Ee_fine[rf] / phys.me, eng_phot
-                        ) * ne_bins_sub[nonzero_ee_high[ef]] * dt_fine[rf] * bw_phot
-                        N_phot_new[nonzero_ee_high[ef]] += temp_N
+                        # Use fast relativistic ICS secondary expression
+                        # and sum over finer transfer function/time steps
+                        for rf, rsf in enumerate(rs_fine):
+                            temp_N = ICS_spectrum_scaled(
+                                rsf, 1 + Ee_fine[rf] / phys.me, eng_phot
+                            ) * ne_bins_sub[nonzero_ee_high[ef]] * dt_fine[rf] * bw_phot
+                            N_phot_new[nonzero_ee_high[ef]] += temp_N
 
-                # Subtract CMB photons upscattered by each electron bin
-                N_phot_new -= phys.thomson_xsec * phys.c * dt_dep * ne_bins_sub[:, np.newaxis] * CMB_N
+                    # Subtract CMB photons upscattered by each electron bin
+                    N_phot_new -= phys.thomson_xsec * phys.c * dt_dep * ne_bins_sub[:, np.newaxis] * CMB_N
 
-                ### POSITRON ANNIHILATION (WQ : needs testing)
-                if include_positrons:
-                    ind_pos = np.argmin((eng_phot - phys.me)**2)
-                    N_phot_new[0, ind_pos] += ne_inj
+                # ### POSITRON ANNIHILATION (WQ : needs fixing)
+                # if include_positrons:
+                #     ind_pos = np.argmin((eng_phot - phys.me)**2)
+                #     N_phot_new[0, ind_pos] += n_primary_inj
 
-                ### PAIR PRODUCTION OFF OF GAS (WQ : needs testing)
+                ### PAIR PRODUCTION OFF OF GAS (WQ : needs fixing)
                 if include_PP:
                     N_PP = (
                         (
                             xsec_PP_nuc(eng_phot) / (1 - phys.YHe)
                             + xsec_PP_ele(eng_phot) * (1 + 2 * phys.chi) 
                         ) * phys.c * dt_dep * phys.nH * rs_dep**3
-                        * N_phot_new.sum(axis=0)
+                        * N_phot_new
                     )
+                    N_phot_new -= N_PP
                     
                     Ne_PP_total = np.zeros_like(eng_elec)
                     for ii, E_phot in enumerate(eng_phot):
                         if E_phot > 2 * phys.me:
-                            Ne_PP_total += Ne_PP_single(E_phot, eng_elec, bw_elec) * N_PP[ii]
+                            Ne_PP_total += Ne_PP_single(E_phot, eng_elec, bw_elec) * N_PP.sum(axis=0)[ii]
                     
                     valid_PP = (Ne_PP_total > 1e-40)
                     if len(dep_rs_future) > 0 and np.any(valid_PP):
                         nonzero_PP = np.where(valid_PP)[0]
-                        Ee_PP_vals = eng_elec[nonzero_PP]   # energies on photon grid, shifted by rydberg
+                        Ee_PP_vals = eng_elec[nonzero_PP]
                         Ne_PP_vals = Ne_PP_total[nonzero_PP]   # counts per baryon
                         Ee_prev_PP = Ee_PP_vals.copy()
 
@@ -308,56 +390,58 @@ def evolve_elec_at_lowz(
                                 heat_rate_list[abs_idx] += np.sum(Ne_PP_vals * heat_rates_PP)
                             Ee_prev_PP = Ee_PP_future.copy()
 
-                            inds_PP_ff = np.digitize(Ee_PP_future, eng_elec)
-                            inds_PP_ff[inds_PP_ff == len(eng_elec)] = 0
+                            # inds_PP_ff = np.digitize(Ee_PP_future, eng_elec)
+                            # inds_PP_ff[inds_PP_ff == len(eng_elec)] = 0
+                            inds_PP_ff = np.clip(np.digitize(Ee_PP_future, eng_elec), 0, len(eng_elec) - 1)
+
                             np.add.at(elec_spec_at_rs[abs_idx], inds_PP_ff, Ne_PP_vals)
                             np.add.at(sec_elec_spec[ind_dep + 1 + ff], inds_PP_ff, Ne_PP_vals)
       
-                ### FOR TESTING AGAINST DH (WQ : needs testing)
-                ### include some photoionizations due to photon transfer functions not going to full ionization
-                if include_photoion:
-                    photo_ion_xsec_list = phys.photo_ion_xsec(eng_phot, species='HI') # cm^2
-                    Ne_photoion = N_phot_new * photo_ion_xsec_list * phys.c * dt_dep * xH_min * phys.nH * rs_dep**3 # per_baryon
-                    N_phot_new -= Ne_photoion
-                    Ne_photoion = Ne_photoion.sum(axis=0)
-                    Ee_photoion = eng_phot - phys.rydberg
+                # ### FOR TESTING AGAINST DH (WQ : needs fixing)
+                # ### include some photoionizations due to photon transfer functions not going to full ionization
+                # if include_photoion:
+                    # photo_ion_xsec_list = phys.photo_ion_xsec(eng_phot, species='HI') # cm^2
+                    # Ne_photoion = N_phot_new * photo_ion_xsec_list * phys.c * dt_dep * xH_min * phys.nH * rs_dep**3 # per_baryon
+                    # N_phot_new -= Ne_photoion
+                    # Ne_photoion = Ne_photoion.sum(axis=0)
+                    # Ee_photoion = eng_phot - phys.rydberg
 
-                    # Add photoionization electrons (same propagation pattern as Compton secondaries)
-                    valid_photo = (Ee_photoion > 3e3) & (Ne_photoion > 1e-40)
-                    if len(dep_rs_future) > 0 and np.any(valid_photo):
-                        nonzero_photo = np.where(valid_photo)[0]
-                        Ee_photo_vals = Ee_photoion[nonzero_photo]   # energies on photon grid, shifted by rydberg
-                        Ne_photo_vals = Ne_photoion[nonzero_photo]   # counts per baryon
-                        Ee_prev_photo = Ee_photo_vals.copy()
+                    # # Add photoionization electrons (same propagation pattern as Compton secondaries)
+                    # valid_photo = (Ee_photoion > 3e3) & (Ne_photoion > 1e-40)
+                    # if len(dep_rs_future) > 0 and np.any(valid_photo):
+                    #     nonzero_photo = np.where(valid_photo)[0]
+                    #     Ee_photo_vals = Ee_photoion[nonzero_photo]   # energies on photon grid, shifted by rydberg
+                    #     Ne_photo_vals = Ne_photoion[nonzero_photo]   # counts per baryon
+                    #     Ee_prev_photo = Ee_photo_vals.copy()
 
-                        for ff, rs_fut in enumerate(dep_rs_future):
-                            abs_idx =ind_inj + ind_dep + 1 + ff
+                    #     for ff, rs_fut in enumerate(dep_rs_future):
+                    #         abs_idx =ind_inj + ind_dep + 1 + ff
 
-                            pts_photo = np.column_stack([
-                                np.full(len(nonzero_photo), rs_dep),
-                                Ee_photo_vals,
-                                np.full(len(nonzero_photo), rs_fut)
-                            ])
-                            Ee_photo_future = transfer_Ee(pts_photo)
+                    #         pts_photo = np.column_stack([
+                    #             np.full(len(nonzero_photo), rs_dep),
+                    #             Ee_photo_vals,
+                    #             np.full(len(nonzero_photo), rs_fut)
+                    #         ])
+                    #         Ee_photo_future = transfer_Ee(pts_photo)
 
-                            if include_heating:
-                                dt_fut = dlnz / phys.hubble(rs_fut)
-                                zero_mask_photo = (Ee_photo_future == 0)
-                                heat_rates_photo = np.where(
-                                    zero_mask_photo,
-                                    np.where(Ee_prev_photo > 0, Ee_prev_photo / dt_fut, 0.0),
-                                    np.nan_to_num(
-                                        phys.elec_heating_engloss_rate(Ee_photo_future, 1+2*phys.chi, rs_fut),
-                                        nan=0.0, posinf=0.0, neginf=0.0
-                                    )
-                                )
-                                heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * heat_rates_photo)
-                            Ee_prev_photo = Ee_photo_future.copy()
+                    #         if include_heating:
+                    #             dt_fut = dlnz / phys.hubble(rs_fut)
+                    #             zero_mask_photo = (Ee_photo_future == 0)
+                    #             heat_rates_photo = np.where(
+                    #                 zero_mask_photo,
+                    #                 np.where(Ee_prev_photo > 0, Ee_prev_photo / dt_fut, 0.0),
+                    #                 np.nan_to_num(
+                    #                     phys.elec_heating_engloss_rate(Ee_photo_future, 1+2*phys.chi, rs_fut),
+                    #                     nan=0.0, posinf=0.0, neginf=0.0
+                    #                 )
+                    #             )
+                    #             heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * heat_rates_photo)
+                    #         Ee_prev_photo = Ee_photo_future.copy()
 
-                            inds_photo_ff = np.digitize(Ee_photo_future, eng_elec)
-                            inds_photo_ff[inds_photo_ff == len(eng_elec)] = 0
-                            np.add.at(elec_spec_at_rs[abs_idx], inds_photo_ff, Ne_photo_vals)
-                            np.add.at(sec_elec_spec[ind_dep + 1 + ff],        inds_photo_ff, Ne_photo_vals)
+                    #         inds_photo_ff = np.digitize(Ee_photo_future, eng_elec)
+                    #         inds_photo_ff[inds_photo_ff == len(eng_elec)] = 0
+                    #         np.add.at(elec_spec_at_rs[abs_idx], inds_photo_ff, Ne_photo_vals)
+                    #         np.add.at(sec_elec_spec[ind_dep + 1 + ff],        inds_photo_ff, Ne_photo_vals)
 
                 ### COMPTON SCATTERING
                 # Change to photon spectrum
@@ -403,8 +487,7 @@ def evolve_elec_at_lowz(
                         Ee_prev_sec = Ee_future.copy()
 
                         # Add electrons to spectrum
-                        inds_Ee_fut = np.digitize(Ee_future, eng_elec)
-                        inds_Ee_fut[inds_Ee_fut == len(eng_elec)] = 0
+                        inds_Ee_fut = np.clip(np.digitize(Ee_future, eng_elec), 0, len(eng_elec) - 1)
                         np.add.at(elec_spec_at_rs[abs_idx], inds_Ee_fut, sec_elec_ICS[nonzero_sec])
                         np.add.at(sec_elec_spec[ind_dep + 1 + ind_fut], inds_Ee_fut, sec_elec_ICS[nonzero_sec]) 
 
@@ -438,9 +521,10 @@ def evolve_elec_at_lowz(
 
         ypar = quad(heat_integrand, start_rs, end_rs)[0]
 
-        # Get y-type distortion
-        y_dist = phys.ymu_distortion(eng_phot, ypar, 1., 'y')
-        phot_spec.dNdE += y_dist.dNdE
+        if include_y_in_dist:
+            # Get y-type distortion
+            y_dist = phys.ymu_distortion(eng_phot, ypar, 1., 'y')
+            phot_spec.dNdE += y_dist.dNdE
 
         f_heat = heat_rate_list / (
             phys.inj_rate(
@@ -1196,20 +1280,26 @@ def Ne_PP_single(eng_phot, eng_elec, bw_elec):
                         
 ### FOR CROSS CHECKS
 def comparison_lowz_v_DH(
-    E_init=None, DM_process=None, sigmav=1e-40, tau=1e40, 
-    start_rs=None, end_rs=None, dlnz=0.008, fine_tf=False
+    E_init=None, DM_process=None, primary=None, sigmav=1e-40, tau=1e40, 
+    start_rs=None, end_rs=None, dlnz=0.008, fine_tf=False,
+    include_PP=True
 ):
-    mDM = 2 * (phys.me + E_init)
+    if primary == 'elec':
+        mDM = 2 * (phys.me + E_init)
+    elif primary == 'phot':
+        mDM = 2 * E_init
 
     ### Run low-z method
-    result = evolve_elec_at_lowz(
-        mDM, DM_process=DM_process, lifetime=tau, sigmav=sigmav,
+    result = evolve_at_lowz(
+        DM_process=DM_process, primary=primary,
+        mDM=mDM, lifetime=tau, sigmav=sigmav,
         start_rs=start_rs, end_rs=end_rs, 
-        dlnz=dlnz, fine_tf=fine_tf
+        dlnz=dlnz, fine_tf=fine_tf, include_PP=include_PP
     )
 
     # Slap the last set of electrons with DH transfer functions to get their energy deposition
     test_spec = copy(result['elec_spec'][-1])
+    # test_spec[result['elec_eng'] < 8e5] = 0
     
     dep_tf_data = config.load_data('dep_tf')
     ics_tf_data = config.load_data('ics_tf')
@@ -1255,7 +1345,7 @@ def comparison_lowz_v_DH(
 
     ### Run DarkHistory on fiducial model
     result_near4_DHstd = main.evolve(
-        DM_process=DM_process, primary='elec_delta',
+        DM_process=DM_process, primary=primary+'_delta',
         mDM=mDM, lifetime=tau*1e40, sigmav=sigmav*1e-40,
         start_rs=start_rs, end_rs=end_rs,
         init_cond = (1, phys.chi, phys.Tm_std(start_rs)),
@@ -1265,7 +1355,7 @@ def comparison_lowz_v_DH(
     )
 
     result_near4_DH = main.evolve(
-        DM_process=DM_process, primary='elec_delta',
+        DM_process=DM_process, primary=primary+'_delta',
         mDM=mDM, lifetime=tau, sigmav=sigmav,
         start_rs=start_rs, end_rs=end_rs,
         init_cond = (1, phys.chi, phys.Tm_std(start_rs)),
