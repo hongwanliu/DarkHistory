@@ -343,7 +343,7 @@ def evolve_at_lowz(
                 #     ind_pos = np.argmin((eng_phot - phys.me)**2)
                 #     N_phot_new[0, ind_pos] += n_primary_inj
 
-                ### PAIR PRODUCTION OFF OF GAS (WQ : needs fixing)
+                ### PAIR PRODUCTION OFF OF GAS
                 if include_PP:
                     N_PP = (
                         (
@@ -1285,9 +1285,12 @@ def comparison_lowz_v_DH(
     include_PP=True
 ):
     if primary == 'elec':
-        mDM = 2 * (phys.me + E_init)
+        mDM = (phys.me + E_init)
     elif primary == 'phot':
-        mDM = 2 * E_init
+        mDM = E_init
+    
+    if DM_process == 'decay':
+        mDM *= 2
 
     ### Run low-z method
     result = evolve_at_lowz(
@@ -1300,6 +1303,11 @@ def comparison_lowz_v_DH(
     # Slap the last set of electrons with DH transfer functions to get their energy deposition
     test_spec = copy(result['elec_spec'][-1])
     # test_spec[result['elec_eng'] < 8e5] = 0
+
+    # plt.figure()
+    # plt.loglog()
+    # plt.plot(result['elec_eng'], test_spec)
+    # plt.show()
     
     dep_tf_data = config.load_data('dep_tf')
     ics_tf_data = config.load_data('ics_tf')
@@ -1365,3 +1373,276 @@ def comparison_lowz_v_DH(
     )
 
     return result, extra_ICS, extra_y_dist, result_near4_DHstd, result_near4_DH
+
+### FOR GENERATING AND USING THE SPECTRAL DISTORTION/HEATING TRANSFER FUNCTIONS
+# WQ: THIS FUNCTION WAS COPY-PASTED BUT NOT TESTED
+def generate_lowz_tfs(
+    eps=1e-7, rs_min=1.01, rs_max=5, rs_num=21,
+    save_dir="/Users/viviesque/Dropbox (MIT)/Research/CLASS-DarkHistory/Updated DarkAges Transfer Functions/low-z/"
+):
+    """
+    Generates and saves transfer functions for non-y-type spectral distortions and f_heat.
+
+    Parameters
+    ----------
+    eps: float
+        Normalization factor for injection (see notes/publication)
+    rs_min: float
+        minimum redshift at which to generate transfer function
+    rs_max: float
+        maximum redshift at which to generate transfer function
+    rs_num: int
+        number of redshift values to use
+    save_dir: string
+        directory in which to save transfer functions
+    """
+    convert = 1e16 * (phys.hbar * 2 * np.pi) * phys.c / (4*np.pi) * phys.ele * 1e4 / eps
+
+    # Lists of redshift and energies to compute transfer function over
+    rs_list = np.linspace(rs_min, rs_max, num=rs_num)
+    log10eng0 = 3.6989700794219966
+    log10E_list = np.array([log10eng0 + 2.3252559*i/5.0 for i in np.arange(20)])
+
+    transfer_heat_elec = np.zeros((len(rs_list), len(log10E_list), len(rs_list)))
+    transfer_nony_elec = np.zeros((len(rs_list), len(log10E_list), 500))
+
+    transfer_heat_phot = np.zeros((len(rs_list), len(log10E_list), len(rs_list)))
+    transfer_nony_phot = np.zeros((len(rs_list), len(log10E_list), 500))
+
+    for ii, rs_inj in enumerate(tqdm(rs_list)):
+        for jj, log10E in enumerate(log10E_list):
+            E_init = 10**log10E
+            dlnz = 0.016
+            dt = dlnz / phys.hubble(rs_inj)
+
+            # Redshift range for evolution
+            start_rs = rs_inj
+            end_rs = 1
+
+            ### Run low redshift method on electrons
+            # Effective lifetime for a given epsilon in [s]
+            mDM = 2 * (phys.me + E_init)
+            tau = dt * phys.rho_DM / (mDM * eps * phys.nB)
+            result = evolve_at_lowz(
+                primary='elec', DM_process='decay', mDM=mDM, lifetime=tau, 
+                start_rs=start_rs, end_rs=end_rs, dlnz=dlnz,
+                include_heating=True, include_y_in_dist=False, single_step_inj=True
+            )
+            eng_phot = result['distortion'].eng # should be same for any step
+
+            ### Add to transfer function arrays
+            transfer_nony_elec[ii, jj, :] = (
+                eng_phot * result['distortion'].dNdE * convert
+            ) # dimensionless -> 10^10 cm^3 Jy/sr
+            transfer_heat_elec[ii, jj, :] = np.interp(
+                rs_list, result['rs'][::-1], result['f_heat'][::-1], 
+                left=0, right=0 # result['f_heat'][0]
+            )
+            
+            ### Run low redshift method on photons
+            # Effective lifetime for a given epsilon in [s]
+            mDM = 2 * E_init
+            tau = dt * phys.rho_DM / (mDM * eps * phys.nB) 
+            result = evolve_at_lowz(
+                primary='phot', DM_process='decay', mDM=mDM, lifetime=tau, 
+                start_rs=start_rs, end_rs=end_rs, dlnz=dlnz,
+                include_heating=True, include_y_in_dist=False, single_step_inj=True
+            )
+            eng_phot = result['distortion'].eng # should be same for any step
+
+            ### Add to transfer function arrays
+            transfer_nony_phot[ii, jj, :] = (
+                eng_phot * result['distortion'].dNdE * convert
+            ) # dimensionless -> 10^10 cm^3 Jy/sr
+            transfer_heat_phot[ii, jj, :] = np.interp(
+                rs_list, result['rs'][::-1], result['f_heat'][::-1], 
+                left=0, right=0 # result['f_heat'][0]
+            )
+
+    ### NON-Y TRANSFER FUNCTION
+    eV_to_GHz = 1/phys.hbar/2/np.pi/1e9 # WQ: double-check
+    inj_grid, freq_grid, E_grid = np.meshgrid(rs_list, eng_phot * eV_to_GHz, log10E_list, indexing='ij')
+    transfer_nony_elec_reordered = np.transpose(transfer_nony_elec, (0, 2, 1))
+    transfer_nony_phot_reordered = np.transpose(transfer_nony_phot, (0, 2, 1))
+
+    tf_nony_elec = transfer_nony_elec_reordered.flatten()
+    tf_nony_phot = transfer_nony_phot_reordered.flatten()
+
+    data_out = np.column_stack([
+        inj_grid.flatten(), freq_grid.flatten(), E_grid.flatten(), tf_nony_elec, tf_nony_phot
+    ])
+
+    save_path = (
+        save_dir+"tf_nony_eps-7_mass_scan_lowz.dat"
+    )
+    np.savetxt(
+        save_path, data_out, fmt='%.4e',
+        header='Columns in order are 1+z, frequency [GHz], log10(E/eV), E dN/dE from electrons (10^10 cm^3 Jy/sr), E dN/dE from photons (10^10 cm^3 Jy/sr)'
+    )
+
+    ### HEAT TRANSFER FUNCTION
+    # Reorder axes from (inj, E, dep) to (dep, E, inj) so flattening gives
+    # dep slowest-varying, then E, then inj fastest-varying (matches file format)
+    dep_grid, E_grid, inj_grid = np.meshgrid(rs_list, log10E_list, rs_list, indexing='ij')
+    transfer_heat_elec_reordered = np.transpose(transfer_heat_elec, (2, 1, 0))
+    transfer_heat_phot_reordered = np.transpose(transfer_heat_phot, (2, 1, 0))
+
+    tf_heat_elec = transfer_heat_elec_reordered.flatten()
+    tf_heat_phot = transfer_heat_phot_reordered.flatten()
+
+    data_out = np.column_stack([
+        dep_grid.flatten(), E_grid.flatten(), inj_grid.flatten(), tf_heat_elec, tf_heat_phot
+    ])
+
+    save_path = (
+        save_dir +"tf_heat_eps-7_mass_scan_lowz.dat"
+    )
+    np.savetxt(
+        save_path, data_out, fmt='%.4e',
+        header='Columns in order are 1+z (dep), log10(E/eV), 1+z (inj), TF from electrons, TF from photons'
+    )
+
+    return
+
+def load_tf(path):
+    """
+    Takes saved transfer function and returns all dimensions as arrays.
+    """
+    d = np.loadtxt(path)
+    ax0 = np.unique(d[:, 0])
+    ax1 = np.unique(d[:, 1])
+    ax2 = np.unique(d[:, 2])
+    shape = (len(ax0), len(ax1), len(ax2))
+    tf_elec = d[:, 3].reshape(shape)
+    tf_phot = d[:, 4].reshape(shape)
+    return ax0, ax1, ax2, tf_elec, tf_phot
+
+def _signed_log_interpolator(axes, values, floor_below_max=30):
+    """
+    RegularGridInterpolator that interpolates log10(|value|) separately for
+    the positive and negative branches of `values`, recombining afterward.
+    Approximates log-space (geometric) interpolation while still handling
+    sign changes and exact zeros in the data.
+    """
+    floor = np.log10(np.max(np.abs(values))) - floor_below_max
+
+    log_pos = np.where(values > 0, np.log10(np.where(values > 0, values, 1)), floor)
+    log_neg = np.where(values < 0, np.log10(np.where(values < 0, -values, 1)), floor)
+
+    interp_pos = RegularGridInterpolator(axes, log_pos, bounds_error=False, fill_value=None)
+    interp_neg = RegularGridInterpolator(axes, log_neg, bounds_error=False, fill_value=None)
+
+    return lambda pts: 10**interp_pos(pts) - 10**interp_neg(pts)
+
+def distortion_from_tfs(
+    primary='elec', DM_process='decay', mDM=None, lifetime=None, sigmav=None, 
+    start_rs=4.0, end_rs=1.0, dlnz=0.016,
+    include_y_in_dist=True,
+    tf_dir="/Users/viviesque/Dropbox (MIT)/Research/CLASS-DarkHistory/Updated DarkAges Transfer Functions/low-z/"
+):
+    """
+    Given exotic injection parameters, builds spectral distortion from transfer
+
+    Parameters
+    ----------
+    primary: string
+        Primary particles injected. Currently can only be one of {'elec', 'phot'}.
+    DM_process: string
+        Process by which DM injects energy. Currently can only be one of {'decay', 'swave'}.
+    mDM: float
+        Dark matter mass in [eV].
+    lifetime: float
+        Dark matter decay lifetime in [s].
+    sigmav: float
+        Dark matter annihlation cross-section in [cm^3/s].
+    start_rs: float
+        Starting redshift for evolution.
+    end_rs: float
+        Ending redshift for evolution.
+    dlnz: float
+        Log redshift step for evolution.
+    include_y_in_dist: bool
+        Flag to include y-type distortion as part of output spectral distortion.
+    tf_dir: string
+        Directory where transfer functions are saved.
+
+    Returns
+    -------
+    ndarrays
+        Tables for photon scattering and secondary electrons
+    """
+    ### Get list of redshifts to evolve over
+    rs_list = np.exp(np.arange(np.log(start_rs), np.log(end_rs), -dlnz))
+    dlnz = - np.log(rs_list[1] / rs_list[0])
+
+    ### Get the injection history for this particular model
+    if DM_process == 'decay':
+        pri_per_DM = 2
+        weights = 1e10 * phys.rho_DM / mDM / lifetime / phys.hubble(rs_list)
+    elif DM_process == 'swave':
+        pri_per_DM = 1
+        weights = 1e10 * (phys.rho_DM / mDM)**2 * sigmav / 2 / phys.hubble(rs_list) * rs_list**3
+    else:
+        print("Only 'decay' and 'swave' processes are implemented.")
+
+    ### Deal with parameters specific to e+e- and photon injections (no other final states implemented).
+    if primary == 'elec':
+        pri_mass = phys.me
+    elif primary == 'phot':
+        pri_mass = 0
+    else:
+        print("Only 'elec' and 'phot' primaries currently implemented.")
+    
+    E_pri = mDM / pri_per_DM - pri_mass
+
+    ### Load relevant transfer functions. 
+    # Interpolate to get the values at the correct injection energy and redshifts.
+    # tf's in units of 10^10 cm^3 Jy/sr
+    rs_axis, freq_axis, E_axis, tf_nony_elec, tf_nony_phot = load_tf(
+        tf_dir + "tf_nony_eps-7_mass_scan_lowz.dat" #, (9, 500, 20)
+    )
+
+    if primary == 'elec':
+        tf_to_interp = tf_nony_elec
+    elif primary =='phot':
+        tf_to_interp = tf_nony_phot
+    else:
+        print("Only 'elec' and 'phot' primaries currently implemented.")
+
+    # interp_nony = _signed_log_interpolator(
+    #     (rs_axis, freq_axis, E_axis),
+    #     tf_to_interp
+    # )
+    interp_nony = RegularGridInterpolator(
+        (rs_axis, freq_axis, E_axis),
+        tf_to_interp, bounds_error=False, fill_value=None
+    )
+    log10E_pri = np.log10(E_pri)
+    rs_grid, freq_grid = np.meshgrid(rs_list, freq_axis, indexing='ij')
+    pts = np.stack([rs_grid.ravel(), freq_grid.ravel(),
+                    np.full(rs_grid.size, log10E_pri)], axis=-1)
+    tf_at_E = interp_nony(pts).reshape(len(rs_list), len(freq_axis))  # (n_rs, 500)
+
+    if include_y_in_dist:
+        rs_dep_axis, E_heat_axis, rs_inj_axis, tf_heat_elec, tf_heat_phot = load_tf(
+            tf_dir + "tf_heat_eps-7_mass_scan_lowz.dat" #, (9, 20, 9)
+        )
+        interp_heat = RegularGridInterpolator(
+            (rs_dep_axis, E_heat_axis, rs_inj_axis),
+            tf_heat_elec if primary == 'elec' else tf_heat_phot,
+            bounds_error=False, fill_value=None
+        )
+
+    ### Dot into the transfer function. Only e+e- and photons implemented right now.
+    fudge = 1 # 1/4
+    dist_EdNdE = np.sum(fudge * weights * tf_at_E.T * dlnz, axis=1) # Jy / sr
+
+    ### Restore to usual DarkHistory units
+    eng_list = freq_axis * 1e9 * (phys.hbar * 2 * np.pi) # eV
+    convert = 1e-26 / (phys.nB * phys.hbar * 2 * np.pi * phys.c / (4*np.pi) * phys.ele * 1e4)
+    dist_EdNdE *= convert # now dimensionless
+
+    ### Convert to Spectrum class and return
+    return {
+        'distortion': Spectrum(eng_list, dist_EdNdE / eng_list, spec_type='dNdE', rs=1)
+    }
