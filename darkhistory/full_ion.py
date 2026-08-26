@@ -18,7 +18,7 @@ from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 import matplotlib.pyplot as plt
 
 save_dir_default = config.data_path+'/'
-xH_min = 1e-4 # 4.53978687e-05 # minimum xH value used in photon transfer functions
+xH_min = 4.53978687e-05 # minimum xH value used in photon transfer functions
 
 def save_h5_dict(fn, d):
     """Save a dictionary to an HDF5 file."""
@@ -31,7 +31,7 @@ def evolve_at_lowz(
     primary='elec', DM_process='decay', mDM=None, lifetime=None, sigmav=None, 
     initial_spec_phot=None, start_rs=4.0, end_rs=1.0, dlnz=0.008,
     save_dir=None, verbose=True, tworegime=True,
-    include_heating=True, include_y_in_dist=True, single_step_inj=False,
+    include_heating=True, include_y_in_dist=True, single_step_inj=False, no_inj=False,
     include_photoion=False, include_PP=True, include_positrons=False,
     fine_tf=False
 ):
@@ -72,6 +72,9 @@ def evolve_at_lowz(
     single_step_inj: bool
         Flag to only inject energy at the first redshift step.
         Useful for generating injection transfer functions.
+    no_inj: bool
+        Flag to never inject energy.
+        Useful for only evolving initial_spec_phot with no further injection.
     include_photoion: bool
         Flag to include residual photoionizations.
         Useful for cross-checking against DarkHistory BUT NOT YET FIXED.
@@ -184,7 +187,7 @@ def evolve_at_lowz(
     if verbose:
         print("Starting main calculation...")
 
-    if single_step_inj:
+    if single_step_inj or no_inj:
         inj_rs_list = np.array([start_rs])
     else:
         inj_rs_list = rs_list
@@ -214,18 +217,21 @@ def evolve_at_lowz(
 
         # Calculate the primary particles injected per baryon at this step
         dt_inj = dlnz / phys.hubble(rs_inj)
-        if DM_process == 'decay':
-            n_primary_inj = (
-                2 * dt_inj / mDM * phys.inj_rate(
-                    DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
-                ) 
-            ) / (phys.nB * rs_inj**3)
+        if no_inj:
+            n_primary_inj = 0
         else:
-            n_primary_inj = (
-                dt_inj / mDM * phys.inj_rate(
-                    DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
-                ) 
-            ) / (phys.nB * rs_inj**3)
+            if DM_process == 'decay':
+                n_primary_inj = (
+                    2 * dt_inj / mDM * phys.inj_rate(
+                        DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
+                    ) 
+                ) / (phys.nB * rs_inj**3)
+            else:
+                n_primary_inj = (
+                    dt_inj / mDM * phys.inj_rate(
+                        DM_process, rs_inj, mDM=mDM, lifetime=lifetime, sigmav=sigmav
+                    ) 
+                ) / (phys.nB * rs_inj**3)
 
         # If electrons are being injected
         if primary == 'elec':
