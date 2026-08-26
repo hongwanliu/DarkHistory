@@ -18,7 +18,7 @@ from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 import matplotlib.pyplot as plt
 
 save_dir_default = config.data_path+'/'
-xH_min = 4.53978687e-05 # minimum xH value used in photon transfer functions
+xH_min = 1e-4 # 4.53978687e-05 # minimum xH value used in photon transfer functions
 
 def save_h5_dict(fn, d):
     """Save a dictionary to an HDF5 file."""
@@ -88,8 +88,10 @@ def evolve_at_lowz(
         tbd
     """
     ### PRELIMINARIES
-    # Redshift list to evolve over
-    rs_list = np.exp(np.arange(np.log(start_rs), np.log(end_rs), -dlnz))
+    # Redshift list to evolve over (added n_steps line to avoid floating point issues with np.arange)
+    # rs_list = np.exp(np.arange(np.log(start_rs), np.log(end_rs), -dlnz))
+    n_steps = int(round((np.log(start_rs) - np.log(end_rs)) / dlnz))
+    rs_list = start_rs * np.exp(-dlnz * np.arange(n_steps))
 
     if primary == 'elec':
         # Kinetic energy of primary electrons
@@ -173,6 +175,7 @@ def evolve_at_lowz(
     # Initialize quantities for output
     # Photon spectra
     phot_spec = Spectrum(eng_phot, np.zeros_like(eng_phot), rs=1, spec_type='dNdE')
+    phot_spec_at_rs = Spectra([], spec_type='N') # total photon spectrum at each time step
     # Electron spectra
     elec_spec_at_rs = np.zeros((len(rs_list), len(eng_elec))) # total electron spectrum at each time step
 
@@ -397,51 +400,53 @@ def evolve_at_lowz(
                             np.add.at(elec_spec_at_rs[abs_idx], inds_PP_ff, Ne_PP_vals)
                             np.add.at(sec_elec_spec[ind_dep + 1 + ff], inds_PP_ff, Ne_PP_vals)
       
-                # ### FOR TESTING AGAINST DH (WQ : needs fixing)
-                # ### include some photoionizations due to photon transfer functions not going to full ionization
-                # if include_photoion:
-                    # photo_ion_xsec_list = phys.photo_ion_xsec(eng_phot, species='HI') # cm^2
-                    # Ne_photoion = N_phot_new * photo_ion_xsec_list * phys.c * dt_dep * xH_min * phys.nH * rs_dep**3 # per_baryon
-                    # N_phot_new -= Ne_photoion
-                    # Ne_photoion = Ne_photoion.sum(axis=0)
-                    # Ee_photoion = eng_phot - phys.rydberg
+                ### FOR TESTING AGAINST DH (WQ : needs fixing)
+                ### include some photoionizations due to photon transfer functions not going to full ionization
+                if include_photoion:
+                    photo_ion_xsec_list = phys.photo_ion_xsec(eng_phot, species='HI') # cm^2
+                    Ne_photoion = N_phot_new * photo_ion_xsec_list * phys.c * dt_dep * xH_min * phys.nH * rs_dep**3 # per_baryon
+                    N_phot_new -= Ne_photoion
+                    Ne_photoion = Ne_photoion.sum(axis=0)
+                    Ee_photoion = eng_phot - phys.rydberg
 
-                    # # Add photoionization electrons (same propagation pattern as Compton secondaries)
-                    # valid_photo = (Ee_photoion > 3e3) & (Ne_photoion > 1e-40)
-                    # if len(dep_rs_future) > 0 and np.any(valid_photo):
-                    #     nonzero_photo = np.where(valid_photo)[0]
-                    #     Ee_photo_vals = Ee_photoion[nonzero_photo]   # energies on photon grid, shifted by rydberg
-                    #     Ne_photo_vals = Ne_photoion[nonzero_photo]   # counts per baryon
-                    #     Ee_prev_photo = Ee_photo_vals.copy()
+                    # Add photoionization electrons (same propagation pattern as Compton secondaries)
+                    valid_photo = (Ne_photoion > 1e-40) # (Ee_photoion > 3e3)
+                    if len(dep_rs_future) > 0 and np.any(valid_photo):
+                        nonzero_photo = np.where(valid_photo)[0]
+                        Ee_photo_vals = Ee_photoion[nonzero_photo]   # energies on photon grid, shifted by rydberg
+                        Ne_photo_vals = Ne_photoion[nonzero_photo]   # counts per baryon
+                        Ee_prev_photo = Ee_photo_vals.copy()
 
-                    #     for ff, rs_fut in enumerate(dep_rs_future):
-                    #         abs_idx =ind_inj + ind_dep + 1 + ff
+                        for ff, rs_fut in enumerate(dep_rs_future):
+                            abs_idx =ind_inj + ind_dep + 1 + ff
 
-                    #         pts_photo = np.column_stack([
-                    #             np.full(len(nonzero_photo), rs_dep),
-                    #             Ee_photo_vals,
-                    #             np.full(len(nonzero_photo), rs_fut)
-                    #         ])
-                    #         Ee_photo_future = transfer_Ee(pts_photo)
+                            pts_photo = np.column_stack([
+                                np.full(len(nonzero_photo), rs_dep),
+                                Ee_photo_vals,
+                                np.full(len(nonzero_photo), rs_fut)
+                            ])
+                            Ee_photo_future = transfer_Ee(pts_photo)
 
-                    #         if include_heating:
-                    #             dt_fut = dlnz / phys.hubble(rs_fut)
-                    #             zero_mask_photo = (Ee_photo_future == 0)
-                    #             heat_rates_photo = np.where(
-                    #                 zero_mask_photo,
-                    #                 np.where(Ee_prev_photo > 0, Ee_prev_photo / dt_fut, 0.0),
-                    #                 np.nan_to_num(
-                    #                     phys.elec_heating_engloss_rate(Ee_photo_future, 1+2*phys.chi, rs_fut),
-                    #                     nan=0.0, posinf=0.0, neginf=0.0
-                    #                 )
-                    #             )
-                    #             heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * heat_rates_photo)
-                    #         Ee_prev_photo = Ee_photo_future.copy()
+                            if include_heating:
+                                dt_fut = dlnz / phys.hubble(rs_fut)
+                                zero_mask_photo = (Ee_photo_future == 0)
+                                heat_rates_photo = np.where(
+                                    zero_mask_photo,
+                                    np.where(Ee_prev_photo > 0, Ee_prev_photo / dt_fut, 0.0),
+                                    np.nan_to_num(
+                                        phys.elec_heating_engloss_rate(Ee_photo_future, 1+2*phys.chi, rs_fut),
+                                        nan=0.0, posinf=0.0, neginf=0.0
+                                    )
+                                )
+                                heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * heat_rates_photo)
+                            Ee_prev_photo = Ee_photo_future.copy()
 
-                    #         inds_photo_ff = np.digitize(Ee_photo_future, eng_elec)
-                    #         inds_photo_ff[inds_photo_ff == len(eng_elec)] = 0
-                    #         np.add.at(elec_spec_at_rs[abs_idx], inds_photo_ff, Ne_photo_vals)
-                    #         np.add.at(sec_elec_spec[ind_dep + 1 + ff],        inds_photo_ff, Ne_photo_vals)
+                            # inds_photo_ff = np.digitize(Ee_photo_future, eng_elec)
+                            # inds_photo_ff[inds_photo_ff == len(eng_elec)] = 0
+                            inds_photo_ff = np.clip(np.digitize(Ee_photo_future, eng_elec), 0, len(eng_elec) - 1)
+
+                            np.add.at(elec_spec_at_rs[abs_idx], inds_photo_ff, Ne_photo_vals)
+                            np.add.at(sec_elec_spec[ind_dep + 1 + ff],        inds_photo_ff, Ne_photo_vals)
 
                 ### COMPTON SCATTERING
                 # Change to photon spectrum
@@ -494,6 +499,7 @@ def evolve_at_lowz(
                 ### Redshift and accumulate distortion
                 sec_phot_spec = Spectrum(eng_phot, N_final.sum(axis=0), rs=rs_dep, spec_type='N')
 
+            phot_spec_at_rs.append(sec_phot_spec.copy())
         sec_phot_spec.redshift(1)
         phot_spec.dNdE += sec_phot_spec.dNdE
                     
@@ -539,7 +545,8 @@ def evolve_at_lowz(
         'rs' : rs_list,
         'elec_eng' : eng_elec,
         'elec_spec' : elec_spec_at_rs,
-        'distortion' : phot_spec
+        'distortion' : phot_spec,
+        'phot_spec' : phot_spec_at_rs
     }
     
     if include_heating:
@@ -886,12 +893,14 @@ def get_electron_tf(
     else:
         return elec_tf
 
-### COMPTON AND INVERSE COMPTON SCATTERING (some translated from Tracy's IDL code)
+### COMPTON AND INVERSE COMPTON SCATTERING 
+### Some from Blumenthal & Gould 1970, some translated from Tracy's IDL code
 
 ### ICS
 
 # Distribution function of ICS photons
 # in terms of normalized final energy, E_f = E_final / (4 E_init gamma^2)
+# Blumenthal & Gould, Eq. (2.45)
 def f_ICS(E_f):
     lnE = np.log(E_f)
     if np.isscalar(E_f):
@@ -903,6 +912,7 @@ def f_ICS(E_f):
 
 # Spectrum per time of photons from ICS of CMB,
 # in terms of dN / dt / dE_final
+# Blumenthal & Gould, Eq. (2.44)
 def ICS_spectrum(rs, gamma, E_final):
     ECMB_list = np.linspace(1e-3*phys.TCMB(rs), 10*phys.TCMB(rs), num=500)
     dE = ECMB_list[1] - ECMB_list[0]
@@ -1399,7 +1409,7 @@ def generate_lowz_tfs(
     convert = 1e16 * (phys.hbar * 2 * np.pi) * phys.c / (4*np.pi) * phys.ele * 1e4 / eps
 
     # Lists of redshift and energies to compute transfer function over
-    rs_list = np.linspace(rs_min, rs_max, num=rs_num)
+    rs_list = np.geomspace(rs_min, rs_max, num=rs_num)
     log10eng0 = 3.6989700794219966
     log10E_list = np.array([log10eng0 + 2.3252559*i/5.0 for i in np.arange(20)])
 
@@ -1429,6 +1439,10 @@ def generate_lowz_tfs(
                 include_heating=True, include_y_in_dist=False, single_step_inj=True
             )
             eng_phot = result['distortion'].eng # should be same for any step
+
+            ### In order to get heating transfer function correct
+            ### need an additional factor of dt_dep / dt_inj
+            dt_dep = dlnz / phys.hubble(result['rs'])
 
             ### Add to transfer function arrays
             transfer_nony_elec[ii, jj, :] = (
@@ -1634,8 +1648,7 @@ def distortion_from_tfs(
         )
 
     ### Dot into the transfer function. Only e+e- and photons implemented right now.
-    fudge = 1 # 1/4
-    dist_EdNdE = np.sum(fudge * weights * tf_at_E.T * dlnz, axis=1) # Jy / sr
+    dist_EdNdE = np.sum(weights * tf_at_E.T * dlnz, axis=1) # Jy / sr
 
     ### Restore to usual DarkHistory units
     eng_list = freq_axis * 1e9 * (phys.hbar * 2 * np.pi) # eV
