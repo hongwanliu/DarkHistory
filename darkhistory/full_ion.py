@@ -11,7 +11,7 @@ import darkhistory.physics as phys
 from darkhistory.physics import ymu_distortion
 from darkhistory.spec.spectrum import Spectrum
 from darkhistory.spec.spectra import Spectra
-from darkhistory.spec.spectools import rebin_N_arr, get_log_bin_width
+from darkhistory.spec.spectools import rebin_N_arr, get_log_bin_width, get_bin_bound
 from darkhistory.electrons.ics.ics_spectrum import ics_spec
 from darkhistory.electrons.elec_cooling import get_elec_cooling_tf
 
@@ -87,8 +87,10 @@ def evolve_at_lowz(
 
     Returns
     -------
-    ndarrays
-        tbd
+    dict
+        Results of the calculation, including a list of output redshifts, the electron energy bins,
+        the spectrum of electrons at each redshift, the spectrum of photons at each redshift, and
+        the spectral distortion today. If 'include_heating'=True, also returns f_heat and the y-parameter.
     """
     ### PRELIMINARIES
     # Redshift list to evolve over (added n_steps line to avoid floating point issues with np.arange)
@@ -159,7 +161,6 @@ def evolve_at_lowz(
     except:
         if verbose:
             print("Electron kinetic energy transfer function not found. Building it now...")
-        # WQ: eventually make tworegime true and change default values
         transfer_Ee = get_electron_tf(
             regenerate=True, interpolated=True, tworegime=tworegime,
             save_dir=save_dir, file_name='eng_elec_tf', save_file=True,
@@ -213,7 +214,7 @@ def evolve_at_lowz(
             sec_phot_spec.switch_spec_type('N')
         else:
             sec_phot_spec = Spectrum(eng_phot, np.zeros(len(eng_phot)), rs=rs_inj, spec_type='N')
-        sec_elec_spec = np.zeros((len(dep_rs_list), len(eng_phot))) 
+        sec_elec_spec = np.zeros((len(dep_rs_list), len(eng_elec)))
 
         # Calculate the primary particles injected per baryon at this step
         dt_inj = dlnz / phys.hubble(rs_inj)
@@ -256,21 +257,30 @@ def evolve_at_lowz(
                 heat_rate_list[ind_inj:] += n_primary_inj * heat_rates_hist  # [eV/s]
 
             # Find indices of electron spectrum corresponding to Ee_history
-            # Add n_primary_inj to corresponding bins
+            # Add n_primary_inj to corresponding bins, conserving N and energy via
+            # fractional splitting between neighboring bins (rebin_N_arr), rather than
+            # snapping to the nearest bin center via np.digitize.
             inds_rs = np.arange(ind_inj, ind_inj+len(dep_rs_list))
-            # inds_Ee = np.digitize(Ee_history, eng_elec)
-            inds_Ee = np.clip(np.digitize(Ee_history, eng_elec), 0, len(eng_elec) - 1)
+            Ee_history_clip = np.clip(Ee_history, eng_elec[0], eng_elec[-1])
 
             if rs_inj > end_rs:
-                elec_spec_at_rs[inds_rs,inds_Ee] += n_primary_inj
-                sec_elec_spec[range(len(dep_rs_list)), inds_Ee] += n_primary_inj
+                for i_dep in range(len(dep_rs_list)):
+                    N_row = rebin_N_arr(
+                        np.array([n_primary_inj]), np.array([Ee_history_clip[i_dep]]),
+                        eng_elec, spec_type='N'
+                    ).N
+                    elec_spec_at_rs[inds_rs[i_dep]] += N_row
+                    sec_elec_spec[i_dep] += N_row
 
         # If photons are being injected
         elif primary == 'phot':
             if rs_inj > end_rs:
-                ind_Eph = np.clip(np.digitize([Ep_init], eng_phot)[0], 0, len(eng_phot) - 1)
-                N_phot_inj = np.zeros(len(eng_phot))
-                N_phot_inj[ind_Eph] = n_primary_inj
+                N_phot_inj = rebin_N_arr(
+                    np.array([n_primary_inj]),
+                    np.array([np.clip(Ep_init, eng_phot[0], eng_phot[-1])]),
+                    eng_phot, spec_type='N'
+                ).N
+                assert sec_phot_spec.spec_type == 'N'
                 sec_phot_spec += N_phot_inj
 
         # No other channels are implemented right now
@@ -302,8 +312,9 @@ def evolve_at_lowz(
                 CMB_N = phys.CMB_spec(eng_phot, phys.TCMB(rs_dep)) * bw_phot
 
                 # Separate fast and slow electrons
-                nonzero_ee_low = np.where(eng_elec[nonzero_ee] < 1e9)[0]
-                nonzero_ee_high = np.where(eng_elec[nonzero_ee] >= 1e9)[0]
+                E_threshold = 1e8 # 1e9
+                nonzero_ee_low = np.where(eng_elec[nonzero_ee] < E_threshold)[0]
+                nonzero_ee_high = np.where(eng_elec[nonzero_ee] >= E_threshold)[0]
 
                 ne_bins_sub = sec_elec_spec[ind_dep, nonzero_ee]   
 
@@ -316,6 +327,12 @@ def evolve_at_lowz(
                 N_phot_new[0] = sec_phot_spec.N
 
                 ### INVERSE COMPTON SCATTERING
+                ### WQ: WARNING. This method does not actually work for capturing the ICS secondaries
+                ###     of very fast electrons. The time steps are just way way too coarse.
+                ###     However, the resulting photons are too low energy to really pair produce and
+                ###     too high energy to do anything else but redshift, so they do not contribute 
+                ###     to the CMB spectral distortion or heating. Will want to fix this for studies of
+                ###     higher energy photons.
                 if elec_present:
                     # Deal with slow electrons
                     N_phot_new[nonzero_ee_low] += (
@@ -366,7 +383,7 @@ def evolve_at_lowz(
                     Ne_PP_total = np.zeros_like(eng_elec)
                     for ii, E_phot in enumerate(eng_phot):
                         if E_phot > 2 * phys.me:
-                            Ne_PP_total += Ne_PP_single(E_phot, eng_elec, bw_elec) * N_PP.sum(axis=0)[ii]
+                            Ne_PP_total += Ne_PP_single(E_phot, eng_elec) * N_PP.sum(axis=0)[ii]
                     
                     valid_PP = (Ne_PP_total > 1e-40)
                     if len(dep_rs_future) > 0 and np.any(valid_PP):
@@ -399,14 +416,16 @@ def evolve_at_lowz(
                                 heat_rate_list[abs_idx] += np.sum(Ne_PP_vals * heat_rates_PP)
                             Ee_prev_PP = Ee_PP_future.copy()
 
-                            # inds_PP_ff = np.digitize(Ee_PP_future, eng_elec)
-                            # inds_PP_ff[inds_PP_ff == len(eng_elec)] = 0
-                            inds_PP_ff = np.clip(np.digitize(Ee_PP_future, eng_elec), 0, len(eng_elec) - 1)
+                            N_PP_row = rebin_N_arr(
+                                Ne_PP_vals,
+                                np.clip(Ee_PP_future, eng_elec[0], eng_elec[-1]),
+                                eng_elec, spec_type='N'
+                            ).N
 
-                            np.add.at(elec_spec_at_rs[abs_idx], inds_PP_ff, Ne_PP_vals)
-                            np.add.at(sec_elec_spec[ind_dep + 1 + ff], inds_PP_ff, Ne_PP_vals)
+                            elec_spec_at_rs[abs_idx] += N_PP_row
+                            sec_elec_spec[ind_dep + 1 + ff] += N_PP_row
       
-                ### FOR TESTING AGAINST DH (WQ : needs fixing)
+                ### FOR TESTING AGAINST DH
                 ### include some photoionizations due to photon transfer functions not going to full ionization
                 if include_photoion:
                     photo_ion_xsec_list = phys.photo_ion_xsec(eng_phot, species='HI') # cm^2
@@ -447,12 +466,14 @@ def evolve_at_lowz(
                                 heat_rate_list[abs_idx] += np.sum(Ne_photo_vals * heat_rates_photo)
                             Ee_prev_photo = Ee_photo_future.copy()
 
-                            # inds_photo_ff = np.digitize(Ee_photo_future, eng_elec)
-                            # inds_photo_ff[inds_photo_ff == len(eng_elec)] = 0
-                            inds_photo_ff = np.clip(np.digitize(Ee_photo_future, eng_elec), 0, len(eng_elec) - 1)
+                            N_photo_row = rebin_N_arr(
+                                Ne_photo_vals,
+                                np.clip(Ee_photo_future, eng_elec[0], eng_elec[-1]),
+                                eng_elec, spec_type='N'
+                            ).N
 
-                            np.add.at(elec_spec_at_rs[abs_idx], inds_photo_ff, Ne_photo_vals)
-                            np.add.at(sec_elec_spec[ind_dep + 1 + ff],        inds_photo_ff, Ne_photo_vals)
+                            elec_spec_at_rs[abs_idx] += N_photo_row
+                            sec_elec_spec[ind_dep + 1 + ff] += N_photo_row
 
                 ### COMPTON SCATTERING
                 # Change to photon spectrum
@@ -498,9 +519,13 @@ def evolve_at_lowz(
                         Ee_prev_sec = Ee_future.copy()
 
                         # Add electrons to spectrum
-                        inds_Ee_fut = np.clip(np.digitize(Ee_future, eng_elec), 0, len(eng_elec) - 1)
-                        np.add.at(elec_spec_at_rs[abs_idx], inds_Ee_fut, sec_elec_ICS[nonzero_sec])
-                        np.add.at(sec_elec_spec[ind_dep + 1 + ind_fut], inds_Ee_fut, sec_elec_ICS[nonzero_sec]) 
+                        N_sec_row = rebin_N_arr(
+                            sec_elec_ICS[nonzero_sec],
+                            np.clip(Ee_future, eng_elec[0], eng_elec[-1]),
+                            eng_elec, spec_type='N'
+                        ).N
+                        elec_spec_at_rs[abs_idx] += N_sec_row
+                        sec_elec_spec[ind_dep + 1 + ind_fut] += N_sec_row
 
                 ### Redshift and accumulate distortion
                 sec_phot_spec = Spectrum(eng_phot, N_final.sum(axis=0), rs=rs_dep, spec_type='N')
@@ -1287,12 +1312,14 @@ def xsec_PP_ele(E_phot):
         )
         return xsec
     
-# Spectrum of electrons per PP event. Approximated as flat
-def Ne_PP_single(eng_phot, eng_elec, bw_elec):
-    dNdE = np.zeros_like(eng_elec)
+# Spectrum of electrons per PP event. Approximated as flat over [0, Ee_max_PP],
+# with exact per-bin overlap (not a bin-center cutoff) so N and energy are conserved
+# regardless of how Ee_max_PP falls relative to the eng_elec grid.
+def Ne_PP_single(eng_phot, eng_elec):
     Ee_max_PP = eng_phot - 2 * phys.me
-    dNdE[eng_elec < Ee_max_PP] = 2 / (Ee_max_PP) # this normalization results in 2 electrons per PP event
-    return dNdE * bw_elec
+    edges = get_bin_bound(eng_elec)
+    overlap = np.clip(np.minimum(edges[1:], Ee_max_PP) - edges[:-1], 0, None)
+    return (2 / Ee_max_PP) * overlap # this normalization results in 2 electrons per PP event
                         
 ### FOR CROSS CHECKS
 def comparison_lowz_v_DH(
