@@ -50,7 +50,7 @@ def evolve(
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
-    first_iter=True, init_distort=None, prev_output=None,
+    first_iter=True, init_distort=None, prev_output=None, exclude_y=False,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
 ):
     """
@@ -178,6 +178,8 @@ def evolve(
         The spectral distortion at start_rs. If None, initialized with zeros.
     prev_output : list of dict, optional
         Output from a previous iteration of this function.
+    exclude_y : bool, optional
+        If *True*, exclude the y-type contribution from the distortion spectrum. Default is *False*.
     use_tqdm : bool, optional
         If *True*, uses `tqdm` to track progress. Default is *True*.
     tqdm_jupyter : bool, optional
@@ -617,6 +619,8 @@ def evolve(
 
     else:
         distortion = None
+        distortion_y = None
+        distortion_nony = None
         # Object to help us interpolate over MEDEA results.
 
     if elec_method == 'old':
@@ -1193,7 +1197,8 @@ def evolve(
             y_heat_spec = phys.ymu_distortion(dist_eng, y, rs, 'y')
 
             distortion_nony_at_rs.N += streaming_lowengphot.N # save non-y contributions before modifying streaming_lowengphot
-            streaming_lowengphot.N += y_heat_spec.N
+            if not exclude_y:
+                streaming_lowengphot.N += y_heat_spec.N
             distortion_y_at_rs.N += y_heat_spec.N
 
             append_distort_spec(streaming_lowengphot)
@@ -1759,7 +1764,7 @@ def evolve_for_CLASS(
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
-    first_iter=True, init_distort_file=None, prev_output=None,
+    first_iter=True, init_distort_file=None, prev_output=None, exclude_y=False,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
