@@ -684,8 +684,17 @@ def evolve(
         #  produced by high energy photon processes (lowengelec_spec_at_rs)
         #  photoionized from atoms (ionized_elec)
 
+        # Compute the fraction of ionizing photons
+        # that free stream within this step
+        if (reion_switch is True) & (rs < start_rs):
+            lowEprop_mask = phot_dep.propagating_lowE_photons_fracs(
+                lowengphot_spec_at_rs, x_at_rs, dt)
+
+        else:
+            lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
+            
         # All normalized per baryon
-        ionized_elec = phot_dep.get_ionized_elec(lowengphot_spec_at_rs,
+        ionized_elec = phot_dep.get_ionized_elec((1-lowEprop_mask) * lowengphot_spec_at_rs,
                                                  eleceng, x_at_rs, method=compute_fs_method)
         tot_spec_elec = (
             in_spec_elec*norm_fac(rs)+lowengelec_spec_at_rs+ionized_elec
@@ -949,16 +958,7 @@ def evolve(
         else:
             highengphot_spec_at_rs += in_spec_phot * norm_fac(rs)
 
-        # Compute the fraction of ionizing photons
-        # that free stream within this step
-        if (reion_switch is True) & (rs < start_rs):
-            lowEprop_mask = phot_dep.propagating_lowE_photons_fracs(
-                lowengphot_spec_at_rs, x_at_rs, dt)
-
-        else:
-            lowEprop_mask = np.zeros_like(lowengphot_spec_at_rs.eng)
-
-        # Add this fraction to the propagating photons
+        # Add propagating fraction to the high energy photons for the next step
         highengphot_spec_at_rs += lowEprop_mask * lowengphot_spec_at_rs
 
         # Get rid of the lowenergy photons that weren't absorbed through
