@@ -49,6 +49,7 @@ def evolve(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
+    include_y_distortion=True,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
     first_iter=True, init_distort=None, prev_output=None, exclude_y=False,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4,verbose=0
@@ -145,6 +146,11 @@ def evolve(
     distort : bool, optional
         If *True* calculate the distortion. This sets elec_processes to True.
         If *False* speed up the code by skipping slow electron cooling code.
+    include_y_distortion : bool, optional
+        If *True*, add the stepwise thermal heating distortion to the output
+        photon spectrum. Set to *False* when constructing the residual
+        non-:math:`g`, non-:math:`y`, non-:math:`\mu` spectrum. Default is
+        *True*.
     cross_check : bool, optional
         If *True*, compare against 1604.02457 by using original MEDEA files,
         turning off partial binning, etc. Default is *False*.
@@ -1197,7 +1203,8 @@ def evolve(
             y_heat_spec = phys.ymu_distortion(dist_eng, y, rs, 'y')
 
             distortion_nony_at_rs.N += streaming_lowengphot.N # save non-y contributions before modifying streaming_lowengphot
-            if not exclude_y:
+            # include_y_distortion (local, ccc56588) and exclude_y (upstream, 86efdcd) are equivalent switches
+            if include_y_distortion and not exclude_y:
                 streaming_lowengphot.N += y_heat_spec.N
             distortion_y_at_rs.N += y_heat_spec.N
 
@@ -1763,8 +1770,9 @@ def evolve_for_CLASS(
     init_cond=None, coarsen_factor=1, backreaction=True,
     compute_fs_method='no_He', elec_method='new',
     distort=False, fudge=1.125, nmax=10, fexc_switch=True, MLA_funcs=None,
+    include_y_distortion=True,
     cross_check=False, reprocess_distortion=True, simple_2s1s=False, iterations=1,
-    first_iter=True, init_distort_file=None, prev_output=None, exclude_y=False,
+    first_iter=True, init_distort_file=None, init_distort_component='total', prev_output=None, exclude_y=False,
     use_tqdm=True, tqdm_jupyter=True, mxstep=1000, rtol=1e-4, verbose=0
 ):
     """
@@ -1799,6 +1807,10 @@ def evolve_for_CLASS(
     if params['struct_boost'] is not None:
         params['struct_boost'] = phys.struct_boost_func(params['struct_boost']) # WQ: not the most flexible way to do this, but okay
 
+    init_distort_component = params.pop('init_distort_component')
+    if init_distort_component not in ('total', 'residual'):
+        raise ValueError("init_distort_component must be 'total' or 'residual'.")
+
     # If init_distort_file is specified, load the inital spectral distortion
     # Assumes spectrum is given in CLASS units at z=0
     if params['init_distort_file'] is not None:
@@ -1811,7 +1823,32 @@ def evolve_for_CLASS(
 
         # Convert spectrum to dNdE
         convert = phys.nB * dist_eng * hplanck * phys.c / (4*np.pi) * phys.ele * 1e4
-        dist_dNdE = init_dist_arr[:,2] * 1e-26 / convert
+        if init_distort_component == 'total':
+            init_intensity = init_dist_arr[:, 2]
+        else:
+            if init_dist_arr.ndim != 2 or init_dist_arr.shape[1] < 6:
+                raise ValueError(
+                    'A residual high-redshift handoff requires CLASS columns '
+                    'SD_tot, SD[g], SD[y], and SD[mu].'
+                )
+            if (
+                np.linalg.norm(init_dist_arr[:, 2]) == 0
+                and np.linalg.norm(init_dist_arr[:, 3:6]) > 0
+            ):
+                raise ValueError(
+                    'Cannot extract a residual from an inconsistent dummy '
+                    'handoff with SD_tot=0 but nonzero g/y/mu columns.'
+                )
+            # Do not trust the legacy SD[residuals] column: in calculations
+            # without an imported residual it may be uninitialized. Construct
+            # the closure residual explicitly instead.
+            init_intensity = (
+                init_dist_arr[:, 2]
+                - init_dist_arr[:, 3]
+                - init_dist_arr[:, 4]
+                - init_dist_arr[:, 5]
+            )
+        dist_dNdE = init_intensity * 1e-26 / convert
 
         # CLASS binning is relatively coarse
         # For smooth initial distortion, interpolate so that we don't have rebinning artifacts

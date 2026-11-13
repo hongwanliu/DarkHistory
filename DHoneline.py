@@ -62,6 +62,7 @@ parser.add_argument("--elec_method", help="Method for evaluation electron energy
 
 # Atomic physics and spectral distortions
 parser.add_argument("--distort", help="If True, calculate spectral distortions. Default is False.", type=str2bool, default=False) #action='store_true')
+parser.add_argument("--include_y_distortion", help="If False, omit DarkHistory's stepwise thermal y distortion from the returned spectrum. Default is True.", type=str2bool, default=True)
 parser.add_argument("--fudge", help="Value of Recfast fudge factor. Default is 1.125.", type=float, default=1.125)
 parser.add_argument("--nmax", help="If distort is True, sets the maximum H principal quantum number that the MLA tracks. Default is 10.", type=int, default=10)
 parser.add_argument("--fexc_switch", help="If True, include the source term b_DM to the MLA steady-state equation. Default is True.", type=str2bool, default='True')
@@ -69,6 +70,7 @@ parser.add_argument("--reprocess_distortion", help="If True, set Delta_f != 0, a
 parser.add_argument("--simple_2s1s", help="If set, fixes the decay rate to 8.22 s^-1.", type=str2bool, default=False) #action='store_true')
 parser.add_argument("--iterations", help="Number of iterations to run for the MLA iterative method.", type=int, default=1)
 parser.add_argument("--init_distort_file", help="File containing spectral distortion at start_rs.")
+parser.add_argument("--init_distort_component", help="Component read from init_distort_file: 'total' or the explicit non-g/non-y/non-mu 'residual'.", choices=('total', 'residual'), default='total')
 
 # Initial conditions, precision options, misc.
 # parser.add_argument("--init_cond", help="Specifies the initial (xH, xHe, Tm).", type=)
